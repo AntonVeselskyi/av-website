@@ -12,6 +12,12 @@ h1
         text-align: center;
         vertical-align: middle;
     }
+    div
+    {
+        display: table;
+        margin-right: auto;
+        margin-left: auto;
+    }
     .title 
     {
         font-family: 'Major Mono Display', monospace;
@@ -23,9 +29,9 @@ h1
 
     .column
     {
-        float: left;
-        width: 6.5%;
-        padding: 5px;
+        float: center;
+        width: 22%;
+        padding: 15px;
     }
 
     /* Clear floats after image containers */
