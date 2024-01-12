@@ -25,9 +25,19 @@
             <a href="https://www.instagram.com/antonveselskyi"><img src="img/instagram.svg" alt="Anton Veselskyi on Instagram" style="width:100%"></a>
         </div>
         <div class="column">
-            <a href="img/btc_donation_qr.png"><img src="img/donation.svg" alt="Give me money" style="width:100%"></a>
+            <a id="myBtn"><img src="img/donation.svg" alt="Give me money" style="width:100%"></a>
         </div>
       </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img src="img/btc_donation_qr.png" alt="QR Code">
+        </div>
+    </div>
+
 </body>
 
 <script>
@@ -38,23 +48,45 @@
 
     function changeText()
     {
-    var textElement = document.getElementById('wavyText');
-    textElement.classList.add('glitch');
+        var textElement = document.getElementById('wavyText');
+        textElement.classList.add('glitch');
 
-    setTimeout(function()
+        setTimeout(function()
+        {
+            if (textElement.innerHTML === "Працюй краще")
+            {
+                textElement.innerHTML = "Strive for excellence";
+            }
+            else
+            {
+                textElement.innerHTML = "Працюй краще";
+            }
+        }, 250);
+
+        setTimeout(() => textElement.classList.remove('glitch'), 500);
+    }
+
+    document.getElementById('myBtn').addEventListener('click',
+    function()
     {
-        if (textElement.innerHTML === "Працюй краще")
-        {
-            textElement.innerHTML = "Strive for excellence";
-        }
-        else
-        {
-            textElement.innerHTML = "Працюй краще";
-        }
-    }, 250);
+        document.getElementById('myModal').style.display = 'block';
+    });
 
-    setTimeout(() => textElement.classList.remove('glitch'), 500);
-}
+    document.getElementsByClassName('close')[0].addEventListener('click',
+    function()
+    {
+        document.getElementById('myModal').style.display = 'none';
+    });
+
+    window.addEventListener('click',
+    function(event)
+    {
+        var modal = document.getElementById('myModal');
+        if (event.target == modal)
+        {
+            modal.style.display = 'none';
+        }
+    });
 </script>
 
 </html>
