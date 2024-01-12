@@ -10,7 +10,7 @@
 
 <body>
     <h1 class=title> Anton Veselskyi </h1>
-    <p class=cursive>Працюй краще</p>
+    <p class="cursive" id="wavyText">Працюй краще</p>
     <div class="row">
         <div class="column">
             <a href="https://github.com/AntonVeselskyi"><img src="img/github.svg" alt="Anton Veselskyi on GitHub"  style="width:100%"></a>
@@ -29,5 +29,32 @@
         </div>
       </div>
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function()
+    {
+        setInterval(changeText, 3000);
+    });
+
+    function changeText()
+    {
+    var textElement = document.getElementById('wavyText');
+    textElement.classList.add('glitch');
+
+    setTimeout(function()
+    {
+        if (textElement.innerHTML === "Працюй краще")
+        {
+            textElement.innerHTML = "Strive for excellence";
+        }
+        else
+        {
+            textElement.innerHTML = "Працюй краще";
+        }
+    }, 250);
+
+    setTimeout(() => textElement.classList.remove('glitch'), 500);
+}
+</script>
 
 </html>

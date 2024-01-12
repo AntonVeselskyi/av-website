@@ -1,48 +1,85 @@
-h1 
-    {
-        font-size: 9vw;
-        color: white;
-        background: black;  
-        text-align: center;
-        vertical-align: middle;
-    }
-    p
-    {
-        font-size: 6vw;
-        text-align: center;
-        vertical-align: middle;
-    }
-    div
-    {
-        display: table;
-        margin-right: auto;
-        margin-left: auto;
-    }
-    .title 
-    {
-        font-family: 'Major Mono Display', monospace;
-    }
-    .cursive 
-    {
-        font-family: 'Poiret One', cursive;
-    }
+h1
+{
+    font-size: 9vw;
+    color: white;
+    background: black;
+    text-align: center;
+    vertical-align: middle;
+}
+p
+{
+    font-size: 6vw;
+    text-align: center;
+    vertical-align: middle;
+}
+div
+{
+    display: table;
+    margin-right: auto;
+    margin-left: auto;
+}
+.title
+{
+    font-family: 'Major Mono Display', monospace;
+}
+.cursive
+{
+    font-family: 'Poiret One', cursive;
+}
 
+@media (orientation: portrait)
+{
     .column
     {
         float: center;
         width: 22%;
         padding: 15px;
     }
+}
 
-    /* Clear floats after image containers */
-    .row::after
+/* desktop layout*/
+@media (orientation: landscape)
+{
+    .row
     {
-        text-align: center;
-        content: "";
-        clear: both;
-        display: table;
+        display: flex; /* align them in a row */
+        justify-content: center; /* center them horizontally */
     }
 
+    .column
+    {
+        display: flex; /* makes it a flex container */
+        align-items: center; /* centers children vertically */
+        justify-content: center; /* centers children horizontally */
+    }
 
-    #html { overflow-y: hidden; }
-    
+    .column img
+    {
+        width: 250px; /* Fixed width for all images */
+        height: 270px; /* Fixed height for all images */
+        object-fit: contain; /* Ensures the image is scaled properly within the given dimensions */
+    }
+}
+
+/* Clear floats after image containers */
+.row::after
+{
+    text-align: center;
+    content: "";
+    clear: both;
+    display: table;
+}
+
+#html { overflow-y: hidden; }
+
+@keyframes shake
+{
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+.glitch
+{
+    animation: shake 0.5s linear infinite;
+}
