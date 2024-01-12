@@ -108,11 +108,13 @@ div
     margin: auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 20%;
-    display: flex; /* Use flexbox to center the image */
+    width: auto;
+    max-width: 300px;
     justify-content: center; /* Center horizontally */
     align-items: center; /* Center vertically */
     transform: translateY(50%); /* Remove or adjust this if it's causing misalignment */
+    display: inline-block; /* Adjust display to fit content */
+    padding: 20px; /* Add padding to create space around the QR code */
 }
 
 .close
