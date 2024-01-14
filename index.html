@@ -93,10 +93,10 @@ function checkAnimationState()
         letterV.style.animation = "";
         letterV.offsetHeight;
 
-        letterA.style.animation = "scale-down-and-place-A 3.7s ease forwards";
+        letterA.style.animation = "scale-down-and-place-A 3.1s ease forwards";
         letterA.style.animationDirection = 'normal';
 
-        letterV.style.animation = "scale-down-and-place-V 3.7s ease forwards";
+        letterV.style.animation = "scale-down-and-place-V 3.1s ease forwards";
         letterV.style.animationDirection = 'normal';
 
         var hiddenLetters = document.querySelectorAll('.hidden');
@@ -108,12 +108,12 @@ function checkAnimationState()
             {
                 letter.classList.remove('hidden');
                 letter.classList.add('slide-in');
-            }, 3100 + letterIndex * (1500 / hiddenLetters.length)); // Distribute the remaining letters over 1.5 seconds
+            }, 2300 + letterIndex * (1500 / hiddenLetters.length)); // Distribute the remaining letters over 1.5 seconds
         });
         setTimeout(function()
         {
             hiddenLeetersAnimationInProgress = false;
-        }, 3100+1500);
+        }, 2300+1500);
 
     }
 

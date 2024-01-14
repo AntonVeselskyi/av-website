@@ -80,13 +80,9 @@
     }
     10%
     {
-      transform:  translate(-50%, -50%) scale(2) rotate(360deg)
-    }
-    29%
-    {
         transform: translate(-50%, -50%) scale(2) rotate(360deg)
     }
-    41%
+    38%
     {
       transform: translate(-50%, -50%) scale(1) rotate(180deg)
     }
@@ -110,11 +106,7 @@
     {
       transform: translate(-50%, -50%) scale(2) rotate(360deg);
     }
-    29%
-    {
-        transform: translate(-50%, -50%) scale(2) rotate(360deg)
-    }
-    41%
+    38%
     {
       transform: translate(-50%, -50%) scale(1) rotate(180deg);
     }
