@@ -1,0 +1,131 @@
+.title
+{
+    font-family: 'Major Mono Display', monospace;
+    font-size: 9vw;
+    color: white;
+    background: black;
+    position: relative;
+
+    text-align: center;
+    vertical-align: middle;
+    width: 100%;
+    overflow: hidden; /* Keeps everything contained */
+}
+
+/* Initial state of A and V with increased size and centered */
+.initial-letter-A
+{
+    font-size: 9vw;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(2); /* Start twice the size */
+    opacity: 1;
+    transform-origin: center; /* Set the rotation point to the center */
+    display: inline-block;
+}
+
+.initial-letter-V
+{
+    font-size: 9vw;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(2); /* Start twice the size */
+    opacity: 1;
+    transform-origin: center; /* Set the rotation point to the center */
+    display: inline-block;
+}
+
+.hidden
+{
+    opacity: 0;
+    transform: translateX(-100%);
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.slide-in
+{
+    opacity: 0; /* starts out invisible */
+    position: relative; /* changed from absolute */
+    display: inline-block; /* changed from block */
+    transform: translateX(-100%);
+    animation: slide-in 0.7s ease forwards;
+}
+
+@keyframes slide-in
+{
+    0%
+    {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    100%
+    {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Animation for scaling down A and V */
+@keyframes scale-down-and-place-A
+{
+    0%
+    {
+      transform: translate(-50%, -50%) scale(2);
+    }
+    10%
+    {
+      transform:  translate(-50%, -50%) scale(2);
+    }
+    21%
+    {
+        transform: translate(-50%, -50%) scale(2)
+    }
+    32%
+    {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    60%
+    {
+        transform: translate(-50%, -100%) scale(1); /* Move it down half way */
+    }
+    100%
+    {
+        transform: translate(-300%, -100%) scale(1);
+    }
+}
+
+@keyframes scale-down-and-place-V
+{
+    0%
+    {
+      transform: translate(-50%, -50%) scale(2);
+    }
+    10%
+    {
+      transform: translate(-50%, -50%) scale(2);
+    }
+    21%
+    {
+        transform: translate(-50%, -50%) scale(2)
+    }
+    32%
+    {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    60%
+    {
+        transform: translate(-50%, 0%) scale(1); /* Move it down half way */
+    }
+    100%
+    {
+        transform: translate(-500%, 0%) scale(1);
+    }
+}
+
+#titleContainer:hover
+{
+    cursor: pointer; /* Change cursor to pointer on hover */
+}

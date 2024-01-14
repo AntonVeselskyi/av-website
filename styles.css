@@ -18,10 +18,7 @@ div
     margin-right: auto;
     margin-left: auto;
 }
-.title
-{
-    font-family: 'Major Mono Display', monospace;
-}
+
 .cursive
 {
     font-family: 'Poiret One', cursive;
@@ -31,7 +28,6 @@ div
 {
     .column
     {
-        float: center;
         width: 22%;
         padding: 15px;
     }
@@ -70,8 +66,6 @@ div
     display: table;
 }
 
-#html { overflow-y: hidden; }
-
 @keyframes shake
 {
     0%, 100% { transform: translateX(0); }
@@ -86,7 +80,6 @@ div
 
 .modal
 {
-    display: none;
     position: fixed;
     z-index: 1;
     padding-top: 100px;
@@ -97,7 +90,7 @@ div
     overflow: auto;
     background-color: rgb(0,0,0);
     background-color: rgba(0,0,0,0.4);
-    display: flex; /* Add flex display */
+    display: none; /* Add flex display */
     justify-content: center; /* Center the modal content horizontally */
     align-items: center; /* Center the modal content vertically */
 }
@@ -114,28 +107,10 @@ div
     align-items: center; /* Center vertically */
     padding: 20px; /* Add padding to create space around the QR code */
     display: flex;
+    animation: none; /* This ensures the modal content does not shake */
 }
 
-#myBtn:hover
+#myBTC:hover
 {
     cursor: pointer; /* Change cursor to pointer on hover */
-}
-
-.close
- {
-    color: #aaaaaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    position: absolute; /* Ensure position is absolute */
-    top: 15px; /* Adjust top position to align as needed */
-    right: 15px; /* Adjust right position to align as needed */
- }
-
-.close:hover,
-.close:focus
-{
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
 }

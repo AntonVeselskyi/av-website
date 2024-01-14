@@ -5,27 +5,47 @@
     <title>Anton Veselskyi</title>
     <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Poiret+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="title.css">
     <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
 </head>
 
 <body>
-    <h1 class=title> Anton Veselskyi </h1>
-    <p class="cursive" id="wavyText">Працюй краще</p>
+    <h1 id="titleContainer" class="title">
+        <span class="initial-letter-A">A</span><!--
+        Other letters of "ANTON" with the slide-in effect
+        --><span class="hidden" style="--letter-index:1;">n</span><!--
+        --><span class="hidden" style="--letter-index:2;">t</span><!--
+        --><span class="hidden" style="--letter-index:3;">o</span><!--
+        --><span class="hidden" style="--letter-index:4;">n</span><br>
+        <span class="initial-letter-V">V</span><!--
+            Other letters of "VESELSKYI" with the slide-in effect
+        --><span class="hidden" style="--letter-index:1;">e</span><!--
+        --><span class="hidden" style="--letter-index:2;">s</span><!--
+        --><span class="hidden" style="--letter-index:3;">e</span><!--
+        --><span class="hidden" style="--letter-index:4;">l</span><!--
+        --><span class="hidden" style="--letter-index:5;">s</span><!--
+        --><span class="hidden" style="--letter-index:6;">k</span><!--
+        --><span class="hidden" style="--letter-index:7;">y</span><!--
+        --><span class="hidden" style="--letter-index:8;">i</span>
+    </h1>
+    <p class="cursive" id="wavyText">
+        Працюй краще
+    </p>
     <div class="row">
         <div class="column">
-            <a href="https://github.com/AntonVeselskyi"><img src="img/github.svg" alt="Anton Veselskyi on GitHub"  style="width:100%"></a>
+            <a href="https://github.com/AntonVeselskyi" target="_blank"><img src="img/github.svg" alt="Anton Veselskyi on GitHub"  style="width:100%"></d>
         </div>
         <div class="column">
-          <a href="https://telegram.me/antonveselskyi"><img src="img/telegram.svg" alt="Anton Veselskyi on Telegram" style="width:100%"></a>
+          <a href="https://telegram.me/antonveselskyi" target="_blank"><img src="img/telegram.svg" alt="Anton Veselskyi on Telegram" style="width:100%"></a>
         </div>
         <div class="column">
-            <a href="https://ua.linkedin.com/in/anton-veselskyi-75254a135"><img src="img/linkedin.svg" alt="Anton Veselskyi on LinkedIn" style="width:100%"></a>
+            <a href="https://ua.linkedin.com/in/anton-veselskyi-75254a135" target="_blank"><img src="img/linkedin.svg" alt="Anton Veselskyi on LinkedIn" style="width:100%"></a>
         </div>
         <div class="column">
-            <a href="https://www.instagram.com/antonveselskyi"><img src="img/instagram.svg" alt="Anton Veselskyi on Instagram" style="width:100%"></a>
+            <a href="https://www.instagram.com/antonveselskyi" target="_blank"><img src="img/instagram.svg" alt="Anton Veselskyi on Instagram" style="width:100%"></a>
         </div>
         <div class="column">
-            <a id="myBtn"><img src="img/donation.svg" alt="Give me money" style="width:100%"></a>
+            <a id="myBTC"><img src="img/donation.svg" alt="Give me money" style="width:100%"></a>
         </div>
       </div>
 
@@ -33,7 +53,6 @@
     <div id="myModal" class="modal">
         <!-- Modal content -->
         <div class="modal-content">
-            <span class="close">&times;</span>
             <img src="img/btc_donation_qr.png" alt="QR Code">
         </div>
     </div>
@@ -41,10 +60,115 @@
 </body>
 
 <script>
+    var globalState = { isTitleFold: false };
+    var animationInProgress = false;
+
+function checkAnimationState()
+{
+    var letterA = document.getElementsByClassName("initial-letter-A")[0];
+    var letterV = document.getElementsByClassName("initial-letter-V")[0];
+
+    // Add event listeners for the 'animationend' event
+    letterA.addEventListener('animationend', () =>
+    {
+        animationInProgress = false;
+        console.log('Animation on A ended');
+    });
+
+    letterV.addEventListener('animationend', () =>
+    {
+        animationInProgress = false;
+        console.log('Animation on V ended');
+    });
+}
+
+    function showTitleLetters()
+    {
+        var letterA = document.getElementsByClassName("initial-letter-A")[0];
+        var letterV = document.getElementsByClassName("initial-letter-V")[0];
+
+        letterA.style.animation = "";
+        letterA.offsetHeight;
+        letterV.style.animation = "";
+        letterV.offsetHeight;
+
+        letterA.style.animation = "scale-down-and-place-A 3.7s ease forwards";
+        letterA.style.animationDirection = 'normal';
+
+        letterV.style.animation = "scale-down-and-place-V 3.7s ease forwards";
+        letterV.style.animationDirection = 'normal';
+
+        var hiddenLetters = document.querySelectorAll('.hidden');
+        //Start revealing letters after delay
+        hiddenLetters.forEach(function(letter, index)
+        {
+            var letterIndex = parseInt(letter.style.getPropertyValue('--letter-index'));
+            setTimeout(function()
+            {
+                letter.classList.remove('hidden');
+                letter.classList.add('slide-in');
+            }, 3100 + letterIndex * (1500 / hiddenLetters.length)); // Distribute the remaining letters over 1.5 seconds
+        });
+    }
+
+    function hideTitleLetters()
+    {
+        // Logic to reverse the animation
+        var hiddenLetters = document.querySelectorAll('.slide-in');
+        hiddenLetters.forEach(function(letter, index)
+        {
+            var letterIndex = parseInt(letter.style.getPropertyValue('--letter-index'));
+            // Calculate the reverse delay based on the index
+            var reverseDelay = (hiddenLetters.length - letterIndex) * (750 / hiddenLetters.length);
+            setTimeout(function()
+            {
+                letter.classList.remove('slide-in');
+                letter.classList.add('hidden');
+            }, reverseDelay);
+        });
+
+        setTimeout(function()
+        {
+            var letterA = document.getElementsByClassName("initial-letter-A")[0];
+            var letterV = document.getElementsByClassName("initial-letter-V")[0];
+
+            letterA.style.animation = "";
+            letterA.offsetHeight;
+            letterV.style.animation = "";
+            letterV.offsetHeight;
+
+            letterA.style.animation = "scale-down-and-place-A 1.6s reverse ease forwards";
+            letterV.style.animation = "scale-down-and-place-V 1.6s reverse ease forwards";
+
+        }, 800);
+    }
+
+    function toggleTitleAnimation(event)
+    {
+        event.stopPropagation();
+
+        if (!animationInProgress)
+        {
+            animationInProgress = true; // Set the flag to true as animation starts
+            if (globalState.isTitleFold)
+            {
+                showTitleLetters();
+            }
+            else
+            {
+                hideTitleLetters();
+            }
+            globalState.isTitleFold = !globalState.isTitleFold;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function()
     {
         document.getElementById('myModal').style.display = 'none';
-        setInterval(changeText, 3000);
+        showTitleLetters();
+        checkAnimationState();
+        document.getElementById('titleContainer').addEventListener('click', toggleTitleAnimation);
+        setTimeout(() => setInterval(changeText, 3000), 4500);;
     });
 
     function changeText()
@@ -67,16 +191,10 @@
         setTimeout(() => textElement.classList.remove('glitch'), 500);
     }
 
-    document.getElementById('myBtn').addEventListener('click',
+    document.getElementById('myBTC').addEventListener('click',
     function()
     {
-        document.getElementById('myModal').style.display = 'block';
-    });
-
-    document.getElementsByClassName('close')[0].addEventListener('click',
-    function()
-    {
-        document.getElementById('myModal').style.display = 'none';
+        document.getElementById('myModal').style.display = 'flex';
     });
 
     window.addEventListener('click',
