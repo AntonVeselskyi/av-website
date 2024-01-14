@@ -10,6 +10,11 @@
     vertical-align: middle;
     width: 100%;
     overflow: hidden; /* Keeps everything contained */
+
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 /* Initial state of A and V with increased size and centered */
@@ -22,7 +27,6 @@
     transform: translate(-50%, -50%) scale(2); /* Start twice the size */
     opacity: 1;
     transform-origin: center; /* Set the rotation point to the center */
-    display: inline-block;
 }
 
 .initial-letter-V
@@ -34,7 +38,6 @@
     transform: translate(-50%, -50%) scale(2); /* Start twice the size */
     opacity: 1;
     transform-origin: center; /* Set the rotation point to the center */
-    display: inline-block;
 }
 
 .hidden
