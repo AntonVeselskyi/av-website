@@ -24,7 +24,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(2); /* Start twice the size */
+    transform: translate(-50%, -50%) scale(2) rotate(360deg); /* Start twice the size */
     opacity: 1;
     transform-origin: center; /* Set the rotation point to the center */
 }
@@ -35,7 +35,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(2); /* Start twice the size */
+    transform: translate(-50%, -50%) scale(2) rotate(360deg); /* Start twice the size */
     opacity: 1;
     transform-origin: center; /* Set the rotation point to the center */
 }
@@ -76,23 +76,23 @@
 {
     0%
     {
-      transform: translate(-50%, -50%) scale(2);
+      transform: translate(-50%, -50%) scale(2) rotate(360deg);
     }
     10%
     {
-      transform:  translate(-50%, -50%) scale(2);
+      transform:  translate(-50%, -50%) scale(2) rotate(360deg)
     }
-    21%
+    29%
     {
-        transform: translate(-50%, -50%) scale(2)
+        transform: translate(-50%, -50%) scale(2) rotate(180deg)
     }
-    32%
+    41%
     {
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-50%, -50%) scale(1) rotate(180deg)
     }
     60%
     {
-        transform: translate(-50%, -100%) scale(1); /* Move it down half way */
+        transform: translate(-50%, -100%) scale(1) rotate(180deg); /* Move it down half way */
     }
     100%
     {
@@ -104,23 +104,23 @@
 {
     0%
     {
-      transform: translate(-50%, -50%) scale(2);
+      transform: translate(-50%, -50%) scale(2) rotate(360deg);
     }
     10%
     {
-      transform: translate(-50%, -50%) scale(2);
+      transform: translate(-50%, -50%) scale(2) rotate(360deg);
     }
-    21%
+    29%
     {
-        transform: translate(-50%, -50%) scale(2)
+        transform: translate(-50%, -50%) scale(2) rotate(180deg)
     }
-    32%
+    41%
     {
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-50%, -50%) scale(1) rotate(180deg);
     }
     60%
     {
-        transform: translate(-50%, 0%) scale(1); /* Move it down half way */
+        transform: translate(-50%, 0%) scale(1) rotate(180deg); /* Move it down half way */
     }
     100%
     {
