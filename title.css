@@ -84,7 +84,7 @@
     }
     29%
     {
-        transform: translate(-50%, -50%) scale(2) rotate(180deg)
+        transform: translate(-50%, -50%) scale(2) rotate(360deg)
     }
     41%
     {
@@ -112,7 +112,7 @@
     }
     29%
     {
-        transform: translate(-50%, -50%) scale(2) rotate(180deg)
+        transform: translate(-50%, -50%) scale(2) rotate(360deg)
     }
     41%
     {
