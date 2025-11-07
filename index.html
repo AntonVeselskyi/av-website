@@ -29,8 +29,9 @@
         --><span class="hidden" style="--letter-index:8;">i</span>
     </h1>
     <p class="cursive" id="wavyText">
-        Працюй краще
+        Strive for excellence
     </p>
+    <a href="sap.html" class="secret-btn">Secret Access Portal</a>
     <div class="row">
         <div class="column">
             <a href="https://github.com/AntonVeselskyi" target="_blank"><img src="img/github.svg" alt="Anton Veselskyi on GitHub"  style="width:100%"></d>
@@ -56,7 +57,6 @@
             <img src="img/btc_donation_qr.png" alt="QR Code">
         </div>
     </div>
-
 </body>
 
 <script>
@@ -182,7 +182,7 @@ function checkAnimationState()
         toggleTitleAnimation();
         checkAnimationState();
         document.getElementById('titleContainer').addEventListener('click', toggleTitleAnimation);
-        setTimeout(() => setInterval(changeText, 3000), 4500);;
+        setTimeout(() => setInterval(changeText, 3000), 2400);
     });
 
     function changeText()
@@ -192,13 +192,13 @@ function checkAnimationState()
 
         setTimeout(function()
         {
-            if (textElement.innerHTML === "Працюй краще")
+            if (textElement.innerHTML === "Strive for excellence")
             {
-                textElement.innerHTML = "Strive for excellence";
+                textElement.innerHTML = "Працюй краще";
             }
             else
             {
-                textElement.innerHTML = "Працюй краще";
+                textElement.innerHTML = "Strive for excellence";
             }
         }, 250);
 

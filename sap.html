@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Poiret+One&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Secret Access Portal</title>
+<style>
+    :root
+    {
+    --rainbow: linear-gradient(
+      90deg,
+      #ff004d 0%,
+      #ff7a00 12%,
+      #ffd300 25%,
+      #4cff00 38%,
+      #00d4ff 52%,
+      #6a00ff 65%,
+      #ff00b3 78%,
+      #ff004d 100%
+    );
+    --rainbow-duration: 6s;
+  }
+
+  body
+  {
+    background-color: #0b0c10;
+    color: #66fcf1;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    padding-top: 100px;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* Typing animation */
+  h1
+  {
+    font-family: 'Major Mono Display', monospace;
+    display: inline-block;
+    border-right: 3px solid #66fcf1;
+    white-space: nowrap;
+    overflow: hidden;
+    letter-spacing: 2px;
+    font-weight: normal;
+    font-size: 1.6rem;
+    animation: caret 0.8s step-end infinite;
+  }
+
+  @keyframes caret
+  {
+    50% { border-color: transparent; }
+  }
+
+  .code-box
+  {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 50px;
+  }
+
+  .slot
+  {
+    font-family: 'Major Mono Display', monospace;
+    width: 50px;
+    height: 60px;
+    border: 2px solid #45a29e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    text-transform: uppercase;
+    color: #66fcf1;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .slot.empty {
+    color: #1f2833;
+  }
+
+  .slot.active {
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse
+  {
+    0%, 100% {
+      box-shadow: 0 0 5px var(--glow-color, #45a29e);
+    }
+    50% {
+      box-shadow: 0 0 17px var(--glow-color, #45a29e);
+    }
+  }
+
+
+  /* Charge-up animation */
+  @keyframes charge {
+    0%{
+      background: linear-gradient(to top, #45a29e 0%, transparent 0%);
+    }
+    100% {
+      background: linear-gradient(to top, #45a29e 100%, transparent 0%);
+    }
+  }
+
+  #hiddenInput {
+    opacity: 0;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .hint {
+    opacity: 0; /* starts out invisible */
+    margin-top: 20px;
+    font-size: 1.1rem;
+    color: #c5c6c7;
+  }
+  .hint.visible {
+  opacity: 1; /* fades in smoothly */
+  animation: caret 0.8s step-end infinite;
+}
+
+  /* -------------------------
+     Rainbow styles (minimal additions)
+     ------------------------- */
+  @keyframes rainbow-slide {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* gradient for clipped text (title + hint) */
+  .rainbow-text {
+    background: var(--rainbow);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: rainbow-slide var(--rainbow-duration) linear infinite;
+    /* keep caret visible via border-right */
+    border-right-color: rgba(255,255,255,0.9);
+
+     /* let pulse animation use dynamic hue */
+     --glow-color: currentColor;
+  }
+
+  /* gradient for boxes — also clip text inside them so letters show gradient */
+  .rainbow-box {
+    background: var(--rainbow);
+    background-size: 300% 300%;
+    animation: rainbow-slide var(--rainbow-duration) linear infinite;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+  }
+
+  /* respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .rainbow-text, .rainbow-box { animation: none; background-position: 50% 50%; }
+  }
+</style>
+</head>
+<body>
+
+  <h1 id="title"></h1>
+
+  <div class="code-box" id="codeBox">
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+    <div class="slot empty">◆</div>
+  </div>
+
+  <input id="hiddenInput" type="text" maxlength="8" autofocus />
+  <p class="hint" id="hint"></p>
+
+<script>
+  const hiddenInput = document.getElementById('hiddenInput');
+  const slots = document.querySelectorAll('.slot');
+  const titleEl = document.getElementById('title');
+
+  const fullTitle = "Access coDe ReqUieReD to pRoceeD";
+  let titleIndex = 0;
+
+  // Typewriter effect for the title
+  function typeTitle()
+  {
+    if (titleIndex < fullTitle.length) {
+      titleEl.textContent = fullTitle.slice(0, titleIndex + 1);
+      titleIndex++;
+      setTimeout(typeTitle, 80); // typing speed
+    }
+  }
+
+  typeTitle();
+
+  function updateDisplay(value)
+  {
+    const chars = value.toUpperCase().split('');
+    slots.forEach((slot, i) =>
+    {
+      if (chars[i])
+      {
+        slot.textContent = chars[i];
+        slot.classList.remove('empty', 'active');
+      } else
+      {
+        slot.textContent = '◆';
+        slot.classList.add('empty');
+      }
+      // highlight current active slot
+      if (i === chars.length && chars.length < 8)
+      {
+        slot.classList.add('active');
+      } else {
+        slot.classList.remove('active');
+      }
+    });
+  }
+
+  // Code to unlock the page
+  const CORRECT_CODE =  "ACCESSOK";
+  const HINT_CODE =     "HINTHINT";
+  const COLOR_CODE =    "COLORFUL";
+  const BACK_CODE =     "BACKBACK";
+  const IVO_CODE =      "IVOXYGEN";
+  const PEEP_CODE =     "LIL'PEEP";
+  const SB_CODE =       "$BOY$G59";
+
+  const REDIRECT_URL = "access.html"; // <-- page to go to when correct
+  const AV_URL = "https://antonveselskyi.com"; // <-- page to go to when correct
+  const IVO_URL = "https://youtu.be/_9Un6sPR7ow?si=Kbj9u7Y8bh2O9PUt";
+  const PEEP_URL = "https://youtu.be/6GAoLQGdZHY?si=xcvZm9rsg1Z12Enz&t=87";
+  const PEEP2_URL = "https://youtu.be/6GAoLQGdZHY?si=xcvZm9rsg1Z12Enz&t=87";
+  const SB_URL = "https://www.youtube.com/watch?v=mSVYHrc4baU";
+
+  const hintElement = document.getElementById('hint');
+  let hintTyped = false; // prevent retyping animation
+  function typeHint(text)
+  {
+    hintElement.classList.add('visible');
+    hintElement.textContent = '';
+    let i = 0;
+
+    function typeNext()
+    {
+      if (i < text.length)
+      {
+        hintElement.textContent = text.slice(0, i + 1);
+        i++;
+        setTimeout(typeNext, 60); // typing speed
+      }
+    }
+
+    typeNext();
+  }
+
+  //apply rainbow classes to title, slots and hint
+  function applyRainbow()
+  {
+    titleEl.classList.add('rainbow-text');
+    hintElement.classList.add('rainbow-text');
+    slots.forEach(s => s.classList.add('rainbow-box'));
+  }
+
+  function openInNewTab(url)
+  {
+    startChargeAnimation();
+    setTimeout(() =>
+     {
+             window.open(url, '_blank')
+     }, 1700);
+    setTimeout(resetAfterCharge, 1800);
+  }
+
+  hiddenInput.addEventListener('input', () =>
+  {
+    const value = hiddenInput.value.trim().toUpperCase();
+    updateDisplay(value);
+
+  if (value.length === 8)
+    {
+        // Let the last character sit for a short moment
+        if (value === HINT_CODE && !hintTyped)
+        {
+            hintTyped = true;
+            typeHint("wonderer, you r lost, go back-back where u came from");
+            setTimeout(shakeError, 1100);
+        }
+        else if (value === IVO_CODE)
+        {
+            openInNewTab(IVO_URL)
+        }
+        else if (value === PEEP_CODE)
+        {
+            openInNewTab(PEEP_URL)
+
+        }
+        else if (value === SB_CODE)
+        {
+            typeHint("G59 till the day I die");
+            openInNewTab(SB_URL)
+        }
+        else if (value === COLOR_CODE)
+        {
+            startChargeAnimation();
+            // show rainbow effect (no redirect)
+            setTimeout(() =>
+            {
+                applyRainbow();
+                // keep the typed code visible for a moment:
+                resetAfterCharge();
+
+            }, 1800);
+        }
+        else if (value === BACK_CODE)
+        {
+            startChargeAnimation();
+            setTimeout(() =>
+            {
+                window.location.replace(AV_URL);
+            }, 1500);
+        }
+        else if (value === CORRECT_CODE)
+        {
+          setTimeout(startChargeAnimation, 300);
+          setTimeout(resetAfterCharge, 1800);
+        }
+        else
+        {
+          setTimeout(shakeError, 600);
+        }
+  }
+  });
+
+    // Always keep focus on the hidden input whenever page is active
+    function refocus()
+    {
+        if (document.hasFocus())
+        {
+            hiddenInput.focus();
+        }
+    }
+    // Refocus on any click, focus, or keypress anywhere
+    ['click', 'focus', 'keydown', 'pointerdown'].forEach(evt =>
+    {
+        document.addEventListener(evt, refocus, true);
+    });
+    // Initial focus
+    refocus();
+
+  updateDisplay('');
+  hiddenInput.focus();
+
+  // Error feedback (optional)
+  function shakeError()
+  {
+    document.body.style.animation = "shake 0.3s";
+    setTimeout(() => document.body.style.animation = "", 300);
+    hiddenInput.value = "";
+    updateDisplay("");
+  }
+
+  function redirectAfterDelay(URL, delay)
+  {
+    setTimeout(() =>
+    {
+      window.location.href = REDIRECT_URL;
+    }, 1500);
+  }
+
+  // Charging animation for correct code
+  function startChargeAnimation()
+  {
+    slots.forEach((slot, i) =>
+    {
+      slot.style.animation = `charge 0.8s ease-in-out ${i * 0.1}s forwards`;
+    });
+  }
+
+function resetAfterCharge()
+{
+  // clear animations and revert visuals after charging finishes
+  slots.forEach((slot) =>
+  {
+    slot.style.animation = "";
+  });
+  hiddenInput.value = "";
+  updateDisplay("");
+}
+
+
+  // Shake animation keyframes
+  const style = document.createElement('style');
+  style.textContent = `
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-10px); }
+    40%, 80% { transform: translateX(10px); }
+  }`;
+  document.head.appendChild(style);
+</script>
+
+</body>
+</html>
