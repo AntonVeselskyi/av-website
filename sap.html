@@ -18,7 +18,7 @@
       #ff00b3 78%,
       #ff004d 100%
     );
-    --rainbow-duration: 6s;
+    --rainbow-duration: 5s;
   }
 
   body
@@ -27,7 +27,7 @@
     color: #66fcf1;
     font-family: 'Courier New', monospace;
     text-align: center;
-    padding-top: 100px;
+    padding-top: 120px;
     overflow: hidden;
     user-select: none;
   }
@@ -37,12 +37,12 @@
   {
     font-family: 'Major Mono Display', monospace;
     display: inline-block;
-    border-right: 3px solid #66fcf1;
+    border-right: 4px solid #66fcf1;
     white-space: nowrap;
     overflow: hidden;
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
     font-weight: normal;
-    font-size: 1.6rem;
+    font-size: 1.952rem;
     animation: caret 0.8s step-end infinite;
   }
 
@@ -55,20 +55,20 @@
   {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    margin-top: 50px;
+    gap: 15px;
+    margin-top: 61px;
   }
 
   .slot
   {
     font-family: 'Major Mono Display', monospace;
-    width: 50px;
-    height: 60px;
-    border: 2px solid #45a29e;
+    width: 61px;
+    height: 73px;
+    border: 2.5px solid #45a29e;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: 2.44rem;
     text-transform: uppercase;
     color: #66fcf1;
     position: relative;
@@ -84,19 +84,58 @@
     animation: pulse 1s infinite;
   }
 
+  /* Make a button look exactly like a .slot */
+  .slot-btn {
+    appearance: none;
+    background: transparent;
+    border: 2.5px solid #45a29e;   /* keep in sync with .slot */
+    color: #66fcf1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font: inherit;
+    width: 61px;           /* same as .slot */
+    height: 73px;          /* same as .slot */
+    text-transform: uppercase;
+    user-select: none;
+    transition: transform 0.08s ease, box-shadow 0.2s ease;
+  }
+  .slot-btn:hover { box-shadow: 0 0 23px #45a29e80; }
+  .slot-btn:active { transform: translateY(1px) scale(0.98); }
+  .slot-btn:focus-visible { outline: 2px solid #66fcf1; outline-offset: 3px; }
+
+  /* physics support */
+  .code-box.physics
+  {
+    position: relative;
+    height: min(32vh, 366px); /* give them room to fall; tweak as you like */
+    cursor: crosshair;
+  }
+
+/* Allow absolute positioning and transforms while in physics mode */
+.slot.physics
+{
+  position: absolute;
+  will-change: transform;
+  transform-origin: center center;
+  transition: none !important;
+}
+
   @keyframes pulse
   {
     0%, 100% {
-      box-shadow: 0 0 5px var(--glow-color, #45a29e);
+      box-shadow: 0 0 6px var(--glow-color, #45a29e);
     }
     50% {
-      box-shadow: 0 0 17px var(--glow-color, #45a29e);
+      box-shadow: 0 0 23px var(--glow-color, #45a29e);
     }
   }
 
 
   /* Charge-up animation */
-  @keyframes charge {
+  @keyframes charge
+  {
     0%{
       background: linear-gradient(to top, #45a29e 0%, transparent 0%);
     }
@@ -104,6 +143,18 @@
       background: linear-gradient(to top, #45a29e 100%, transparent 0%);
     }
   }
+
+  @keyframes charged-blink
+  {
+  0%, 100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+  50% {
+    background-color: rgba(75, 208, 241, 0.774);
+    box-shadow: 0 0 31px rgba(75, 208, 241, 0.774);
+  }
+}
 
   #hiddenInput {
     opacity: 0;
@@ -114,8 +165,9 @@
   .hint {
     opacity: 0; /* starts out invisible */
     margin-top: 20px;
-    font-size: 1.1rem;
+    font-size: 1.6rem;
     color: #c5c6c7;
+    white-space: pre-line
   }
   .hint.visible {
   opacity: 1; /* fades in smoothly */
@@ -162,12 +214,32 @@
   @media (prefers-reduced-motion: reduce) {
     .rainbow-text, .rainbow-box { animation: none; background-position: 50% 50%; }
   }
+
+  #infinityBadge {
+    display: none;
+    margin-left: 8px;
+    font-family: 'Major Mono Display', monospace;
+    font-size: 4.2rem;
+    color: #66fcf1;
+    vertical-align: top;
+  }
+  #infinityBadge.active { display: inline; }
+
+ .purple-curve
+ {
+  color: #b300ff;            /* dark magenta-purple */
+  font-style: italic;
+  font-family: "Poiret One", cursive;
+  display: inline-block;
+  transform: rotate(-2deg);
+  text-shadow: 0 0 13px rgba(179, 0, 255, 0.6);
+  font-size: 4.9rem;
+}
 </style>
 </head>
 <body>
 
   <h1 id="title"></h1>
-
   <div class="code-box" id="codeBox">
     <div class="slot empty">◆</div>
     <div class="slot empty">◆</div>
@@ -179,9 +251,11 @@
     <div class="slot empty">◆</div>
   </div>
 
-  <input id="hiddenInput" type="text" maxlength="8" autofocus />
+  <input id="hiddenInput" type="text" maxlength="13" autofocus />
+  <span id="infinityBadge" aria-hidden="true">∞</span>
   <p class="hint" id="hint"></p>
 
+<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <script>
   const hiddenInput = document.getElementById('hiddenInput');
   const slots = document.querySelectorAll('.slot');
@@ -189,7 +263,6 @@
 
   const fullTitle = "Access coDe ReqUieReD to pRoceeD";
   let titleIndex = 0;
-
   // Typewriter effect for the title
   function typeTitle()
   {
@@ -199,8 +272,34 @@
       setTimeout(typeTitle, 80); // typing speed
     }
   }
-
   typeTitle();
+
+  let infinityMode = false;
+  const infinityBadge = document.getElementById('infinityBadge');
+  function enableInfinityMode()
+  {
+    infinityMode = true;
+    infinityBadge.classList.add('active');
+    typeHint("keep typing");
+  }
+
+  // diamond variants
+  const diamondChars = [
+    "◆", // Black Diamond
+    "◇", // White Diamond
+    "◈", // White Diamond Containing Black Small Diamond
+    "♢", // White Diamond Suit
+    "♦", // Black Diamond Suit
+    "❖", // Black Diamond Minus White X
+    "⟐", // White Diamond With Centred Dot
+    "⟡", // White Concave-sided Diamond
+    "⬖", // Diamond With Left Half Black
+    "⬗", // Diamond With Right Half Black
+    "⬘", // Diamond With Top Half Black
+    "⬙", // Diamond With Bottom Half Black
+  ];
+  let diamond_char = diamondChars[Math.floor(Math.random() * diamondChars.length)];
+
 
   function updateDisplay(value)
   {
@@ -213,7 +312,7 @@
         slot.classList.remove('empty', 'active');
       } else
       {
-        slot.textContent = '◆';
+        slot.textContent = diamond_char;
         slot.classList.add('empty');
       }
       // highlight current active slot
@@ -234,29 +333,56 @@
   const IVO_CODE =      "IVOXYGEN";
   const PEEP_CODE =     "LIL'PEEP";
   const SB_CODE =       "$BOY$G59";
+  const PHYSX_CODE =    "GRAVDROP";
+  const RSET_CODE =     "RESET'ME";
+  const INF_CODE =      "INFINITY";
+  const D2_CODE =       "DOTABUFF";
+
+  const AM_LINE = `My blades are an extension of my hands, my hands are an extension of my will.
+My emotions are a reflection of my actions, not the driver of them,
+and my mind is focused on the task at hand, because a divided mind is a weak mind
+and this is the creed of the Anti-Mage and this is the law of the hunt.
+
+
+<span class="purple-curve">Boom, suck it, meditation.</span>
+`;
 
   const REDIRECT_URL = "access.html"; // <-- page to go to when correct
   const AV_URL = "https://antonveselskyi.com"; // <-- page to go to when correct
   const IVO_URL = "https://youtu.be/_9Un6sPR7ow?si=Kbj9u7Y8bh2O9PUt";
   const PEEP_URL = "https://youtu.be/6GAoLQGdZHY?si=xcvZm9rsg1Z12Enz&t=87";
-  const PEEP2_URL = "https://youtu.be/6GAoLQGdZHY?si=xcvZm9rsg1Z12Enz&t=87";
+  const PEEP2_URL = "https://youtu.be/T5OR0VhwGRc?si=jH50L_Jba5g_VY-m";
   const SB_URL = "https://www.youtube.com/watch?v=mSVYHrc4baU";
+  const D2_URL = "https://stratz.com/players/93747916";
 
   const hintElement = document.getElementById('hint');
   let hintTyped = false; // prevent retyping animation
-  function typeHint(text)
+  function typeHint(text, speed = 60)
   {
     hintElement.classList.add('visible');
-    hintElement.textContent = '';
+    hintElement.innerHTML = '';
     let i = 0;
-
     function typeNext()
     {
       if (i < text.length)
       {
-        hintElement.textContent = text.slice(0, i + 1);
+        // If we encounter a tag start, append the whole tag instantly
+        if (text[i] === '<')
+        {
+          const close = text.indexOf('>', i);
+          if (close !== -1)
+          {
+            // append the full tag without delay
+            hintElement.innerHTML += text.slice(i, close + 1);
+            i = close + 1;
+            typeNext(); // immediately continue without delay
+            return;
+          }
+        }
+
+        hintElement.innerHTML = text.slice(0, i + 1);
         i++;
-        setTimeout(typeNext, 60); // typing speed
+        setTimeout(typeNext, speed); // typing speed
       }
     }
 
@@ -277,16 +403,54 @@
     setTimeout(() =>
      {
              window.open(url, '_blank')
-     }, 1700);
-    setTimeout(resetAfterCharge, 1800);
+     }, 1950);
+    setTimeout(resetAfterCharge, 2050);
+  }
+
+  function playAudioThen(src, cb)
+  {
+    const audio = new Audio(src);
+    let fired = false;
+
+    function done() {
+      if (fired) return;
+      fired = true;
+      cb?.();
+    }
+
+    audio.addEventListener('ended', done, { once: true });
+    audio.addEventListener('error', done, { once: true });
+    audio.play().catch(done);
+  }
+
+  function showSlotButton(label, onClick)
+  {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'slot slot-btn';
+    btn.textContent = label;
+
+    // accessibility: Space/Enter click
+    btn.addEventListener('click', onClick);
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+    });
+
+    // place under the hint
+    const holder = document.createElement('div');
+    holder.style.marginTop = '14px';
+    holder.appendChild(btn);
+    hintElement.appendChild(holder);
+    return btn;
   }
 
   hiddenInput.addEventListener('input', () =>
   {
-    const value = hiddenInput.value.trim().toUpperCase();
+    value = hiddenInput.value.trim().toUpperCase();
     updateDisplay(value);
+    value = value.replace(/[ _-]+/g, "'");
 
-  if (value.length === 8)
+    if (value.length === 8)
     {
         // Let the last character sit for a short moment
         if (value === HINT_CODE && !hintTyped)
@@ -298,27 +462,59 @@
         else if (value === IVO_CODE)
         {
             openInNewTab(IVO_URL)
+            typeHint("E-e-e, ah-ah-ah, e-e-e-e-e-e")
         }
         else if (value === PEEP_CODE)
         {
-            openInNewTab(PEEP_URL)
-
+            const randomPeepUrl = Math.random() < 0.5 ? PEEP_URL : PEEP2_URL;
+            openInNewTab(randomPeepUrl);
+            typeHint("crybaby");
         }
         else if (value === SB_CODE)
         {
             typeHint("G59 till the day I die");
             openInNewTab(SB_URL)
         }
+        else if (value === D2_CODE)
+        {
+            typeHint(AM_LINE, 36);
+            playAudioThen("audio/Vo_antimage_amp_wei_enter_meditation_06_03.mp3.mpeg", () =>
+            {
+              showSlotButton('→', () => { openInNewTab(D2_URL); });
+            });
+        }
+        else if (value === RSET_CODE)
+        {
+            typeHint("here we go again");
+            setTimeout(() => { window.location.reload() }, 1333);
+        }
+        else if (value === INF_CODE)
+        {
+            startChargeAnimation();
+            setTimeout(() =>
+            {
+                enableInfinityMode();
+                resetAfterCharge();
+            }, 1800);
+
+        }
+        else if (value === PHYSX_CODE)
+        {
+            startChargeAnimation();
+            setTimeout(() =>
+            {
+                typeHint("free fall");
+                resetAfterCharge();
+                enablePhysics();
+            }, 1800);
+        }
         else if (value === COLOR_CODE)
         {
             startChargeAnimation();
-            // show rainbow effect (no redirect)
             setTimeout(() =>
             {
                 applyRainbow();
-                // keep the typed code visible for a moment:
                 resetAfterCharge();
-
             }, 1800);
         }
         else if (value === BACK_CODE)
@@ -365,8 +561,7 @@
   {
     document.body.style.animation = "shake 0.3s";
     setTimeout(() => document.body.style.animation = "", 300);
-    hiddenInput.value = "";
-    updateDisplay("");
+    resetAfterCharge()
   }
 
   function redirectAfterDelay(URL, delay)
@@ -384,10 +579,25 @@
     {
       slot.style.animation = `charge 0.8s ease-in-out ${i * 0.1}s forwards`;
     });
+
+      // Calculate total time for all charges to finish
+    const totalDuration = 0.8 + (slots.length - 1) * 0.1;
+
+    // After all charged, trigger one simultaneous blink
+    setTimeout(() =>
+    {
+      slots.forEach(slot =>
+      {
+        slot.style.animation = 'charged-blink 0.25s ease-in-out';
+      });
+    }, totalDuration * 1000);
   }
 
 function resetAfterCharge()
 {
+  // pick a random diamond symbol
+  diamond_char = diamondChars[Math.floor(Math.random() * diamondChars.length)];
+
   // clear animations and revert visuals after charging finishes
   slots.forEach((slot) =>
   {
@@ -403,10 +613,188 @@ function resetAfterCharge()
   style.textContent = `
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-10px); }
-    40%, 80% { transform: translateX(10px); }
+    20%, 60% { transform: translateX(-13px); }
+    40%, 80% { transform: translateX(13px); }
   }`;
   document.head.appendChild(style);
+
+  // --- Physics state ---
+  let physics =
+  {
+    enabled: false,
+    engine: null,
+    bodies: [],
+    ground: null,
+  };
+
+  function enablePhysics()
+  {
+    if (physics.enabled) { return; }
+    const { Engine, World, Bodies } = Matter;
+
+    const codeBox = document.getElementById('codeBox');
+    const slotsArr = Array.from(slots);
+
+    // Freeze layout -> switch to absolute positioning at current spots
+    codeBox.classList.add('physics');
+
+    const boxRect = codeBox.getBoundingClientRect();
+    const slotRects = slotsArr.map(el => el.getBoundingClientRect());
+
+    // Flip each slot to absolute, keeping same on-screen position
+    slotsArr.forEach((el, i) =>
+    {
+      el.classList.add('physics');
+      const r = slotRects[i];
+      const left = r.left - boxRect.left;
+      const top  = r.top  - boxRect.top;
+
+      el.style.left = `${left}px`;
+      el.style.top  = `${top}px`;
+      el.style.width  = `${r.width}px`;
+      el.style.height = `${r.height}px`;
+    });
+
+    // Setup Matter engine
+    const engine = Engine.create({ gravity: { x: 0, y: 0.55 } });
+
+    // Create bodies for each slot
+    const bodies = slotsArr.map((el, i) =>
+    {
+      const r = slotRects[i];
+      const x = r.left - boxRect.left + r.width  / 2;
+      const y = r.top  - boxRect.top  + r.height / 2;
+      const isJumpy  = (i === 0 || i == 3 || i === slotsArr.length - 1);
+
+      const body = Bodies.rectangle(x, y, r.width, r.height, {
+        restitution: isJumpy  ? .9 : 0.25,   // bounciness
+        friction: isJumpy ? 0.12 : 0.35,
+        frictionStatic: 0.2,
+        frictionAir: isJumpy  ? 0.004 : 0.03,
+        chamfer: 4,
+        angle: (Math.random() - 0.5) * 0.05,
+      });
+      return body;
+    });
+
+    // Invisible bounds: ground + side walls
+    const w = boxRect.width;
+    const h = codeBox.clientHeight;
+
+    const leftWall  = Bodies.rectangle(-20, h/2, 40, h*2, { isStatic: true });
+    const rightWall = Bodies.rectangle(w+20, h/2, 40, h*2, { isStatic: true });
+    const topWall   = Bodies.rectangle(w / 2, -10, w, 2, { isStatic: true });
+
+
+    // Lower ground so we see bounces clearly
+    const ground = Bodies.rectangle(w / 2, h - 1, w, 2,
+    {
+      isStatic: true,
+      friction: 0.35,
+      restitution: 0.25
+    });
+    World.add(engine.world, [ ...bodies, ground, leftWall, rightWall, topWall ]);
+
+    bodies.forEach((b, i) =>
+    {
+      if (i === 0 || i === bodies.length - 1)
+      {
+        // small upward nudge + a bit of spin
+        Matter.Body.applyForce(b, b.position, { x: 0, y: -0.007 });
+        Matter.Body.setAngularVelocity(b, (Math.random() < 0.5 ? -1 : 1) * 0.002);
+      }
+
+      if (i == 3)
+      {
+        Matter.Body.setAngularVelocity(b, (Math.random() < 0.5 ? -1 : 1) * 0.006);
+      }
+    });
+
+    // Sync DOM per frame
+    const sync = () =>
+    {
+      bodies.forEach((b, i) =>
+      {
+        const el = slotsArr[i];
+        const x = b.position.x - (parseFloat(el.style.left) + (parseFloat(el.style.width)/2));
+        const y = b.position.y - (parseFloat(el.style.top)  + (parseFloat(el.style.height)/2));
+        el.style.transform = `translate(${x}px, ${y}px) rotate(${b.angle}rad)`;
+      });
+    };
+
+    let last = performance.now();
+    function loop(t)
+    {
+      const dt = Math.min(1000/30, t - last); // clamp big stalls
+      last = t;
+      Matter.Engine.update(engine, dt);
+      sync();
+      physics._raf = requestAnimationFrame(loop);
+    }
+    physics._raf = requestAnimationFrame(loop);
+
+    // Save state for disable
+    physics.enabled = true;
+    physics.engine = engine;
+    physics.bodies = bodies;
+    physics.ground = ground;
+
+
+    // --- CLICK/TAP EXPLOSION ---
+    const blastRadius = 191;     // px
+    const blastForce  = 0.13;   // tune strength
+
+    function blastAt(localX, localY)
+    {
+      bodies.forEach(b => {
+        const dx = b.position.x - localX;
+        const dy = b.position.y - localY;
+        const dist = Math.hypot(dx, dy) || 0.0001;
+        if (dist > blastRadius) return;
+
+        const nx = dx / dist, ny = dy / dist;           // outward normal
+        const falloff = (1 - dist / blastRadius) ** 2;  // smooth falloff
+        // scale by mass so all boxes feel similar kick
+        const f = blastForce * falloff * b.mass;
+        Matter.Body.applyForce(b, b.position, { x: nx * f, y: ny * f });
+      });
+    }
+
+    // Pointer handler
+    function onPointer(e)
+    {
+      const rect = codeBox.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      blastAt(x, y);
+      // optional ripple
+      makeRipple(codeBox, x, y);
+    }
+    codeBox.addEventListener('pointerdown', onPointer);
+
+      // simple ripple effect (optional)
+    function makeRipple(root, x, y)
+    {
+      const r = document.createElement('span');
+      r.style.position = 'absolute';
+      r.style.left = `${x - 4}px`;
+      r.style.top  = `${y - 4}px`;
+      r.style.width = r.style.height = '8px';
+      r.style.border = '3px solid rgba(102,252,241,0.6)';
+      r.style.borderRadius = '999px';
+      r.style.pointerEvents = 'none';
+      r.style.transform = 'translate(-50%,-50%)';
+      r.style.transition = 'transform 350ms ease, opacity 350ms ease';
+      r.style.opacity = '0.9';
+      root.appendChild(r);
+      requestAnimationFrame(() =>
+      {
+        r.style.transform = 'translate(-50%,-50%) scale(9)';
+        r.style.opacity = '0';
+      });
+      setTimeout(() => r.remove(), 380);
+  }
+  }
 </script>
 
 </body>
