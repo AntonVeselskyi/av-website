@@ -74,18 +74,25 @@
     position: relative;
     overflow: hidden;
     transition: all 0.2s ease;
+
+    --glow-color: #45a29e;  /* default glow color */
+    --charge-glow: rgba(69, 162, 158, 0.9);    /* edge flash color */
+    --charge-fill: rgba(69, 162, 158, 0.18);   /* inside-light color */
   }
 
-  .slot.empty {
+  .slot.empty
+  {
     color: #1f2833;
   }
 
-  .slot.active {
+  .slot.active
+  {
     animation: pulse 1s infinite;
   }
 
   /* Make a button look exactly like a .slot */
-  .slot-btn {
+  .slot-btn
+  {
     appearance: none;
     background: transparent;
     border: 2.5px solid #45a29e;   /* keep in sync with .slot */
@@ -104,6 +111,11 @@
   .slot-btn:hover { box-shadow: 0 0 23px #45a29e80; }
   .slot-btn:active { transform: translateY(1px) scale(0.98); }
   .slot-btn:focus-visible { outline: 2px solid #66fcf1; outline-offset: 3px; }
+
+  body.stars-active .slot
+  {
+    background-color: #0b0c10;
+  }
 
   /* physics support */
   .code-box.physics
@@ -132,16 +144,64 @@
     }
   }
 
-
   /* Charge-up animation */
-  @keyframes charge
-  {
-    0%{
-      background: linear-gradient(to top, #45a29e 0%, transparent 0%);
+  /* LED-style flash on the whole box */
+  @keyframes charge {
+    0% {
+      filter: brightness(1);
+      box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
+    40% {
+      filter: brightness(1.7);
+      box-shadow: 0 0 26px var(--charge-glow, rgba(69, 162, 158, 0.9));
     }
     100% {
-      background: linear-gradient(to top, #45a29e 100%, transparent 0%);
+      filter: brightness(1);
+      box-shadow: 0 0 0 rgba(255, 255, 255, 0);
     }
+  }
+
+  /* edge flash (stagger controlled via --charge-delay) */
+  .slot.is-charging {
+    animation: charge 0.25s ease-out var(--charge-delay, 0s) forwards;
+  }
+
+  .slot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--charge-fill);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes charge-fill {
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }   /* fast pop-in */
+    100% { opacity: 0; }   /* fade out */
+  }
+
+  /* when charging, do BOTH: edge flash (element) + inner flash (::before) */
+  .slot.is-charging::before {
+    animation: charge-fill 0.45s ease-out var(--charge-delay, 0s) forwards;
+  }
+
+  /* quick LED pop whenever a new character is typed */
+  .slot.key-flash {
+    animation: charge 0.42s ease-out;
+  }
+
+  /* rainbow boxes: keep rainbow-slide even while flashing */
+  .rainbow-box.key-flash {
+    animation:
+      rainbow-slide var(--rainbow-duration) linear infinite,
+      charge 0.42s ease-out;
+  }
+
+  .rainbow-box.is-charging {
+    animation:
+      rainbow-slide var(--rainbow-duration) linear infinite,
+      charge 0.25s ease-out var(--charge-delay, 0s) forwards;
   }
 
   @keyframes charged-blink
@@ -199,7 +259,8 @@
   }
 
   /* gradient for boxes — also clip text inside them so letters show gradient */
-  .rainbow-box {
+  .rainbow-box
+  {
     background: var(--rainbow);
     background-size: 300% 300%;
     animation: rainbow-slide var(--rainbow-duration) linear infinite;
@@ -208,6 +269,9 @@
     background-clip: text;
     border-color: rgba(255,255,255,0.08);
     box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+
+    --charge-glow: rgba(255, 255, 255, 0.95);  /* brighter edge in colorful */
+    --charge-fill: rgba(255, 255, 255, 0.38);  /* soft white inner flash */
   }
 
   /* respect reduced motion */
@@ -234,32 +298,52 @@
   transform: rotate(-2deg);
   text-shadow: 0 0 13px rgba(179, 0, 255, 0.6);
   font-size: 4.9rem;
+  }
+
+canvas
+{
+  position: fixed;
+  inset: 0;           /* top:0; right:0; bottom:0; left:0 */
+  width: 100vw;
+  height: 100vh;
+  z-index: 0; /* baseline */
+  pointer-events: none; /* lets clicks go to your inputs/slots */
+  display: block;
 }
+#stars-bg{ z-index: 0; }
+#stars-fg{ z-index: 999; }
+
 </style>
 </head>
 <body>
+  <canvas id="stars-bg" aria-hidden="true"></canvas>
 
-  <h1 id="title"></h1>
-  <div class="code-box" id="codeBox">
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-    <div class="slot empty">◆</div>
-  </div>
+  <!-- <div id="ui-layer" class="ui-layer"> -->
+    <h1 id="title"></h1>
+    <div class="code-box" id="codeBox">
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+      <div class="slot empty">◆</div>
+    </div>
 
-  <input id="hiddenInput" type="text" maxlength="13" autofocus />
-  <span id="infinityBadge" aria-hidden="true">∞</span>
-  <p class="hint" id="hint"></p>
+    <input id="hiddenInput" type="text" maxlength="13" autofocus />
+    <span id="infinityBadge" aria-hidden="true">∞</span>
+    <p class="hint" id="hint"></p>
+  <!-- </div> -->
+
+  <canvas id="stars-fg" aria-hidden="true"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <script>
   const hiddenInput = document.getElementById('hiddenInput');
   const slots = document.querySelectorAll('.slot');
   const titleEl = document.getElementById('title');
+  const codeBox = document.getElementById('codeBox');
 
   const fullTitle = "Access coDe ReqUieReD to pRoceeD";
   let titleIndex = 0;
@@ -279,12 +363,15 @@
   function enableInfinityMode()
   {
     infinityMode = true;
+    renderStars();
     infinityBadge.classList.add('active');
+    document.body.classList.add('stars-active');
     typeHint("keep typing");
   }
 
   // diamond variants
-  const diamondChars = [
+  const diamondChars =
+  [
     "◆", // Black Diamond
     "◇", // White Diamond
     "◈", // White Diamond Containing Black Small Diamond
@@ -304,22 +391,51 @@
   function updateDisplay(value)
   {
     const chars = value.toUpperCase().split('');
+
     slots.forEach((slot, i) =>
     {
-      if (chars[i])
+      const prevChar = slot.dataset.char || '';
+      const newChar = chars[i] || '';
+
+      if (newChar)
       {
-        slot.textContent = chars[i];
+        slot.textContent = newChar;
         slot.classList.remove('empty', 'active');
-      } else
+
+
+         // remember this char in dataset
+        slot.dataset.char = newChar;
+
+        // LED pop on NEW letter
+        if (newChar !== prevChar)
+        {
+          slot.classList.remove('key-flash');
+          void slot.offsetWidth;        // force reflow to restart animation
+          slot.classList.add('key-flash');
+        }
+
+        // if infinity mode is on and starfield exists,
+        // spawn particles when this slot first gets / changes a letter
+        if (infinityMode && typeof starField !== 'undefined' && starField && newChar !== prevChar)
+        {
+          starField.spawnFromSlot(slot);
+        }
+      }
+      else
       {
+        slot.classList.remove('key-flash');
         slot.textContent = diamond_char;
         slot.classList.add('empty');
+        slot.dataset.char = '';
       }
+
       // highlight current active slot
       if (i === chars.length && chars.length < 8)
       {
         slot.classList.add('active');
-      } else {
+      }
+      else
+      {
         slot.classList.remove('active');
       }
     });
@@ -337,6 +453,9 @@
   const RSET_CODE =     "RESET'ME";
   const INF_CODE =      "INFINITY";
   const D2_CODE =       "DOTABUFF";
+  const CN_CODE =       "CPPNORTH";
+  const WR_CODE =       "WONDERER";
+  const LWRCODE =       "LOWER'ME";
 
   const AM_LINE = `My blades are an extension of my hands, my hands are an extension of my will.
 My emotions are a reflection of my actions, not the driver of them,
@@ -354,9 +473,9 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
   const PEEP2_URL = "https://youtu.be/T5OR0VhwGRc?si=jH50L_Jba5g_VY-m";
   const SB_URL = "https://www.youtube.com/watch?v=mSVYHrc4baU";
   const D2_URL = "https://stratz.com/players/93747916";
+  const CN_URL = "https://www.youtube.com/watch?v=OVhX0uhwCz0";
 
   const hintElement = document.getElementById('hint');
-  let hintTyped = false; // prevent retyping animation
   function typeHint(text, speed = 60)
   {
     hintElement.classList.add('visible');
@@ -389,11 +508,12 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
     typeNext();
   }
 
-  //apply rainbow classes to title, slots and hint
+  // Apply rainbow classes to title, slots and hint
   function applyRainbow()
   {
     titleEl.classList.add('rainbow-text');
     hintElement.classList.add('rainbow-text');
+    infinityBadge.classList.add('rainbow-text');
     slots.forEach(s => s.classList.add('rainbow-box'));
   }
 
@@ -444,6 +564,8 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
     return btn;
   }
 
+
+  let failedAttemps = 0;
   hiddenInput.addEventListener('input', () =>
   {
     value = hiddenInput.value.trim().toUpperCase();
@@ -453,33 +575,43 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
     if (value.length === 8)
     {
         // Let the last character sit for a short moment
-        if (value === HINT_CODE && !hintTyped)
+        if (value === HINT_CODE)
         {
-            hintTyped = true;
-            typeHint("wonderer, you r lost, go back-back where u came from");
+            typeHint("it will take <b>infinity</b> for you to guess the code");
             setTimeout(shakeError, 1100);
+        }
+        else if (value === WR_CODE)
+        {
+          typeHint("wonderer, you r lost, go back-back where u came from");
+          setTimeout(shakeError, 1100);
         }
         else if (value === IVO_CODE)
         {
-            openInNewTab(IVO_URL)
             typeHint("E-e-e, ah-ah-ah, e-e-e-e-e-e")
+            openInNewTab(IVO_URL)
         }
         else if (value === PEEP_CODE)
         {
+            typeHint("crybaby");
             const randomPeepUrl = Math.random() < 0.5 ? PEEP_URL : PEEP2_URL;
             openInNewTab(randomPeepUrl);
-            typeHint("crybaby");
         }
         else if (value === SB_CODE)
         {
             typeHint("G59 till the day I die");
             openInNewTab(SB_URL)
         }
+        else if (value === CN_CODE)
+        {
+            typeHint("me talking");
+            openInNewTab(CN_URL)
+        }
         else if (value === D2_CODE)
         {
             typeHint(AM_LINE, 36);
             playAudioThen("audio/Vo_antimage_amp_wei_enter_meditation_06_03.mp3.mpeg", () =>
             {
+              resetAfterCharge();
               showSlotButton('→', () => { openInNewTab(D2_URL); });
             });
         }
@@ -497,6 +629,16 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
                 resetAfterCharge();
             }, 1800);
 
+        }
+        else if (value === LWRCODE)
+        {
+          startChargeAnimation();
+            setTimeout(() =>
+            {
+              resetAfterCharge();   // clears slots back to diamonds
+              typeHint("going down");
+              lowerOnce();
+            }, 1800);
         }
         else if (value === PHYSX_CODE)
         {
@@ -527,31 +669,39 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
         }
         else if (value === CORRECT_CODE)
         {
-          setTimeout(startChargeAnimation, 300);
+          startChargeAnimation();
           setTimeout(resetAfterCharge, 1800);
         }
         else
         {
-          setTimeout(shakeError, 600);
+          setTimeout(() =>
+          {
+            shakeError()
+            failedAttemps++;
+            if (failedAttemps == 3)
+              typeHint("You have no idea what the code is, right?");
+            else if (failedAttemps == 5)
+              typeHint("No luck? Looks like you need a tip (<b>hint-hint</b>)");
+          }, 600);
         }
-  }
+      }
   });
 
-    // Always keep focus on the hidden input whenever page is active
-    function refocus()
-    {
-        if (document.hasFocus())
-        {
-            hiddenInput.focus();
-        }
-    }
-    // Refocus on any click, focus, or keypress anywhere
-    ['click', 'focus', 'keydown', 'pointerdown'].forEach(evt =>
-    {
-        document.addEventListener(evt, refocus, true);
-    });
-    // Initial focus
-    refocus();
+  // Always keep focus on the hidden input whenever page is active
+  function refocus()
+  {
+      if (document.hasFocus())
+      {
+          hiddenInput.focus();
+      }
+  }
+  // Refocus on any click, focus, or keypress anywhere
+  ['click', 'focus', 'keydown', 'pointerdown'].forEach(evt =>
+  {
+      document.addEventListener(evt, refocus, true);
+  });
+  // Initial focus
+  refocus();
 
   updateDisplay('');
   hiddenInput.focus();
@@ -577,7 +727,15 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
   {
     slots.forEach((slot, i) =>
     {
-      slot.style.animation = `charge 0.8s ease-in-out ${i * 0.1}s forwards`;
+      //slot.style.animation = `charge 0.8s ease-in-out ${i * 0.1}s forwards`;
+
+      // stagger like before
+      slot.style.setProperty('--charge-delay', `${i * 0.1}s`);
+
+      // restart animation cleanly if we charge again
+      slot.classList.remove('is-charging');
+      void slot.offsetWidth; // force reflow
+      slot.classList.add('is-charging');
     });
 
       // Calculate total time for all charges to finish
@@ -588,25 +746,27 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
     {
       slots.forEach(slot =>
       {
+        slot.classList.remove('is-charging');
         slot.style.animation = 'charged-blink 0.25s ease-in-out';
       });
     }, totalDuration * 1000);
   }
 
-function resetAfterCharge()
-{
-  // pick a random diamond symbol
-  diamond_char = diamondChars[Math.floor(Math.random() * diamondChars.length)];
-
-  // clear animations and revert visuals after charging finishes
-  slots.forEach((slot) =>
+  function resetAfterCharge()
   {
-    slot.style.animation = "";
-  });
-  hiddenInput.value = "";
-  updateDisplay("");
-}
+    // pick a random diamond symbol
+    diamond_char = diamondChars[Math.floor(Math.random() * diamondChars.length)];
 
+    // clear animations and revert visuals after charging finishes
+    slots.forEach((slot) =>
+    {
+      slot.classList.remove('is-charging', 'key-flash');
+      slot.style.removeProperty('--charge-delay');
+      slot.style.animation = "";
+    });
+    hiddenInput.value = "";
+    updateDisplay("");
+  }
 
   // Shake animation keyframes
   const style = document.createElement('style');
@@ -632,7 +792,6 @@ function resetAfterCharge()
     if (physics.enabled) { return; }
     const { Engine, World, Bodies } = Matter;
 
-    const codeBox = document.getElementById('codeBox');
     const slotsArr = Array.from(slots);
 
     // Freeze layout -> switch to absolute positioning at current spots
@@ -794,7 +953,596 @@ function resetAfterCharge()
       });
       setTimeout(() => r.remove(), 380);
   }
+}
+
+// Lowering
+  const elementsToLower =
+  [
+    codeBox,
+    hiddenInput,
+    infinityBadge,
+    hintElement
+  ];
+
+  let lowerCount = 0;
+  const MAX_LOWER = 2;
+
+  function lowerOnce()
+  {
+    if (lowerCount >= MAX_LOWER)
+    {
+      typeHint("can't go any lower");
+      shakeError();
+      return;
+    }
+
+    lowerCount++;
+
+    const boxHeight = codeBox.offsetHeight;
+    const shift = boxHeight * 1.5;  // how far we drop this step
+
+    const slotsArr = Array.from(slots);
+    const lastIndex = slotsArr.length - 1;
+
+    const duration  = 600; // ms
+    const delayStep = 70;  // ms between “layers” from edges
+    const easing    = 'cubic-bezier(0.22, 0.7, 0.08, 1.0)'; // heavy rope feel
+
+    // 1) Move EVERYTHING (box, input, badge, hint) down immediately
+    elementsToLower.forEach(el =>
+    {
+      const current = parseFloat(getComputedStyle(el).marginTop) || 0;
+      el.style.marginTop = (current + shift) + 'px';
+    });
+
+    // 2) Instantly offset slots back up so visually nothing moved yet
+    slotsArr.forEach(slot =>
+    {
+      slot.style.transition = 'none';
+      slot.style.transform = `translateY(${-shift}px)`;
+    });
+
+    // 3) Next frame: animate slots down from edges towards center
+    requestAnimationFrame(() =>
+    {
+      requestAnimationFrame(() =>
+      {
+        slotsArr.forEach((slot, i) =>
+        {
+          const edgeIndex = Math.min(i, lastIndex - i); // 0,0,1,1,2,2,...
+          const delay = edgeIndex * delayStep;
+
+          slot.style.transition =
+            `transform ${duration}ms ${easing} ${delay}ms`;
+          slot.style.transform = 'translateY(0)'; // fall into new layout
+        });
+
+        const maxEdgeIndex = Math.floor(slotsArr.length / 2);
+        const totalTime = duration + maxEdgeIndex * delayStep;
+
+        // 4) After animation, clean up styles
+        setTimeout(() =>
+        {
+          slotsArr.forEach(slot =>
+          {
+            slot.style.transition = '';
+            slot.style.transform = '';
+          });
+        }, totalTime + 40);
+      });
+    });
   }
+
+// Starfield effect adapted from yonatan – original CodePen: https://codepen.io/ybensira/pen/byYNBZ (MIT License)
+// Rewritten to be dependency-free (no GSAP / TweenMax / lodash)
+/**
+ * Utility function for returning a random integer in a given range
+ * @param {Int} max
+ * @param {Int} min
+ */
+const randomInRange = (max, min) =>
+  Math.floor(Math.random() * (max - min + 1)) + min
+const ACTIVE_PROBABILITY = 0
+const BASE_SIZE = 1
+const VELOCITY_INC = 1.01
+const VELOCITY_INIT_INC = 1.03
+const JUMP_VELOCITY_INC = 1.25
+const JUMP_SIZE_INC = 1.15
+const SIZE_INC = 1.01
+const RAD = Math.PI / 180
+const WARP_COLORS =
+[
+  [197, 239, 247],
+  [25, 181, 254],
+  [77, 5, 232],
+  [165, 55, 253],
+  [255, 255, 255],
+]
+// when a star is “close enough” to go in front
+// biggest are like 7ish
+const FG_SIZE_THRESHOLD = 3.8;
+const CHARGE_VELOCITY = 1.001
+const SLOT_STAR_VELOCITY = 1.007
+const SLOT_STAR_SIZE_INC = 1.003
+
+/**
+ * Class for storing the particle metadata
+ * position, size, length, speed etc.
+ */
+class Star
+{
+  STATE =
+  {
+    alpha: Math.random(),
+    angle: randomInRange(0, 360) * RAD,
+  }
+
+  // picks a random direction, picks a random distance out from the center,
+  // and sets the star somewhere along that line.
+  reset = () =>
+  {
+    const angle = randomInRange(0, 360) * (Math.PI / 180)
+    // A direction (vX, vY)
+    const vX = Math.cos(angle)
+    const vY = Math.sin(angle)
+    const travelled =
+      Math.random() > 0.5
+        ? Math.random() * Math.max(window.innerWidth, window.innerHeight) + (Math.random() * (window.innerWidth * 0.24))
+        : Math.random() * (window.innerWidth * 0.25)
+    this.STATE =
+    {
+      ...this.STATE,
+      iX: undefined,
+      iY: undefined,
+      iVX: 0,
+      iVY: 0,
+      active: travelled ? true : false,
+      // position (x, y)
+      x: Math.floor(vX * travelled) + window.innerWidth / 2,
+      vX,
+      y: Math.floor(vY * travelled) + window.innerHeight / 2,
+      vY,
+      // size (line thickness), which will grow
+      size: BASE_SIZE,
+    }
+  }
+
+  constructor()
+  {
+    this.reset()
+  }
+}
+
+// Stars are pre-allocated into a pool
+const generateStarPool = size => new Array(size).fill().map(() => new Star())
+
+// Class for the actual app
+// Not too much happens in here
+// Initiate the drawing process and listen for user interactions
+class MovingStars
+{
+  STATE =
+  {
+    stars: generateStarPool(550),
+    bgAlpha: 0,
+    // how fast their line width grows
+    sizeInc: SIZE_INC,
+    // how fast stars move
+    velocity: VELOCITY_INC,
+    initiating: false,
+    jumping: false,
+    initiateTimestamp: undefined,
+    // short-lived streaks emitted from slot frames
+    slotParticles: [],
+  }
+
+  // Creates a single <canvas> dynamically and appends it to <body>
+  constructor(bgCanvas, fgCanvas)
+  {
+    this.bgCanvas = bgCanvas;
+    this.fgCanvas = fgCanvas;
+    this.bgCtx = bgCanvas.getContext('2d');
+    this.fgCtx = fgCanvas.getContext('2d');
+
+    this.bind()
+    this.setup()
+    this.render()
+  }
+
+  // render() is the main loop
+  render = () =>
+  {
+    const
+    {
+      STATE:
+      {
+        bgAlpha,
+        velocity,
+        sizeInc,
+        initiating,
+        jumping,
+        stars,
+      },
+      bgCtx,
+      fgCtx,
+      render
+    } = this
+
+    // Make sure canvases match the viewport
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    // 0. Clear both canvaslayers
+    bgCtx.clearRect(0, 0, w, h);
+    fgCtx.clearRect(0, 0, w, h);
+
+    // Draw a semi-transparent background rectangle when bgAlpha > 0
+    if (bgAlpha > 0)
+    {
+      bgCtx.fillStyle = `rgba(31, 58, 157, ${bgAlpha})`;
+      bgCtx.fillRect(0, 0, w, h);
+    }
+
+    // --- Slot-frame particles (greenish streaks) ---
+    if (this.STATE.slotParticles.length > 0)
+    {
+      const next = []
+      for (const p of this.STATE.slotParticles)
+      {
+        // accelerate like stars: v *= velocity each frame
+        const vX = p.vX * SLOT_STAR_VELOCITY
+        const vY = p.vY * SLOT_STAR_VELOCITY
+
+        const newX = p.x + vX
+        const newY = p.y + vY
+        const newSize = p.size * SIZE_INC
+
+        // kill if off-screen
+        if (newX < 0 || newX > w || newY < 0 || newY > h)
+        {
+          continue
+        }
+
+        p.x = newX
+        p.y = newY
+        p.vX = vX
+        p.vY = vY
+        p.size = newSize
+
+        // choose canvas layer based on size threshold, like stars
+        const ctx = fgCtx
+
+        // teal/green portal color
+        ctx.strokeStyle = p.color || `rgba(69, 162, 158, 1)`;
+        ctx.lineWidth = p.size
+        ctx.beginPath()
+        // draw a streak from "previous" position to current
+        ctx.moveTo(newX - vX, newY - vY)
+        ctx.lineTo(newX, newY)
+        ctx.stroke()
+
+        next.push(p)
+      }
+      this.STATE.slotParticles = next
+    }
+
+    // 1. Shall we add a new star
+    const nonActive = stars.filter(s => !s.STATE.active)
+    if (!initiating && nonActive.length > 0)
+    {
+      // Introduce a star
+      nonActive[0].STATE.active = true
+    }
+    // 2. Update the stars and draw them.
+    for (const star of stars.filter(s => s.STATE.active))
+    {
+      const { active, x, y, iX, iY, iVX, iVY, size, vX, vY } = star.STATE
+      const w = this.bgCanvas.width
+      const h = this.bgCanvas.height
+      // Check if the star needs deactivating
+      if (
+        ((iX ?? x) < 0 ||
+          (iX ?? x) > w ||
+          (iY ?? y) < 0 ||
+          (iY ?? y) > h) &&
+        active &&
+        !initiating
+      )
+      {
+        star.reset()
+      }
+      else if (active)
+      {
+        const newIX = initiating
+          ? iX
+          : (iX !== undefined ? iX + iVX : undefined)
+        const newIY = initiating
+          ? iY
+          : (iY !== undefined ? iY + iVY : undefined)
+        const newX = x + vX
+        const newY = y + vY
+        // Just need to work out if it overtakes the original line that's all
+        const caught =
+          (vX < 0 && newIX < x) ||
+          (vX > 0 && newIX > x) ||
+          (vY < 0 && newIY < y) ||
+          (vY > 0 && newIY > y)
+        star.STATE =
+        {
+          ...star.STATE,
+          iX: caught ? undefined : newIX,
+          iY: caught ? undefined : newIY,
+          iVX: caught ? undefined : iVX * VELOCITY_INIT_INC,
+          iVY: caught ? undefined : iVY * VELOCITY_INIT_INC,
+          x: newX,
+          vX: star.STATE.vX * velocity,
+          y: newY,
+          vY: star.STATE.vY * velocity,
+          size: initiating ? size : size * (iX || iY ? SIZE_INC : sizeInc),
+        }
+        let color = `rgba(255, 255, 255, ${star.STATE.alpha})`
+        if (jumping)
+        {
+          const [r, g, b] = WARP_COLORS[randomInRange(0, WARP_COLORS.length)]
+          color = `rgba(${r}, ${g}, ${b}, ${star.STATE.alpha})`
+        }
+
+        // Decide which layer to draw on:
+        // small stars = background, big stars = foreground
+        const context = star.STATE.size >= FG_SIZE_THRESHOLD ? fgCtx : bgCtx;
+
+        context.strokeStyle = color
+        context.lineWidth = star.STATE.size
+        context.beginPath()
+        context.moveTo(star.STATE.iX ?? star.STATE.x, star.STATE.iY || star.STATE.y)
+        context.lineTo(star.STATE.x, star.STATE.y)
+        context.stroke()
+      }
+    }
+    requestAnimationFrame(render)
+  }
+
+  // Charging of the jump
+  initiate = () =>
+  {
+    if (this.STATE.jumping || this.STATE.initiating)
+      return
+
+    this.STATE =
+    {
+      ...this.STATE,
+      initiating: true,
+      initiateTimestamp: Date.now(),
+      velocity: CHARGE_VELOCITY,
+      bgAlpha: 0.3,
+    }
+
+
+    // When we initiate, stop the XY origin from moving so that we draw
+    // longer lines until the jump
+    for (const star of this.STATE.stars.filter(s => s.STATE.active))
+    {
+      star.STATE =
+      {
+        ...star.STATE,
+        iX: star.STATE.x,
+        iY: star.STATE.y,
+        iVX: star.STATE.vX,
+        iVY: star.STATE.vY,
+      }
+    }
+  }
+
+  // The hyperspace jump functionality
+  jump = () =>
+  {
+    this.STATE =
+    {
+      ...this.STATE,
+      bgAlpha: 0,
+      jumping: true,
+      bgAlpha: 0.75,
+      velocity: JUMP_VELOCITY_INC,
+      sizeInc: JUMP_SIZE_INC,
+    }
+
+    // Temporarily increases velocity, sizeInc, bgAlpha
+    setTimeout(() =>
+    {
+      this.STATE = {
+        ...this.STATE,
+        jumping: false,
+        bgAlpha: 0,
+        velocity: VELOCITY_INC,
+        sizeInc: SIZE_INC,
+      }
+      // After ~2.5s, eases back to the normal state
+    }, 2500)
+  }
+  enter = () =>
+  {
+    if (this.STATE.jumping)
+      return
+
+    const { initiateTimestamp } = this.STATE
+    this.STATE =
+    {
+      ...this.STATE,
+      initiating: false,
+      initiateTimestamp: undefined,
+    }
+    if (initiateTimestamp && Date.now() - initiateTimestamp > 600)
+    {
+      this.jump()
+    }
+    else
+    {
+      this.STATE =
+      {
+        ...this.STATE,
+        velocity: VELOCITY_INC,
+        bgAlpha: 0,
+        sizeInc: SIZE_INC,
+      }
+      }
+  }
+  bind = () =>
+  {
+    this.handleDown = this.handleDown.bind(this);
+    this.handleUp = this.handleUp.bind(this);
+
+    document.addEventListener('mousedown', this.handleDown, true);
+    document.addEventListener('touchstart', this.handleDown, true);
+    document.addEventListener('mouseup', this.handleUp, true);
+    document.addEventListener('touchend', this.handleUp, true);
+  }
+  handleDown(e)
+  {
+    // If click started inside the code box, skip warp
+    if (e.target.closest('#codeBox'))
+    {
+      return;
+    }
+
+    this.initiate();
+  }
+  handleUp(e)
+  {
+    // Same: ignore releases that started in code box region
+    if (e.target.closest('#codeBox'))
+    {
+      return;
+    }
+
+    this.enter();
+  }
+  setup = () =>
+  {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    this.bgCanvas.width = w;
+    this.bgCanvas.height = h;
+    this.fgCanvas.width = w;
+    this.fgCanvas.height = h;
+
+    this.bgCtx.lineCap = 'round';
+    this.fgCtx.lineCap = 'round';
+  }
+  reset = () =>
+  {
+    this.STATE = {
+      ...this.STATE,
+      stars: generateStarPool(550)
+    }
+    this.setup()
+  }
+  spawnFromSlot(slotEl)
+  {
+    const rect = slotEl.getBoundingClientRect()
+    const left   = rect.left
+    const right  = rect.right
+    const top    = rect.top
+    const bottom = rect.bottom
+    const w = rect.width
+    const h = rect.height
+
+    const screenCenterX = window.innerWidth  / 2
+    const screenCenterY = window.innerHeight / 2
+
+    const burstCount = 48   // how many streaks per letter
+
+    let slotColor;
+    if (slotEl.classList.contains('rainbow-box'))
+    {
+      // colorful mode – sample from warp palette
+      const [r, g, b] = WARP_COLORS[randomInRange(0, WARP_COLORS.length)]
+      slotColor = `rgba(${r}, ${g}, ${b}, 1)`;
+    }
+    else
+    {
+      // normal mode – use the slot's border color
+      const styles = getComputedStyle(slotEl);
+      slotColor = styles.borderColor;
+    }
+
+    for (let i = 0; i < burstCount; ++i)
+    {
+      // --- pick a random point ON the rectangle perimeter ---
+      const perimeter = 2 * (w + h)
+      let t = Math.random() * perimeter
+      let x, y
+
+      if (t < w)
+      {
+        // top edge: left -> right
+        x = left + t
+        y = top
+      }
+      else if (t < w + h)
+      {
+        // right edge: top -> bottom
+        x = right
+        y = top + (t - w)
+      }
+      else if (t < 2 * w + h)
+      {
+        // bottom edge: right -> left
+        x = right - (t - (w + h))
+        y = bottom
+      }
+      else
+      {
+        // left edge: bottom -> top
+        x = left
+        y = bottom - (t - (2 * w + h))
+      }
+
+      // --- direction: from global center through this frame point ---
+      let dirX = x - screenCenterX
+      let dirY = y - screenCenterY
+
+      // little extra upward bias if you like; comment out if not needed
+      dirY *= 1.4
+
+      const len = Math.hypot(dirX, dirY) || 1
+      dirX /= len
+      dirY /= len
+
+      this.STATE.slotParticles.push(
+      {
+        x,
+        y,
+        vX: dirX,
+        vY: dirY,
+        size: BASE_SIZE * 1.2,
+        color: slotColor,
+      })
+    }
+  }
+}
+
+let starField = null;
+function renderStars()
+{
+  if (starField)
+    return;
+
+  const bgCanvas = document.getElementById('stars-bg');
+  const fgCanvas = document.getElementById('stars-fg');
+  starField  = new MovingStars(bgCanvas, fgCanvas)
+
+  window.addEventListener(
+    'resize',
+    () =>
+    {
+      if (starField)
+      {
+        starField.reset()
+      }
+    }
+  )
+}
 </script>
 
 </body>
