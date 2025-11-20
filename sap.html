@@ -318,7 +318,6 @@ canvas
 <body>
   <canvas id="stars-bg" aria-hidden="true"></canvas>
 
-  <!-- <div id="ui-layer" class="ui-layer"> -->
     <h1 id="title"></h1>
     <div class="code-box" id="codeBox">
       <div class="slot empty">◆</div>
@@ -334,7 +333,6 @@ canvas
     <input id="hiddenInput" type="text" maxlength="13" autofocus />
     <span id="infinityBadge" aria-hidden="true">∞</span>
     <p class="hint" id="hint"></p>
-  <!-- </div> -->
 
   <canvas id="stars-fg" aria-hidden="true"></canvas>
 
@@ -366,7 +364,6 @@ canvas
     renderStars();
     infinityBadge.classList.add('active');
     document.body.classList.add('stars-active');
-    typeHint("keep typing");
   }
 
   // diamond variants
@@ -386,7 +383,6 @@ canvas
     "⬙", // Diamond With Bottom Half Black
   ];
   let diamond_char = diamondChars[Math.floor(Math.random() * diamondChars.length)];
-
 
   function updateDisplay(value)
   {
@@ -441,21 +437,6 @@ canvas
     });
   }
 
-  // Code to unlock the page
-  const CORRECT_CODE =  "ACCESSOK";
-  const HINT_CODE =     "HINTHINT";
-  const COLOR_CODE =    "COLORFUL";
-  const BACK_CODE =     "BACKBACK";
-  const IVO_CODE =      "IVOXYGEN";
-  const PEEP_CODE =     "LIL'PEEP";
-  const SB_CODE =       "$BOY$G59";
-  const PHYSX_CODE =    "GRAVDROP";
-  const RSET_CODE =     "RESET'ME";
-  const INF_CODE =      "INFINITY";
-  const D2_CODE =       "DOTABUFF";
-  const CN_CODE =       "CPPNORTH";
-  const WR_CODE =       "WONDERER";
-  const LWRCODE =       "LOWER'ME";
 
   const AM_LINE = `My blades are an extension of my hands, my hands are an extension of my will.
 My emotions are a reflection of my actions, not the driver of them,
@@ -466,14 +447,7 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
 <span class="purple-curve">Boom, suck it, meditation.</span>
 `;
 
-  const REDIRECT_URL = "access.html"; // <-- page to go to when correct
-  const AV_URL = "https://antonveselskyi.com"; // <-- page to go to when correct
-  const IVO_URL = "https://youtu.be/_9Un6sPR7ow?si=Kbj9u7Y8bh2O9PUt";
-  const PEEP_URL = "https://youtu.be/6GAoLQGdZHY?si=xcvZm9rsg1Z12Enz&t=87";
-  const PEEP2_URL = "https://youtu.be/T5OR0VhwGRc?si=jH50L_Jba5g_VY-m";
-  const SB_URL = "https://www.youtube.com/watch?v=mSVYHrc4baU";
-  const D2_URL = "https://stratz.com/players/93747916";
-  const CN_URL = "https://www.youtube.com/watch?v=OVhX0uhwCz0";
+
 
   const hintElement = document.getElementById('hint');
   function typeHint(text, speed = 60)
@@ -527,14 +501,27 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
     setTimeout(resetAfterCharge, 2050);
   }
 
+  let currentAudio = null;
   function playAudioThen(src, cb)
   {
+  if (currentAudio)
+    {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+
     const audio = new Audio(src);
+    currentAudio = audio;
+
     let fired = false;
 
-    function done() {
+    function done()
+    {
       if (fired) return;
       fired = true;
+
+      if (currentAudio === audio) currentAudio = null;
+
       cb?.();
     }
 
@@ -564,117 +551,23 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
     return btn;
   }
 
-
   let failedAttemps = 0;
-  hiddenInput.addEventListener('input', () =>
+  const BACK_API = "https://bzfclyzne3.execute-api.us-east-2.amazonaws.com/default/SAPcodeCheck"
+  async function sendCodeToBackend(code)
   {
-    value = hiddenInput.value.trim().toUpperCase();
-    updateDisplay(value);
-    value = value.replace(/[ _-]+/g, "'");
-
-    if (value.length === 8)
+    try
     {
-        // Let the last character sit for a short moment
-        if (value === HINT_CODE)
-        {
-            typeHint("it will take <b>infinity</b> for you to guess the code");
-            setTimeout(shakeError, 1100);
-        }
-        else if (value === WR_CODE)
-        {
-          typeHint("wonderer, you r lost, go back-back where u came from");
-          setTimeout(shakeError, 1100);
-        }
-        else if (value === IVO_CODE)
-        {
-            typeHint("E-e-e, ah-ah-ah, e-e-e-e-e-e")
-            openInNewTab(IVO_URL)
-        }
-        else if (value === PEEP_CODE)
-        {
-            typeHint("crybaby");
-            const randomPeepUrl = Math.random() < 0.5 ? PEEP_URL : PEEP2_URL;
-            openInNewTab(randomPeepUrl);
-        }
-        else if (value === SB_CODE)
-        {
-            typeHint("G59 till the day I die");
-            openInNewTab(SB_URL)
-        }
-        else if (value === CN_CODE)
-        {
-            typeHint("me talking");
-            openInNewTab(CN_URL)
-        }
-        else if (value === D2_CODE)
-        {
-            typeHint(AM_LINE, 36);
-            playAudioThen("audio/Vo_antimage_amp_wei_enter_meditation_06_03.mp3.mpeg", () =>
-            {
-              resetAfterCharge();
-              showSlotButton('→', () => { openInNewTab(D2_URL); });
-            });
-        }
-        else if (value === RSET_CODE)
-        {
-            typeHint("here we go again");
-            setTimeout(() => { window.location.reload() }, 1333);
-        }
-        else if (value === INF_CODE)
-        {
-            startChargeAnimation();
-            setTimeout(() =>
-            {
-                enableInfinityMode();
-                resetAfterCharge();
-            }, 1800);
+      const res = await fetch(BACK_API,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
 
-        }
-        else if (value === LWRCODE)
-        {
-          startChargeAnimation();
-            setTimeout(() =>
-            {
-              resetAfterCharge();   // clears slots back to diamonds
-              typeHint("going down");
-              lowerOnce();
-            }, 1800);
-        }
-        else if (value === PHYSX_CODE)
-        {
-            startChargeAnimation();
-            setTimeout(() =>
-            {
-                typeHint("free fall");
-                resetAfterCharge();
-                enablePhysics();
-            }, 1800);
-        }
-        else if (value === COLOR_CODE)
-        {
-            startChargeAnimation();
-            setTimeout(() =>
-            {
-                applyRainbow();
-                resetAfterCharge();
-            }, 1800);
-        }
-        else if (value === BACK_CODE)
-        {
-            startChargeAnimation();
-            setTimeout(() =>
-            {
-                window.location.replace(AV_URL);
-            }, 1500);
-        }
-        else if (value === CORRECT_CODE)
-        {
-          startChargeAnimation();
-          setTimeout(resetAfterCharge, 1800);
-        }
-        else
-        {
-          setTimeout(() =>
+      const data = await res.json();
+      if (!data.ok)
+      {
+        setTimeout(() =>
           {
             shakeError()
             failedAttemps++;
@@ -683,8 +576,106 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
             else if (failedAttemps == 5)
               typeHint("No luck? Looks like you need a tip (<b>hint-hint</b>)");
           }, 600);
-        }
+        return;
       }
+
+      handleCodeAction(data);
+    }
+    catch (e)
+    {
+      typeHint("servers broke, try again later");
+      shakeError();
+    }
+  }
+
+  function handleCodeAction(data)
+  {
+    if (data.message)
+    {
+      typeHint(data.message, data.type_speed || 60);
+    }
+
+    switch (data.action)
+    {
+      case "redirect":
+        startChargeAnimation();
+        setTimeout(() =>
+        {
+            window.location.replace(data.url);
+        }, 1500);
+        break;
+      case "newtab":
+        openInNewTab(data.url)
+        break;
+      case "newtab_rand":
+        const randomUrl = Math.random() < 0.5 ? data.url : data.url2;
+        openInNewTab(randomUrl);
+      case "text":
+        startChargeAnimation();
+        setTimeout(() =>
+        {
+            resetAfterCharge();
+        }, 1800);
+        break;
+      case "clr":
+          startChargeAnimation();
+          setTimeout(() =>
+          {
+              applyRainbow();
+              resetAfterCharge();
+          }, 1800);
+        break;
+      case "inf":
+        startChargeAnimation();
+        setTimeout(() =>
+        {
+            enableInfinityMode();
+            resetAfterCharge();
+        }, 1800);
+        break;
+      case "lwr":
+          startChargeAnimation();
+          setTimeout(() =>
+          {
+            resetAfterCharge();
+            lowerOnce();
+          }, 1800);
+        break;
+      case "physX":
+        startChargeAnimation();
+        setTimeout(() =>
+        {
+            resetAfterCharge();
+            enablePhysics();
+        }, 1800);
+        break;
+      case "dota":
+        typeHint(AM_LINE, 36);
+        playAudioThen(data.audio, () =>
+        {
+          resetAfterCharge();
+          showSlotButton('→', () => { openInNewTab(data.url); });
+        });
+        break;
+      case "audio":
+        playAudioThen(data.audio, () =>
+        {
+        });
+        resetAfterCharge();
+        break;
+    }
+  }
+
+  hiddenInput.addEventListener('input', () =>
+  {
+    value = hiddenInput.value.trim().toUpperCase();
+    updateDisplay(value);
+    value = value.replace(/[ _-]+/g, "'");
+
+    if (value.length === 8)
+    {
+      sendCodeToBackend(value);
+    }
   });
 
   // Always keep focus on the hidden input whenever page is active
