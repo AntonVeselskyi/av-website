@@ -438,17 +438,6 @@ canvas
   }
 
 
-  const AM_LINE = `My blades are an extension of my hands, my hands are an extension of my will.
-My emotions are a reflection of my actions, not the driver of them,
-and my mind is focused on the task at hand, because a divided mind is a weak mind
-and this is the creed of the Anti-Mage and this is the law of the hunt.
-
-
-<span class="purple-curve">Boom, suck it, meditation.</span>
-`;
-
-
-
   const hintElement = document.getElementById('hint');
   function typeHint(text, speed = 60)
   {
@@ -650,7 +639,7 @@ and this is the creed of the Anti-Mage and this is the law of the hunt.
         }, 1800);
         break;
       case "dota":
-        typeHint(AM_LINE, 36);
+        startChargeAnimation();
         playAudioThen(data.audio, () =>
         {
           resetAfterCharge();
