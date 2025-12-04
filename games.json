@@ -1,0 +1,59 @@
+
+window.gameMasterList = [
+  {
+    "name": "Hades",
+    "tier": "SSS",
+    "category": "Indie",
+    "platform": "PC",
+    "played_year": 2021,
+    "comment": "One of the best indie roguelikes I've ever played."
+  },
+  {
+    "name": "Celeste",
+    "tier": "S",
+    "category": "Indie",
+    "platform": "Switch",
+    "played_year": 2019,
+    "comment": "Emotional platforming perfection."
+  },
+  {
+    "name": "The Witcher 3: Wild Hunt",
+    "tier": "SSS",
+    "category": "AAA",
+    "platform": "PC",
+    "played_year": 2016,
+    "comment": "Massive world and deep storytelling. Unforgettable."
+  },
+  {
+    "name": "Dark Souls III",
+    "tier": "A",
+    "category": "AAA",
+    "platform": "PlayStation 4",
+    "played_year": 2017,
+    "comment": "Challenging and rewarding with haunting atmosphere."
+  },
+  {
+    "name": "Undertale",
+    "tier": "S",
+    "category": "Indie",
+    "platform": "PC",
+    "played_year": 2018,
+    "comment": "Unique, clever, and subversive in the best way."
+  },
+  {
+    "name": "God of War",
+    "tier": "A",
+    "category": "AAA",
+    "platform": "PlayStation 4",
+    "played_year": 2019,
+    "comment": "Reinvents the franchise with heart and grit."
+  },
+  {
+    "name": "Hollow Knight",
+    "tier": "S",
+    "category": "Indie",
+    "platform": "PC",
+    "played_year": 2020,
+    "comment": "Deep worldbuilding and stunning art design."
+  }
+];

@@ -1,0 +1,305 @@
+h1
+{
+    font-size: 9vw;
+    color: white;
+    background: black;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.title
+{
+    font-family: 'Major Mono Display', monospace;
+    font-size: 9vw;
+    color: white;
+    background: black;
+    position: relative;
+
+    text-align: center;
+    vertical-align: middle;
+    width: 100%;
+    overflow: hidden; /* Keeps everything contained */
+
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+}
+
+.tab-buttons
+{
+  text-align: center; /* center the group of tabs */
+}
+.secret-btn
+{
+  display: inline-block;
+  text-align: center;
+  margin: 0 10px 0px 10px;
+  padding: 8px 16px;
+  border: 3px solid black;
+  color: black;
+  text-decoration: none;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 44px;
+  letter-spacing: 9px;
+  transition: 0.4s;
+}
+.secret-btn:hover
+{
+  background-color: black;
+  color: white;
+}
+
+.tier-label
+{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: black;
+    color: white;
+    font-family: 'Major Mono Display', monospace;
+    font-size: 3.8vw;
+    width: 144px;
+    margin-right: 10px;
+    padding: 10px 0;
+    height: calc(144px * 3 / 2);
+    align-self: flex-start;
+  }
+
+
+/* Fixed-size cards with consistent box art ratio (2:3) */
+
+.game-card
+{
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  position: relative;
+  border: 2px solid black;
+  background-color: #000;
+  z-index: 15;
+  overflow: hidden;
+}
+
+.game-card img
+{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-title-overlay
+{
+  position: absolute;
+  font-size: 21px;
+  bottom: 100%; /* slide in from above */
+  left: 0;
+  width: 100%;
+  background: black;
+  color: white;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 14px;
+  padding: 9px;
+  opacity: 0;
+  transform: translateY(100%) scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  white-space: normal;
+  z-index: 10;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.game-title-overlay a
+{
+  color: white;
+  text-decoration: none;
+}
+
+.game-title-overlay a:hover
+{
+  text-decoration: underline;
+}
+
+/* ========== EXP OVERLAY: SLIDE RIGHT ========== */
+.game-exp-overlay {
+  position: absolute;
+  top: 0;
+  left: 100%;
+
+  width: max-content;      /* grow to the width of the longest line */
+  min-width: 160px;        /* still at least card-width-ish */
+  max-width: 32vw;         /* optional: stop it getting *too* wide */
+  overflow: visible;
+  min-height: 100%;
+  max-height: 100%;
+
+  transform: scaleX(0);
+  transform-origin: left;
+  background: black;
+  color: white;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 16.8px;
+  padding: 9.6px;
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  white-space: normal;
+  z-index: 20;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  word-break: keep-all;      /* NEVER break inside words */
+  overflow-wrap: break-word; /* but break whole words if too long */
+}
+
+/* ========== INFO OVERLAY: SLIDE DOWN ========== */
+.game-details-overlay {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;                 /* match card width */
+  background: black;
+  color: white;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 16.8px;
+  padding: 9.6px;
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+  white-space: normal;
+  z-index: 20;
+  box-sizing: border-box;
+}
+
+.game-card-wrapper
+{
+  display: flex;
+  flex-direction: column;
+  width: 144px;
+  transition: transform 0.3s ease;
+  position: relative;
+  overflow: visible;
+}
+
+.game-card-wrapper:hover .game-title-overlay {
+  opacity: 1;
+  transform: translateY(0%) scaleY(1);
+}
+
+.game-card-wrapper:hover .game-details-overlay
+{
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.game-card-wrapper:hover .game-exp-overlay {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.game-details-overlay p
+{
+  margin: 5px 0;
+}
+.game-details-overlay p {
+  margin: 5px 0;
+  font-family: 'Major Mono Display', monospace;
+}
+
+.game-details-overlay a {
+  color: #33ccff;
+}
+
+.game-details-overlay p span {
+  font-family: Consolas, monospace;
+  color: darkorchid;
+}
+
+.game-exp-overlay p
+{
+  margin: 5px 0;
+}
+.game-exp-overlay p {
+  margin: 5px 0;
+  font-family: 'Major Mono Display', monospace;
+}
+
+.game-exp-overlay p span{
+  font-family: Consolas, monospace;
+  color: darkorchid;
+}
+
+.game-comment
+{
+  font-style: italic;
+  color: darkorchid;
+  margin-top: 16px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+/* Tab button styling */
+.tab-buttons {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tab-buttons .secret-btn {
+  display: inline-block;
+  margin: 0 10px 40px 10px;
+  padding: 8px 16px;
+  border: 3px solid black;
+  color: black;
+  text-decoration: none;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 22px;
+  letter-spacing: 7px;
+  transition: 0.4s;
+}
+
+.tab-buttons .secret-btn:hover {
+  background-color: black;
+  color: white;
+}
+
+.tier-section
+{
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0px;
+    /*extra line at the bottom, not needed 4 now
+     border-bottom: 2px solid #000;
+    padding-bottom: 20px; */
+    position: relative;
+    overflow: visible;
+
+}
+
+.tier-row
+{
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+    flex: 1;
+  }
+
+.art-divider
+{
+    width: 100vw;
+    height: 40px;
+    background: url('img/tier-list.svg') center center no-repeat;
+    background-size: contain;
+    margin: 0 0 10px 0;
+    display: block;
+    align-self: stretch;
+}
