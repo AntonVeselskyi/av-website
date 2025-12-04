@@ -164,7 +164,7 @@
       "score": 66,
       "comment": "U have a minit to live!\nInsane how much was squizzed out of this simple idea!",
       "igdb_id": 26970,
-      "rawg_id": minit,
+      "rawg_id": "minit",
     },
     {
       "name": "Ruiner",
@@ -186,7 +186,7 @@
       "score": 82,
       "comment": "Loved the aesthetics of it and gore graphic noir art style.",
       "igdb_id": 544,
-      "rawg_id": the-darkness-ii,
+      "rawg_id": "the-darkness-ii",
     },
     {
       "name": "Surf's Up",
