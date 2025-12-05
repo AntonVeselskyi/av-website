@@ -1,6 +1,4 @@
 // ========== DOM ELEMENTS ==========
-const allTabBtn = document.getElementById('allTab');
-const indieTabBtn = document.getElementById('indieTab');
 const gameContainer = document.getElementById('main-list');
 
 // ========== TIER ORDER ==========
@@ -65,7 +63,7 @@ function createGameCard(game)
 
   const titleOverlay = document.createElement('div');
   titleOverlay.className = 'game-title-overlay';
-  titleOverlay.innerHTML = `<a href="${game.website}" target="_blank" style="color: inherit; text-decoration: none;">${game.name}</a>`;
+  titleOverlay.innerHTML = `<a href="${game.website}" target="_blank">${game.name}</a>`;
 
   const card = document.createElement('div');
   card.className = 'game-card';
@@ -75,6 +73,8 @@ function createGameCard(game)
   img.alt = game.name;
   card.appendChild(img);
 
+  const commentHtml = (game.comment || '').replace(/\n/g, '<br>');
+
   const infoOverlay = document.createElement('div');
   infoOverlay.className = 'game-details-overlay';
   infoOverlay.innerHTML = `
@@ -83,9 +83,8 @@ function createGameCard(game)
     <p>Released:</p>
     <p><span>${game.release_date?.split('-')[0] || 'N/A'}<span></p>
     ${game.metacritic ? `<p>Metacritic: <span>${game.metacritic}<span></p>` : ''}
-    ${game.dev_team_size ? `<p>Dev Team Size: <span>${game.dev_team_size}<span></p>` : ''}
-    ${game.website ? `<span><a href="${game.website}" target="_blank" style="color: inherit; text-decoration: none;">Website</a><span>` : ''}
-    ${game.developer ? `<span><a href="https://rawg.io/games/${game.rawg_id}" target="_blank" style="color: inherit; text-decoration: none;">RAWG</a><span>` : ''}
+    ${game.website ? `<p><a href="${game.website}" target="_blank" style="color: inherit; text-decoration: none;">Website</a><p>` : ''}
+    ${game.developer ? `<p><a href="https://rawg.io/games/${game.rawg_id}" target="_blank" style="color: inherit; text-decoration: none;">RAWG</a><p>` : ''}
   `;
 
   const expOverlay = document.createElement('div');
@@ -94,7 +93,8 @@ function createGameCard(game)
     <p>Platform: <span>${game.platform}<span></p>
     <p>Played: <span>${game.played_year}<span></p>
     <p>Score: <span>${game.score || '?'}<span></p>
-    <p class="game-comment">"${game.comment}"</p>
+    <div class="exp-spacer"></div>
+    <p class="game-comment">"${commentHtml}"</p>
   `;
 
   // Append everything directly to wrapper
@@ -102,6 +102,26 @@ function createGameCard(game)
   wrapper.appendChild(card);
   wrapper.appendChild(infoOverlay);
   wrapper.appendChild(expOverlay);
+
+  wrapper.addEventListener('mouseenter', () =>
+  {
+    const rect = wrapper.getBoundingClientRect();
+    const maxOverlayWidth = window.innerWidth * 0.32; // 32vw = your max-width
+    const spaceRight = window.innerWidth - rect.right;
+
+    if (spaceRight < maxOverlayWidth) {
+      // Not enough space on the right -> open to the left
+      expOverlay.classList.add('open-left');
+    } else {
+      // Plenty of space -> keep opening to the right
+      expOverlay.classList.remove('open-left');
+    }
+  });
+
+  wrapper.addEventListener('mouseleave', () =>
+  {
+    expOverlay.classList.remove('open-left');
+  });
 
   return wrapper;
 }
@@ -155,19 +175,92 @@ function renderGames(games)
             gameContainer.appendChild(divider);
         }
     });
+
+  // decide which side overlays should open on for this layout
+  setupOverlaySides();
 }
 
-// ========== TAB HANDLERS ==========
-function setupTabs() {
-  allTabBtn.addEventListener('click', (e) =>
-    {
-    e.preventDefault();
-    renderGames(allGames);
+function setupOverlaySides()
+{
+  const wrappers = document.querySelectorAll('.game-card-wrapper');
+  const maxOverlayWidth = window.innerWidth * 0.32; // 32vw = your max-width
+
+  wrappers.forEach(wrapper => {
+    const rect = wrapper.getBoundingClientRect();
+    const spaceRight = window.innerWidth - rect.right;
+
+    if (spaceRight < maxOverlayWidth) {
+      // Not enough space on the right → always open this one to the left
+      wrapper.classList.add('exp-open-left');
+    } else {
+      wrapper.classList.remove('exp-open-left');
+    }
   });
-  indieTabBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    const filtered = allGames.filter(g => g.category.toLowerCase() === 'indie');
-    renderGames(filtered);
+}
+
+// ========== TAB FILTERS ==========
+const FILTERS =
+{
+  // show everything
+  allTab: games => games,
+
+  // existing indie filter
+  indieTab: games =>
+    games.filter(g => (g.category || '').toLowerCase() === 'indie'),
+
+  // 200x: 2000–2009
+  y200xTab: games =>
+    games.filter(g =>
+    {
+      const year = Number(g.played_year);
+      return year >= 2000 && year < 2010;
+    }),
+
+  // 201x: 2010–2019
+  y201xTab: games =>
+    games.filter(g => {
+      const year = Number(g.played_year);
+      return year >= 2010 && year < 2020;
+    }),
+
+  // 202x: 2020–2029
+  y202xTab: games =>
+    games.filter(g =>
+    {
+      const year = Number(g.played_year);
+      return year >= 2020 && year < 2030;
+    }),
+
+  // PSP filter (adjust string if needed to match your data exactly)
+  pspTab: games =>
+    games.filter(g => (g.platform || '').toLowerCase() === 'psp'),
+
+  // Xbox 360 filter
+  xbox360Tab: games =>
+    games.filter(g => (g.platform || '').toLowerCase() === 'xbox 360'),
+};
+
+// ========== TAB HANDLERS ==========
+function setupTabs()
+{
+  const tabButtons = document.querySelectorAll('.tab-buttons .secret-btn');
+
+  tabButtons.forEach(btn =>
+  {
+    const id = btn.id;
+    const filterFn = FILTERS[id] || (games => games);
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // clear active from all
+      tabButtons.forEach(b => b.classList.remove('active'));
+      // mark this as active
+      btn.classList.add('active');
+
+      const filtered = filterFn(allGames);
+      renderGames(filtered);
+    });
   });
 }
 
@@ -177,16 +270,29 @@ async function init()
     console.log(gameMasterList);
     try
     {
-    const enriched = await enrichGames(gameMasterList);
-    allGames = enriched;
-    console.log('Enriched games:', allGames);
+      const enriched = await enrichGames(gameMasterList);
+      allGames = enriched;
+      console.log('Enriched games:', allGames);
 
-    renderGames(allGames); // default to all
-    setupTabs();
-    } catch (e)
-    {
-    console.error('Failed to load games.json', e);
+      renderGames(allGames); // default to all
+      setupTabs();
+
+      // make ALL GAMES tab visually active on load
+      const allTabBtn = document.getElementById('allTab');
+      if (allTabBtn)
+      {
+        allTabBtn.classList.add('active');
+      }
     }
+    catch (e)
+    {
+      console.error('Failed to load games.json', e);
+    }
+
+    window.addEventListener('resize', () =>
+    {
+      setupOverlaySides();
+    });
 }
 
 init();
