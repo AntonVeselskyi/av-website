@@ -276,7 +276,7 @@
       "platform": "PSP",
       "played_year": 2010,
       "score": 61,
-      "comment": "First game I played on my PSP-3000. Not a biggest fun though",
+      "comment": "First game I played on my PSP-3000. Not the biggest fan though",
       "igdb_id": 14755,
       "rawg_id": "ace-combat-x-skies-of-deception",
     },
