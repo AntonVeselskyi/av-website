@@ -147,7 +147,7 @@ h1
 
   width: max-content;      /* grow to the width of the longest line */
   min-width: 150%;        /* still at least card-width-ish */
-  max-width: 32vw;         /* optional: stop it getting *too* wide */
+  max-width: 300%;         /* optional: stop it getting *too* wide */
   overflow: visible;
   min-height: 100%;
   max-height: 100%;
