@@ -63,7 +63,22 @@ function createGameCard(game)
 
   const titleOverlay = document.createElement('div');
   titleOverlay.className = 'game-title-overlay';
-  titleOverlay.innerHTML = `<a href="${game.website}" target="_blank">${game.name}</a>`;
+  const hasWebsite = game.website && game.website.trim();
+  const hasRawg   = game.rawg_id;
+  const titleUrl = hasWebsite
+    ? game.website
+    : (hasRawg ? `https://rawg.io/games/${game.rawg_id}` : null);
+
+  if (titleUrl)
+  {
+    titleOverlay.innerHTML =
+      `<a href="${titleUrl}" target="_blank">${game.name}</a>`;
+  }
+  else
+  {
+    // fallback: just text, not a link
+    titleOverlay.textContent = game.name;
+  }
 
   const card = document.createElement('div');
   card.className = 'game-card';
@@ -198,69 +213,147 @@ function setupOverlaySides()
   });
 }
 
-// ========== TAB FILTERS ==========
-const FILTERS =
+// ========== FILTER STATE ==========
+// category: 'all' | 'indie' | 'ubisoft'
+let filterCategory = 'all';
+// decade: null | '2000s' | '2010s' | '2020s'
+let filterDecade = null;
+// platform: null | 'psp' | 'ps2' | 'ps4' | 'xbox 360' | 'pc'
+let filterPlatform = null;
+
+// Helper to apply all active filters and re-render
+function applyFilters()
 {
-  // show everything
-  allTab: games => games,
+  let games = allGames.slice();
 
-  // existing indie filter
-  indieTab: games =>
-    games.filter(g => (g.category || '').toLowerCase() === 'indie'),
+  // Category
+  if (filterCategory === 'indie')
+  {
+    games = games.filter(g =>
+      (g.category || '').toLowerCase() === 'indie'
+    );
+  }
+  else if (filterCategory === 'ubisoft')
+  {
+    games = games.filter(g =>
+      (g.developer || '').toLowerCase().includes('ubisoft')
+    );
+  }
 
-  // 200x: 2000–2009
-  y200xTab: games =>
-    games.filter(g =>
+  if (filterCategory === 'indie')
+  {
+    games = games.filter(g =>
+      (g.category || '').toLowerCase() === 'indie'
+    );
+  }
+
+  // Decade
+  if (filterDecade)
+  {
+    games = games.filter(g =>
     {
       const year = Number(g.played_year);
-      return year >= 2000 && year < 2010;
-    }),
+      if (!year) return false;
 
-  // 201x: 2010–2019
-  y201xTab: games =>
-    games.filter(g => {
-      const year = Number(g.played_year);
-      return year >= 2010 && year < 2020;
-    }),
+      if (filterDecade === '2000s') return year >= 2000 && year < 2010;
+      if (filterDecade === '2010s') return year >= 2010 && year < 2020;
+      if (filterDecade === '2020s') return year >= 2020 && year < 2030;
+      return true;
+    });
+  }
 
-  // 202x: 2020–2029
-  y202xTab: games =>
-    games.filter(g =>
-    {
-      const year = Number(g.played_year);
-      return year >= 2020 && year < 2030;
-    }),
+  // Platform
+  if (filterPlatform)
+  {
+    const target = filterPlatform.toLowerCase();
+    games = games.filter(g =>
+      (g.platform || '').toLowerCase() === target
+    );
+  }
 
-  // PSP filter (adjust string if needed to match your data exactly)
-  pspTab: games =>
-    games.filter(g => (g.platform || '').toLowerCase() === 'psp'),
+  renderGames(games);
+}
 
-  // Xbox 360 filter
-  xbox360Tab: games =>
-    games.filter(g => (g.platform || '').toLowerCase() === 'xbox 360'),
-};
+function setActiveInGroup(buttons, activeBtn)
+{
+  buttons.forEach(b =>
+  {
+    if (b === activeBtn) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+}
+
+
 
 // ========== TAB HANDLERS ==========
+// One category + one decade + one platform at a time,
+// but groups combine with each other.
 function setupTabs()
 {
-  const tabButtons = document.querySelectorAll('.tab-buttons .secret-btn');
+  const allButtons = document.querySelectorAll('.tab-buttons .secret-btn');
 
-  tabButtons.forEach(btn =>
+  const categoryButtons = Array.from(allButtons)
+    .filter(b => b.dataset.group === 'category');
+  const decadeButtons = Array.from(allButtons)
+    .filter(b => b.dataset.group === 'decade');
+  const platformButtons = Array.from(allButtons)
+    .filter(b => b.dataset.group === 'platform');
+
+  allButtons.forEach(btn =>
   {
-    const id = btn.id;
-    const filterFn = FILTERS[id] || (games => games);
-
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', (e) =>
+    {
       e.preventDefault();
 
-      // clear active from all
-      tabButtons.forEach(b => b.classList.remove('active'));
-      // mark this as active
-      btn.classList.add('active');
+      const group = btn.dataset.group;
+      const value = btn.dataset.value;
 
-      const filtered = filterFn(allGames);
-      renderGames(filtered);
+      if (group === 'category')
+      {
+        // always exactly one category
+        filterCategory = value;
+        setActiveInGroup(categoryButtons, btn);
+      }
+      else if (group === 'decade')
+      {
+        // toggle decade: click again to clear
+        if (filterDecade === value)
+        {
+          filterDecade = null;
+          decadeButtons.forEach(b => b.classList.remove('active'));
+        }
+        else
+        {
+          filterDecade = value;
+          setActiveInGroup(decadeButtons, btn);
+        }
+      }
+      else if (group === 'platform')
+      {
+        // toggle platform: click again to clear
+        if (filterPlatform === value)
+        {
+          filterPlatform = null;
+          platformButtons.forEach(b => b.classList.remove('active'));
+        }
+        else
+        {
+          filterPlatform = value;
+          setActiveInGroup(platformButtons, btn);
+        }
+      }
+
+      applyFilters();
     });
+  });
+
+  // Mark ALL GAMES as active by default
+  categoryButtons.forEach(b =>
+  {
+    if (b.dataset.value === 'all')
+    {
+      b.classList.add('active');
+    }
   });
 }
 
@@ -276,13 +369,6 @@ async function init()
 
       renderGames(allGames); // default to all
       setupTabs();
-
-      // make ALL GAMES tab visually active on load
-      const allTabBtn = document.getElementById('allTab');
-      if (allTabBtn)
-      {
-        allTabBtn.classList.add('active');
-      }
     }
     catch (e)
     {

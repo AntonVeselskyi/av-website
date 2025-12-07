@@ -11,18 +11,38 @@
   <!-- Page Title -->
   <h1 class="title">GAME LIST</h1>
   <!-- Tab Navigation -->
-  <div class="tab-buttons">
-    <a href="#all" id="allTab" class="secret-btn">ALL GAMES</a>
-    <a href="#indie" id="indieTab" class="secret-btn">INDIE</a>
+  <!-- Row 1: category -->
+  <div class="tab-buttons tab-row tab-row-category">
+    <a href="#all"   id="allTab"   class="secret-btn"
+      data-group="category" data-value="all">ALL GAMES</a>
+    <a href="#indie" id="indieTab" class="secret-btn"
+      data-group="category" data-value="indie">INDIE</a>
+    <a href="#ubi" id="ubiTab" class="secret-btn"
+      data-group="category" data-value="ubisoft">UBISOFT</a>
+  </div>
 
-    <!-- Year filters -->
-    <a href="#y200x" id="y200xTab" class="secret-btn">200X</a>
-    <a href="#y201x" id="y201xTab" class="secret-btn">201X</a>
-    <a href="#y202x" id="y202xTab" class="secret-btn">202X</a>
+  <!-- Row 2: decade -->
+  <div class="tab-buttons tab-row tab-row-decade">
+    <a href="#200x" id="y200xTab" class="secret-btn"
+      data-group="decade" data-value="2000s">200X</a>
+    <a href="#201x" id="y201xTab" class="secret-btn"
+      data-group="decade" data-value="2010s">201X</a>
+    <a href="#202x" id="y202xTab" class="secret-btn"
+      data-group="decade" data-value="2020s">202X</a>
+  </div>
 
-    <!-- Platform filters -->
-    <a href="#psp" id="pspTab" class="secret-btn">PSP</a>
-    <a href="#x360" id="xbox360Tab" class="secret-btn">XBOX 360</a>
+  <!-- Row 3: platforms -->
+  <div class="tab-buttons tab-row tab-row-platform">
+    <a href="#pc"   id="pcTab"   class="secret-btn"
+    data-group="platform" data-value="pc">PC</a>
+    <a href="#psp"  id="pspTab"  class="secret-btn"
+      data-group="platform" data-value="psp">PSP</a>
+    <a href="#ps2"  id="ps2Tab"  class="secret-btn"
+      data-group="platform" data-value="playstation 2">PLAYSTATION 2</a>
+    <a href="#ps4"  id="ps4Tab"  class="secret-btn"
+      data-group="platform" data-value="playstation 4">PLAYSTATION 4</a>
+    <a href="#x360" id="xbox360Tab" class="secret-btn"
+      data-group="platform" data-value="xbox 360">XBOX 360</a>
   </div>
 
   <!-- Main Games List -->
