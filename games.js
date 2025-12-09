@@ -554,7 +554,7 @@
       `Unique steam park art style Arkane
       crafted for this game. Doubt that 
       I played a better FPS stealth game.
-      The sandbox level design is impeccable.",
+      The sandbox level design is impeccable.`,
       "igdb_id": 533,
       "rawg_id": "dishonored",
     },
