@@ -4,6 +4,7 @@
   const dmc_combichrist = "https://youtu.be/_9J8ccza1OI?si=auJSiHZwMEYIID7y&t=13";
   const lara_radio_climb = "https://youtu.be/8ULSAuYvu5Y?si=BVTZ37dWmAQIacrj&t=1066";
   const psp_splinter_cell_stealth = "https://youtu.be/6lhN3alxqHk?si=ZvtITXJNDB_otEUC&t=594";
+  const chao_garden_url = "https://youtu.be/gkCloh5t_zo?si=tPcHdXfNWTFJbZ7e&t=731";
 
   const gameMasterList = [
     {
@@ -37,8 +38,10 @@
       "platform": "PC",
       "played_year": 2019,
       "score": 96,
-      "comment": `Best metroidvania of it's time
-      with combat depth and vast engaging world.`,
+      "comment": `Best metroidvania
+      of it's time
+      with combat depth
+      and vast engaging world.`,
       "igdb_id": 365702,
       "rawg_id": 9767,
     },
@@ -101,8 +104,11 @@
       "platform": "PC",
       "played_year": 2025,
       "score": 76,
-      "comment": `3D-runner with unique satisfying locomotion mechanics and
-      very polished animations. Not a fun of the plot though.`,
+      "comment": 
+      `3D-runner with unique 
+      satisfying locomotion mechanics and
+      very polished animations. 
+      Not a fun of the plot though.`,
       "igdb_id": 228918,
       "rawg_id": 719612,
     },
@@ -124,7 +130,8 @@
       "platform": "PC",
       "played_year": 2025,
       "score": 68,
-      "comment": `Satisfying portal-themed puzzles,
+      "comment": `Satisfying
+      portal-themed puzzles,
       Portal humor included`,
       "igdb_id": 76770,
       "rawg_id": 50675,
@@ -176,8 +183,11 @@
       "platform": "PC",
       "played_year": 2025,
       "score": 74,
-      "comment": `Classic turn base 2D puzzle, great twists on mechanics,
-      in-depth exploration of each mechanic and how it overlaps with others.
+      "comment":
+      `Classic turn base 2D puzzle,
+      great twists on mechanics,
+      in-depth exploration of each mechanic
+      and how it overlaps with others.
       Constantly gives you an a-ha moment.`,
       "igdb_id": 11592,
       "rawg_id": 700,
@@ -190,7 +200,8 @@
       "played_year": 2024,
       "score": 72,
       "comment": `Not as much of a game gameplay-wise,
-      but a briliant showcase of how video game medium
+      but a briliant showcase
+      of how video game medium
       can be used as an engaging narrative tool.
       Magical realism at its finest.`,
       "igdb_id": 11233,
@@ -252,8 +263,10 @@
       "platform": "PC",
       "played_year": 2021,
       "score": 76,
-      "comment": `U r a sheriff of snowy remote town.
-      XCOM like combat w/ resource management of cops in between.
+      "comment": `U r a sheriff of a 
+      snowy remote town.
+      XCOM like combat w/ 
+      resource management of cops in between.
       Put 40h in.`,
       "igdb_id": 84486,
       "rawg_id": "this-is-the-police-2",
@@ -458,8 +471,10 @@
       "played_year": 2013,
       "score": 91,
       "comment": `My favourite racing game.
-      The <a href=\"${ForzaHorizon_playlsit_url}\" target=\"_blank\">soundtrack</a> was insane, discovered <a href=\"${chaos_mark_cinematic}\" target=\"_blank\">Arctic Monkeys</a> in it.
-       Open world street racing festival set in Colorado. It was magnificent`,
+      The <a href=\"${ForzaHorizon_playlsit_url}\" target=\"_blank\">soundtrack</a> was insane, discovered <a href=\"${RUmine_url}\" target=\"_blank\">Arctic Monkeys</a> in it.
+      Open world street racing festival 
+      set in Colorado.
+      It was magnificent`,
       "igdb_id": 3047,
       "rawg_id": "forza-horizon",
     },
@@ -516,7 +531,7 @@
       "platform": "PC",
       "played_year": 2012,
       "score": 97,
-      "comment": "Neo-noir story + documentary style cinematography set in Brazil. \nOne of the best-feeling controls in shooter game. \nEnormous inspiration for me gameplay-wise.\nNo loading screens across gameplay and cutscenes  \nTook me a few days to download it on release!",
+      "comment": "Neo-noir story + documentary style cinematography \nset in Brazil. \nOne of the best-feeling controls in shooter game. \nEnormous inspiration for me gameplay-wise.\nNo loading screens across gameplay and cutscenes  \nTook me a few days to download it on release!",
       "igdb_id": 960,
       "rawg_id": "max-payne-3"
     },
@@ -549,7 +564,10 @@
       "platform": "PC",
       "played_year": 2012,
       "score": 77,
-      "comment": "Melee combat and enviorment interactions were next level! \nHong Kong's organized crime aesthetic ✨",
+      "comment": 
+      `Melee combat and enviorment interactions
+      were next level! 
+      Hong Kong's organized crime aesthetic ✨`,
       "igdb_id": 1267,
       "rawg_id": "sleeping-dogs",
     },
@@ -593,7 +611,13 @@
       "platform": "PC",
       "played_year": 2011,
       "score": 71,
-      "comment": "What a the was this game, \nit's about evolution and as you evolve gameplay changes: \nCell -- 2D 'snake'-mode, Creature -- survival, \nCivilization -- strategy, and Space -- colonizing the entire galaxy / terraforming planets",
+      "comment": 
+      `What the hell was this game, 
+      it's about evolution and as you evolve gameplay changes: 
+      Cell -- 2D 'snake'-mode, Creature -- survival, 
+      Civilization -- strategy, and 
+      Space -- colonizing the entire galaxy 
+        / terraforming planets`,
       "igdb_id": 1876,
       "rawg_id": "spore",
     },
@@ -604,7 +628,7 @@
       "platform": "PC",
       "played_year": 2009,
       "score": 90,
-      "comment": "Loved the fast locomotion, slasher combat \nand how it all interacts with open world. \nThe movement system still remains one of the main inspirations for me, \nhope one day I'll create something that tops it!",
+      "comment": "Loved the fast locomotion, slasher combat \nand how it all interacts with open world. \nThe movement system still remains \none of the main inspirations for me, \nhope one day I'll create something that tops it!",
       "igdb_id": 570,
       "rawg_id": "prototype",
     },
@@ -639,7 +663,7 @@
       "platform": "PSP",
       "played_year": 2011,
       "score": 59,
-      "comment": "Portable AR game in 2010 is wild. \nBoring tomagochi though. \nI got a camera for my PSP, so I was pretty happy. \nEnabled me to do some 'interesting' photography on my portable.",
+      "comment": "Portable AR game in 2010 is wild. \nBoring tomagochi though. \nI got a camera for my PSP, \nso I was pretty happy. \nEnabled me to do some \n'interesting' photography on my portable.",
       "igdb_id": 7303,
       "rawg_id": "eyepet",
     },
@@ -683,8 +707,13 @@
       "platform": "PlayStation 2",
       "played_year": 2009,
       "score": 78,
-      "comment": "Crazy that they released both Ultimate Ninja 4 and 5\n the same year just because CyberConnect2 was rushing to close out PS2 development.\
-      \nBy 2007, PS3 had already launched in Japan (late 2006), \nso PS2 games were nearing the end of their commercial window. \nPoor devs.",
+      "comment": 
+      `Crazy that they released both Ultimate Ninja 4 and 5
+      the same year just because CyberConnect2
+      was rushing to close out PS2 development.
+      By 2007, PS3 had already launched in Japan (late 2006),
+      so PS2 games were nearing the end of their commercial window.
+      Poor devs.`,
       "igdb_id": 19623,
       "rawg_id": "naruto-shippuden-ultimate-ninja-4",
     },
@@ -695,7 +724,7 @@
       "platform": "PlayStation 2",
       "played_year": 2009,
       "score": 82,
-      "comment": "My favorite 2D fighting of that time. \nJapan and Europe only release, suck it North America.",
+      "comment": "My favorite 2D fighting of that time. \nJapan and Europe only release, \nsuck it North America.",
       "igdb_id": 25112,
       "rawg_id": "naruto-shippuden-ultimate-ninja-5",
     },
@@ -717,7 +746,7 @@
       "platform": "PC",
       "played_year": 2009,
       "score": 59,
-      "comment": "I didn't like feel and look of it :/",
+      "comment": "I didn't like \nfeel and look of it :/",
       "igdb_id": 100,
       "rawg_id": "/nfs-prostreet",
     },
@@ -772,7 +801,7 @@
       "platform": "Sony Ericsson",
       "played_year": 2007,
       "score": 85,
-      "comment": "This game was insanely hard. \nEvery class break turned into a competition to beat the fastest run.",
+      "comment": "This game was insanely hard. \nEvery class break turned into\n a competition to beat the fastest run.",
       "igdb_id": 151054,
       "rawg_id": "gravity-defied-trial-racing"
     },
@@ -783,7 +812,7 @@
       "platform": "PC",
       "played_year": 2005,
       "score": 89,
-      "comment": "Spent dozens of hours playing local multiplayer, \nlooking away when it's not my turn 😋",
+      "comment": "Spent dozens of hours \nplaying local multiplayer, \nlooking away when it's not my turn 😋",
       "igdb_id": 51820,
       "rawg_id": 22685
     },
@@ -805,8 +834,11 @@
       "platform": "PC",
       "played_year": 2007,
       "score": 83,
-      "comment": `I remember it being super engaging and hard.
-      The <a href=\"${chaos_mark_cinematic}\" target=\"_blank\">cinematic</a> looks insane event today!`,
+      "comment":
+      `I remember it being super 
+      engaging and hard.
+      The <a href=\"${chaos_mark_cinematic}\" target=\"_blank\">cinematic</a> looks 
+      insane event today!`,
       "igdb_id": 7241,
       "rawg_id": "warhammer-mark-of-chaos"
     },
@@ -833,13 +865,58 @@
       "rawg_id": "prince-of-persia-warrior-within"
     },
     {
+      "name": "Crazy Frog Racer 2",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 61,
+      "comment": 
+      `Ring ding ding daa baa
+      Baa aramba baa bom baa barooumba
+      Wh-wha-what's going on-on?
+      <a href=\"${crazyfrog_url}\" target=\"_blank\">Ding, ding</a>`,
+      "igdb_id": 80095,
+      "rawg_id": "Crazy-Frog-Racer-2"
+    },
+    {
+      "name": "Sonic Riders",
+      "tier": "B",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 73,
+      "comment": 
+      `Hoverboards, let's gooo!`,
+      "igdb_id": 4158,
+      "rawg_id": "sonic-riders"
+    },
+    {
+      "name": "Sonic Adventure DX",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 81,
+      "comment": 
+      `<a href=\"${chao_garden_url}\" target=\"_blank\">Chao gardens</a> !!!
+      Garden full of tamagochi creatures
+      was so fun and cute,
+      I wasted so much time there,
+      instead of playing actual story :D`,
+      "igdb_id": 23695,
+      "rawg_id": "sonic-adventure-dx"
+    },
+    {
       "name": "Prince of Persia: The Two Thrones",
       "tier": "SS",
       "category": "",
       "platform": "PC",
       "played_year": 2006,
       "score": 93,
-      "comment": "First PoP game I played, and it was magnificent.\nLifelong fan ever since!",
+      "comment": `First PoP game I played,
+      and it was magnificent.
+      Lifelong fan ever since!`,
       "igdb_id": 2437,
       "rawg_id": "prince-of-persia-the-two-thrones"
     },
@@ -861,7 +938,11 @@
       "platform": "PC",
       "played_year": 2008,
       "score": 70,
-      "comment": "Bunch of Rabbids coop mini-games (originaly a Wii game). \nStill fun, but no more story mode and focus on Rayman :(",
+      "comment": 
+      `Bunch of Rabbids coop mini-games
+      (originaly a Wii game).
+      Still fun, but no more 
+      story mode and focus on Rayman :(`,
       "igdb_id": 193376,
       "rawg_id": "rayman-raving-rabbids-2"
     },
@@ -872,7 +953,10 @@
       "platform": "PC",
       "played_year": 2006,
       "score": 73,
-      "comment": "My intro to Ubisoft games, \nalso first game ever to feature the iconic Rabbids!",
+      "comment":
+      `My intro to Ubisoft games,
+      also first game ever to 
+      feature the iconic Rabbids!`,
       "igdb_id": 2277,
       "rawg_id": "rayman-raving-rabbids"
     },
@@ -883,7 +967,7 @@
       "platform": "PC",
       "played_year": 2006,
       "score": 82,
-      "comment": "Motion blur is the coolest thing ever",
+      "comment": "Motion blur is \nthe coolest thing ever",
       "igdb_id": 242997,
       "rawg_id": 53446
     },
