@@ -5,6 +5,7 @@
   const lara_radio_climb = "https://youtu.be/8ULSAuYvu5Y?si=BVTZ37dWmAQIacrj&t=1066";
   const psp_splinter_cell_stealth = "https://youtu.be/6lhN3alxqHk?si=ZvtITXJNDB_otEUC&t=594";
   const chao_garden_url = "https://youtu.be/gkCloh5t_zo?si=tPcHdXfNWTFJbZ7e&t=731";
+  const crazyfrog_url  = "https://youtu.be/k85mRPqvMbE?si=NVW839CwYdceu_N_";
 
   const gameMasterList = [
     {
