@@ -6,6 +6,8 @@
   const psp_splinter_cell_stealth = "https://youtu.be/6lhN3alxqHk?si=ZvtITXJNDB_otEUC&t=594";
   const chao_garden_url = "https://youtu.be/gkCloh5t_zo?si=tPcHdXfNWTFJbZ7e&t=731";
   const crazyfrog_url  = "https://youtu.be/k85mRPqvMbE?si=NVW839CwYdceu_N_";
+  const peterpen_url  = "https://youtu.be/gmqphFq7BiE?si=YtxxRoeTGiUkoKUi&t=9095";
+  const SW_FU_url  = "https://youtu.be/1UVQxZvFZKw?si=JtJH7Pq3nm6DuL9A&t=401";
 
   const gameMasterList = [
     {
@@ -595,6 +597,37 @@
       "rawg_id": "the-elder-scrolls-v-skyrim",
     },
     {
+      "name": "Mafia II",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 87,
+      "comment":
+      `- “What the hell’s going on?
+       Where are they taking Joe?”
+      - “Sorry, kid. Joe wasn’t
+       part of our deal.”`,
+      "igdb_id": 40,
+      "rawg_id": "mafia-ii",
+    },
+    {
+      "name": "Bulletstorm",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 90,
+      "comment": `First-preson combat 
+      mechanics were so creative!
+      Loved the kick, flailgun,
+      drill gun, energy leash,
+      Whole skillshots 
+      combo-system was fun!`,
+      "igdb_id": 494,
+      "rawg_id": "bulletstorm",
+    },
+    {
       "name": "Portal 2",
       "tier": "SSS",
       "category": "AAA",
@@ -702,6 +735,46 @@
       "rawg_id": "ace-combat-x-skies-of-deception",
     },
     {
+      "name": "Star Wars: The Force Unleashed II",
+      "tier": "C",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2014,
+      "score": 67,
+      "comment": 
+      `The dark side 2,
+      not as good the first one,
+      <a href=\"${SW_FU_url}\" target=\"_blank\">but some truly epic cinema</a>`,
+      "igdb_id": 137,
+      "rawg_id": "star-wars-the-force-unleashed-2",
+    },
+    {
+      "name": "Star Wars: The Force Unleashed",
+      "tier": "B",
+      "category": "",
+      "platform": "PlayStation 2",
+      "played_year": 2010,
+      "score": 75,
+      "comment": 
+      `The dark side 🌑`,
+      "igdb_id": 475,
+      "rawg_id": "star-wars-the-force-unleashed",
+    },
+    {
+      "name": "Marvel: Ultimate Alliance",
+      "tier": "B",
+      "category": "",
+      "platform": "PlayStation 2",
+      "played_year": 2010,
+      "score": 76,
+      "comment": 
+      `Team-based action-RPG,
+      with 23 playable characters,
+      accross different Marvel IPs`,
+      "igdb_id": 288948, // PS2/PSP version 
+      "rawg_id": "marvel-ult-alliance",
+    },
+    {
       "name": "Naruto Shippuden: Ultimate Ninja 4",
       "tier": "A",
       "category": "",
@@ -712,8 +785,8 @@
       `Crazy that they released both Ultimate Ninja 4 and 5
       the same year just because CyberConnect2
       was rushing to close out PS2 development.
-      By 2007, PS3 had already launched in Japan (late 2006),
-      so PS2 games were nearing the end of their commercial window.
+      By 2007, PS3 had already launched in Japan ~late 2006, so
+      PS2 games were nearing the end of their commercial window.
       Poor devs.`,
       "igdb_id": 19623,
       "rawg_id": "naruto-shippuden-ultimate-ninja-4",
@@ -749,7 +822,34 @@
       "score": 59,
       "comment": "I didn't like \nfeel and look of it :/",
       "igdb_id": 100,
-      "rawg_id": "/nfs-prostreet",
+      "rawg_id": "nfs-prostreet",
+    },
+    {
+      "name": "Grand Theft Auto: San Andreas",
+      "tier": "SSS",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 97,
+      "comment":
+      `Needed to expand my Xbox's
+      memory with a thumb drive
+      to play.
+      Wild that Rockstar made THIS
+      game on the hardware from 2005!`,
+      "igdb_id": 1020,
+      "rawg_id": "grand-theft-auto-v",
+    },
+    {
+      "name": "Grand Theft Auto: San Andreas",
+      "tier": "SS",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 94,
+      "comment": "Grove 4 Life\nHESOYAM",
+      "igdb_id": 732,
+      "rawg_id": "grand-theft-auto-san-andreas",
     },
     {
       "name": "Grand Theft Auto IV",
@@ -783,6 +883,22 @@
       "comment": "Like Tony Hawk, but parkour. \nSame studio as Sniper Elite.",
       "igdb_id": 4873,
       "rawg_id": "free-running"
+    },
+    {
+      "name": "Barnyard",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 79,
+      "comment":
+      `like GTA,
+      but on a farm as 🐮
+      so many mini-games, lots
+      of really creative ones!
+      (mini-golf was too hard though)`,
+      "igdb_id": 3794,
+      "rawg_id": "barnyard"
     },
     {
       "name": "LEGO Indiana Jones: The Original Adventures",
@@ -973,13 +1089,28 @@
       "rawg_id": 53446
     },
     {
+      "name": "Disney’s Peter Pan: Adventures in Never Land",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2003,
+      "score": 72,
+      "comment": `First game I played
+       from start to finish 🧚
+      <a href=\"${peterpen_url}\" target=\"_blank\">(gameplay)</a>
+      TODO: ADD THE RIGHT COVER`,
+      "igdb_id": 44877, // wrong game, but peter pen cover
+      // use https://www.imdb.com/title/tt9360556/ instead
+      "rawg_id": "disneys-peter-pan-adventures-in-never-land"
+    },
+    {
       "name": "Scooby-Doo! Two: Monsters Unleashed",
       "tier": "C",
       "category": "",
       "platform": "PC",
       "played_year": 2006,
       "score": 77,
-      "comment": "First game I played on my first PC 🎂",
+      "comment": `First game I played on my first PC 🎂`,
       "igdb_id": 49184,
       "rawg_id": 35821
     }
