@@ -351,7 +351,7 @@
       "played_year": 2019,
       "score": 78,
       "comment": "Ma fav tavern.",
-      "igdb_id": 18857,
+      "igdb_id": 1279,
       "rawg_id": "hearthstone",
     },
     {
@@ -521,9 +521,14 @@
       "platform": "Xbox 360",
       "played_year": 2013,
       "score": 87,
-      "comment": `Loved the reimagination of Dante, \ncinematography, use of fonts and effects.
-      Was 10/10 for me, not mentioning <a href=\"${dmc_combichrist}\" target=\"_blank\">Combichrist soundtrack</a>!
-      Wish they went with this version of Date forward.`,
+      "comment":
+      `Loved the reimagination
+      of Dante, cinematography,
+      use of fonts and effects.
+      Was 10/10 for me, 
+      not mentioning <a href=\"${dmc_combichrist}\" target=\"_blank\">Combichrist soundtrack</a>!
+      Wish they went with
+      this version of Date forward.`,
       "igdb_id": 1254,
       "rawg_id": "dmc",
     },
@@ -545,7 +550,11 @@
       "platform": "PC",
       "played_year": 2012,
       "score": 92,
-      "comment": "Unique steam park art style Arkane crafted for this game.\n Doubt that I played a better FPS stealth game. \nThe sandbox level design is impeccable.",
+      "comment": 
+      `Unique steam park art style Arkane
+      crafted for this game. Doubt that 
+      I played a better FPS stealth game.
+      The sandbox level design is impeccable.",
       "igdb_id": 533,
       "rawg_id": "dishonored",
     },
@@ -656,13 +665,33 @@
       "rawg_id": "spore",
     },
     {
+      "name": "Prototype 2",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 78,
+      "comment":
+      `Just repeated the
+      formula of the original, 
+      I felt like game was lacking something,
+      Plot was meh as well.`,
+      "igdb_id": 2988,
+      "rawg_id": "prototype-2",
+    },
+    {
       "name": "Prototype",
       "tier": "S",
       "category": "AAA",
       "platform": "PC",
       "played_year": 2009,
       "score": 90,
-      "comment": "Loved the fast locomotion, slasher combat \nand how it all interacts with open world. \nThe movement system still remains \none of the main inspirations for me, \nhope one day I'll create something that tops it!",
+      "comment": 
+      `Loved the fast locomotion, slasher combat 
+      and how it all interacts with open world.
+      The movement system still remains one
+      of the main inspirations for me, hope one
+      day I'll create something that tops it!`,
       "igdb_id": 570,
       "rawg_id": "prototype",
     },
@@ -835,8 +864,9 @@
       `Needed to expand my Xbox's
       memory with a thumb drive
       to play.
-      Wild that Rockstar made THIS
-      game on the hardware from 2005!`,
+      Wild that
+      Rockstar made THIS game run
+      on the hardware from 2005!`,
       "igdb_id": 1020,
       "rawg_id": "grand-theft-auto-v",
     },
