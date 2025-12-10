@@ -107,10 +107,10 @@
       "platform": "PC",
       "played_year": 2025,
       "score": 76,
-      "comment": 
-      `3D-runner with unique 
+      "comment":
+      `3D-runner with unique
       satisfying locomotion mechanics and
-      very polished animations. 
+      very polished animations.
       Not a fun of the plot though.`,
       "igdb_id": 228918,
       "rawg_id": 719612,
@@ -266,9 +266,9 @@
       "platform": "PC",
       "played_year": 2021,
       "score": 76,
-      "comment": `U r a sheriff of a 
+      "comment": `U r a sheriff of a
       snowy remote town.
-      XCOM like combat w/ 
+      XCOM like combat w/
       resource management of cops in between.
       Put 40h in.`,
       "igdb_id": 84486,
@@ -298,6 +298,17 @@
       Welcome to the 'The Primate Observation Club'`,
       "igdb_id": 52014,
       "rawg_id": "do-not-feed-the-monkeys",
+    },
+    {
+      "name": "Slipstream",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2019,
+      "score": 72,
+      "comment": "Arcade-style",
+      "igdb_id": 75096,
+      "rawg_id": "slipstream",
     },
     {
       "name": "Minit",
@@ -475,7 +486,7 @@
       "score": 91,
       "comment": `My favourite racing game.
       The <a href=\"${ForzaHorizon_playlsit_url}\" target=\"_blank\">soundtrack</a> was insane, discovered <a href=\"${RUmine_url}\" target=\"_blank\">Arctic Monkeys</a> in it.
-      Open world street racing festival 
+      Open world street racing festival
       set in Colorado.
       It was magnificent`,
       "igdb_id": 3047,
@@ -525,7 +536,7 @@
       `Loved the reimagination
       of Dante, cinematography,
       use of fonts and effects.
-      Was 10/10 for me, 
+      Was 10/10 for me,
       not mentioning <a href=\"${dmc_combichrist}\" target=\"_blank\">Combichrist soundtrack</a>!
       Wish they went with
       this version of Date forward.`,
@@ -550,9 +561,9 @@
       "platform": "PC",
       "played_year": 2012,
       "score": 92,
-      "comment": 
+      "comment":
       `Unique steam park art style Arkane
-      crafted for this game. Doubt that 
+      crafted for this game. Doubt that
       I played a better FPS stealth game.
       The sandbox level design is impeccable.`,
       "igdb_id": 533,
@@ -576,9 +587,9 @@
       "platform": "PC",
       "played_year": 2012,
       "score": 77,
-      "comment": 
+      "comment":
       `Melee combat and enviorment interactions
-      were next level! 
+      were next level!
       Hong Kong's organized crime aesthetic ✨`,
       "igdb_id": 1267,
       "rawg_id": "sleeping-dogs",
@@ -627,11 +638,11 @@
       "platform": "PC",
       "played_year": 2011,
       "score": 90,
-      "comment": `First-preson combat 
+      "comment": `First-preson combat
       mechanics were so creative!
       Loved the kick, flailgun,
       drill gun, energy leash,
-      Whole skillshots 
+      Whole skillshots
       combo-system was fun!`,
       "igdb_id": 494,
       "rawg_id": "bulletstorm",
@@ -654,12 +665,12 @@
       "platform": "PC",
       "played_year": 2011,
       "score": 71,
-      "comment": 
-      `What the hell was this game, 
-      it's about evolution and as you evolve gameplay changes: 
-      Cell -- 2D 'snake'-mode, Creature -- survival, 
-      Civilization -- strategy, and 
-      Space -- colonizing the entire galaxy 
+      "comment":
+      `What the hell was this game,
+      it's about evolution and as you evolve gameplay changes:
+      Cell -- 2D 'snake'-mode, Creature -- survival,
+      Civilization -- strategy, and
+      Space -- colonizing the entire galaxy
         / terraforming planets`,
       "igdb_id": 1876,
       "rawg_id": "spore",
@@ -673,7 +684,7 @@
       "score": 78,
       "comment":
       `Just repeated the
-      formula of the original, 
+      formula of the original,
       I felt like game was lacking something,
       Plot was meh as well.`,
       "igdb_id": 2988,
@@ -686,8 +697,8 @@
       "platform": "PC",
       "played_year": 2009,
       "score": 90,
-      "comment": 
-      `Loved the fast locomotion, slasher combat 
+      "comment":
+      `Loved the fast locomotion, slasher combat
       and how it all interacts with open world.
       The movement system still remains one
       of the main inspirations for me, hope one
@@ -770,7 +781,7 @@
       "platform": "Xbox 360",
       "played_year": 2014,
       "score": 67,
-      "comment": 
+      "comment":
       `The dark side 2,
       not as good the first one,
       <a href=\"${SW_FU_url}\" target=\"_blank\">but some truly epic cinema</a>`,
@@ -784,7 +795,7 @@
       "platform": "PlayStation 2",
       "played_year": 2010,
       "score": 75,
-      "comment": 
+      "comment":
       `The dark side 🌑`,
       "igdb_id": 475,
       "rawg_id": "star-wars-the-force-unleashed",
@@ -796,11 +807,11 @@
       "platform": "PlayStation 2",
       "played_year": 2010,
       "score": 76,
-      "comment": 
+      "comment":
       `Team-based action-RPG,
       with 23 playable characters,
       accross different Marvel IPs`,
-      "igdb_id": 288948, // PS2/PSP version 
+      "igdb_id": 288948, // PS2/PSP version
       "rawg_id": "marvel-ult-alliance",
     },
     {
@@ -810,7 +821,7 @@
       "platform": "PlayStation 2",
       "played_year": 2009,
       "score": 78,
-      "comment": 
+      "comment":
       `Crazy that they released both Ultimate Ninja 4 and 5
       the same year just because CyberConnect2
       was rushing to close out PS2 development.
@@ -982,9 +993,9 @@
       "played_year": 2007,
       "score": 83,
       "comment":
-      `I remember it being super 
+      `I remember it being super
       engaging and hard.
-      The <a href=\"${chaos_mark_cinematic}\" target=\"_blank\">cinematic</a> looks 
+      The <a href=\"${chaos_mark_cinematic}\" target=\"_blank\">cinematic</a> looks
       insane event today!`,
       "igdb_id": 7241,
       "rawg_id": "warhammer-mark-of-chaos"
@@ -1018,7 +1029,7 @@
       "platform": "PC",
       "played_year": 2008,
       "score": 61,
-      "comment": 
+      "comment":
       `Ring ding ding daa baa
       Baa aramba baa bom baa barooumba
       Wh-wha-what's going on-on?
@@ -1033,7 +1044,7 @@
       "platform": "PC",
       "played_year": 2008,
       "score": 73,
-      "comment": 
+      "comment":
       `Hoverboards, let's gooo!`,
       "igdb_id": 4158,
       "rawg_id": "sonic-riders"
@@ -1045,7 +1056,7 @@
       "platform": "PC",
       "played_year": 2006,
       "score": 81,
-      "comment": 
+      "comment":
       `<a href=\"${chao_garden_url}\" target=\"_blank\">Chao gardens</a> !!!
       Garden full of tamagochi creatures
       was so fun and cute,
@@ -1085,10 +1096,10 @@
       "platform": "PC",
       "played_year": 2008,
       "score": 70,
-      "comment": 
+      "comment":
       `Bunch of Rabbids coop mini-games
       (originaly a Wii game).
-      Still fun, but no more 
+      Still fun, but no more
       story mode and focus on Rayman :(`,
       "igdb_id": 193376,
       "rawg_id": "rayman-raving-rabbids-2"
@@ -1102,7 +1113,7 @@
       "score": 73,
       "comment":
       `My intro to Ubisoft games,
-      also first game ever to 
+      also first game ever to
       feature the iconic Rabbids!`,
       "igdb_id": 2277,
       "rawg_id": "rayman-raving-rabbids"

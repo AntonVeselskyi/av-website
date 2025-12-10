@@ -118,6 +118,13 @@ function createGameCard(game)
   wrapper.appendChild(infoOverlay);
   wrapper.appendChild(expOverlay);
 
+  // Grab the COMMENT element inside EXP overlay
+  const commentEl = expOverlay.querySelector('.game-comment');
+
+  // Bottom portion of EXP where we keep overlays visible.
+  // Example: 0.5 = bottom 50% is "safe".
+  const SAFE_ZONE_START = 0.5;
+
   wrapper.addEventListener('mouseenter', () =>
   {
     const rect = wrapper.getBoundingClientRect();
@@ -125,18 +132,55 @@ function createGameCard(game)
     const spaceRight = window.innerWidth - rect.right;
 
     if (spaceRight < maxOverlayWidth) {
-      // Not enough space on the right -> open to the left
       expOverlay.classList.add('open-left');
     } else {
-      // Plenty of space -> keep opening to the right
       expOverlay.classList.remove('open-left');
     }
+
+    // Whenever we re-enter a card, allow overlays again
+    wrapper.classList.remove('force-collapse');
   });
 
   wrapper.addEventListener('mouseleave', () =>
   {
     expOverlay.classList.remove('open-left');
+    // Reset collapse state when we truly leave the card
+    wrapper.classList.remove('force-collapse');
   });
+
+  // Moving over the EXP overlay:
+  // - In safe (bottom) zone → overlays stay
+  // - In top area (outside safe zone & not on comment) → collapse everything,
+  //   same as if the wrapper wasn't hovered at all.
+  expOverlay.addEventListener('mousemove', (e) =>
+  {
+    const rect = expOverlay.getBoundingClientRect();
+    const relY = (e.clientY - rect.top) / rect.height; // 0 = top, 1 = bottom
+    const overComment = e.target.closest('.game-comment') !== null;
+
+    const inSafeZone = relY >= SAFE_ZONE_START;
+
+    if (!inSafeZone && !overComment) {
+      // Top area of EXP (not comment) → nuke all overlays
+      wrapper.classList.add('force-collapse');
+      // After this, overlays are "dead" until you truly leave the card
+      // and re-enter (wrapper mouseleave + mouseenter).
+    }
+  });
+
+  // Bonus: entering the comment itself always keeps overlays alive
+  if (commentEl) {
+    commentEl.addEventListener('mouseenter', (e) =>
+    {
+      wrapper.classList.remove('force-collapse');
+      e.stopPropagation();
+    });
+  }
+    // 🔻 NEW: coming back to the main card revives overlays
+    card.addEventListener('mouseenter', () =>
+      {
+        wrapper.classList.remove('force-collapse');
+      });
 
   return wrapper;
 }
@@ -213,6 +257,54 @@ function setupOverlaySides()
   });
 }
 
+// ==========  SORT STATE ==========
+// sort: null | 'played' | 'released' | 'score' | 'name'
+let sortKey = null;
+// 'asc' or 'desc'
+let sortDir = 'desc';
+
+function sortGames(games)
+{
+  if (!sortKey) return games;
+
+  const dir = (sortDir === 'asc') ? 1 : -1;
+
+  return games.slice().sort((a, b) =>
+  {
+    let va, vb;
+
+    switch (sortKey)
+    {
+      case 'played':
+        va = Number(a.played_year) || 0;
+        vb = Number(b.played_year) || 0;
+        break;
+
+      case 'released':
+        va = a.release_date ? Number(a.release_date.split('-')[0]) : 0;
+        vb = b.release_date ? Number(b.release_date.split('-')[0]) : 0;
+        break;
+
+      case 'score':
+        va = Number(a.score) || 0;
+        vb = Number(b.score) || 0;
+        break;
+
+      case 'name':
+        va = (a.name || '').toLowerCase();
+        vb = (b.name || '').toLowerCase();
+        break;
+
+      default:
+        return 0;
+    }
+
+    if (va < vb) return -1 * dir;
+    if (va > vb) return  1 * dir;
+    return 0;
+  });
+}
+
 // ========== FILTER STATE ==========
 // category: 'all' | 'indie' | 'ubisoft'
 let filterCategory = 'all';
@@ -271,6 +363,9 @@ function applyFilters()
     );
   }
 
+  // sort after all filters
+  games = sortGames(games);
+
   renderGames(games);
 }
 
@@ -298,6 +393,8 @@ function setupTabs()
     .filter(b => b.dataset.group === 'decade');
   const platformButtons = Array.from(allButtons)
     .filter(b => b.dataset.group === 'platform');
+    const sortButtons = Array.from(allButtons)
+    .filter(b => b.dataset.group === 'sort');
 
   allButtons.forEach(btn =>
   {
@@ -341,6 +438,24 @@ function setupTabs()
           filterPlatform = value;
           setActiveInGroup(platformButtons, btn);
         }
+      }
+      else if (group === 'sort')
+      {
+        if (sortKey === value)
+        {
+          // same button → toggle direction
+          sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
+        }
+        else
+        {
+          sortKey = value;
+
+          // sensible defaults
+          if (value === 'name') sortDir = 'asc';
+          else sortDir = 'desc';
+        }
+
+        setActiveInGroup(sortButtons, btn);
       }
 
       applyFilters();

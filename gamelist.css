@@ -222,6 +222,14 @@ h1
   transform: scaleX(1);
 }
 
+/* When we want to *force* the card to behave like it's not hovered */
+.game-card-wrapper.force-collapse .game-title-overlay,
+.game-card-wrapper.force-collapse .game-details-overlay,
+.game-card-wrapper.force-collapse .game-exp-overlay {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .game-exp-overlay.open-left {
   left: auto;
   right: 100%;        /* attach to left side of card */
@@ -299,9 +307,25 @@ h1
   margin-top: 10px;   /* same gap between rows */
 }
 
-.tab-row-platform
+.tab-row-sort
 {
-  margin-bottom: 20px;
+  margin-top: 10px;
+  margin-bottom: 20px; /* extra space below last row */
+}
+
+.sort-label {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 22px;
+  letter-spacing: 7px;
+  color: black;
+  padding: 8px 16px;
+  margin-right: 10px;
+  display: inline-block;
+
+  /* make it look like a button without the border */
+  border: none;
+  background: transparent;
+  pointer-events: none; /* can't click it */
 }
 
 .tab-buttons .secret-btn
