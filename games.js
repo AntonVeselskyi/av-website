@@ -598,6 +598,18 @@
       "rawg_id": "nba-2k17",
     },
     {
+      "name": "Just Dance 2014",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2015,
+      "score": 81,
+      "comment": 
+      "Ultimate Kinect\nparty game",
+      "igdb_id": 3256,
+      "rawg_id": "just-dance-2014",
+    },
+    {
       "name": "Rayman Origins",
       "tier": "S",
       "category": "AAA",
@@ -1079,6 +1091,17 @@
       "rawg_id": "tom-clancys-splinter-cell-essentials",
     },
     {
+      "name": "Prince of Persia: The Forgotten Sands",
+      "tier": "B",
+      "category": "",
+      "platform": "PSP",
+      "played_year": 2010,
+      "score": 72,
+      "comment": "Decent platformer",
+      "igdb_id": 142710,
+      "rawg_id": "prince-of-persia-the-forgotten-sands-psp",
+    },
+    {
       "name": "EyePet",
       "tier": "E",
       "category": "",
@@ -1241,6 +1264,50 @@
       "rawg_id": "grand-theft-auto-san-andreas",
     },
     {
+      "name": "Just Cause 2",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 76,
+      "comment":
+      `Fun sandbox with bunch
+      of unique mechanics.
+      Plot was super weak,
+      and I got bored of just
+      "GTA"-ing around after 
+      a few hours.`,
+      "igdb_id": 558,
+      "rawg_id": "just-cause-2",
+    },
+    {
+      "name": "Mirror's Edge",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2009,
+      "score": 86,
+      "comment": `Honestly,
+      I liked the reimagination
+      of the characters.
+      Artsyle was neat,
+      larger-scale levels
+      traversal was smooth!`,
+      "igdb_id": 2438,
+      "rawg_id": "prince-of-persia",
+    },
+    {
+      "name": "Mirror's Edge",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2009,
+      "score": 87,
+      "comment": "Very satisfying\nfirst-person 3Cs!\nTODO: Need to replay it",
+      "igdb_id": 1051,
+      "rawg_id": "mirrors-edge",
+    },
+    {
       "name": "Grand Theft Auto IV",
       "tier": "SS",
       "category": "AAA",
@@ -1263,6 +1330,17 @@
       "rawg_id": "open-season"
     },
     {
+      "name": "WWE SmackDown vs. Raw 2011",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PlayStation 2",
+      "played_year": 2010,
+      "score": 82,
+      "comment": "Last WWE fighting for PS2.\nVery polished,]nplayed it for years!",
+      "igdb_id": 2265,
+      "rawg_id": "wwe-smackdown-vs-raw-2011"
+    },
+    {
       "name": "Free Running",
       "tier": "B",
       "category": "",
@@ -1272,6 +1350,33 @@
       "comment": "Like Tony Hawk, but parkour. \nSame studio as Sniper Elite.",
       "igdb_id": 4873,
       "rawg_id": "free-running"
+    },
+    {
+      "name": "Madagascar",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 82,
+      "comment":
+      `played it over and over lol`,
+      "igdb_id": 3764,
+      "rawg_id": "madagascar"
+    },
+    {
+      "name": "Madagascar: Escape 2 Africa",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 65,
+      "comment":
+      `More of a party/minigame-focused,
+      unlike the story-driven 
+      3D adventure/platformer
+      first Madagascar`,
+      "igdb_id": 3765,
+      "rawg_id": "madagascar-escape-2-africa"
     },
     {
       "name": "Barnyard",
