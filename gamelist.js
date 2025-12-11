@@ -419,7 +419,7 @@ function calcMaxCardsPerRow()
   if (!total || rowWidth <= 0) return 1;
 
   const perRow = Math.floor((rowWidth + gap) / total);
-  return Math.max(1, perRow);
+  return Math.max(1, perRow-1);
 }
 
 function renderGames(games)
