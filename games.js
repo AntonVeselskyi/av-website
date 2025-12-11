@@ -948,6 +948,124 @@
       "rawg_id": "wormix",
     },
     {
+      "name": "",
+      "tier": "A",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2014,
+      "score": 85,
+      "comment":
+      `I did not had new gen for Unity,
+      so I played Rogue on release`,
+      "igdb_id": 7570,
+      "rawg_id": "assassins-creed-rogue-2",
+    },
+    {
+      "name": "Assassin's Creed IV Black Flag",
+      "tier": "A",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 85,
+      "comment":
+      `TODO`,
+      "igdb_id": 1970,
+      "rawg_id": "assassins-creed-iv-black-flag",
+    },
+    {
+      "name": "Assassin's Creed III",
+      "tier": "S",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 91,
+      "comment":
+      `TODO
+      AC release 
+      every year,
+      and is still peak`,
+      "igdb_id": 1266,
+      "rawg_id": "assassins-creed-iii-2",
+    },
+    {
+      "name": "Assassin's Creed Revelations",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 88,
+      "comment":
+      `End of Ezio's arc!
+      Hookblade was cool.
+      But ~10–11 month for
+      development is a crime!
+      Way too short, not polished`,
+      "igdb_id": 537,
+      "rawg_id": "assassins-creed-revelations",
+    },
+    {
+      "name": "Assassin's Creed: Brotherhood",
+      "tier": "SSS",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 97,
+      "comment":
+      `My favorite AC!
+      Jaw dropping ending.
+      Peak open world.
+      Wasted dosens of hours 
+      in the multiplayer!
+      Made in 1 year - insane!`,
+      "igdb_id": 113,
+      "rawg_id": "assassins-creed-brotherhood-2",
+    },
+    {
+      "name": "Assassin's Creed II",
+      "tier": "SSS",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 96,
+      "comment":
+      `Revolutionized parkour,
+      Introduced Ezio and kickstarted the best
+      narrative arc in AC history!
+      DRM required a constant internet connection.
+      I remember getting UPlay, and the game won't boot,
+      while torrent version was playable day 1.`,
+      "igdb_id": 127,
+      "rawg_id": "assassins-creed-ii",
+    },
+    {
+      "name": "Assassin's Creed",
+      "tier": "S",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 90,
+      "comment":
+      `PoP with the open world, I was sold instantly.`,
+      "igdb_id": 27827,
+      "rawg_id": "assassins-creed",
+    },
+    {
+      "name": "Assassin's Creed: Bloodlines",
+      "tier": "B",
+      "category": "",
+      "platform": "PSP",
+      "played_year": 2010,
+      "score": 72,
+      "comment":
+      `Worse then the first AC,
+      didn't offer that
+      much gameplay-wise.
+      Lore of the Altair's 
+      past is the best it offers.`,
+      "igdb_id": 10661,
+      "rawg_id": "assassins-creed-bloodlines",
+    },
+    {
       "name": "Tom Clancy's Splinter Cell: Essentials",
       "tier": "E",
       "category": "",
