@@ -3,6 +3,76 @@
   padding-bottom: 260px; /* tweak number until it feels right */
 }
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+
+  /* warm off-white base */
+  background-color: #F6F3EF;
+
+  /* super subtle paper texture – low alphas everywhere */
+  background-image:
+    /* very light chromatic bleed */
+    radial-gradient(circle at 30% 20%,
+      rgba(255,   0,  80, 0.015),
+      transparent 55%
+    ),
+    radial-gradient(circle at 70% 80%,
+      rgba(  0, 120, 255, 0.015),
+      transparent 60%
+    ),
+
+    /* faint vertical line imperfections */
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.015) 0px,
+      rgba(0, 0, 0, 0.015) 1px,
+      transparent 1px,
+      transparent 20px
+    ),
+
+    /* micro horizontal fibres */
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.015) 0px,
+      rgba(0, 0, 0, 0.015) 2px,
+      transparent 2px,
+      transparent 26px
+    ),
+
+    /* light speckle */
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.02) 0px,
+      rgba(0, 0, 0, 0.02) 3px,
+      transparent 3px,
+      transparent 10px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.018) 0px,
+      rgba(0, 0, 0, 0.018) 3px,
+      transparent 3px,
+      transparent 12px
+    );
+
+  background-size:
+    100% 100%,   /* chroma 1 */
+    100% 100%,   /* chroma 2 */
+    140px 100%,  /* vertical lines */
+    100% 140px,  /* horizontal fibres */
+    18px 18px,   /* speckle 1 */
+    22px 22px;   /* speckle 2 */
+
+  background-attachment: scroll; /* scrolls with content = real paper */
+}
+
 h1
 {
     font-size: 9vw;
@@ -11,7 +81,6 @@ h1
     text-align: center;
     vertical-align: middle;
 }
-
 
 .title
 {
@@ -191,6 +260,29 @@ h1
   box-sizing: border-box;
 }
 
+/* ===== SCORE STRIP UNDER CARD (SORT BY SCORE MODE) ===== */
+.game-score-overlay
+{
+  width: 100%;
+  /* height will be auto from padding/line-height, but you can fix it if you want */
+  padding: 4px 0;
+  margin-top: 4px;
+
+  background: black;
+  color: white;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 4px;
+
+  border-left: 2px solid black;
+  border-right: 2px solid black;
+  border-bottom: 2px solid black;
+
+  box-sizing: border-box;
+  user-select: none;
+}
+
 .game-card-wrapper
 {
   display: flex;
@@ -285,6 +377,74 @@ h1
 {
   flex-grow: 1;     /* this fills all remaining vertical space */
   min-height: 0;    /* prevents weird rounding issues */
+}
+
+/* ===== YEAR GROUPING (when sorting by played/released) ===== */
+.year-group
+{
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-bottom: 18px;
+  position: relative;       /* for frame corners */
+}
+
+/* cards inside a year group */
+.year-group-cards {
+  display: flex;
+  flex-wrap: wrap;          /* allow wrapping inside a year */
+  gap: 10px;
+}
+
+/* year text in the middle */
+.year-label {
+  margin-top: 4px;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 18px;
+  letter-spacing: 4px;
+  text-align: center;
+  position: relative;
+  padding-top: 6px;
+}
+
+/* horizontal bottom line split into left + right, leaving gap under year text */
+.year-label::before,
+.year-label::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  border-bottom: 2px solid black;
+}
+
+.year-label::before {
+  left: 0;
+  right: 50%;          /* line from left up to middle */
+  margin-right: 40px;  /* widen the gap under the year text */
+}
+
+.year-label::after {
+  right: 0;
+  left: 50%;           /* line from middle to right  */
+  margin-left: 40px;
+}
+
+/* vertical “frame corners” at ends */
+.year-group::before,
+.year-group::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  height: 10px;             /* how tall the corner legs are */
+}
+
+.year-group::before {
+  left: 0;
+  border-left: 2px solid black;
+}
+
+.year-group::after {
+  right: 0;
+  border-right: 2px solid black;
 }
 
 /* Tab button styling */
@@ -400,3 +560,185 @@ h1
     margin: 5px 0;        /* top = 5, right = 0, bottom = 5, left = 0 */
     display: block;
   }
+
+/* ===== LOADER OVERLAY ===== */
+
+loader-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+
+  /* copy page background so it looks identical */
+  background-color: #F6F3EF;
+  background-image:
+    radial-gradient(circle at 30% 20%,
+      rgba(255,   0,  80, 0.015),
+      transparent 55%
+    ),
+    radial-gradient(circle at 70% 80%,
+      rgba(  0, 120, 255, 0.015),
+      transparent 60%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.015) 0px,
+      rgba(0, 0, 0, 0.015) 1px,
+      transparent 1px,
+      transparent 20px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.015) 0px,
+      rgba(0, 0, 0, 0.015) 2px,
+      transparent 2px,
+      transparent 26px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.02) 0px,
+      rgba(0, 0, 0, 0.02) 3px,
+      transparent 3px,
+      transparent 10px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.018) 0px,
+      rgba(0, 0, 0, 0.018) 3px,
+      transparent 3px,
+      transparent 12px
+    );
+
+  background-size:
+    100% 100%,
+    100% 100%,
+    140px 100%,
+    100% 140px,
+    18px 18px,
+    22px 22px;
+}
+
+.loader-hidden {
+  display: none;
+}
+
+.loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* NUMBER: same font + size as title */
+.loader-number {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 18vw;
+  letter-spacing: 12px;
+  margin-bottom: 6rem;
+  text-align: center;
+}
+
+/* we'll re-trigger this class from JS on every tick */
+.loader-number.animate-in {
+  animation: loader-number-enter 0.7s ease-out forwards;
+}
+
+/* slow fall, quick snap into place */
+@keyframes loader-number-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-150px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* DOTS */
+
+.loader-dots {
+  display: flex;
+  gap: 26px;                        /* generous gap */
+  font-family: 'Major Mono Display', monospace;
+  font-size: 6.2vw;                 /* big but smaller than number */
+}
+
+.loader-dots span {
+  display: inline-block;
+  animation: loader-dot-wave 1.1s infinite ease-in-out;
+}
+
+/* phase offset → wave effect */
+.loader-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.loader-dots span:nth-child(3) {
+  animation-delay: 0.30s;
+}
+
+/* nice up-down wave (roughly sinus-ish) */
+@keyframes loader-dot-wave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-12px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(8px);
+  }
+}
+
+/* dots shake a bit when number clicks in */
+.loader-dots.shake {
+  animation: loader-dots-shake 0.25s ease;
+}
+
+@keyframes loader-dots-shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  50%      { transform: translateX(4px); }
+  75%      { transform: translateX(-2px); }
+}
+
+/* extra photocopy grain on loader */
+.loader-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.05) 0px,
+      rgba(0, 0, 0, 0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.04) 0px,
+      rgba(0, 0, 0, 0.04) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.035) 0px,
+      rgba(0, 0, 0, 0.035) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+}

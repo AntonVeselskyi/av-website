@@ -1,6 +1,84 @@
 // ========== DOM ELEMENTS ==========
 const gameContainer = document.getElementById('main-list');
 
+// ===== LOADER COUNTDOWN =====
+
+// Roman-ish glyphs from 10 down to 0
+const LOADER_SYMBOLS = {
+  10: 'Ⅹ',
+  9:  'Ⅸ',
+  8:  'Ⅷ',
+  7:  'Ⅶ',
+  6:  'Ⅵ',
+  5:  'Ⅴ',
+  4:  'Ⅳ',
+  3:  'Ⅲ',
+  2:  'Ⅱ',
+  1:  'Ⅰ',
+  0:  '∞'   // you can swap for some funky glyph if you want
+};
+
+let loaderTimer   = null;
+let loaderValue   = 10;
+let loaderActive  = false;
+
+function loaderSetNumber(value) {
+  const numEl  = document.getElementById('loader-number');
+  const dotsEl = document.querySelector('.loader-dots');
+  if (!numEl || !dotsEl) return;
+
+  const symbol = LOADER_SYMBOLS[value] ?? String(value);
+  numEl.textContent = symbol;
+
+  // restart number animation
+  numEl.classList.remove('animate-in');
+  void numEl.offsetWidth;           // force reflow
+  numEl.classList.add('animate-in');
+
+  // little shake on dots when number "clicks in"
+  dotsEl.classList.remove('shake');
+  void dotsEl.offsetWidth;
+  dotsEl.classList.add('shake');
+}
+
+function showLoader()
+{
+  const overlay = document.getElementById('loader-overlay');
+  if (!overlay) return;
+
+  overlay.classList.remove('loader-hidden');
+  loaderActive = true;
+  loaderValue  = 10;
+  loaderSetNumber(loaderValue);
+
+  if (loaderTimer) clearInterval(loaderTimer);
+  loaderTimer = setInterval(() => {
+    if (!loaderActive) return;
+
+    loaderValue--;
+    if (loaderValue < 0) {
+      // stay at 0, stop counting
+      loaderValue = 0;
+      clearInterval(loaderTimer);
+      loaderTimer = null;
+      return;
+    }
+    loaderSetNumber(loaderValue);
+  }, 1000);
+}
+
+function hideLoader() {
+  const overlay = document.getElementById('loader-overlay');
+  if (!overlay) return;
+
+  loaderActive = false;
+  if (loaderTimer) {
+    clearInterval(loaderTimer);
+    loaderTimer = null;
+  }
+  overlay.classList.add('loader-hidden');
+}
+
 // ========== TIER ORDER ==========
 const TIER_ORDER = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'];
 
@@ -12,6 +90,8 @@ async function enrichGames(games)
   const BACK_API = "https://bzfclyzne3.execute-api.us-east-2.amazonaws.com/default/gameTierListProvider"
   try
   {
+    showLoader(); // start countdown while we wait
+
     const idPairs = games.map(g => [g.igdb_id, g.rawg_id]);
 
     const response = await fetch(BACK_API,
@@ -53,8 +133,11 @@ async function enrichGames(games)
     console.error("Failed to enrich via Lambda:", e);
     return games.map(g => ({ ...g, image: 'img/placeholder.png' }));
   }
+  finally
+  {
+    hideLoader();
+  }
 }
-
 
 function createGameCard(game)
 {
@@ -109,12 +192,26 @@ function createGameCard(game)
     <p>Played: <span>${game.played_year}<span></p>
     <p>Score: <span>${game.score || '?'}<span></p>
     <div class="exp-spacer"></div>
-    <p class="game-comment">"${commentHtml}"</p>
+    <p class="game-comment">〝${commentHtml}〞</p>
   `;
+
+  // 🔻 NEW: SCORE STRIP – only in "sort by score" mode
+  let scoreStrip = null;
+  if (sortKey === 'score')
+  {
+    scoreStrip = document.createElement('div');
+    scoreStrip.className = 'game-score-overlay';
+    scoreStrip.textContent =
+      (game.score !== undefined && game.score !== null && game.score !== '')
+        ? game.score
+        : '?';
+  }
 
   // Append everything directly to wrapper
   wrapper.appendChild(titleOverlay);
   wrapper.appendChild(card);
+  if(scoreStrip)
+    wrapper.appendChild(scoreStrip);
   wrapper.appendChild(infoOverlay);
   wrapper.appendChild(expOverlay);
 
@@ -176,7 +273,7 @@ function createGameCard(game)
       e.stopPropagation();
     });
   }
-    // 🔻 NEW: coming back to the main card revives overlays
+    // coming back to the main card revives overlays
     card.addEventListener('mouseenter', () =>
       {
         wrapper.classList.remove('force-collapse');
@@ -200,11 +297,86 @@ function buildTierSection(tierName, games)
         const row = document.createElement('div');
     row.className = 'row';
 
+// ===== YEAR / ROW LAYOUT =====
+if (sortKey === 'played' || sortKey === 'released')
+  {
+    const maxPerRow = calcMaxCardsPerRow();
+
+    // helper to get the "year" string for a game based on current sort
+    const getYear = (game) =>
+    {
+      if (sortKey === 'played')
+      {
+        return game.played_year || 'N/A';
+      }
+      return game.release_date
+        ? game.release_date.split('-')[0]
+        : 'N/A';
+    };
+
+    let i = 0;
+    let slotsLeft = maxPerRow; // how many card slots remain in the current row
+
+    while (i < games.length)
+    {
+      const currentYear = getYear(games[i]);
+
+      // how many consecutive games share this year, starting at i
+      let runEnd = i + 1;
+      while (runEnd < games.length && getYear(games[runEnd]) === currentYear)
+      {
+        runEnd++;
+      }
+      let remainingInYear = runEnd - i;
+
+      // while we still have games from this year, keep carving groups
+      while (remainingInYear > 0)
+      {
+        if (slotsLeft === 0)
+        {
+          // conceptually start a new visual row
+          slotsLeft = maxPerRow;
+        }
+
+        const take = Math.min(remainingInYear, slotsLeft);
+
+        const group = document.createElement('div');
+        group.className = 'year-group';
+
+        const cardsRow = document.createElement('div');
+        cardsRow.className = 'year-group-cards';
+
+        for (let k = 0; k < take; k++)
+        {
+          const g = games[i + k];
+          const card = createGameCard(g);
+          cardsRow.appendChild(card);
+        }
+
+        const yearLabel = document.createElement('div');
+        yearLabel.className = 'year-label';
+        yearLabel.textContent = currentYear;
+
+        group.appendChild(cardsRow);
+        group.appendChild(yearLabel);
+        row.appendChild(group);
+
+        i += take;
+        remainingInYear -= take;
+        slotsLeft -= take;
+      }
+    }
+  }
+  else
+  {
+    // ===== DEFAULT: just cards next to each other =====
     games.forEach(game =>
     {
-        const card = createGameCard(game);
-        row.appendChild(card);
+      const card = createGameCard(game);
+      row.appendChild(card);
     });
+  }
+
 
     tierRowWrapper.appendChild(row);
     section.appendChild(tierRowWrapper);
@@ -213,6 +385,41 @@ function buildTierSection(tierName, games)
     divider.className = 'art-divider';
 
     return [section, divider];
+}
+
+function calcMaxCardsPerRow()
+{
+  // Probe container to get real width + gap
+  const probeRow = document.createElement('div');
+  probeRow.className = 'row';
+  probeRow.style.visibility = 'hidden';
+  probeRow.style.position = 'absolute';
+
+  // KEY PART: make it span the viewport width, not shrink to content
+  probeRow.style.left = '0';
+  probeRow.style.right = '0';
+  probeRow.style.width = '100%';
+
+  const probeCard = document.createElement('div');
+  probeCard.className = 'game-card-wrapper';
+
+  probeRow.appendChild(probeCard);
+  document.body.appendChild(probeRow);
+
+  const rowWidth  = probeRow.clientWidth || window.innerWidth;
+  const cardWidth = probeCard.offsetWidth || 144;
+
+  const style = getComputedStyle(probeRow);
+  const gapStr = style.columnGap || style.gap || '0';
+  const gap    = parseFloat(gapStr) || 0;
+
+  document.body.removeChild(probeRow);
+
+  const total = cardWidth + gap;
+  if (!total || rowWidth <= 0) return 1;
+
+  const perRow = Math.floor((rowWidth + gap) / total);
+  return Math.max(1, perRow);
 }
 
 function renderGames(games)

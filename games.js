@@ -49,12 +49,25 @@
       "rawg_id": 9767,
     },
     {
+      "name": "Pool Panic",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2019,
+      "score": 72,
+      "comment": `World’s least realistic
+      pool simulator
+      FUN COUCH COOP`,
+      "igdb_id": 95028,
+      "rawg_id": "pool-panic",
+    },
+    {
       "name": "Indiana Jones and the Great Circle",
       "tier": "A",
       "category": "AAA",
       "platform": "Xbox Series X",
       "played_year": 2025,
-      "score": 77,
+      "score": 79,
       "comment": `Game that makes you feel like Indiana Jones.
       Polished first-person animations and micro-sandbox-levels here and there.
       Game is quite short, but it's a good thing
@@ -106,7 +119,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2025,
-      "score": 76,
+      "score": 77,
       "comment":
       `3D-runner with unique
       satisfying locomotion mechanics and
@@ -249,6 +262,22 @@
       "rawg_id": 284763,
     },
     {
+      "name": "WWE 2K BATTLEGROUNDS",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 59,
+      "comment":
+      `Way too aggressive
+      with microtransactions
+      Arcade fighting,
+      nothing special about it.
+      Tries to be WWE All-Stars`,
+      "igdb_id": 132956,
+      "rawg_id": "wwe-2k-battlegrounds",
+    },
+    {
       "name": "Forager",
       "tier": "B",
       "category": "Indie",
@@ -288,6 +317,33 @@
       "rawg_id": 48897,
     },
     {
+      "name": "Bad North: Jotunn Edition",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2020,
+      "score": 66,
+      "comment": `Cute tower defence game
+      with rougelite elements`,
+      "igdb_id": 302647,
+      "rawg_id": "bad-north-jotunn-edition",
+    },
+    {
+      "name": "Frostpunk",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2020,
+      "score": 82,
+      "comment":
+      `Steampunk survival city-builder,
+      where the world is frozen and
+       heat is a resource.
+       Another Polish gem.`,
+      "igdb_id": 23248,
+      "rawg_id": "frostpunk",
+    },
+    {
       "name": "Do Not Feed the Monkeys",
       "tier": "A",
       "category": "Indie",
@@ -300,13 +356,95 @@
       "rawg_id": "do-not-feed-the-monkeys",
     },
     {
+      "name": "Nanotale - Typing Chronicles",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 71,
+      "comment":
+      `Game to train/learn
+      blindtyping.
+      Decent visuals.`,
+      "igdb_id": 112378,
+      "rawg_id": "nanotale-typing-chronicles",
+    },
+    {
+      "name": "Wizard of Legend",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 71,
+      "comment":
+      `Fun in coop`,
+      "igdb_id": 19935,
+      "rawg_id": "wizard-of-legend",
+    },
+    {
+      "name": "Rock of Ages 2: Bigger & Boulder",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 70,
+      "comment":
+      `U r the big round boulder,
+      destroying significant
+      historic places.
+      VERSUS
+      couch mode is super fun`,
+      "igdb_id": 19407,
+      "rawg_id": "rock-of-ages-2-bigger-boulder",
+    },
+    {
+      "name": "OLDTV",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 78,
+      "comment":
+      `Glitchy visuals,
+      simple idea,
+      fast-paced reaction game,
+      Try it, it's free!
+      Just 90min to beat.`,
+      "igdb_id": 80544,
+      "rawg_id": "v",
+    },
+    {
+      "name": "PC Building Simulator",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 64,
+      "comment":
+      `Detailed PC parts, yeah
+      But the core loop is kinda boring`,
+      "igdb_id": 27792,
+      "rawg_id": "pc-building-simulator",
+    },
+    {
+      "name": "Hotshot Racing",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 74,
+      "comment": "Cool coop",
+      "igdb_id": 131888,
+      "rawg_id": "hotshot-racing",
+    },
+    {
       "name": "Slipstream",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2019,
       "score": 72,
-      "comment": "Arcade-style",
+      "comment": "Arcade-style TODO",
       "igdb_id": 75096,
       "rawg_id": "slipstream",
     },
@@ -331,6 +469,23 @@
       "comment": "My fav couch-coop game EVER!\nBeat every level with 3 stars.",
       "igdb_id": 103341,
       "rawg_id": "overcooked-2",
+    },
+    {
+      "name": "Moon Hunters",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2018,
+      "score": 76,
+      "comment":
+      `Coop game that takes 45 min
+      (5 days in-game days) to beat.
+      But u r incentivized to replay
+      The story is branching, there
+      are multiple characters
+      with different builds`,
+      "igdb_id": 18263,
+      "rawg_id": "moon-hunters",
     },
     {
       "name": "Ruiner",
@@ -366,6 +521,22 @@
       "rawg_id": "hearthstone",
     },
     {
+      "name": "Plague Inc",
+      "tier": "B",
+      "category": "",
+      "platform": "Android",
+      "played_year": 2012,
+      "score": 70,
+      "comment":
+      `RTS. U play as apathogen
+      with the goal of infecting and
+      wiping out humanity 😈
+      Played Plague Inc: Evolved
+      PC port too`,
+      "igdb_id": 1279,
+      "rawg_id": "plague-inc",
+    },
+    {
       "name": "Steep",
       "tier": "A",
       "category": "AAA",
@@ -399,11 +570,39 @@
       "rawg_id": "rime",
     },
     {
+      "name": "Snake Pass",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2018,
+      "score": 77,
+      "comment":
+      `Product of the Game Jam in 2015
+      in the studio that made LittleBigPlanet`,
+      "igdb_id": 19220,
+      "rawg_id": "snake-pass",
+    },
+    {
+      "name": "NBA 2K17",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2016,
+      "score": 84,
+      "comment":
+      `"Golden era" of 2K basketball
+      Big leap for the series,
+      it kinda stagnated ever after.
+      Wasted 300 hours in it!`,
+      "igdb_id": 18819,
+      "rawg_id": "nba-2k17",
+    },
+    {
       "name": "Rayman Origins",
       "tier": "S",
       "category": "AAA",
       "platform": "Xbox 360",
-      "played_year": 2016,
+      "played_year": 2015,
       "score": 88,
       "comment": "The fast-pasted platforming \nwith unique charming art style. \nMy favorite Rayman game for sure!",
       "igdb_id": 981,
@@ -426,10 +625,27 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2013,
-      "score": 88,
-      "comment": "Destruction beyond imaginable for it's time!\nWas forced to register an Origin account.",
+      "score": 85,
+      "comment": `
+      Destruction beyond imaginable for it's time!
+      Frostbite 2 ❄
+      Was forced to register an Origin account.`,
       "igdb_id": 343,
       "rawg_id": "battlefield-3",
+    },
+    {
+      "name": "Battlefield 4",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2017,
+      "score": 86,
+      "comment":
+      `Started playing after they fixed the game.
+      Played all the DLC maps.
+      Final Stand was fun with all the snow.`,
+      "igdb_id": 1979,
+      "rawg_id": "battlefield-4",
     },
     {
       "name": "Tomb Raider",
@@ -450,7 +666,7 @@
       "category": "AAA",
       "platform": "Xbox 360",
       "played_year": 2013,
-      "score": 76,
+      "score": 78,
       "comment": "God of War clone \nthat lived up to the original. \nEnemy deisgn is next level is whole \nhell's-horror aethtetic stood out so much.",
       "igdb_id": 6958,
       "rawg_id": "dantes-inferno",
@@ -549,7 +765,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2012,
-      "score": 97,
+      "score": 95,
       "comment": "Neo-noir story + documentary style cinematography \nset in Brazil. \nOne of the best-feeling controls in shooter game. \nEnormous inspiration for me gameplay-wise.\nNo loading screens across gameplay and cutscenes  \nTook me a few days to download it on release!",
       "igdb_id": 960,
       "rawg_id": "max-payne-3"
@@ -657,6 +873,20 @@
       "comment": "M A S T E R P I E C E",
       "igdb_id": 72,
       "rawg_id": "portal-2",
+    },
+    {
+      "name": "Portal",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2013,
+      "score": 86,
+      "comment": `Brilliant concept,
+      but extremely short.
+      Like 3.5 hours to beat.
+      Felt like a prototype.`,
+      "igdb_id": 71,
+      "rawg_id": "portal",
     },
     {
       "name": "Spore",
@@ -1006,7 +1236,7 @@
       "category": "",
       "platform": "PlayStation 2",
       "played_year": 2007,
-      "score": 90,
+      "score": 85,
       "comment": "TODO:",
       "igdb_id": 5180,
       "rawg_id": "spider-man-friend-or-foe"
