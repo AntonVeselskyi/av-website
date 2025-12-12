@@ -407,7 +407,7 @@ function calcMaxCardsPerRow()
   document.body.appendChild(probeRow);
 
   const rowWidth  = probeRow.clientWidth || window.innerWidth;
-  const cardWidth = probeCard.offsetWidth || 144;
+  const cardWidth = probeCard.offsetWidth || 169;
 
   const style = getComputedStyle(probeRow);
   const gapStr = style.columnGap || style.gap || '0';
