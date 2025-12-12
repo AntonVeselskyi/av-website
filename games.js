@@ -607,7 +607,7 @@
       "platform": "Xbox 360",
       "played_year": 2015,
       "score": 81,
-      "comment": 
+      "comment":
       "Ultimate Kinect\nparty game",
       "igdb_id": 3256,
       "rawg_id": "just-dance-2014",
@@ -1008,7 +1008,7 @@
       "score": 91,
       "comment":
       `TODO
-      AC release 
+      AC release
       every year,
       and is still peak`,
       "igdb_id": 1266,
@@ -1041,7 +1041,7 @@
       `My favorite AC!
       Jaw dropping ending.
       Peak open world.
-      Wasted dosens of hours 
+      Wasted dosens of hours
       in the multiplayer!
       Made in 1 year - insane!`,
       "igdb_id": 113,
@@ -1055,10 +1055,10 @@
       "played_year": 2010,
       "score": 98,
       "comment":
-      `Played so much, 
+      `Played so much,
       on so many different servers.
       Even had a Minecraft
-      youtube channel 
+      youtube channel
       `,
       "igdb_id": 121,
       "rawg_id": "minecraft",
@@ -1103,7 +1103,7 @@
       `Worse then the first AC,
       didn't offer that
       much gameplay-wise.
-      Lore of the Altair's 
+      Lore of the Altair's
       past is the best it offers.`,
       "igdb_id": 10661,
       "rawg_id": "assassins-creed-bloodlines",
@@ -1220,20 +1220,33 @@
       "name": "The Simpsons: Hit & Run",
       "tier": "S",
       "category": "",
-      "platform": "PlayStation 2",
+      "platform": "PC",
       "played_year": 2009,
       "score": 75,
       "comment":
-      `Bunch of homages to different 
+      `Bunch of homages to different
       games and platforming challenges`,
       "igdb_id": 259330,
       "rawg_id": "the-simpsons-hit-run",
     },
     {
+      "name": "Harry Potter Quidditch World ",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 75,
+      "comment":
+      `it was actuallly good
+      arcade sports game`,
+      "igdb_id": 3944,
+      "rawg_id": "harry-potter-quidditch-world-cup"
+    },
+    {
       "name": "The Simpsons Game",
       "tier": "A",
       "category": "",
-      "platform": "PC",
+      "platform": "PlayStation 2",
       "played_year": 2007,
       "score": 90,
       "comment":
@@ -1294,7 +1307,7 @@
       "rawg_id": "nfs-prostreet",
     },
     {
-      "name": "Grand Theft Auto: San Andreas",
+      "name": "Grand Theft Auto V",
       "tier": "SSS",
       "category": "AAA",
       "platform": "Xbox 360",
@@ -1328,7 +1341,7 @@
       "platform": "PC",
       "played_year": 2007,
       "score": 68,
-      "comment": 
+      "comment":
       `Hoverboard racing/platforming.
       <a href=\"${HUGO_HOVER}\" target=\"_blank\">Has a cool mechanic,</a>
       where you can switch modes
@@ -1345,9 +1358,9 @@
       "platform": "PC",
       "played_year": 2007,
       "score": 70,
-      "comment": 
-      `A game based on 
-      a movie within 
+      "comment":
+      `A game based on
+      a movie within
       another movie,
       inspired by a fairy tale!
       I mean, it's all right..`,
@@ -1366,7 +1379,7 @@
       of unique mechanics.
       Plot was super weak,
       and I got bored of just
-      "GTA"-ing around after 
+      "GTA"-ing around after
       a few hours.`,
       "igdb_id": 558,
       "rawg_id": "just-cause-2",
@@ -1416,7 +1429,7 @@
       "platform": "PC",
       "played_year": 2007,
       "score": 96,
-      "comment": 
+      "comment":
       `Drifting,
       so much drifing
       + everything neon`,
@@ -1430,8 +1443,8 @@
       "platform": "PC",
       "played_year": 2007,
       "score": 96,
-      "comment": 
-      `LOVED the grind to climb 
+      "comment":
+      `LOVED the grind to climb
       the top of the BLACKLIST.
       <a href=\"${NFS_MW_OST}\" target=\"_blank\">OST</a> was loaded!`,
       "igdb_id": 98,
@@ -1491,7 +1504,7 @@
       "score": 65,
       "comment":
       `More of a party/minigame-focused,
-      unlike the story-driven 
+      unlike the story-driven
       3D adventure/platformer
       first Madagascar`,
       "igdb_id": 3765,
