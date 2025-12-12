@@ -212,6 +212,17 @@
       "rawg_id": 700,
     },
     {
+      "name": "Life is Strange",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 78,
+      "comment": `TODO`,
+      "igdb_id": 7599,
+      "rawg_id": "life-is-strange-episode-1-2",
+    },
+    {
       "name": "What Remains of Edith Finch",
       "tier": "B",
       "category": "Indie",
@@ -225,6 +236,65 @@
       Magical realism at its finest.`,
       "igdb_id": 11233,
       "rawg_id": "what-remains-of-edith-finch",
+    },
+    {
+      "name": "Call of the Sea",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 63,
+      "comment": `
+      1st-person narrative puzzle adventure
+      Puzzles are basic.
+      Still got a few "a-ha"-moments!
+      Mostly story-driven.
+      Ending is really heartwarming,
+       shaders and level design
+       are pleasant to the eye`,
+      "igdb_id": 133306,
+      "rawg_id": "call-of-the-sea",
+    },
+    {
+      "name": "Papers, Please",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 77,
+      "comment": `
+      TODO`,
+      "igdb_id": 2935,
+      "rawg_id": "papers-please",
+    },
+    {
+      "name": "Aliens: Fireteam Elite",
+      "tier": "D",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 60,
+      "comment": `Fun co-op game.
+      But not that much content.
+      They compensated for it
+      by making AI unfairly strong.
+      Dropped it after ~8 hours.`,
+      "igdb_id": 144153,
+      "rawg_id": "aliens-fireteam",
+    },
+    {
+      "name": "Hidden Folks",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 75,
+      "comment":
+      `Does exactly what you expect from the game.
+      Doodle art style and huge maps are impressive.
+      Cozy “Where’s Waldo?” experience.`,
+      "igdb_id": 26809,
+      "rawg_id": "hidden-folks",
     },
     {
       "name": "SUPERHOT",
@@ -251,6 +321,63 @@
       With a shotgun!`,
       "igdb_id": 196030,
       "rawg_id": 783865,
+    },
+    {
+      "name": "Vampire Survivors",
+      "tier": "S",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 90,
+      "comment":
+      `todo`,
+      "igdb_id": 186725,
+      "rawg_id": "vampire-survivors",
+    },
+    {
+      "name": "Darkest Dungeon",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2022,
+      "score": 86,
+      "comment":
+      `todo`,
+      "igdb_id": 8965,
+      "rawg_id": "darkest-dungeon",
+    },
+    {
+      "name": "Superliminal",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2022,
+      "score": 84,
+      "comment":
+      `first-person puzzle
+       with perception as
+       a mechanic.
+       It's only minus is
+       that it's too short
+       (3h to beat)`,
+      "igdb_id": 68447,
+      "rawg_id": "superliminal",
+    },
+    {
+      "name": "Ghostrunner",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2022,
+      "score": 82,
+      "comment":
+      `First-person
+      parkour slasher!
+      🩸🔥🩸🔥🩸🔥🩸🔥
+      More Polish
+      cyberpunk games!`,
+      "igdb_id": 121752,
+      "rawg_id": "ghostrunner",
     },
     {
       "name": "Colt Canyon",
@@ -799,6 +926,20 @@
       "rawg_id": "nba-2k17",
     },
     {
+      "name": "The Evil Within",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2015,
+      "score": 83,
+      "comment":
+      `Survival horror.
+      Ammo scarcity, traps, and pure tension.
+      Mentally exhausting in a good way.`,
+      "igdb_id": 4786,
+      "rawg_id": "the-evil-within",
+    },
+    {
       "name": "Just Dance 2014",
       "tier": "A",
       "category": "AAA",
@@ -872,6 +1013,34 @@
       was so well directed. \nBig inspiration for cinematographic interactive levels in general.`,
       "igdb_id": 1164,
       "rawg_id": "tomb-raider",
+    },
+    {
+      "name": "Hitman: Absolution",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2014,
+      "score": 83,
+      "comment":
+      `TODO`,
+      "igdb_id": 530,
+      "rawg_id": "hitman-absolution",
+    },
+    {
+      "name": "Dead Space",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 81,
+      "comment":
+      `Loved the diegetic HUD
+      (and dismemberment)!
+      Accessible 3rd person
+      survival horror.
+      Was on 2 discs for Xbox 360 :)`,
+      "igdb_id": 37,
+      "rawg_id": "dead-space",
     },
     {
       "name": "Dante's Inferno",
@@ -1533,6 +1702,48 @@
       on the hardware from 2005!`,
       "igdb_id": 1020,
       "rawg_id": "grand-theft-auto-v",
+    },
+    {
+      "name": "The Walking Dead: Survival Instinct",
+      "tier": "E",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 31,
+      "comment":
+      `Wasted money and time.
+      Should be illegal to
+      release games that bad!`,
+      "igdb_id": 1831,
+      "rawg_id": "twd-survival-instinct",
+    },
+    {
+      "name": "Neighbours from Hell",
+      "tier": "B",
+      "category": "AA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 73,
+      "comment":
+      `point and click stealth,
+      setting up
+      chain-reaction pranks`,
+      "igdb_id": 3132,
+      "rawg_id": "neighbours-from-hell-season-1",
+    },
+    {
+      "name": "Neighbours from Hell 2: On Vacation",
+      "tier": "B",
+      "category": "AA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 75,
+      "comment":
+      `same concept as
+      the first game,
+      more complex levels`,
+      "igdb_id": 10592,
+      "rawg_id": "neighbours-from-hell-season-2",
     },
     {
       "name": "Grand Theft Auto: San Andreas",
