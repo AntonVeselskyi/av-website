@@ -8,6 +8,9 @@
   const crazyfrog_url  = "https://youtu.be/k85mRPqvMbE?si=NVW839CwYdceu_N_";
   const peterpen_url  = "https://youtu.be/gmqphFq7BiE?si=YtxxRoeTGiUkoKUi&t=9095";
   const SW_FU_url  = "https://youtu.be/1UVQxZvFZKw?si=JtJH7Pq3nm6DuL9A&t=401";
+  const NFS_MW_OST  = "https://youtu.be/LL65Iz8g9YQ?si=xo-jR01muzcDEbGA";
+  const NFS_GET_LOW  = "https://www.youtube.com/watch?v=IYH7_GzP4Tg";
+  const HUGO_HOVER  = "https://youtu.be/kxuMYVDcc4A?si=ipWzx0Bo9OPj-M4U&t=1578";
 
   const gameMasterList = [
     {
@@ -933,8 +936,20 @@
       "rawg_id": "prototype-2",
     },
     {
+      "name": "Tom Clancy's Rainbow Six Vegas 2",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2009,
+      "score": 71,
+      "comment":
+      `TODO`,
+      "igdb_id": 1853,
+      "rawg_id": "tom-clancys-rainbow-six-vegas-2-2",
+    },
+    {
       "name": "Prototype",
-      "tier": "S",
+      "tier": "B",
       "category": "AAA",
       "platform": "PC",
       "played_year": 2009,
@@ -1031,6 +1046,22 @@
       Made in 1 year - insane!`,
       "igdb_id": 113,
       "rawg_id": "assassins-creed-brotherhood-2",
+    },
+    {
+      "name": "Minecraft",
+      "tier": "SSS",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 98,
+      "comment":
+      `Played so much, 
+      on so many different servers.
+      Even had a Minecraft
+      youtube channel 
+      `,
+      "igdb_id": 121,
+      "rawg_id": "minecraft",
     },
     {
       "name": "Assassin's Creed II",
@@ -1186,6 +1217,33 @@
       "rawg_id": "marvel-ult-alliance",
     },
     {
+      "name": "The Simpsons: Hit & Run",
+      "tier": "S",
+      "category": "",
+      "platform": "PlayStation 2",
+      "played_year": 2009,
+      "score": 75,
+      "comment":
+      `Bunch of homages to different 
+      games and platforming challenges`,
+      "igdb_id": 259330,
+      "rawg_id": "the-simpsons-hit-run",
+    },
+    {
+      "name": "The Simpsons Game",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 90,
+      "comment":
+      `open world
+      "GTA" in Springfield,
+      so many cool littel details`,
+      "igdb_id": 2844,
+      "rawg_id": "the-simpsons-game",
+    },
+    {
       "name": "Naruto Shippuden: Ultimate Ninja 4",
       "tier": "A",
       "category": "",
@@ -1257,11 +1315,44 @@
       "tier": "SS",
       "category": "AAA",
       "platform": "PC",
-      "played_year": 2006,
+      "played_year": 2007,
       "score": 94,
       "comment": "Grove 4 Life\nHESOYAM",
       "igdb_id": 732,
       "rawg_id": "grand-theft-auto-san-andreas",
+    },
+    {
+      "name": "Agent Hugo: RoboRumble",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 68,
+      "comment": 
+      `Hoverboard racing/platforming.
+      <a href=\"${HUGO_HOVER}\" target=\"_blank\">Has a cool mechanic,</a>
+      where you can switch modes
+      of your board, and it does
+      different actions when
+      you hit the pressure plates`,
+      "igdb_id": 46037,
+      "rawg_id": "agent-hugo-roborumble",
+    },
+    {
+      "name": "Disney's Chicken Little: Ace in Action",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 70,
+      "comment": 
+      `A game based on 
+      a movie within 
+      another movie,
+      inspired by a fairy tale!
+      I mean, it's all right..`,
+      "igdb_id": 20627,
+      "rawg_id": "disneys-chicken-little-ace-in-action",
     },
     {
       "name": "Just Cause 2",
@@ -1317,6 +1408,34 @@
       "comment": "Euphoria physics",
       "igdb_id": 731,
       "rawg_id": "grand-theft-auto-iv",
+    },
+    {
+      "name": "Need for Speed: Carbon",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 96,
+      "comment": 
+      `Drifting,
+      so much drifing
+      + everything neon`,
+      "igdb_id": 99,
+      "rawg_id": "need-for-speed-carbon"
+    },
+    {
+      "name": "Need For Speed: Most Wanted",
+      "tier": "SSS",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 96,
+      "comment": 
+      `LOVED the grind to climb 
+      the top of the BLACKLIST.
+      <a href=\"${NFS_MW_OST}\" target=\"_blank\">OST</a> was loaded!`,
+      "igdb_id": 98,
+      "rawg_id": "need-for-speed-most-wanted"
     },
     {
       "name": "Open Season",
@@ -1377,6 +1496,18 @@
       first Madagascar`,
       "igdb_id": 3765,
       "rawg_id": "madagascar-escape-2-africa"
+    },
+    {
+      "name": "X-Men: The Official Game",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 62,
+      "comment":
+      `Iceman gameplay was cool`,
+      "igdb_id": 4578,
+      "rawg_id": "x-men-the-official-game"
     },
     {
       "name": "Barnyard",
@@ -1572,6 +1703,21 @@
       "rawg_id": "rayman-raving-rabbids"
     },
     {
+      "name": "Need for Speed: Underground",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 79,
+      "comment":
+      `<a href=\"${NFS_GET_LOW}\" target=\"_blank\">To the windooooow,</a>
+      to the window,
+      To the wall,
+      to the wall`,
+      "igdb_id": 96,
+      "rawg_id": "need-for-speed-underground-3"
+    },
+    {
       "name": "Need for Speed: Underground 2",
       "tier": "S",
       "category": "",
@@ -1579,7 +1725,7 @@
       "played_year": 2006,
       "score": 82,
       "comment": "Motion blur is \nthe coolest thing ever",
-      "igdb_id": 242997,
+      "igdb_id": 97,
       "rawg_id": 53446
     },
     {
