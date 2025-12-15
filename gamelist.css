@@ -371,7 +371,7 @@ h1
 .game-comment
 {
   font-style: bold;
-  color: darkorchid;
+  color: #E2DAF0;
   margin-top: auto;
   margin-bottom: 0;
   flex-shrink: 1;
@@ -382,6 +382,14 @@ h1
   letter-spacing: 0.3px;
 
   white-space: nowrap;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-shadow: 0 0 4px rgba(181,140,255,0.08);
+}
+
+.comment em {
+  font-style: normal; /* kill italics if you want */
+  color: #B58CFF;
 }
 
 .exp-spacer

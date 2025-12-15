@@ -268,6 +268,22 @@
       "rawg_id": "papers-please",
     },
     {
+      "name": "Game Dev Tycoon",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 80,
+      "comment":
+      `The resemblance to
+      real-world game industry
+      dynamics is uncanny.
+       Running a game studio here
+       feels painfully authentic.`,
+      "igdb_id": 2599,
+      "rawg_id": "game-dev-tycoon",
+    },
+    {
       "name": "Aliens: Fireteam Elite",
       "tier": "D",
       "category": "",
@@ -898,6 +914,18 @@
       "rawg_id": "rayman-legends",
     },
     {
+      "name": "Sid Meier’s Civilization VI",
+      "tier": "SS",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2018,
+      "score": 93,
+      "comment":
+      `Just one more turn...`,
+      "igdb_id": 19130,
+      "rawg_id": "civilization-vi",
+    },
+    {
       "name": "Snake Pass",
       "tier": "B",
       "category": "Indie",
@@ -909,6 +937,19 @@
       in the studio that made LittleBigPlanet`,
       "igdb_id": 19220,
       "rawg_id": "snake-pass",
+    },
+    {
+      "name": "NBA Playgrounds",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2018,
+      "score": 72,
+      "comment":
+      `Silly 2v2
+       arcade basketball`,
+      "igdb_id": 28081,
+      "rawg_id": "nba-playgrounds",
     },
     {
       "name": "NBA 2K17",
@@ -1013,6 +1054,22 @@
       was so well directed. \nBig inspiration for cinematographic interactive levels in general.`,
       "igdb_id": 1164,
       "rawg_id": "tomb-raider",
+    },
+    {
+      "name": "Dead Island Riptide",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 71,
+      "comment":
+      `The plot was lame
+      and missions repoetative.
+      But I genuanly enjoyed the
+      melee combat and 3Cs of it.
+      Finished the whole thing.`,
+      "igdb_id": 1833,
+      "rawg_id": "dead-island-riptide",
     },
     {
       "name": "Hitman: Absolution",
@@ -1716,6 +1773,45 @@
       release games that bad!`,
       "igdb_id": 1831,
       "rawg_id": "twd-survival-instinct",
+    },
+    {
+      "name": "DreamWorks' Shark Tale",
+      "tier": "D",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 61,
+      "comment":
+      `Bunch of underwater
+       mini-games with a plot`,
+      "igdb_id": 4148,
+      "rawg_id": "shark-tale",
+    },
+    {
+      "name": "Worms 4: Mayhem",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 83,
+      "comment":
+      `Worms that had a
+      Story Mode lol`,
+      "igdb_id": 6244,
+      "rawg_id": "worms-4-mayhem",
+    },
+    {
+      "name": "Worms 3D",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 81,
+      "comment":
+      `Backflip into
+      holy grenade`,
+      "igdb_id": 1047,
+      "rawg_id": "worms-3d",
     },
     {
       "name": "Neighbours from Hell",
