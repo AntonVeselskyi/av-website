@@ -52,6 +52,20 @@
       "rawg_id": 9767,
     },
     {
+      "name": "Serial Cleaner",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2019,
+      "score": 69,
+      "comment":
+      `Cleaning crime scences
+      before the cops showed up,
+      has some groovy tunes`,
+      "igdb_id": 19450,
+      "rawg_id": "serial-cleaner",
+    },
+    {
       "name": "Pool Panic",
       "tier": "B",
       "category": "Indie",
@@ -926,6 +940,18 @@
       "rawg_id": "civilization-vi",
     },
     {
+      "name": "Laser League",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2017,
+      "score": 67,
+      "comment":
+      `TODO`,
+      "igdb_id": 36912,
+      "rawg_id": "laser-league",
+    },
+    {
       "name": "Snake Pass",
       "tier": "B",
       "category": "Indie",
@@ -1013,6 +1039,43 @@
       "comment": "Unusual combat mechanics \nfor first-person multiplayer.",
       "igdb_id": 2358,
       "rawg_id": "chivalry-medieval-warfare",
+    },
+    {
+      "name": "Magicka",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2013,
+      "score": 82,
+      "comment": "TODO",
+      "igdb_id": 2042,
+      "rawg_id": "magicka",
+    },
+    {
+      "name": "Metro 2033",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2013,
+      "score": 82,
+      "comment":
+      "TODO",
+      "igdb_id": 495,
+      "rawg_id": "metro-2033",
+    },
+    {
+      "name": "Ace of Spades",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 70,
+      "comment":
+      `Minecraft meets Battlefield.
+       Voxel FPS with building
+       / destruction and team play.`,
+      "igdb_id": 23400,
+      "rawg_id": "ace-of-spades-battle-builder",
     },
     {
       "name": "Battlefield 3",
@@ -1694,6 +1757,32 @@
       "rawg_id": "the-simpsons-game",
     },
     {
+      "name": "NARUTO SHIPPUDEN: Ultimate Ninja STORM 4",
+      "tier": "S",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 84,
+      "comment":
+      `Only Naruto fighting on PC,
+      got the best features from
+      previous STORM games 🍃`,
+      "igdb_id": 11059,
+      "rawg_id": "naruto-shippuden-ultimate-ninja-storm-4",
+    },
+    {
+      "name": "NARUTO SHIPPUDEN: Ultimate Ninja STORM 3",
+      "tier": "A",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2009,
+      "score": 80,
+      "comment":
+      `My go-to Naruto fighting on Xbox 360 🍃`,
+      "igdb_id": 7099,
+      "rawg_id": "naruto-storm-3",
+    },
+    {
       "name": "Naruto Shippuden: Ultimate Ninja 4",
       "tier": "A",
       "category": "",
@@ -2273,6 +2362,28 @@
       "igdb_id": 44877, // wrong game, but peter pen cover
       // use https://www.imdb.com/title/tt9360556/ instead
       "rawg_id": "disneys-peter-pan-adventures-in-never-land"
+    },
+    {
+      "name": "The Sims 3",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 84,
+      "comment": ``,
+      "igdb_id": 260,
+      "rawg_id": "the-sims-3"
+    },
+    {
+      "name": "The Sims 2",
+      "tier": "S",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 90,
+      "comment": `Had all the DLCs I could physically get.`,
+      "igdb_id": 224,
+      "rawg_id": "the-sims-2"
     },
     {
       "name": "Scooby-Doo! Two: Monsters Unleashed",
