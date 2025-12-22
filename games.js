@@ -237,7 +237,24 @@
       "rawg_id": "life-is-strange-episode-1-2",
     },
     {
-      "name": "What Remains of Edith Finch",
+      "name": "Behind the Frame",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 70,
+      "comment":
+      `🎨Artsy and cozy 2D animations,
+      very heart-warming love story.
+      Story-driven, simple
+      interactions & meditative puzzles.
+      Beat it in one go
+      on a transatlantic flight.`,
+      "igdb_id": 148499,
+      "rawg_id": "behind-the-frame",
+    },
+    {
+      "name": "Behind the Frame",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
@@ -681,6 +698,20 @@
       "rawg_id": "hearthstone",
     },
     {
+      "name": "Serious Sam 3: BFE",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 65,
+      "comment":
+      `High quality arena shooter,
+      classic 💣💣💣,
+      but I got bored pretty fast`,
+      "igdb_id": 527,
+      "rawg_id": "serious-sam-3-bfe",
+    },
+    {
       "name": "Plague Inc",
       "tier": "B",
       "category": "Indie",
@@ -1007,6 +1038,23 @@
       "rawg_id": "the-evil-within",
     },
     {
+      "name": "Remember Me",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2015,
+      "score": 76,
+      "comment":
+      `Very cinematic,
+      lot's of creative
+      futuristic concepts.
+      Neo-Paris, memory-hunters!
+      Played it 1 month
+      before release!`,
+      "igdb_id": 1827,
+      "rawg_id": "remember-me",
+    },
+    {
       "name": "Just Dance 2014",
       "tier": "A",
       "category": "AAA",
@@ -1104,6 +1152,20 @@
       Final Stand was fun with all the snow.`,
       "igdb_id": 1979,
       "rawg_id": "battlefield-4",
+    },
+    {
+      "name": "Metal Gear Rising: Revengeance",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 65,
+      "comment": `not a fan
+      of this game,
+      slicing mechanic
+      is cool though`,
+      "igdb_id": 378,
+      "rawg_id": "metal-gear-rising-revengeance",
     },
     {
       "name": "Tomb Raider",
@@ -1322,6 +1384,48 @@
       "comment": "Face mocap ahead of it's time. \nFelt like an old movie.",
       "igdb_id": 109,
       "rawg_id": "la-noire",
+    },
+    {
+      "name": "FreeStyle Street Basketball",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 76,
+      "comment":
+      `There was no
+      NBA2K with multiplayer
+      back then.
+      3v3 was hell'a fun`,
+      "igdb_id": 21423,
+      "rawg_id": "freestyle-street-basketball",
+    },
+    {
+      "name": "Pure",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 74,
+      "comment":
+      `off-road racing
+      on quads,
+      HELL YEAH!`,
+      "igdb_id": 7137,
+      "rawg_id": "pure",
+    },
+    {
+      "name": "Blur",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 66,
+      "comment":
+      `Wasn't worth
+      the hype, imho`,
+      "igdb_id": 3235,
+      "rawg_id": "blur",
     },
     {
       "name": "Shank",
@@ -1591,6 +1695,18 @@
       `PoP with the open world, I was sold instantly.`,
       "igdb_id": 27827,
       "rawg_id": "assassins-creed",
+    },
+    {
+      "name": "Grand Theft Auto: Chinatown Wars",
+      "tier": "B",
+      "category": "",
+      "platform": "PSP",
+      "played_year": 2012,
+      "score": 77,
+      "comment":
+      `TODO`,
+      "igdb_id": 3270,
+      "rawg_id": "gta-chinatown-wars",
     },
     {
       "name": "Assassin's Creed: Bloodlines",
@@ -1869,7 +1985,7 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2008,
-      "score": 61,
+      "score": 57,
       "comment":
       `Bunch of underwater
        mini-games with a plot`,
@@ -2029,6 +2145,71 @@
       "igdb_id": 731,
       "rawg_id": "grand-theft-auto-iv",
     },
+
+    {
+      "name": "Harry Potter and the Chamber of Secrets",
+      "tier": "B",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 78,
+      "comment":
+      `Zelda inspired
+      platforming was fun.
+      Unreal Engine
+      PC version is the best!
+    (EA made 4 versions
+    of the game)`,
+      "igdb_id": 3941,
+      "rawg_id": "harry-potter-and-the-chamber-of-secrets"
+    },
+    {
+      "name": "Harry Potter and the Prisoner of Azkaban",
+      "tier": "B",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 79,
+      "comment":
+      `Very simmilar to
+      Chamber of Secrets.
+      KnowWonder still
+      made a good game imho`,
+      "igdb_id": 3943,
+      "rawg_id": "harry-potter-and-the-prisoner-of-azkaban"
+    },
+    {
+      "name": "Harry Potter and the Order of the Phoenix",
+      "tier": "B",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 80,
+      "comment":
+      `Loved exact copy
+      of Hogwarts from movies.
+      Open world was really fun.
+      Was so much gloomier than
+      old games.`,
+      "igdb_id": 3011,
+      "rawg_id": "harry-potter-and-the-order-of-the-phoenix"
+    },
+    {
+      "name": "Harry Potter and the Deathly Hallows: Part 1",
+      "tier": "E",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 29,
+      "comment":
+      `Making a
+      3rd person shooter
+      out of Harry Potter
+      is a BAD idea.
+      Game is TRASH.`,
+      "igdb_id": 4904,
+      "rawg_id": "harry-potter-and-the-deathly-hallows-part-1"
+    },
     {
       "name": "Need for Speed: Carbon",
       "tier": "A",
@@ -2078,6 +2259,18 @@
       "comment": "Last WWE fighting for PS2.\nVery polished,]nplayed it for years!",
       "igdb_id": 2265,
       "rawg_id": "wwe-smackdown-vs-raw-2011"
+    },
+    {
+      "name": "Ghost Rider",
+      "tier": "B",
+      "category": "",
+      "platform": "PlayStation 2",
+      "played_year": 2009,
+      "score": 72,
+      "comment": `Sony exclusive, hehe
+      good hack-n-slash`,
+      "igdb_id": 6420,
+      "rawg_id": "ghost-rider"
     },
     {
       "name": "Free Running",
@@ -2375,6 +2568,18 @@
       "rawg_id": "the-sims-3"
     },
     {
+      "name": "Zuma Deluxe",
+      "tier": "B",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2005,
+      "score": 77,
+      "comment":
+      `"Killing time in the office"-game 🐸`,
+      "igdb_id": 20509,
+      "rawg_id": "zuma-deluxe"
+    },
+    {
       "name": "The Sims 2",
       "tier": "S",
       "category": "",
@@ -2384,6 +2589,78 @@
       "comment": `Had all the DLCs I could physically get.`,
       "igdb_id": 224,
       "rawg_id": "the-sims-2"
+    },
+    {
+      "name": "Scooby-Doo: Showdown in Ghost Town",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 70,
+      "comment": `Loved those point
+      and click quests.
+      Pie fight in
+      Los Burritos!`,
+      "igdb_id": 67790,
+      "rawg_id": "scooby-doo-showdown-in-ghost-town"
+    },
+    {
+      "name": "Scooby-Doo! Phantom of the Knight",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 72,
+      "comment": `Loved those point
+      and click quests.
+      Serwing beer to
+      the knights 🍺`,
+      "igdb_id": 67789,
+      "rawg_id": "scooby-doo-phantom-of-the-knight"
+    },
+    {
+      "name": "Scooby-Doo: Jinx at the Sphinx",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 68,
+      "comment": `Point
+      and click quests.
+      Egypt-one was
+      kinda boring`,
+      "igdb_id": 67791,
+      "rawg_id": "scooby-doo-jinx-at-the-sphinx"
+    },
+    {
+      "name": "Scooby-Doo: Case File 1 - The Glowing Bug Man",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 71,
+      "comment": `Loved those point
+      and click quests.
+      This one was my fav`,
+      "igdb_id": 78685,
+      "rawg_id": "scooby-doo-case-file-1-the-glowing-bug-man"
+    },
+    {
+      "name": "Scooby-Doo: Case File #2 - The Scary Stone Dragon",
+      "tier": "C",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 72,
+      "comment":
+      `Last one I played,
+      I didn't know
+      Case File #3 exist.
+      Had collectables,
+      that unlock print-outs,
+      breaking the 4th wall!`,
+      "igdb_id": 138946,
+      "rawg_id": "scooby-doo-case-file-2-the-scary-stone-dragon"
     },
     {
       "name": "Scooby-Doo! Two: Monsters Unleashed",
