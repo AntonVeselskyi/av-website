@@ -11,6 +11,7 @@
   const NFS_MW_OST  = "https://youtu.be/LL65Iz8g9YQ?si=xo-jR01muzcDEbGA";
   const NFS_GET_LOW  = "https://www.youtube.com/watch?v=IYH7_GzP4Tg";
   const HUGO_HOVER  = "https://youtu.be/kxuMYVDcc4A?si=ipWzx0Bo9OPj-M4U&t=1578";
+  const VH_GAMEPLAY  = "https://youtu.be/BYnAFOUhJwI?si=PEEgZlJfGc_jCQO7&t=5614";
 
   const gameMasterList = [
     {
@@ -23,6 +24,21 @@
       "comment": "No comments.",
       "igdb_id": 2963,
       "rawg_id": 10213,
+    },
+    {
+      "name": "Alice: Madness Returns",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2025,
+      "score": 83,
+      "comment":
+      `Unreal enviorment,
+      Satysfying camera work,
+      3Cs did not age well,
+      but still pure art`,
+      "igdb_id": 1040,
+      "rawg_id": "alice-madness-returns",
     },
     {
       "name": "Hollow Knight: Silksong",
@@ -475,7 +491,8 @@
       "comment": `U r a sheriff of a
       snowy remote town.
       XCOM like combat w/
-      resource management of cops in between.
+      resource management
+      of cops in between.
       Put 40h in.`,
       "igdb_id": 84486,
       "rawg_id": "this-is-the-police-2",
@@ -808,6 +825,21 @@
       "comment": `Fuck Zeus`,
       "igdb_id": 551,
       "rawg_id": "god-of-war-ii",
+    },
+    {
+      "name": "Van Helsing",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PlayStation 2",
+      "played_year": 2009,
+      "score": 59,
+      "comment":
+      `Like God of War mixed
+      with Devil May Cry,
+      but worse than any one of those.
+      <a href=\"${VH_GAMEPLAY}\" target=\"_blank\">Looked like this</a>`,
+      "igdb_id": 6226,
+      "rawg_id": "van-helsing",
     },
     {
       "name": "god-of-war-chains-of-olympus",
@@ -1375,6 +1407,87 @@
       "rawg_id": "sleeping-dogs",
     },
     {
+      "name": "S.T.A.L.K.E.R.: Call of Pripyat",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 86,
+      "comment":
+      `Played soooo much of it,
+      systemic exploration is
+      top notch.`,
+      "igdb_id": 7605,
+      "rawg_id": "stalker-call-of-pripyat",
+    },
+    {
+      "name": "Spider-Man: Shattered Dimensions",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 81,
+      "comment":
+      `Good beat em up,
+      the artstyle and
+      gameplay in each demesion
+      is super different.
+      Loved stealth vibe of
+      the Noir Spider-Man🖤`,
+      "igdb_id": 553,
+      "rawg_id": "spider-man-shattered-dimensions",
+    },
+    {
+      "name": "Call of Duty: Modern Warfare 2",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 87,
+      "comment":
+      `Absolute cinema`,
+      "igdb_id": 559,
+      "rawg_id": "modern-warfare-2",
+    },
+    {
+      "name": "Call of Duty: Modern Warfare 3",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 81,
+      "comment":
+      `Game that made
+      me install Steam`,
+      "igdb_id": 979,
+      "rawg_id": "call-of-duty-modern-warfare-3",
+    },
+    {
+      "name": "World of goo",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 74,
+      "comment":
+      `Black goo ✒`,
+      "igdb_id": 942,
+      "rawg_id": "world-of-goo",
+    },
+    {
+      "name": "Command & Conquer: Red Alert 3",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 80,
+      "comment":
+      `Fuck soviets,
+      the game was good though`,
+      "igdb_id": 959,
+      "rawg_id": "command-conquer-red-alert-3-2",
+    },
+    {
       "name": "L.A. Noire",
       "tier": "S",
       "category": "AAA",
@@ -1384,6 +1497,24 @@
       "comment": "Face mocap ahead of it's time. \nFelt like an old movie.",
       "igdb_id": 109,
       "rawg_id": "la-noire",
+    },
+    {
+      "name": "Crossfire",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 78,
+      "comment":
+      `Had some unique modes:
+      with normal team VS
+      invisible terrorists
+      with knife only,
+      zombie "imposter"-mode
+      Played on both Eastern-Europe
+      and North America clients.`,
+      "igdb_id": 9739,
+      "rawg_id": "crossfire-2007",
     },
     {
       "name": "FreeStyle Street Basketball",
@@ -1526,6 +1657,149 @@
       "rawg_id": "spore",
     },
     {
+      "name": "The Wolf Among Us",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2014,
+      "score": 82,
+      "comment":
+      `One of the best
+      TellTale games!`,
+      "igdb_id": 2993,
+      "rawg_id": "the-wolf-among-us",
+    },
+    {
+      "name": "NBA 2K13",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2012,
+      "score": 78,
+      "comment":
+      `Only NBA 2K game produced by Jay-Z`,
+      "igdb_id": 5058,
+      "rawg_id": "nba-2k13",
+    },
+    {
+      "name": "Bolt",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PlayStation 2",
+      "played_year": 2010,
+      "score": 67,
+      "comment":
+      `One of the last
+      game-for-a-kids-movie games,
+      that were so common :(`,
+      "igdb_id": 4723,
+      "rawg_id": "bolt",
+    },
+    {
+      "name": "Heroes of Might & Magic V",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 76,
+      "comment":
+      `It was cool,
+      but did not top Heroes III`,
+      "igdb_id": 373,
+      "rawg_id": "might-magic-heroes-vi",
+    },
+    {
+      "name": "Plants vs. Zombies",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 81,
+      "comment":
+      `What can I say...
+      Not in my garden?`,
+      "igdb_id": 1277,
+      "rawg_id": "plants-vs-zombies",
+    },
+    {
+      "name": "Gotham City Impostors",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 65,
+      "comment":
+      `Fun Team Fortress clone,
+      RIP`,
+      "igdb_id": 1012,
+      "rawg_id": "gotham-city-impostors",
+    },
+    {
+      "name": "Asterix & Obelix XXL",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 77,
+      "comment":
+      `TODO`,
+      "igdb_id": 210711,
+      "rawg_id": "asterix-obelix-xxl",
+    },
+    {
+      "name": "Asterix & Obelix XXL 2: Mission Las Vegum",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 77,
+      "comment":
+      `TODO`,
+      "igdb_id": 81480,
+      "rawg_id": "asterix-obelix-xxl-2",
+    },
+    {
+      "name": "Counter-Strike 1.6",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 85,
+      "comment":
+      `Computer club LAN days`,
+      "igdb_id": 241,
+      "rawg_id": "counter-strike",
+    },
+    {
+      "name": "Shrek 2",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 62,
+      "comment":
+      `Mid action-adventure,
+      playing as Shrek
+      bumps the score`,
+      "igdb_id": 3668,
+      "rawg_id": "shrek-2",
+    },
+    {
+      "name": "Shrek SuperSlam",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2009,
+      "score": 61,
+      "comment":
+      `An okay party
+      fighting with
+      physics-based destruction,
+      pretty satisfying overall!`,
+      "igdb_id": 10628,
+      "rawg_id": "shrek-superslam",
+    },
+    {
       "name": "Prototype 2",
       "tier": "A",
       "category": "AAA",
@@ -1535,7 +1809,8 @@
       "comment":
       `Just repeated the
       formula of the original,
-      I felt like game was lacking something,
+      I felt like game was
+      lacking something,
       Plot was meh as well.`,
       "igdb_id": 2988,
       "rawg_id": "prototype-2",
@@ -1560,10 +1835,11 @@
       "played_year": 2009,
       "score": 90,
       "comment":
-      `Loved the fast locomotion, slasher combat
-      and how it all interacts with open world.
-      The movement system still remains one
-      of the main inspirations for me, hope one
+      `Loved the fast locomotion,
+      slasher combat and how it all
+      interacts with open world. The movement
+      system still remains one of the main
+      inspirations for me, hope one
       day I'll create something that tops it!`,
       "igdb_id": 570,
       "rawg_id": "prototype",
@@ -2250,13 +2526,41 @@
       "rawg_id": "open-season"
     },
     {
+      "name": "WWE SmackDown vs. Raw 2009",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PlayStation 2",
+      "played_year": 2009,
+      "score": 76,
+      "comment":
+      `Tag-team mode was fun`,
+      "igdb_id": 344148,
+      "rawg_id": "smackdown-vs-raw-2009",
+    },
+    {
+      "name": "WWE SmackDown vs. Raw 2010",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PlayStation 2",
+      "played_year": 2010,
+      "score": 77,
+      "comment":
+      `Series gradually evolved,
+      good fighting`,
+      "igdb_id": 5300,
+      "rawg_id": "wwe-smackdown-vs-raw-2010",
+    },
+    {
       "name": "WWE SmackDown vs. Raw 2011",
       "tier": "A",
       "category": "AAA",
       "platform": "PlayStation 2",
       "played_year": 2010,
       "score": 82,
-      "comment": "Last WWE fighting for PS2.\nVery polished,]nplayed it for years!",
+      "comment":
+      `Last WWE fighting for PS2.
+      Very polished,
+      played it for years!`,
       "igdb_id": 2265,
       "rawg_id": "wwe-smackdown-vs-raw-2011"
     },
@@ -2267,7 +2571,8 @@
       "platform": "PlayStation 2",
       "played_year": 2009,
       "score": 72,
-      "comment": `Sony exclusive, hehe
+      "comment":
+      `Sony exclusive, hehe
       good hack-n-slash`,
       "igdb_id": 6420,
       "rawg_id": "ghost-rider"
