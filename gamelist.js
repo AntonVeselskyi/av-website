@@ -85,6 +85,12 @@ const TIER_ORDER = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'];
 // ========== LOAD AND PROCESS GAMES ==========
 let allGames = [];
 
+function gameKey(g)
+{
+  // stable unique-ish key (prefer IDs, fallback to name)
+  return `${g.igdb_id || 'x'}_${g.rawg_id || 'y'}_${(g.name || '').toLowerCase()}`;
+}
+
 async function enrichGames(games)
 {
   const BACK_API = "https://bzfclyzne3.execute-api.us-east-2.amazonaws.com/default/gameTierListProvider"
@@ -143,6 +149,7 @@ function createGameCard(game)
 {
   const wrapper = document.createElement('div');
   wrapper.className = 'game-card-wrapper';
+  wrapper.dataset.key = gameKey(game);
 
   const titleOverlay = document.createElement('div');
   titleOverlay.className = 'game-title-overlay';
@@ -446,6 +453,105 @@ function renderGames(games)
   setupOverlaySides();
 }
 
+function renderGamesAnimated(games) {
+  const container = gameContainer;
+
+  // FIRST: Snapshot current positions
+  const oldEls = Array.from(container.querySelectorAll('.game-card-wrapper'));
+  const oldRectByKey = new Map();
+  for (const el of oldEls) {
+    const key = el.dataset.key;
+    if (key) oldRectByKey.set(key, el.getBoundingClientRect());
+  }
+
+  const nextKeys = new Set(games.map(gameKey));
+
+  // EXIT: Handle Deletions (Slide RIGHT)
+  for (const el of oldEls) {
+    const key = el.dataset.key;
+    if (!key || nextKeys.has(key)) continue;
+
+    const r = el.getBoundingClientRect();
+    const clone = el.cloneNode(true);
+
+    // Fixed positioning to decouple from the live grid
+    Object.assign(clone.style, {
+      position: 'fixed',
+      left: `${r.left}px`,
+      top: `${r.top}px`,
+      width: `${r.width}px`,
+      margin: '0',
+      zIndex: '1000',
+      pointerEvents: 'none'
+    });
+
+    clone.classList.add('is-leaving');
+    document.body.appendChild(clone);
+
+    // Trigger Slide Right
+    requestAnimationFrame(() => {
+      // 50vw travel + fade
+      clone.style.transform = `translate3d(${window.innerWidth * 0.5}px, 0, 0)`;
+      clone.style.opacity = '0';
+    });
+
+    clone.addEventListener('transitionend', () => clone.remove(), { once: true });
+  }
+
+  // RENDER: Injects new DOM nodes
+  renderGames(games);
+
+  // INVERT: Calculate offsets for the new positions
+  const newEls = Array.from(container.querySelectorAll('.game-card-wrapper'));
+
+  for (const el of newEls) {
+    const key = el.dataset.key;
+    const newRect = el.getBoundingClientRect();
+    const oldRect = oldRectByKey.get(key);
+
+    if (oldRect) {
+      // Logic for sorting/moving existing cards
+      const dx = oldRect.left - newRect.left;
+      const dy = oldRect.top - newRect.top;
+      el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+      el.dataset.animType = 'move';
+    } else {
+      // Logic for new cards appearing (The Drop)
+      const dropHeight = Math.max(350, window.innerHeight * 0.45);
+      el.style.transform = `translate3d(0, ${-dropHeight}px, 0)`;
+      el.style.opacity = '0';
+      el.dataset.animType = 'enter';
+    }
+  }
+
+  // PLAY: Trigger the actual movement
+  // The 'void' call forces the browser to flush the style changes
+  // so the start position is locked in before the transition classes are added.
+  void container.offsetHeight;
+
+  requestAnimationFrame(() => {
+    for (const el of newEls) {
+      if (el.dataset.animType === 'move') {
+        el.classList.add('is-moving');
+      } else {
+        el.classList.add('is-entering');
+      }
+
+      // Transition to final state (center)
+      el.style.transform = 'translate3d(0,0,0)';
+      el.style.opacity = '1';
+
+      // Cleanup
+      el.addEventListener('transitionend', () => {
+        el.classList.remove('is-moving', 'is-entering');
+        el.style.transform = '';
+        el.style.opacity = '';
+        delete el.dataset.animType;
+      }, { once: true });
+    }
+  });
+}
+
 function setupOverlaySides()
 {
   const wrappers = document.querySelectorAll('.game-card-wrapper');
@@ -539,13 +645,6 @@ function applyFilters()
     );
   }
 
-  if (filterCategory === 'indie')
-  {
-    games = games.filter(g =>
-      (g.category || '').toLowerCase() === 'indie'
-    );
-  }
-
   // Decade
   if (filterDecade)
   {
@@ -566,14 +665,15 @@ function applyFilters()
   {
     const target = filterPlatform.toLowerCase();
     games = games.filter(g =>
-      (g.platform || '').toLowerCase() === target
+      (g.platform || '').toLowerCase().includes(target)
     );
   }
 
   // sort after all filters
   games = sortGames(games);
 
-  renderGames(games);
+    //renderGames(games);
+    renderGamesAnimated(games);
 }
 
 function setActiveInGroup(buttons, activeBtn)
@@ -689,7 +789,9 @@ async function init()
       allGames = enriched;
       console.log('Enriched games:', allGames);
 
-      renderGames(allGames); // default to all
+    //renderGames(allGames); // default to all
+    renderGamesAnimated(allGames);
+
       setupTabs();
     }
     catch (e)

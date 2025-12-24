@@ -28,7 +28,7 @@
     {
       "name": "Alice: Madness Returns",
       "tier": "A",
-      "category": "Indie",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2025,
       "score": 83,
@@ -270,7 +270,7 @@
       "rawg_id": "behind-the-frame",
     },
     {
-      "name": "Behind the Frame",
+      "name": "What Remains of Edith Finch",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
@@ -704,6 +704,26 @@
       "rawg_id": "mini-metro",
     },
     {
+      "name": "Magic: The Gathering Arena",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "Android",
+      "played_year": 2023,
+      "score": 78,
+      "comment":
+      `I started playing Magic in
+       2023 and Arena is a great
+       way to learn. Score is for
+       MTG as a game in general.
+       The game is super deep, with
+       unique mechanics and infinite
+       deckbuilding potential. But OMG
+       how broken it is, it's hard to
+       find balanced playgroup 😭`,
+      "igdb_id": 54538,
+      "rawg_id": "magic-the-gathering-arena",
+    },
+    {
       "name": "Hearthstone",
       "tier": "A",
       "category": "AAA",
@@ -787,6 +807,60 @@
       "rawg_id": "xcom-2",
     },
     {
+      "name": "Knowledge is Power!",
+      "tier": "D",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2018,
+      "score": 52,
+      "comment":
+      `Worst Playlink game.
+      The pool of questions was small
+      and questions were strange 🤢
+      PS Playlink that allows huge
+      crowds to play on PS4 with their
+      phones was awesome piece of technology.
+      SAD that it's DEAD`,
+      "igdb_id": 70833,
+      "rawg_id": "knowledge-is-power",
+    },
+    {
+      "name": "That's You!",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2018,
+      "score": 82,
+      "comment":
+      `So many parties with this games.
+      Really fun, it focuses on friends
+      knowing each other as a foundation
+      for all minigames. Real-cozy.
+      PS Playlink that allows huge
+      crowds to play on PS4 with their
+      phones was awesome piece of technology.
+      SAD that it's DEAD`,
+      "igdb_id": 37141,
+      "rawg_id": "thats-you",
+    },
+    {
+      "name": "Hidden Agenda",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2019,
+      "score": 79,
+      "comment":
+      `Great movie-night experience.
+      Good branching plot, short.
+      PS Playlink that allows huge
+      crowds to play on PS4 with their
+      phones was awesome piece of technology.
+      SAD that it's DEAD`,
+      "igdb_id": 37092,
+      "rawg_id": "hidden-agenda",
+    },
+    {
       "name": "Max Max",
       "tier": "B",
       "category": "AAA",
@@ -825,6 +899,19 @@
       "comment": `Fuck Zeus`,
       "igdb_id": 551,
       "rawg_id": "god-of-war-ii",
+    },
+    {
+      "name": "Runes of Magic",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2010,
+      "score": 66,
+      "comment":
+      `WoW, but friendlier and free.
+      Dual-class system was cool`,
+      "igdb_id": 14730,
+      "rawg_id": "runes-of-magic",
     },
     {
       "name": "Van Helsing",
@@ -1296,10 +1383,12 @@
       "platform": "Xbox 360",
       "played_year": 2013,
       "score": 91,
-      "comment": `My favourite racing game.
-      The <a href=\"${ForzaHorizon_playlsit_url}\" target=\"_blank\">soundtrack</a> was insane, discovered <a href=\"${RUmine_url}\" target=\"_blank\">Arctic Monkeys</a> in it.
-      Open world street racing festival
-      set in Colorado.
+      "comment":
+      `My favourite racing game.
+      The <a href=\"${ForzaHorizon_playlsit_url}\" target=\"_blank\">soundtrack</a> was insane,
+      discovered <a href=\"${RUmine_url}\" target=\"_blank\">Arctic Monkeys</a> in it.
+      Open-world street racing
+      festival set in Colorado.
       It was magnificent`,
       "igdb_id": 3047,
       "rawg_id": "forza-horizon",
@@ -1856,9 +1945,9 @@
       "rawg_id": "wormix",
     },
     {
-      "name": "",
+      "name": "Assassin's Creed Rogue",
       "tier": "A",
-      "category": "",
+      "category": "AAA",
       "platform": "Xbox 360",
       "played_year": 2014,
       "score": 85,
@@ -2867,8 +2956,8 @@
       "category": "",
       "platform": "PC",
       "played_year": 2010,
-      "score": 84,
-      "comment": ``,
+      "score": 85,
+      "comment": `TODO`,
       "igdb_id": 260,
       "rawg_id": "the-sims-3"
     },

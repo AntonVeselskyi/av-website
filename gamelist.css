@@ -294,10 +294,43 @@ h1
   display: flex;
   flex-direction: column;
   width: var(--cardW);
-  transition: transform 0.3s ease;
   position: relative;
   overflow: visible;
   z-index: 1;
+}
+
+/* Smooth transforms for FLIP */
+/* Base wrapper - Keep it static so JS can set the 'Invert' state instantly */
+.game-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: var(--cardW);
+  position: relative;
+  overflow: visible;
+  z-index: 1;
+  will-change: transform, opacity;
+  /* transition: 0.3s; <-- REMOVE THIS IF IT'S STILL THERE */
+}
+
+/* 1. MOVE: Sorting glide */
+.game-card-wrapper.is-moving {
+  transition: transform 2.0s cubic-bezier(0.2, 0.9, 0.2, 1),
+              opacity 0.5s ease;
+}
+
+/* 2. ENTER: The "Slam-Click" */
+/* Mimics a physical object hitting a stop with high energy */
+.game-card-wrapper.is-entering {
+  transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.4s ease;
+}
+
+/* 3. EXIT: Slow fade and slide to the RIGHT */
+.game-card-wrapper.is-leaving {
+  transition: transform 1.5s cubic-bezier(0.7, 0, 0.84, 0),
+              opacity 1.2s ease;
+  pointer-events: none;
+  z-index: 9999;
 }
 
 .game-card-wrapper:hover .game-title-overlay {
@@ -582,7 +615,8 @@ h1
 
 /* ===== LOADER OVERLAY ===== */
 
-loader-overlay {
+loader-overlay
+{
   position: fixed;
   inset: 0;
   display: flex;
@@ -651,7 +685,7 @@ loader-overlay {
 
 /* NUMBER: same font + size as title */
 .loader-number {
-  font-family: 'Major Mono Display', monospace;
+  font-family: "IBM Plex Serif", serif;
   font-size: 18vw;
   letter-spacing: 12px;
   margin-bottom: 6rem;
