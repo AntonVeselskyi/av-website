@@ -429,7 +429,7 @@
     {
       "name": "Ghostrunner",
       "tier": "A",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2022,
       "score": 82,
@@ -443,12 +443,39 @@
       "rawg_id": "ghostrunner",
     },
     {
+      "name": "Slay the Spire",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 75,
+      "comment":
+      `One of my
+      favorite rougelikes.
+      ADDICTIVE gameplay`,
+      "igdb_id": 40477,
+      "rawg_id": "slay-the-spire",
+    },
+    {
+      "name": "My Friend Pedro",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 75,
+      "comment": `Kickflip-backflip
+      into ricochet
+      tirplekill`,
+      "igdb_id": 25901,
+      "rawg_id": "my-friend-pedro",
+    },
+    {
       "name": "Colt Canyon",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2021,
-      "score": 66,
+      "score": 70,
       "comment": `Satisfying Western 2D
       pixel art rouglike shooter.`,
       "igdb_id": 114074,
@@ -1496,6 +1523,30 @@
       "rawg_id": "sleeping-dogs",
     },
     {
+      "name": "Ratatouille",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2009,
+      "score": 75,
+      "comment":
+      `TODO`,
+      "igdb_id": 78482,
+      "rawg_id": "ratatouille",
+    },
+    {
+      "name": "TMNT",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 70,
+      "comment":
+      `TODO`,
+      "igdb_id": 7605,
+      "rawg_id": "tmnt",
+    },
+    {
       "name": "S.T.A.L.K.E.R.: Call of Pripyat",
       "tier": "S",
       "category": "AAA",
@@ -2256,7 +2307,7 @@
       "tier": "A",
       "category": "",
       "platform": "Xbox 360",
-      "played_year": 2009,
+      "played_year": 2014,
       "score": 80,
       "comment":
       `My go-to Naruto fighting on Xbox 360 🍃`,

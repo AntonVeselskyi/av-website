@@ -525,29 +525,38 @@ function renderGamesAnimated(games) {
   }
 
   // PLAY: Trigger the actual movement
-  // The 'void' call forces the browser to flush the style changes
-  // so the start position is locked in before the transition classes are added.
   void container.offsetHeight;
 
   requestAnimationFrame(() => {
     for (const el of newEls) {
-      if (el.dataset.animType === 'move') {
+      const type = el.dataset.animType;
+
+      if (type === 'move') {
         el.classList.add('is-moving');
-      } else {
+        // Transition to final state (center)
+        el.style.transform = 'translate3d(0,0,0)';
+        el.style.opacity = '1';
+      } else if (type === 'enter') {
+        // CSS @keyframes handles the transform logic here
         el.classList.add('is-entering');
       }
 
-      // Transition to final state (center)
-      el.style.transform = 'translate3d(0,0,0)';
-      el.style.opacity = '1';
+      // Unified Cleanup for both Transitions and Keyframes
+      const cleanup = (e) => {
+        // Ensure we only clean up the intended property/animation
+        if (e.type === 'transitionend' && e.propertyName !== 'transform') return;
 
-      // Cleanup
-      el.addEventListener('transitionend', () => {
         el.classList.remove('is-moving', 'is-entering');
         el.style.transform = '';
         el.style.opacity = '';
         delete el.dataset.animType;
-      }, { once: true });
+
+        el.removeEventListener('transitionend', cleanup);
+        el.removeEventListener('animationend', cleanup);
+      };
+
+      el.addEventListener('transitionend', cleanup);
+      el.addEventListener('animationend', cleanup);
     }
   });
 }
