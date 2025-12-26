@@ -410,6 +410,18 @@
       "rawg_id": "darkest-dungeon",
     },
     {
+      "name": "The Binding of Isaac",
+      "tier": "SS",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2022,
+      "score": 92,
+      "comment":
+      `todo`,
+      "igdb_id": 2132,
+      "rawg_id": "the-binding-of-isaac",
+    },
+    {
       "name": "Superliminal",
       "tier": "A",
       "category": "Indie",
@@ -738,10 +750,8 @@
       "played_year": 2023,
       "score": 78,
       "comment":
-      `I started playing Magic in
-       2023 and Arena is a great
-       way to learn. Score is for
-       MTG as a game in general.
+      `Great way to learn MTG.
+      Score is for MTG in general.
        The game is super deep, with
        unique mechanics and infinite
        deckbuilding potential. But OMG
@@ -834,12 +844,57 @@
       "rawg_id": "xcom-2",
     },
     {
+      "name": "Mad Max",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2018,
+      "score": 74,
+      "comment":
+      `Vehicle combat and
+      everything build
+      around it is just
+      FANTASTIC. Repetative
+      tasks, and mid melee
+      combat is a weak-side.`,
+      "igdb_id": 2552,
+      "rawg_id": "mad-max",
+    },
+    {
+      "name": "Forma.8",
+      "tier": "D",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2018,
+      "score": 56,
+      "comment":
+      `minimalistic platformer,
+      not good enough to
+      keep me playing`,
+      "igdb_id": 27277,
+      "rawg_id": "forma8",
+    },
+    {
+      "name": "Uncanny Valley",
+      "tier": "D",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2018,
+      "score": 53,
+      "comment":
+      `survival horror,
+      boredom it causes
+      is scary`,
+      "igdb_id": 10140,
+      "rawg_id": "uncanny-valley",
+    },
+    {
       "name": "Knowledge is Power!",
       "tier": "D",
       "category": "AAA",
       "platform": "PlayStation 4",
       "played_year": 2018,
-      "score": 52,
+      "score": 51,
       "comment":
       `Worst Playlink game.
       The pool of questions was small
@@ -977,6 +1032,23 @@
       "comment": `What a COMEBACK!`,
       "igdb_id": 19560,
       "rawg_id": "god-of-war-2",
+    },
+    {
+      "name": "Call of Duty: Black Ops III",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2018,
+      "score": 76,
+      "comment":
+      `Short campaign.
+      Solid, fast-paced
+      multiplayer.
+      Never again will I
+      play an FPS with a
+      gamepad.`,
+      "igdb_id": 9509,
+      "rawg_id": "cod-black-ops-iii",
     },
     {
       "name": "Marvel's Spider-Man",
@@ -1155,6 +1227,21 @@
       "rawg_id": "nba-playgrounds",
     },
     {
+      "name": "NBA 2K18",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2017,
+      "score": 75,
+      "comment":
+      `Same as 2k17,
+      tiny bit better,
+      MyTeam was super broken
+      p-2-win swamp :(`,
+      "igdb_id": 26772,
+      "rawg_id": "nba-2k18",
+    },
+    {
       "name": "NBA 2K17",
       "tier": "A",
       "category": "AAA",
@@ -1168,6 +1255,67 @@
       Wasted 300 hours in it!`,
       "igdb_id": 18819,
       "rawg_id": "nba-2k17",
+    },
+    {
+      "name": "The Witness",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2021,
+      "score": 77,
+      "comment":
+      `Took 2 month break
+       after 6 hours of
+      playing. Big mistake.
+      Imposible to come back
+      into :D`,
+      "igdb_id": 5601,
+      "rawg_id": "the-witness",
+    },
+    {
+      "name": "Enter the Gungeon",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2021,
+      "score": 79,
+      "comment":
+      `Isaac + Hotline Miami,
+      yes please!`,
+      "igdb_id": 11182,
+      "rawg_id": "enter-the-gungeon",
+    },
+    {
+      "name": "Fall Guys: Ultimate Knockout",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2020,
+      "score": 74,
+      "comment":
+      `Got it in PS Plus.
+      Cute little folks,
+      used to take turns
+      playing duirng parties`,
+      "igdb_id": 119313,
+      "rawg_id": "fall-guys",
+    },
+    {
+      "name": "NBA 2K20",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PlayStation 4",
+      "played_year": 2020,
+      "score": 82,
+      "comment":
+      `Got it in PS Plus.
+      Same 2K as before.
+      But selling it each
+      year, with
+      micro-transactions.
+      FIFA approach :(`,
+      "igdb_id": 114285,
+      "rawg_id": "nba-2k20",
     },
     {
       "name": "The Evil Within",
@@ -1199,6 +1347,34 @@
       before release!`,
       "igdb_id": 1827,
       "rawg_id": "remember-me",
+    },
+    {
+      "name": "Fable: The Journey",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 72,
+      "comment":
+      `The story-driven
+      Kinect game that was
+      kinda fun. Casting
+      spells by doing hand
+      gestures IRL.`,
+      "igdb_id": 1592,
+      "rawg_id": "fable-the-journey",
+    },
+    {
+      "name": "Just Dance 4",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 79,
+      "comment":
+      "Ultimate Kinect\nparty game",
+      "igdb_id": 3255,
+      "rawg_id": "just-dance-4",
     },
     {
       "name": "Just Dance 2014",
@@ -1341,6 +1517,21 @@
       Finished the whole thing.`,
       "igdb_id": 1833,
       "rawg_id": "dead-island-riptide",
+    },
+    {
+      "name": "Trials Fusion",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC / PlayStation 4",
+      "played_year": 2014,
+      "score": 79,
+      "comment":
+      `Most polished
+      iteretaion of the
+      Gravity Defied
+      gameplay 💛`,
+      "igdb_id": 3191,
+      "rawg_id": "trials-fusion",
     },
     {
       "name": "Hitman: Absolution",
@@ -1535,6 +1726,23 @@
       "rawg_id": "ratatouille",
     },
     {
+      "name": "Ultimate Spider-Man",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2008,
+      "score": 72,
+      "comment":
+      `Cel-shaded comics-like
+      art really stood out,
+      compared to other games.
+      Felt like an ULTIMATE
+      style comics. Strong
+      combat and bosses.`,
+      "igdb_id": 4225,
+      "rawg_id": "ultimate-spider-man",
+    },
+    {
       "name": "TMNT",
       "tier": "C",
       "category": "AAA",
@@ -1543,7 +1751,7 @@
       "score": 70,
       "comment":
       `TODO`,
-      "igdb_id": 7605,
+      "igdb_id": 3817,
       "rawg_id": "tmnt",
     },
     {
@@ -1595,12 +1803,119 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2011,
-      "score": 81,
+      "score": 84,
       "comment":
       `Game that made
       me install Steam`,
       "igdb_id": 979,
       "rawg_id": "call-of-duty-modern-warfare-3",
+    },
+    {
+      "name": "Left 4 Dead 2",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 82,
+      "comment":
+      `TODO`,
+      "igdb_id": 124,
+      "rawg_id": "left-4-dead-2",
+    },
+    {
+      "name": "Deponia",
+      "tier": "S",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 89,
+      "comment":
+      `One of my fav
+      point-and-clicks`,
+      "igdb_id": 5060,
+      "rawg_id": "deponia",
+    },
+    {
+      "name": "Chaos on Deponia",
+      "tier": "S",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2012,
+      "score": 88,
+      "comment":
+      `A puzzle where to
+      silent musicians
+      on a square you
+      need to turn off
+      music in settings
+      still haunts me`,
+      "igdb_id": 5062,
+      "rawg_id": "chaos-on-deponia",
+    },
+    {
+      "name": "Goodbye Deponia",
+      "tier": "S",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2013,
+      "score": 88,
+      "comment":
+      `Grand finale of the
+      Rufus's story <3.
+      I must play Deponia Doomsday!`,
+      "igdb_id": 5064,
+      "rawg_id": "goodbye-deponia",
+    },
+    {
+      "name": "Deponia: The Complete Journey",
+      "tier": "SS",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 91,
+      "comment":
+      `⚙Replayed the
+      original trilogy⚙
+      Was glad to be
+      back to Kuvaq`,
+      "igdb_id": 17224,
+      "rawg_id": "deponia-the-complete-journey",
+    },
+    {
+      "name": "Kane and Lynch 2 Dog Days",
+      "tier": "D",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 60,
+      "comment":
+      `I disliked 3Cs so much,
+      everything blury,
+      camera is to shake.
+      Was just annoying to move
+      around and shoot,
+      even though it looked
+      stylish`,
+      "igdb_id": 17224,
+      "rawg_id": "kane-lynch-2-dog-days",
+    },
+    {
+      "name": "Deus Ex: Human Revolution",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 77,
+      "comment":
+      `I enhoyed the sandbox aspect of
+      it, but plot and BOSS fights
+      were odd for me at the time.
+      Direct combat felt janky and
+      there were too many mechanics
+      at once. 89 meta-score...
+      Need to give another try!`,
+      "igdb_id": 43,
+      "rawg_id": "deus-ex-human-revolution",
     },
     {
       "name": "World of goo",
@@ -1699,18 +2014,18 @@
       "rawg_id": "blur",
     },
     {
-      "name": "Shank",
+      "name": "Shank 2",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
-      "played_year": 2011,
+      "played_year": 2013,
       "score": 72,
       "comment":
       `Side-scrolling beat-em-up.
       Challenging at some points,
       Very distinct art syle`,
-      "igdb_id": 7518,
-      "rawg_id": "shank",
+      "igdb_id": 9623,
+      "rawg_id": "shank-2",
     },
     {
       "name": "The Elder Scrolls V: Skyrim",
@@ -1753,6 +2068,21 @@
       combo-system was fun!`,
       "igdb_id": 494,
       "rawg_id": "bulletstorm",
+    },
+    {
+      "name": "Mortal Kombat: Unchained",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PSP",
+      "played_year": 2011,
+      "score": 75,
+      "comment":
+      `Good portable MK.
+      Port of the
+      MK: Deception
+      from 2004`,
+      "igdb_id": 1615,
+      "rawg_id": "mortal-kombat-deception",
     },
     {
       "name": "Portal 2",
@@ -1808,6 +2138,20 @@
       TellTale games!`,
       "igdb_id": 2993,
       "rawg_id": "the-wolf-among-us",
+    },
+    {
+      "name": "Mortal Kombat",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2012,
+      "score": 88,
+      "comment":
+      `MK9 was the
+      main fighting
+      I played for YEARS.`,
+      "igdb_id": 119,
+      "rawg_id": "mortal-kombat-2011",
     },
     {
       "name": "NBA 2K13",
@@ -1866,7 +2210,7 @@
       "tier": "C",
       "category": "AAA",
       "platform": "PC",
-      "played_year": 2012,
+      "played_year": 2013,
       "score": 65,
       "comment":
       `Fun Team Fortress clone,
@@ -2310,7 +2654,8 @@
       "played_year": 2014,
       "score": 80,
       "comment":
-      `My go-to Naruto fighting on Xbox 360 🍃`,
+      `My go-to Naruto
+      fighting on Xbox 360 🍃`,
       "igdb_id": 7099,
       "rawg_id": "naruto-storm-3",
     },

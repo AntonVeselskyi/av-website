@@ -2,7 +2,6 @@
 const gameContainer = document.getElementById('main-list');
 
 // ===== LOADER COUNTDOWN =====
-
 // Roman-ish glyphs from 10 down to 0
 const LOADER_SYMBOLS = {
   10: 'Ⅹ',
@@ -81,6 +80,9 @@ function hideLoader() {
 
 // ========== TIER ORDER ==========
 const TIER_ORDER = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'];
+
+let viewMode = 'grid'; // 'grid' or 'pillar'
+let activePillarAxis = 'score'; // 'score', 'played', 'released'
 
 // ========== LOAD AND PROCESS GAMES ==========
 let allGames = [];
@@ -453,8 +455,11 @@ function renderGames(games)
   setupOverlaySides();
 }
 
-function renderGamesAnimated(games) {
+function renderGamesAnimated(games)
+{
   const container = gameContainer;
+  // Lock height to prevent scroll jumping when clearing content
+  container.style.minHeight = `${container.offsetHeight}px`;
 
   // FIRST: Snapshot current positions
   const oldEls = Array.from(container.querySelectorAll('.game-card-wrapper'));
@@ -489,7 +494,8 @@ function renderGamesAnimated(games) {
     document.body.appendChild(clone);
 
     // Trigger Slide Right
-    requestAnimationFrame(() => {
+    requestAnimationFrame(() =>
+    {
       // 50vw travel + fade
       clone.style.transform = `translate3d(${window.innerWidth * 0.5}px, 0, 0)`;
       clone.style.opacity = '0';
@@ -527,8 +533,13 @@ function renderGamesAnimated(games) {
   // PLAY: Trigger the actual movement
   void container.offsetHeight;
 
-  requestAnimationFrame(() => {
-    for (const el of newEls) {
+  requestAnimationFrame(() =>
+  {
+    // Release the height lock so the page can resize naturally again
+    container.style.minHeight = '';
+
+    for (const el of newEls)
+    {
       const type = el.dataset.animType;
 
       if (type === 'move') {
@@ -653,6 +664,10 @@ function applyFilters()
       (g.developer || '').toLowerCase().includes('ubisoft')
     );
   }
+  else if (filterCategory === 'meta80')
+  {
+    games = games.filter(g => Number(g.metacritic) >= 80);
+  }
 
   // Decade
   if (filterDecade)
@@ -678,11 +693,22 @@ function applyFilters()
     );
   }
 
-  // sort after all filters
-  games = sortGames(games);
-
-    //renderGames(games);
+  // Sort and Render based on ViewMode
+  if (viewMode === 'pillar')
+  {
+    // If axis is Metacritic, filter out games without a metascore
+    if (activePillarAxis === 'metacritic')
+      {
+      games = games.filter(g => g.metacritic && !isNaN(g.metacritic));
+    }
+    // We don't need sorting for pillars as position is X-axis based
+    renderPillarView(games);
+  }
+  else
+  {
+    games = sortGames(games);
     renderGamesAnimated(games);
+  }
 }
 
 function setActiveInGroup(buttons, activeBtn)
@@ -773,6 +799,12 @@ function setupTabs()
 
         setActiveInGroup(sortButtons, btn);
       }
+      else if (group === 'pillarAxis')
+      {
+        activePillarAxis = value;
+        setActiveInGroup(document.querySelectorAll('[data-group="pillarAxis"]'), btn);
+        applyFilters();
+      }
 
       applyFilters();
     });
@@ -786,6 +818,280 @@ function setupTabs()
       b.classList.add('active');
     }
   });
+
+  // View Mode Toggles
+  const viewButtons = document.querySelectorAll('.view-btn');
+  viewButtons.forEach(btn =>
+  {
+    btn.addEventListener('click', () =>
+    {
+      if (btn.classList.contains('active')) return;
+        viewButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        viewMode = btn.dataset.view;
+
+        //Sync state to body for CSS visibility logic
+        if (viewMode === 'pillar')
+        {
+            document.body.classList.add('pillar-view-active'); // For CSS
+            gameContainer.classList.add('pillar-view');
+        }
+        else
+        {
+            document.body.classList.remove('pillar-view-active');
+            gameContainer.classList.remove('pillar-view');
+            gameContainer.style.height = '';
+        }
+
+        applyFilters();
+    });
+  });
+}
+
+// ---------- VARIATION 1 ---
+function updatePillarInspect(game, isHovering, mouseX = 0)
+{
+  const panel = document.getElementById('pillar-inspect-panel');
+  if (!panel) return;
+
+  if (!isHovering)
+  {
+    panel.classList.add('inspect-hidden');
+    // Clear content after fade out to prevent flickering
+    setTimeout(() => {
+        if(panel.classList.contains('inspect-hidden')) panel.innerHTML = '';
+    }, 200);
+    return;
+  }
+
+  // --- SMART POSITIONING LOGIC ---
+  const screenMid = window.innerWidth / 2;
+
+  if (mouseX > screenMid) {
+      // Mouse is on RIGHT side -> Show Panel on LEFT
+      panel.style.left = '30px';
+      panel.style.right = 'auto';
+      // Standard Layout: Image Left, Details Right
+      panel.classList.remove('dock-right');
+  } else {
+      // Mouse is on LEFT side -> Show Panel on RIGHT
+      panel.style.left = 'auto';
+      panel.style.right = '30px';
+      // Flipped Layout: Details Left, Image Right
+      panel.classList.add('dock-right');
+  }
+
+  panel.innerHTML = '';
+  // Create a fresh card for the preview
+  const previewCard = createGameCard(game);
+
+  // Remove animation classes so it doesn't "drop" inside the HUD
+  previewCard.classList.remove('is-entering', 'is-moving');
+  // Force overlays to be visible in the preview via your CSS
+  previewCard.classList.add('force-preview-show');
+
+  panel.appendChild(previewCard);
+  panel.classList.remove('inspect-hidden');
+}
+
+// Global variable to track state between renders
+let lastRenderedAxis = null;
+
+function renderPillarView(games) {
+  const container = gameContainer;
+  container.classList.add('pillar-view');
+
+  // ============================================================
+  // 1. CLEANUP PHASE: TRANSITION FROM TIER LIST (GRID -> PILLAR)
+  // ============================================================
+  // We only destroy cards if we detect Tier Sections (headers).
+  // This ensures the first load gets the "Drop" animation.
+  const tierArtifacts = container.querySelectorAll('.tier-section, .art-divider');
+  if (tierArtifacts.length > 0) {
+    const allNestedCards = container.querySelectorAll('.game-card-wrapper');
+    allNestedCards.forEach(card => card.remove());
+    tierArtifacts.forEach(el => el.remove());
+    lastRenderedAxis = null;
+  }
+
+  if (activePillarAxis !== lastRenderedAxis) {
+    lastRenderedAxis = activePillarAxis;
+  }
+
+  // Ensure HUD exists
+  let hud = document.getElementById('pillar-inspect-panel');
+  if (!hud) {
+    hud = document.createElement('div');
+    hud.id = 'pillar-inspect-panel';
+    hud.classList.add('inspect-hidden');
+    container.appendChild(hud);
+  }
+
+  // ============================================================
+  // 2. CALCULATION PHASE
+  // ============================================================
+  const getVal = (g) => {
+    if (activePillarAxis === 'score') return g.score || 0;
+    if (activePillarAxis === 'played') return g.played_year || 0;
+    if (activePillarAxis === 'released') return g.release_date ? g.release_date.split('-')[0] : 0;
+    if (activePillarAxis === 'metacritic') return Number(g.metacritic);
+    return 0;
+  };
+
+  const presentValues = [...new Set(games.map(getVal))].sort((a, b) => a - b);
+  const colCount = presentValues.length;
+
+  // Dimensions
+  const cardWidth = 30;
+  // Fixed offset (45px) prevents overlapping
+  const yOffset = 45;
+  const maxStack = Math.max(...presentValues.map(v => games.filter(g => getVal(g) === v).length));
+
+  // Calculate Height (Stack + Ruler + Buffer)
+  const actualChartHeight = (maxStack * yOffset) + 150;
+  container.style.height = `${actualChartHeight}px`;
+
+  // Animation Timers (Used for 'isNew' cards only)
+  const colStartTimes = new Map();
+  presentValues.forEach(val => {
+      colStartTimes.set(val, Math.random() * 0.6);
+  });
+
+  // Snapshot Current DOM
+  const existingCards = new Map();
+  container.querySelectorAll('.game-card-wrapper').forEach(el => {
+    if(el.dataset.key) existingCards.set(el.dataset.key, el);
+  });
+
+  const stacks = {};
+  const newKeys = new Set();
+
+  // ============================================================
+  // 3. RENDER LOOP
+  // ============================================================
+  games.forEach(game => {
+    const key = gameKey(game);
+    newKeys.add(key);
+
+    const val = getVal(game);
+    if (!stacks[val]) stacks[val] = 0;
+
+    const valIndex = presentValues.indexOf(val);
+    const xPos = colCount <= 1 ? 50 : (valIndex / (colCount - 1)) * 94 + 3;
+    const yPos = stacks[val] * yOffset;
+    const depth = 1000 + (valIndex * 100) + stacks[val];
+
+    let card = existingCards.get(key);
+    let isNew = false;
+    let isRevived = false;
+
+    // A. CREATE (Drop In)
+    if (!card) {
+      isNew = true;
+      card = createGameCard(game);
+      card.classList.add('pillar-mini-card');
+      card.addEventListener('mouseenter', (e) => updatePillarInspect(game, true, e.clientX));
+      card.addEventListener('mouseleave', () => updatePillarInspect(game, false));
+      container.appendChild(card);
+    }
+    // B. REVIVE (Card exists but was dissolving)
+    else {
+      // Kill pending removal timer
+      if (card._removeTimer) {
+         clearTimeout(card._removeTimer);
+         card._removeTimer = null;
+      }
+
+      if (card.classList.contains('pillar-dissolve')) {
+        isRevived = true;
+        card.classList.remove('pillar-dissolve');
+      }
+    }
+
+    // UPDATE POSITION
+    // The CSS 'transition: left 2.0s' handles the glide here!
+    card.style.left = `${xPos}%`;
+    card.style.bottom = `${yPos + 40}px`;
+    card.style.position = 'absolute';
+    card.style.width = `${cardWidth}px`;
+    card.style.zIndex = depth;
+    card.style.transform = 'translateX(-50%) translateZ(0)';
+
+    // ANIMATION CONTROL
+    if (isNew || isRevived) {
+      card.classList.remove('pillar-animate-in');
+      card.style.animationDelay = '0s';
+      card.style.opacity = '1';
+
+      void card.offsetWidth; // Force Reflow
+
+      card.classList.add('pillar-animate-in');
+      const baseDelay = colStartTimes.get(val) || 0;
+      const floorDelay = stacks[val] * 0.05;
+      card.style.animationDelay = `${baseDelay + floorDelay}s`;
+    } else {
+      // Existing cards: Remove animation class so CSS transition takes over
+      card.classList.remove('pillar-animate-in');
+      card.style.animationDelay = '0s';
+      card.classList.remove('pillar-dissolve');
+      card.style.opacity = '1';
+    }
+
+    stacks[val]++;
+  });
+
+  // ============================================================
+  // 4. REMOVAL PHASE
+  // ============================================================
+  existingCards.forEach((el, key) => {
+    if (!newKeys.has(key)) {
+      if (el._removeTimer) clearTimeout(el._removeTimer);
+      if (el.classList.contains('pillar-dissolve')) return;
+
+      el.classList.add('pillar-dissolve');
+
+      el._removeTimer = setTimeout(() => {
+        if (el.parentNode) el.remove();
+        el._removeTimer = null;
+      }, 350);
+    }
+  });
+
+  // ============================================================
+  // 5. RULER UPDATE
+  // ============================================================
+  const oldRulers = container.querySelectorAll('.pillar-ruler');
+  oldRulers.forEach(r => r.remove());
+
+  const ruler = document.createElement('div');
+  ruler.className = 'pillar-ruler';
+  presentValues.forEach((tick, i) => {
+    const marker = document.createElement('span');
+    marker.textContent = tick;
+    marker.style.position = 'absolute';
+    const xPos = colCount <= 1 ? 50 : (i / (colCount - 1)) * 94 + 3;
+    marker.style.left = `${xPos}%`;
+    marker.style.transform = 'translateX(-50%)';
+    ruler.appendChild(marker);
+  });
+  container.appendChild(ruler);
+
+  // ============================================================
+  // 6. AUTO-SCROLL TO BOTTOM (Ruler View)
+  // ============================================================
+  // We use a small timeout to let the DOM update the height first
+  setTimeout(() => {
+    const scrollTarget = container.offsetTop + container.offsetHeight;
+
+    // Only scroll if we aren't already near the bottom
+    if ((window.innerHeight + window.scrollY) < scrollTarget - 100) {
+        window.scrollTo({
+            top: scrollTarget,
+            behavior: 'smooth'
+        });
+    }
+  }, 100);
 }
 
 // ========== INIT ==========

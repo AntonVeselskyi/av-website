@@ -347,7 +347,7 @@ h1
   }
 }
 .game-card-wrapper:hover {
-  z-index: 999;            /* bring whole card + overlays above neighbors */
+  z-index: 200000 !important;            /* bring whole card + overlays above neighbors */
 }
 
 .game-card-wrapper:hover .game-details-overlay
@@ -359,6 +359,11 @@ h1
 .game-card-wrapper:hover .game-exp-overlay {
   opacity: 1;
   transform: scaleX(1);
+}
+
+.game-card-wrapper:hover .game-title-overlay {
+  opacity: 1;
+  transform: translateY(0%) scaleY(1);
 }
 
 /* When we want to *force* the card to behave like it's not hovered */
@@ -528,6 +533,12 @@ h1
 }
 
 .tab-row-sort
+{
+  margin-top: 10px;
+  margin-bottom: 20px; /* extra space below last row */
+}
+
+.tab-row-columns
 {
   margin-top: 10px;
   margin-bottom: 20px; /* extra space below last row */
@@ -802,4 +813,326 @@ loader-overlay
       transparent 1px,
       transparent 6px
     );
+}
+
+/*----------VARIATION 1------------------*/
+/* Alternative Pillar View */
+
+body:not(.pillar-view-active) .tab-row-columns {
+  display: none !important;
+}
+.pillar-view-active .tab-row-columns {
+  display: block !important;
+}
+.pillar-view-active .tab-row-sort {
+  display: none !important;
+}
+/* Docking buttons to the title */
+.view-toggles
+{
+  background: black;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 10px; /* Some breathing room at bottom */
+  margin-bottom: 20px;
+}
+
+.view-btn
+{
+  background: transparent;
+  border: 2px solid white;
+  color: white;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 18px;
+  padding: 6px 20px;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.view-btn.active
+{
+  background: white;
+  color: black;
+}
+
+/* PILLAR VIEW SPATIAL RULES */
+#main-list.pillar-view
+{
+  padding-bottom: 0 !important;
+  padding-top: 10px !important;
+  margin-top: 0 !important;
+
+  min-height: 0 !important;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin-left: 1vw;
+  margin-right: 1vw;
+}
+/* Pillar Card Base */
+#main-list.pillar-view .game-card-wrapper {
+  position: absolute;
+  width: 45px;
+  transform-origin: center center;
+  /* Snappy transition for 3C feel */
+  transition: left 0.6s ease, bottom 0.6s ease, transform 0.3s ease, filter 0.2s;
+}
+
+/* Ensure the Header and Tabs stay on top of the falling/sliding cards */
+.title,
+.tab-buttons,
+.view-toggles
+{
+  z-index: 100001; /* Higher than the hovered card (100000) */
+}
+
+/* The Inspect Panel (HUD Window) */
+/* --- PILLAR HUD (INSPECT PANEL) --- */
+
+#pillar-inspect-panel {
+  position: fixed;
+  top: 40vh;
+  left: 30px;
+  z-index: 200000 !important;
+  pointer-events: none;
+  background: transparent;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#pillar-inspect-panel.inspect-hidden {
+  opacity: 0;
+  display: none !important;
+}
+
+/* GRID CONTAINER */
+#pillar-inspect-panel .game-card-wrapper {
+  display: grid !important;
+  /* Two equal columns of 338px */
+  grid-template-columns: 338px 338px;
+  /* Row 1: Title | Row 2: Image & Comments | Row 3: Details */
+  grid-template-rows: auto 507px auto;
+
+  width: auto !important;
+  background: transparent;
+  border: none !important;
+  box-shadow: none !important; /* Shadows applied to children */
+}
+
+/* =========================================
+   DEFAULT LAYOUT (Panel on Right)
+   [Title]    [Empty]
+   [Image]    [Comment Box]
+   [Details]  [Empty]
+   ========================================= */
+
+/* 1. Title (Top Left) */
+#pillar-inspect-panel .game-title-overlay {
+  grid-column: 1;
+  grid-row: 1;
+  position: static !important;
+  opacity: 1 !important;
+  transform: none !important;
+  background: black;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  border-bottom: 2px solid #333 !important;
+  box-shadow: 5px 0 10px rgba(0,0,0,0.5);
+}
+
+/* 2. Image (Middle Left) */
+#pillar-inspect-panel .game-card {
+  grid-column: 1;
+  grid-row: 2;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  box-shadow: 5px 0 10px rgba(0,0,0,0.5);
+}
+
+#pillar-inspect-panel .game-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 3. Details (Bottom Left) */
+#pillar-inspect-panel .game-details-overlay {
+  grid-column: 1;
+  grid-row: 3;
+  position: static !important;
+  opacity: 1 !important;
+  transform: none !important;
+  background: black;
+  padding: 15px;
+  border-top: 2px solid #333 !important;
+  box-shadow: 5px 0 10px rgba(0,0,0,0.5);
+}
+
+/* 4. EXP/Comment Panel (Middle Right) */
+#pillar-inspect-panel .game-exp-overlay {
+  grid-column: 2;
+  /* Lock strictly to Row 2 (Image Height) */
+  grid-row: 2;
+
+  position: static !important;
+  width: 100% !important;
+  height: 100% !important; /* Matches Image Height (507px) */
+
+  opacity: 1 !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column;
+
+  background: black;
+  padding: 20px;
+  box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+
+  border: none !important;
+  border-left: 2px solid #333 !important; /* Separator */
+  overflow: hidden; /* Cut off if comment is too long, keeps alignment */
+}
+
+/* =========================================
+   FLIPPED LAYOUT (Panel on Left)
+   [Empty]        [Title]
+   [Comment Box]  [Image]
+   [Empty]        [Details]
+   ========================================= */
+
+/* Move EXP to Left */
+#pillar-inspect-panel.dock-right .game-exp-overlay {
+  grid-column: 1 !important;
+  border-left: none !important;
+  border-right: 2px solid #333 !important;
+}
+
+/* Move Image Stack to Right */
+#pillar-inspect-panel.dock-right .game-title-overlay,
+#pillar-inspect-panel.dock-right .game-card,
+#pillar-inspect-panel.dock-right .game-details-overlay {
+  grid-column: 2 !important;
+}
+
+/* --- POLISH --- */
+/* Fix Comment Spacing to sit in the middle of the box */
+#pillar-inspect-panel .game-comment {
+  margin-top: auto !important;
+  margin-bottom: 0 !important;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+/* 2. Style for cards inside the Pillar view (Micro view) */
+.pillar-mini-card
+{
+  transition: filter 0.2s !important;
+}
+
+/* Disable all standard overlay logic for mini cards */
+.pillar-mini-card .game-title-overlay,
+.pillar-mini-card .game-details-overlay,
+.pillar-mini-card .game-exp-overlay,
+.pillar-mini-card .game-score-overlay {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.pillar-mini-card img
+{
+  image-rendering: pixelated;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Polish: Instead of overlays, just do a high-contrast border */
+.pillar-mini-card:hover
+{
+    outline: 3px solid white;
+    outline-offset: -3px;
+    filter: brightness(1.1);
+    z-index: 999999 !important;
+    cursor: crosshair;
+    transform: translateX(-50%) scale(1.7) !important;
+  }
+
+/* 3. Force the overlays to show inside the preview panel */
+.force-preview-show .game-title-overlay { opacity: 1; transform: translateY(0) scaleY(1); }
+.force-preview-show .game-details-overlay { opacity: 1; transform: scaleY(1); }
+.force-preview-show .game-exp-overlay { opacity: 1; transform: scaleX(1); }
+
+/* 4. STOP PIERCING: The Clipping Hack */
+#main-list.pillar-view {
+  margin-top: 20px;
+  padding-top: 40px;
+  /* This creates a hard boundary. Cards cannot exist above this container's top */
+  overflow: hidden;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Make sure tabs have a solid background so cards slide "under" them */
+.tab-buttons, .view-toggles, .title {
+  position: relative;
+  z-index: 1000;
+}
+
+/* 5. Ruler */
+.pillar-ruler {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 40px;
+  border-top: 3px solid black;
+  font-family: 'Major Mono Display', monospace;
+  background: #F6F3EF; /* Solid color prevents card bleed */
+}
+
+.pillar-ruler span {
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 40px;   /* Center text vertically */
+  color: black;
+}
+
+/* --- PILLAR MOTION ENGINE --- */
+
+.pillar-mini-card {
+  /* 1. FORCE THE GLIDE: Override any generic wrapper transitions */
+  transition: left 2.0s cubic-bezier(0.2, 0.9, 0.2, 1),
+              bottom 2.0s cubic-bezier(0.2, 0.9, 0.2, 1),
+              opacity 0.5s ease,
+              filter 0.2s !important;
+
+  /* 2. Hardware acceleration */
+  will-change: left, bottom;
+
+  /* 3. Strict Centering */
+  transform-origin: center center;
+  transform: translateX(-50%) translateZ(0);
+}
+
+/* Ensure the Dissolve is faster than the Glide so they don't linger */
+.pillar-dissolve {
+  opacity: 0 !important;
+  transform: translateX(-50%) scale(0.9) translateY(20px) !important;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease !important;
+}
+
+/* The Drop Animation (Only for NEW items) */
+@keyframes pillar-drop-bounce {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-100vh) scale(0.5); }
+  60% { opacity: 1; transform: translateX(-50%) translateY(20px) scale(1.1); }
+  80% { transform: translateX(-50%) translateY(-10px) scale(0.95); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.pillar-animate-in {
+  animation-name: pillar-drop-bounce;
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation-fill-mode: both;
 }

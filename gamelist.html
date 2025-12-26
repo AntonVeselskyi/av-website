@@ -10,6 +10,11 @@
 <body>
   <!-- Page Title -->
   <h1 class="title">GAME LIST</h1>
+  <!-- Views -->
+  <div class="view-toggles">
+    <button class="view-btn active" data-view="grid">TIERLIST</button>
+    <button class="view-btn" data-view="pillar">PILLARS</button>
+  </div>
   <!-- Tab Navigation -->
   <!-- Row 1: category -->
   <div class="tab-buttons tab-row tab-row-category">
@@ -19,6 +24,8 @@
       data-group="category" data-value="indie">INDIE</a>
     <a href="#ubi" id="ubiTab" class="secret-btn"
       data-group="category" data-value="ubisoft">UBISOFT</a>
+      <a href="#meta80" class="secret-btn"
+      data-group="category" data-value="meta80">METACRITIC 80+</a>
   </div>
 
   <!-- Row 2: decade -->
@@ -63,6 +70,15 @@
       NAME
     </a>
   </div>
+
+  <!-- PILLAR VIEW ROW -->
+  <div class="tab-buttons tab-row tab-row-columns">
+    <span class="sort-label">COLUMNS:</span>
+    <a href="#" class="secret-btn active" data-group="pillarAxis" data-value="score">SCORE</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="played">YEAR_PLAYED</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="released">YEAR_RELEASED</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="metacritic">METACRITIC</a>
+  </div>
 </div>
 
 <!-- COUNTDOWN LOADER -->
@@ -75,10 +91,14 @@
   </div>
 </div>
 
-  <!-- Main Games List -->
-  <div id="main-list" class="games-list">
-    <!-- Tier sections will be injected here by JS -->
-  </div>
+<!-- Inspect Panel for Pillar view -->
+<div id="pillar-inspect-panel" class="inspect-hidden">
+</div>
+
+<!-- Main Games List -->
+<div id="main-list" class="games-list">
+  <!-- Tier sections will be injected here by JS -->
+</div>
 
   <script src="games.js"></script>
   <script src="gamelist.js"></script>
