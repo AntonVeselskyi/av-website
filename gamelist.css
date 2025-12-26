@@ -892,7 +892,7 @@ body:not(.pillar-view-active) .tab-row-columns {
 
 #pillar-inspect-panel {
   position: fixed;
-  top: 40vh;
+  top: 26vh;
   left: 30px;
   z-index: 200000 !important;
   pointer-events: none;
