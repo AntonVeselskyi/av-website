@@ -79,7 +79,7 @@
       but still pure art`,
       "igdb_id": 1040,
       "rawg_id": "alice-madness-returns",
-      "vibe": "Cinematic, Brainy",
+      "vibe": "Cinematic, Flow",
       "ttb": "Medium"
     },
     {
@@ -95,7 +95,7 @@
        Weak plot and puzzles.`,
       "igdb_id": 7346,
       "rawg_id": "the-legend-of-zelda-breath-of-the-wild",
-      "vibe": "Epic, Cozy, Brainy",
+      "vibe": "Epic, Cozy, Flow",
       "ttb": "Long"
     },
     {
@@ -477,7 +477,7 @@
       TODO`,
       "igdb_id": 2935,
       "rawg_id": "papers-please",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Sweaty",
       "ttb": "Short"
     },
     {
@@ -666,7 +666,7 @@
       "comment": `todo`,
       "igdb_id": 186725,
       "rawg_id": "vampire-survivors",
-      "vibe": "Flow",
+      "vibe": "Flow, Sweaty",
       "ttb": "Medium"
     },
     {
@@ -1022,7 +1022,7 @@
       couch mode is super fun`,
       "igdb_id": 19407,
       "rawg_id": "rock-of-ages-2-bigger-boulder",
-      "vibe": "Comedy",
+      "vibe": "Party",
       "ttb": "Short"
     },
     {
@@ -1039,7 +1039,7 @@
       Just 90min to beat.`,
       "igdb_id": 80544,
       "rawg_id": "v",
-      "vibe": "Arcade",
+      "vibe": "Sweaty, Flow",
       "ttb": "Short"
     },
     {
@@ -1185,7 +1185,7 @@
         which is my favorite`,
       "igdb_id": 19726,
       "rawg_id": "rayman-fiesta-run",
-      "vibe": "Arcade",
+      "vibe": "Flow",
       "ttb": "Short"
     },
     {
@@ -1322,7 +1322,7 @@
       Firaxis game on PS4.`,
       "igdb_id": 10919,
       "rawg_id": "xcom-2",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Sweaty",
       "ttb": "Long"
     },
     {
@@ -1454,7 +1454,7 @@
       "comment": `Fuck Zeus`,
       "igdb_id": 551,
       "rawg_id": "god-of-war-ii",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -1746,7 +1746,7 @@
        arcade basketball`,
       "igdb_id": 28081,
       "rawg_id": "nba-playgrounds",
-      "vibe": "Flow",
+      "vibe": "Party",
       "ttb": "Short"
     },
     {
@@ -2065,7 +2065,7 @@
       is cool though`,
       "igdb_id": 378,
       "rawg_id": "metal-gear-rising-revengeance",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Flow, Epic",
       "ttb": "Short"
     },
     {
@@ -2318,7 +2318,7 @@
       "comment": "Neo-noir story + documentary style cinematography \nset in Brazil. \nOne of the best-feeling controls in shooter game. \nEnormous inspiration for me gameplay-wise.\nNo loading screens across gameplay and cutscenes  \nTook me a few days to download it on release!",
       "igdb_id": 960,
       "rawg_id": "max-payne-3",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Sweaty",
       "ttb": "Medium"
     },
     {
@@ -2439,7 +2439,7 @@
       the Noir Spider-Man🖤`,
       "igdb_id": 553,
       "rawg_id": "spider-man-shattered-dimensions",
-      "vibe": "Superhero",
+      "vibe": "Cinematic, Flow",
       "ttb": "Medium"
     },
     {
@@ -2879,7 +2879,7 @@
       that were so common :(`,
       "igdb_id": 4723,
       "rawg_id": "bolt",
-      "vibe": "Cozy",
+      "vibe": "Cinematic",
       "ttb": "Short"
     },
     {
@@ -3039,7 +3039,7 @@
       day I'll create something that tops it!`,
       "igdb_id": 570,
       "rawg_id": "prototype",
-      "vibe": "Cinematic",
+      "vibe": "Flow, Epic",
       "ttb": "Medium"
     },
     {
@@ -3164,7 +3164,7 @@
       while torrent version was playable day 1.`,
       "igdb_id": 127,
       "rawg_id": "assassins-creed-ii",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -3177,7 +3177,7 @@
       "comment": `PoP with the open world, I was sold instantly.`,
       "igdb_id": 27827,
       "rawg_id": "assassins-creed",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -3288,7 +3288,7 @@
       "comment": "First game I played on my PSP-3000. \nNot the biggest fan though",
       "igdb_id": 14755,
       "rawg_id": "ace-combat-x-skies-of-deception",
-      "vibe": "Arcade",
+      "vibe": "Flow, Epic",
       "ttb": "Short"
     },
     {
@@ -3985,7 +3985,7 @@
       "comment": `Iceman gameplay was cool`,
       "igdb_id": 4578,
       "rawg_id": "x-men-the-official-game",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Flow",
       "ttb": "Short"
     },
     {
@@ -4002,7 +4002,7 @@
       (mini-golf was too hard though)`,
       "igdb_id": 3794,
       "rawg_id": "barnyard",
-      "vibe": "Cozy",
+      "vibe": "Party, Cozy",
       "ttb": "Medium"
     },
     {
