@@ -704,7 +704,8 @@ loader-overlay
 
 /* NUMBER: same font + size as title */
 .loader-number {
-  font-family: "IBM Plex Serif", serif;
+  /*font-family: "IBM Plex Serif", serif;*/
+  font-family: "DIN", "Inter", sans-serif;
   font-size: 18vw;
   letter-spacing: 12px;
   margin-bottom: 6rem;

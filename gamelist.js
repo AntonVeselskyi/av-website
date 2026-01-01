@@ -100,7 +100,7 @@ async function enrichGames(games)
   {
     showLoader(); // start countdown while we wait
 
-    const idPairs = games.map(g => [g.igdb_id, g.rawg_id]);
+    const idPairs = games.map(g => [g.igdb_id, g.rawg_id || null]);
 
     const response = await fetch(BACK_API,
     {
@@ -125,15 +125,19 @@ async function enrichGames(games)
     }, {});
 
     return games.map(game =>
-      {
-        const key = `${game.igdb_id}_${game.rawg_id}`;
+    {
+        const safeRawgId = (game.rawg_id === undefined || game.rawg_id === "")
+                            ? "null"
+                            : game.rawg_id;
+
+        const key = `${game.igdb_id}_${safeRawgId}`;
         const enriched = coverMap[key] || {};
         return {
           ...game,
           ...enriched,
           image: enriched.image || 'img/placeholder.png'
         };
-      });
+    });
 
   }
   catch (e)
@@ -645,6 +649,13 @@ let filterCategory = 'all';
 let filterDecade = null;
 // platform: null | 'psp' | 'ps2' | 'ps4' | 'xbox 360' | 'pc'
 let filterPlatform = null;
+const MAIN_PLATFORMS_FILTER = [
+  'pc',
+  'psp',
+  'playstation 2',
+  'xbox 360',
+  'playstation 4'
+];
 
 // Helper to apply all active filters and re-render
 function applyFilters()
@@ -687,10 +698,22 @@ function applyFilters()
   // Platform
   if (filterPlatform)
   {
-    const target = filterPlatform.toLowerCase();
-    games = games.filter(g =>
-      (g.platform || '').toLowerCase().includes(target)
-    );
+    if (filterPlatform === 'all-other')
+    {
+      games = games.filter(g =>
+      {
+        const p = (g.platform || '').toLowerCase();
+        // Keep game ONLY if it does NOT match any of the main platforms
+        return !MAIN_PLATFORMS_FILTER.some(main => p.includes(main));
+      });
+   }
+   else
+   {
+     const target = filterPlatform.toLowerCase();
+     games = games.filter(g =>
+       (g.platform || '').toLowerCase().includes(target)
+     );
+   }
   }
 
   // Sort and Render based on ViewMode
@@ -898,7 +921,8 @@ function updatePillarInspect(game, isHovering, mouseX = 0)
 // Global variable to track state between renders
 let lastRenderedAxis = null;
 
-function renderPillarView(games) {
+function renderPillarView(games)
+{
   const container = gameContainer;
   container.classList.add('pillar-view');
 
@@ -936,10 +960,24 @@ function renderPillarView(games) {
     if (activePillarAxis === 'played') return g.played_year || 0;
     if (activePillarAxis === 'released') return g.release_date ? g.release_date.split('-')[0] : 0;
     if (activePillarAxis === 'metacritic') return Number(g.metacritic);
+    if (activePillarAxis === 'platform')
+    {
+        const raw = g.platform || "Unknown";
+        return raw.split('/')[0].trim();
+    }
     return 0;
   };
 
-  const presentValues = [...new Set(games.map(getVal))].sort((a, b) => a - b);
+  // Robust Sorting (Handles Numbers AND Strings for Platforms)
+  const uniqueVals = [...new Set(games.map(getVal))];
+  const presentValues = uniqueVals.sort((a, b) => {
+    // If comparing strings (platforms), use alphabetical sort
+    if (typeof a === 'string' && typeof b === 'string') {
+      return a.localeCompare(b);
+    }
+    // Otherwise numeric sort
+    return a - b;
+  });
   const colCount = presentValues.length;
 
   // Dimensions
@@ -954,13 +992,15 @@ function renderPillarView(games) {
 
   // Animation Timers (Used for 'isNew' cards only)
   const colStartTimes = new Map();
-  presentValues.forEach(val => {
+  presentValues.forEach(val =>
+  {
       colStartTimes.set(val, Math.random() * 0.6);
   });
 
   // Snapshot Current DOM
   const existingCards = new Map();
-  container.querySelectorAll('.game-card-wrapper').forEach(el => {
+  container.querySelectorAll('.game-card-wrapper').forEach(el =>
+  {
     if(el.dataset.key) existingCards.set(el.dataset.key, el);
   });
 

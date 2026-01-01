@@ -1,5 +1,5 @@
   const RUmine_url = "https://youtu.be/voH0S0e01vs?si=g38vWuUqhXVRTV82";
-  const ForzaHorizon_playlsit_url = "https://www.youtube.com/watch?v=1RfeC8LtxPQ&list=PLCutjjq7vO82Aa2MbyO3A6_bKHEY-tS7j";
+  const ForzaHorizon_playlist_url = "https://www.youtube.com/watch?v=1RfeC8LtxPQ&list=PLCutjjq7vO82Aa2MbyO3A6_bKHEY-tS7j";
   const chaos_mark_cinematic = "https://youtu.be/dNFGJQIW5ZM?si=piHe5cnzak2GUaNH&t=118";
   const dmc_combichrist = "https://youtu.be/_9J8ccza1OI?si=auJSiHZwMEYIID7y&t=13";
   const lara_radio_climb = "https://youtu.be/8ULSAuYvu5Y?si=BVTZ37dWmAQIacrj&t=1066";
@@ -26,6 +26,42 @@
       "rawg_id": 10213,
     },
     {
+      "name": "The Last of Us Part I",
+      "tier": "SS",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2025,
+      "score": 96,
+      "comment":
+      `TODO: still finishing it`,
+      "igdb_id": 204350,
+      "rawg_id": "the-last-of-us",
+    },
+    {
+      "name": "Ghost of Yotei",
+      "tier": "S",
+      "category": "AAA",
+      "platform": "PlayStation 5",
+      "played_year": 2025,
+      "score": 91,
+      "comment":
+      `TODO: still finishing it`,
+      "igdb_id": 317627,
+      "rawg_id": "ghost-of-yotei",
+    },
+    {
+      "name": "Beyond: Two Souls",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PlayStation 5",
+      "played_year": 2025,
+      "score": 79,
+      "comment":
+      `TODO: still finishing it`,
+      "igdb_id": 1342,
+      "rawg_id": "beyond-two-souls",
+    },
+    {
       "name": "Alice: Madness Returns",
       "tier": "A",
       "category": "AAA",
@@ -34,11 +70,39 @@
       "score": 83,
       "comment":
       `Unreal enviorment,
-      Satysfying camera work,
+      satisfying camera work,
       3Cs did not age well,
       but still pure art`,
       "igdb_id": 1040,
       "rawg_id": "alice-madness-returns",
+    },
+    {
+      "name": "The Legend of Zelda: Breath of the Wild",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Nintendo Switch",
+      "played_year": 2025,
+      "score": 84,
+      "comment":
+      `Good systemic
+       gameplay
+       and exploration.
+       Weak plot and puzzles.`,
+      "igdb_id": 7346,
+      "rawg_id": "the-legend-of-zelda-breath-of-the-wild",
+    },
+    {
+      "name": "Rabbids: Party of Legends",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "Nintendo Switch",
+      "played_year": 2025,
+      "score": 67,
+      "comment":
+      `Mario Party
+      kinda game`,
+      "igdb_id": 201254,
+      "rawg_id": "rabbids-party-of-legends",
     },
     {
       "name": "Hollow Knight: Silksong",
@@ -100,11 +164,14 @@
       "category": "AAA",
       "platform": "Xbox Series X",
       "played_year": 2025,
-      "score": 79,
-      "comment": `Game that makes you feel like Indiana Jones.
-      Polished first-person animations and micro-sandbox-levels here and there.
-      Game is quite short, but it's a good thing
-      -- it focuses on what matters without filler content!`,
+      "score": 81,
+      "comment": `
+      Game that makes you feel
+      like Indiana Jones.
+      Polished first-person animations and
+       micro-sandbox-levels here and there.
+      Game is quite short, but it's a good thing. It
+      focuses on what matters without filler content!`,
       "igdb_id": 142415,
       "rawg_id": "indiana-jones-and-the-great-circle",
     },
@@ -114,7 +181,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2025,
-      "score": 75,
+      "score": 80,
       "comment": `Fast gameplay loop.
       Hardcode 2D micro-skill-demending
       game aboud dodging DISCS.`,
@@ -152,7 +219,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2025,
-      "score": 77,
+      "score": 78,
       "comment":
       `3D-runner with unique
       satisfying locomotion mechanics and
@@ -178,7 +245,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2025,
-      "score": 68,
+      "score": 71,
       "comment": `Satisfying
       portal-themed puzzles,
       Portal humor included`,
@@ -231,7 +298,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2025,
-      "score": 74,
+      "score": 78,
       "comment":
       `Classic turn base 2D puzzle,
       great twists on mechanics,
@@ -240,6 +307,58 @@
       Constantly gives you an a-ha moment.`,
       "igdb_id": 11592,
       "rawg_id": 700,
+    },
+    {
+      "name": "SUPERVIVE",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 80,
+      "comment":
+      `Been playing since
+      pre-alpha playtest.
+      ("Project Loki")
+      Breath of fresh air
+      in MOBA scene, with
+      Hotline Miami-style aiming
+      and skill-based mechanics.
+      SUPER SAD THAT
+      IT'S DEAD NOW :(`,
+      "igdb_id": 255078,
+      "rawg_id": "supervive",
+    },
+    {
+      "name": "Moonlighter",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 78,
+      "comment":
+      `Rogue-lite,
+      during the day: 📜
+      u r a shopkeeper
+      managing artifact prices,
+      at night you loot dungions
+      and fight monsters`,
+      "igdb_id": 27771,
+      "rawg_id": "moonlighter",
+    },
+    {
+      "name": "Dicey Dungeons",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 75,
+      "comment":
+      `Rouglike with lots
+      of random management
+      where you play as a
+      giant walking dice 🎲!`,
+      "igdb_id": 102420,
+      "rawg_id": "dicey-dungeons",
     },
     {
       "name": "Life is Strange",
@@ -286,11 +405,11 @@
     },
     {
       "name": "Call of the Sea",
-      "tier": "B",
+      "tier": "C",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2024,
-      "score": 63,
+      "score": 65,
       "comment": `
       1st-person narrative puzzle adventure
       Puzzles are basic.
@@ -308,16 +427,107 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2024,
-      "score": 77,
+      "score": 79,
       "comment": `
       TODO`,
       "igdb_id": 2935,
       "rawg_id": "papers-please",
     },
     {
+      "name": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+      "tier": "SS",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 95,
+      "comment":
+      `TODO:
+      need to finish it`,
+      "igdb_id": 101440,
+      "rawg_id": "stalker-2",
+    },
+    {
+      "name": "Celeste",
+      "tier": "S",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2024,
+      "score": 92,
+      "comment":
+      `TODO`,
+      "igdb_id": 26226,
+      "rawg_id": "celeste",
+    },
+    {
+      "name": "Baldur's Gate 3",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 86,
+      "comment":
+      `Spent just 15 hours,
+      really deep,
+      need to find time to
+      finish it,
+      A for now.`,
+      "igdb_id": 119171,
+      "rawg_id": "baldurs-gate-3",
+    },
+    {
+      "name": "Aperture Desk Job",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 81,
+      "comment":
+      `Nice Portal-flavored
+      demo for Steam Deck
+      features. 30min to
+      beat`,
+      "igdb_id": 191897,
+      "rawg_id": "aperture-desk-job",
+    },
+    {
+      "name": "Death Stranding: Director's Cut",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 87,
+      "comment":
+      `Enjoyed deeply
+      every meditative
+      aspect of it. EXCEPT
+      the World War flashback,
+      where the game
+      became a shooter
+      all of a sudden`,
+      "igdb_id": 152063,
+      "rawg_id": "death-stranding",
+    },
+    {
+      "name": "Oxygen Not Included",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2023,
+      "score": 85,
+      "comment":
+      `Manage cute, doodly
+      space-colonies’ food,
+      sleep, energy, plumbing,
+      ventilation,heat,
+      resources, space, stress,
+      health and MORE!`,
+      "igdb_id": 19542,
+      "rawg_id": "oxygen-not-included",
+    },
+    {
       "name": "Game Dev Tycoon",
       "tier": "A",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2023,
       "score": 80,
@@ -336,7 +546,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2023,
-      "score": 60,
+      "score": 59,
       "comment": `Fun co-op game.
       But not that much content.
       They compensated for it
@@ -396,6 +606,30 @@
       `todo`,
       "igdb_id": 186725,
       "rawg_id": "vampire-survivors",
+    },
+    {
+      "name": "Wolfenstein II: The New Colossus",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2022,
+      "score": 83,
+      "comment":
+      `TODO: still finishing it`,
+      "igdb_id": 36952,
+      "rawg_id": "wolfenstein-2-the-new-colossus",
+    },
+    {
+      "name": "Deathloop",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2022,
+      "score": 81,
+      "comment":
+      `TODO: still finishing it`,
+      "igdb_id": 113598,
+      "rawg_id": "deathloop-2",
     },
     {
       "name": "Darkest Dungeon",
@@ -460,7 +694,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2021,
-      "score": 75,
+      "score": 82,
       "comment":
       `One of my
       favorite rougelikes.
@@ -499,7 +733,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2021,
-      "score": 59,
+      "score": 61,
       "comment":
       `Way too aggressive
       with microtransactions
@@ -510,12 +744,48 @@
       "rawg_id": "wwe-2k-battlegrounds",
     },
     {
+      "name": "Crazy Machines 3",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 70,
+      "comment":
+      `Chain-reaction
+       puzzles.
+       Really satisfying
+       domino effects.
+       Not enough challenge
+       for me, most are
+      pretty straightforward`,
+      "igdb_id": 19291,
+      "rawg_id": "crazy-machines-3",
+    },
+    {
+      "name": "Chess Ultra",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 76,
+      "comment":
+      `Well, it's
+       just chess.
+       in 4K.
+       Allows you
+       to change
+       sets,boards,
+       soundtrack.`,
+      "igdb_id": 31561,
+      "rawg_id": "chess-ultra",
+    },
+    {
       "name": "Forager",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2021,
-      "score": 70,
+      "score": 71,
       "comment": "TODO",
       "igdb_id": 25580,
       "rawg_id": "forager",
@@ -526,7 +796,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2021,
-      "score": 76,
+      "score": 78,
       "comment": `U r a sheriff of a
       snowy remote town.
       XCOM like combat w/
@@ -551,7 +821,7 @@
     },
     {
       "name": "Bad North: Jotunn Edition",
-      "tier": "B",
+      "tier": "C",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2020,
@@ -601,6 +871,39 @@
       Decent visuals.`,
       "igdb_id": 112378,
       "rawg_id": "nanotale-typing-chronicles",
+    },
+    {
+      "name": "Two Point Hospital",
+      "tier": "C",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 70,
+      "comment":
+      `Cute and cozy
+      hospital-builder,
+      core gameplay loop
+      was not catchy
+      enough for me :(`,
+      "igdb_id": 82117,
+      "rawg_id": "two-point-hospital",
+    },
+    {
+      "name": "Sniper Elite 4",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 80,
+      "comment":
+      `Super polished
+      (it's Polish)
+      sniper-simulator. They
+      iterated the series
+      into perfection. X-Ray
+      shots are WOW`,
+      "igdb_id": 18366,
+      "rawg_id": "sniper-elite-4",
     },
     {
       "name": "Wizard of Legend",
@@ -671,6 +974,20 @@
       "rawg_id": "hotshot-racing",
     },
     {
+      "name": "Hitman",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2019,
+      "score": 85,
+      "comment":
+      `Good stealth sandbox,
+      exactly what I expected
+      from a Hitman game`,
+      "igdb_id": 11157,
+      "rawg_id": "hitman",
+    },
+    {
       "name": "Slipstream",
       "tier": "B",
       "category": "Indie",
@@ -691,6 +1008,22 @@
       "comment": "U have a minit to live!\nInsane how much\nwas squizzed out of this simple idea!",
       "igdb_id": 26970,
       "rawg_id": "minit",
+    },
+    {
+      "name": "Moving Out",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 84,
+      "comment":
+      `Very Overcooked-like,
+      couch-coop about
+      moving furniture,
+      while trashing
+      the place 🛋`,
+      "igdb_id": 113866,
+      "rawg_id": "moving-out-2",
     },
     {
       "name": "Overcooked! 2",
@@ -732,12 +1065,39 @@
       "rawg_id": 10537,
     },
     {
+      "name": "Rayman Fiesta Run",
+      "tier": "A",
+      "category": "",
+      "platform": "Android",
+      "played_year": 2011,
+      "score": 82,
+      "comment":
+        `Using the same
+        watercolour
+        artstlye as
+        Rayman Origins,
+        which is my favorite`,
+      "igdb_id": 19726,
+      "rawg_id": "rayman-fiesta-run",
+    },
+    {
+      "name": "Jetpack Joyride",
+      "tier": "A",
+      "category": "",
+      "platform": "Android",
+      "played_year": 2011,
+      "score": 86,
+      "comment": "TODO",
+      "igdb_id": 8978,
+      "rawg_id": "jetpack-joyride",
+    },
+    {
       "name": "Mini Metro",
       "tier": "B",
       "category": "Indie",
       "platform": "Android",
       "played_year": 2019,
-      "score": 70,
+      "score": 73,
       "comment": "Creative miminalistic puzzle game.",
       "igdb_id": 7767,
       "rawg_id": "mini-metro",
@@ -789,16 +1149,17 @@
       "name": "Plague Inc",
       "tier": "B",
       "category": "Indie",
-      "platform": "Android",
+      "platform": "Android / PC",
       "played_year": 2012,
       "score": 70,
       "comment":
-      `RTS. U play as apathogen
-      with the goal of infecting and
+      `RTS. U play as a
+      pathogen with the goal
+      of infecting and
       wiping out humanity 😈
       Played Plague Inc: Evolved
       PC port too`,
-      "igdb_id": 1279,
+      "igdb_id": 2065,
       "rawg_id": "plague-inc",
     },
     {
@@ -807,7 +1168,7 @@
       "category": "AAA",
       "platform": "PlayStation 4",
       "played_year": 2020,
-      "score": 83,
+      "score": 84,
       "comment":
       `Great remake!
       Got Collector's Edition of it,
@@ -842,23 +1203,6 @@
       Firaxis game on PS4.`,
       "igdb_id": 10919,
       "rawg_id": "xcom-2",
-    },
-    {
-      "name": "Mad Max",
-      "tier": "B",
-      "category": "AAA",
-      "platform": "PlayStation 4",
-      "played_year": 2018,
-      "score": 74,
-      "comment":
-      `Vehicle combat and
-      everything build
-      around it is just
-      FANTASTIC. Repetative
-      tasks, and mid melee
-      combat is a weak-side.`,
-      "igdb_id": 2552,
-      "rawg_id": "mad-max",
     },
     {
       "name": "Forma.8",
@@ -943,7 +1287,7 @@
       "rawg_id": "hidden-agenda",
     },
     {
-      "name": "Max Max",
+      "name": "Mad Max",
       "tier": "B",
       "category": "AAA",
       "platform": "PlayStation 4",
@@ -1001,7 +1345,7 @@
       "category": "AAA",
       "platform": "PlayStation 2",
       "played_year": 2009,
-      "score": 59,
+      "score": 60,
       "comment":
       `Like God of War mixed
       with Devil May Cry,
@@ -1201,6 +1545,22 @@
       "rawg_id": "laser-league",
     },
     {
+      "name": "The Escapists 2",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2018,
+      "score": 72,
+      "comment":
+      `First time played it
+      on Chirstmas after-party
+      from 2am to 6am.
+      We did not manage
+      to escape, sadly`,
+      "igdb_id": 25653,
+      "rawg_id": "the-escapists-2",
+    },
+    {
       "name": "Snake Pass",
       "tier": "B",
       "category": "Indie",
@@ -1257,12 +1617,42 @@
       "rawg_id": "nba-2k17",
     },
     {
+      "name": "Journey",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2020,
+      "score": 86,
+      "comment":
+      `Hope I'll
+      start the journey
+      again after a
+      long break.`,
+      "igdb_id": 1352,
+      "rawg_id": "journey",
+    },
+    {
+      "name": "BioShock",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PlayStation 4",
+      "played_year": 2020,
+      "score": 81,
+      "comment":
+      `Stunning
+      worldbuilding,
+      gameplay did not
+      hold up that well`,
+      "igdb_id": 34293,
+      "rawg_id": "bioshock",
+    },
+    {
       "name": "The Witness",
       "tier": "A",
       "category": "Indie",
       "platform": "PlayStation 4",
       "played_year": 2021,
-      "score": 77,
+      "score": 79,
       "comment":
       `Took 2 month break
        after 6 hours of
@@ -1534,6 +1924,40 @@
       "rawg_id": "trials-fusion",
     },
     {
+      "name": "Playman Extreme Running",
+      "tier": "A",
+      "category": "",
+      "platform": "Sony Ericsson",
+      "played_year": 2009,
+      "score": 82,
+      "comment":
+      `Parkour game for
+      old phones with
+      up to 8 (!!!)
+      players competitve
+      races using
+      Bluetooth!`,
+      "igdb_id": 316708,
+      //"rawg_id": -1,
+    },
+    {
+      "name": "Dead Rising 2",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 79,
+      "comment":
+      `Global 72h timer and
+      really visceral melee
+      combat were pillars
+      that defined this game.
+      Loved mashing through
+      hundreds of zombies 🪓`,
+      "igdb_id": 496,
+      "rawg_id": "dead-rising-2",
+    },
+    {
       "name": "Hitman: Absolution",
       "tier": "A",
       "category": "AAA",
@@ -1546,7 +1970,7 @@
       "rawg_id": "hitman-absolution",
     },
     {
-      "name": "Dead Space",
+      "name": "Dead Space 2",
       "tier": "A",
       "category": "AAA",
       "platform": "Xbox 360",
@@ -1558,8 +1982,8 @@
       Accessible 3rd person
       survival horror.
       Was on 2 discs for Xbox 360 :)`,
-      "igdb_id": 37,
-      "rawg_id": "dead-space",
+      "igdb_id": 38,
+      "rawg_id": "dead-space-2",
     },
     {
       "name": "Dante's Inferno",
@@ -1603,7 +2027,7 @@
       "score": 91,
       "comment":
       `My favourite racing game.
-      The <a href=\"${ForzaHorizon_playlsit_url}\" target=\"_blank\">soundtrack</a> was insane,
+      The <a href=\"${ForzaHorizon_playlist_url}\" target=\"_blank\">soundtrack</a> was insane,
       discovered <a href=\"${RUmine_url}\" target=\"_blank\">Arctic Monkeys</a> in it.
       Open-world street racing
       festival set in Colorado.
@@ -1679,7 +2103,7 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2012,
-      "score": 92,
+      "score": 91,
       "comment":
       `Unique steam park art style Arkane
       crafted for this game. Doubt that
@@ -1694,7 +2118,7 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2012,
-      "score": 82,
+      "score": 84,
       "comment": "Loved the aesthetics of it \n and the gore graphic noir art style.",
       "igdb_id": 544,
       "rawg_id": "the-darkness-ii",
@@ -1731,7 +2155,7 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2008,
-      "score": 72,
+      "score": 74,
       "comment":
       `Cel-shaded comics-like
       art really stood out,
@@ -1796,6 +2220,18 @@
       `Absolute cinema`,
       "igdb_id": 559,
       "rawg_id": "modern-warfare-2",
+    },
+    {
+      "name": "Tropico 4",
+      "tier": "A",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2011,
+      "score": 79,
+      "comment":
+      `TODO`,
+      "igdb_id": 2595,
+      "rawg_id": "tropico-4",
     },
     {
       "name": "Call of Duty: Modern Warfare 3",
@@ -1896,12 +2332,12 @@
       around and shoot,
       even though it looked
       stylish`,
-      "igdb_id": 17224,
+      "igdb_id": 488,
       "rawg_id": "kane-lynch-2-dog-days",
     },
     {
       "name": "Deus Ex: Human Revolution",
-      "tier": "C",
+      "tier": "B",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2011,
@@ -2480,7 +2916,8 @@
       didn't offer that
       much gameplay-wise.
       Lore of the Altair's
-      past is the best it offers.`,
+      past is the best thing
+      it offers.`,
       "igdb_id": 10661,
       "rawg_id": "assassins-creed-bloodlines",
     },
@@ -2525,7 +2962,7 @@
       "category": "",
       "platform": "PSP",
       "played_year": 2011,
-      "score": 77,
+      "score": 80,
       "comment": "Great rythm game, \nplaying coop locally on PSP \n(PSP had its own wireless protocol!) \nwas so much fun. \nUsed to store cash in the Patapon's game case :D",
       "igdb_id": 18373,
       "rawg_id": "patapon-3",
@@ -2598,15 +3035,15 @@
       "category": "",
       "platform": "PC",
       "played_year": 2009,
-      "score": 75,
+      "score": 85,
       "comment":
       `Bunch of homages to different
       games and platforming challenges`,
-      "igdb_id": 259330,
+      "igdb_id": 2844,
       "rawg_id": "the-simpsons-hit-run",
     },
     {
-      "name": "Harry Potter Quidditch World ",
+      "name": "Harry Potter Quidditch World",
       "tier": "B",
       "category": "AAA",
       "platform": "PC",
@@ -2619,17 +3056,29 @@
       "rawg_id": "harry-potter-quidditch-world-cup"
     },
     {
+      "name": "Warhammer 40,000: Dawn of War - Dark Crusade",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 88,
+      "comment":
+      `TODO`,
+      "igdb_id": 467,
+      "rawg_id": "warhammer-40000-dawn-of-war-dark-crusade",
+    },
+    {
       "name": "The Simpsons Game",
       "tier": "A",
       "category": "",
       "platform": "PlayStation 2",
       "played_year": 2007,
-      "score": 90,
+      "score": 81,
       "comment":
       `open world
       "GTA" in Springfield,
       so many cool littel details`,
-      "igdb_id": 2844,
+      "igdb_id": 259330,
       "rawg_id": "the-simpsons-game",
     },
     {
@@ -2658,6 +3107,76 @@
       fighting on Xbox 360 🍃`,
       "igdb_id": 7099,
       "rawg_id": "naruto-storm-3",
+    },
+    {
+      "name": "LEGO Jurassic World",
+      "tier": "B",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2015,
+      "score": 71,
+      "comment":
+      `OK, default
+      Lego game formula`,
+      "igdb_id": 9918,
+      "rawg_id": "lego-jurassic-world",
+    },
+    {
+      "name": "London 2012 - The Official Video Game of the Olympic Games",
+      "tier": "D",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2012,
+      "score": 54,
+      "comment":
+      `If you like
+      all the sports
+      equally, and
+      you like
+      them being BAD.
+      This game is for you`,
+      "igdb_id": 7055,
+      "rawg_id": "london-2012",
+    },
+    {
+      "name": "FIFA 13",
+      "tier": "B",
+      "category": "",
+      "platform": "Xbox 360 / PSP",
+      "played_year": 2013,
+      "score": 77,
+      "comment":
+      `Last FIFA I touched.
+      Not a big football fan.
+      imho FIFA is the same
+      exact game each year`,
+      "igdb_id": 2153,
+      "rawg_id": "fifa-13",
+    },
+    {
+      "name": "WWE '13",
+      "tier": "B",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2013,
+      "score": 75,
+      "comment":
+      `Last WWE I played`,
+      "igdb_id": 5295,
+      "rawg_id": "wwe-13",
+    },
+    {
+      "name": "Naruto Shippuden: Ultimate Ninja STORM 2",
+      "tier": "A",
+      "category": "",
+      "platform": "Xbox 360",
+      "played_year": 2012,
+      "score": 79,
+      "comment":
+      `Upgrade from 2D fighting
+      to full 3D 🔥🍃`,
+      "igdb_id": 7098,
+      "rawg_id": "naruto-shippuden-ultimate-ninja-storm-2",
     },
     {
       "name": "Naruto Shippuden: Ultimate Ninja 4",
@@ -2693,7 +3212,7 @@
       "category": "",
       "platform": "PlayStation 2",
       "played_year": 2009,
-      "score": 65,
+      "score": 70,
       "comment": "Cozy surf-racing game",
       "igdb_id": 4191,
       "rawg_id": 25144,
@@ -2841,7 +3360,7 @@
       "category": "AAA",
       "platform": "PC",
       "played_year": 2007,
-      "score": 70,
+      "score": 67,
       "comment":
       `A game based on
       a movie within
@@ -2869,7 +3388,7 @@
       "rawg_id": "just-cause-2",
     },
     {
-      "name": "Mirror's Edge",
+      "name": "Prince of Persia",
       "tier": "A",
       "category": "AAA",
       "platform": "PC",
@@ -2899,7 +3418,7 @@
       "name": "Grand Theft Auto IV",
       "tier": "SS",
       "category": "AAA",
-      "platform": "PC",
+      "platform": "PC / Xbox 360",
       "played_year": 2009,
       "score": 92,
       "comment": "Euphoria physics",
@@ -3068,7 +3587,7 @@
       "category": "",
       "platform": "PlayStation 2",
       "played_year": 2009,
-      "score": 68,
+      "score": 69,
       "comment": "Like Tony Hawk, but parkour. \nSame studio as Sniper Elite.",
       "igdb_id": 4873,
       "rawg_id": "free-running"
@@ -3326,7 +3845,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2006,
-      "score": 82,
+      "score": 84,
       "comment": "Motion blur is \nthe coolest thing ever",
       "igdb_id": 97,
       "rawg_id": 53446
@@ -3458,7 +3977,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2006,
-      "score": 77,
+      "score": 72,
       "comment": `First game I played on my first PC 🎂`,
       "igdb_id": 49184,
       "rawg_id": 35821
