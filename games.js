@@ -69,7 +69,7 @@
       "played_year": 2025,
       "score": 83,
       "comment":
-      `Unreal enviorment,
+      `Unreal environment,
       satisfying camera work,
       3Cs did not age well,
       but still pure art`,
@@ -125,7 +125,7 @@
       "played_year": 2019,
       "score": 96,
       "comment": `Best metroidvania
-      of it's time
+      of its time
       with combat depth
       and vast engaging world.`,
       "igdb_id": 365702,
@@ -184,7 +184,7 @@
       "score": 80,
       "comment": `Fast gameplay loop.
       Hardcode 2D micro-skill-demending
-      game aboud dodging DISCS.`,
+      game about dodging DISCS.`,
       "igdb_id": 131614,
       "rawg_id": 513878,
     },
@@ -224,7 +224,7 @@
       `3D-runner with unique
       satisfying locomotion mechanics and
       very polished animations.
-      Not a fun of the plot though.`,
+      Not a fan of the plot though.`,
       "igdb_id": 228918,
       "rawg_id": 719612,
     },
@@ -300,7 +300,7 @@
       "played_year": 2025,
       "score": 78,
       "comment":
-      `Classic turn base 2D puzzle,
+      `Classic turn-base 2D puzzle,
       great twists on mechanics,
       in-depth exploration of each mechanic
       and how it overlaps with others.
@@ -340,7 +340,7 @@
       during the day: 📜
       u r a shopkeeper
       managing artifact prices,
-      at night you loot dungions
+      at night you loot dungeons
       and fight monsters`,
       "igdb_id": 27771,
       "rawg_id": "moonlighter",
@@ -353,7 +353,7 @@
       "played_year": 2024,
       "score": 75,
       "comment":
-      `Rouglike with lots
+      `Roguelike with lots
       of random management
       where you play as a
       giant walking dice 🎲!`,
@@ -396,7 +396,7 @@
       "played_year": 2024,
       "score": 72,
       "comment": `Not as much of a game gameplay-wise,
-      but a briliant showcase
+      but a brilliant showcase
       of how video game medium
       can be used as an engaging narrative tool.
       Magical realism at its finest.`,
@@ -436,7 +436,7 @@
     {
       "name": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
       "tier": "SS",
-      "category": "Indie",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2024,
       "score": 95,
@@ -666,7 +666,7 @@
       `first-person puzzle
        with perception as
        a mechanic.
-       It's only minus is
+       Its only minus is
        that it's too short
        (3h to beat)`,
       "igdb_id": 68447,
@@ -697,7 +697,7 @@
       "score": 82,
       "comment":
       `One of my
-      favorite rougelikes.
+      favorite Roguelikes.
       ADDICTIVE gameplay`,
       "igdb_id": 40477,
       "rawg_id": "slay-the-spire",
@@ -711,7 +711,7 @@
       "score": 75,
       "comment": `Kickflip-backflip
       into ricochet
-      tirplekill`,
+      tirple kill`,
       "igdb_id": 25901,
       "rawg_id": "my-friend-pedro",
     },
@@ -723,7 +723,7 @@
       "played_year": 2021,
       "score": 70,
       "comment": `Satisfying Western 2D
-      pixel art rouglike shooter.`,
+      pixel art Roguelike shooter.`,
       "igdb_id": 114074,
       "rawg_id": 284763,
     },
@@ -867,7 +867,7 @@
       "score": 71,
       "comment":
       `Game to train/learn
-      blindtyping.
+      blind typing.
       Decent visuals.`,
       "igdb_id": 112378,
       "rawg_id": "nanotale-typing-chronicles",
@@ -1134,7 +1134,7 @@
     {
       "name": "Serious Sam 3: BFE",
       "tier": "C",
-      "category": "AAA",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2012,
       "score": 65,
@@ -1235,7 +1235,7 @@
     {
       "name": "Knowledge is Power!",
       "tier": "D",
-      "category": "AAA",
+      "category": "",
       "platform": "PlayStation 4",
       "played_year": 2018,
       "score": 51,
@@ -1298,7 +1298,7 @@
       are fantastic,
       but plot is weak and
       after somepoint
-      gameplay is repetative`,
+      gameplay is repetitive`,
       "igdb_id": 2552,
       "rawg_id": "mad-max",
     },
@@ -1310,7 +1310,7 @@
       "played_year": 2009,
       "score": 94,
       "comment": `So much epic
-      and cinimatography
+      and cinematography
       in a slashing action`,
       "igdb_id": 549,
       "rawg_id": "god-of-war",
@@ -1408,7 +1408,7 @@
     {
       "name": "Q*bert: Rebooted",
       "tier": "C",
-      "category": "AAA",
+      "category": "",
       "platform": "PlayStation 4",
       "played_year": 2018,
       "score": 70,
@@ -1480,7 +1480,7 @@
       "platform": "PlayStation 4",
       "played_year": 2019,
       "score": 83,
-      "comment": "Almost meditative, \nsatysfing locomotion.",
+      "comment": "Almost meditative, \nsatisfying locomotion.",
       "igdb_id": 19554,
       "rawg_id": "steep",
     },
@@ -1502,7 +1502,7 @@
       "platform": "PlayStation 4",
       "played_year": 2018,
       "score": 69,
-      "comment": "Heartwarming adventure with \nJourney/The Witness-like visuals that just suck you in. \nNo HUD! But the puzzles are pretty shallow and \nit's more about exeriencing the art of it.",
+      "comment": "Heartwarming adventure with \nJourney/The Witness-like visuals that just suck you in. \nNo HUD! But the puzzles are pretty shallow and \nit's more about experiencing the art of it.",
       "igdb_id": 7621,
       "rawg_id": "rime",
     },
@@ -1634,7 +1634,7 @@
     {
       "name": "BioShock",
       "tier": "A",
-      "category": "Indie",
+      "category": "AAA",
       "platform": "PlayStation 4",
       "played_year": 2020,
       "score": 81,
@@ -1785,7 +1785,7 @@
       "platform": "Xbox 360",
       "played_year": 2015,
       "score": 88,
-      "comment": "The fast-pasted platforming \nwith unique charming art style. \nMy favorite Rayman game for sure!",
+      "comment": "The fast-paced platforming \nwith unique charming art style. \nMy favorite Rayman game for sure!",
       "igdb_id": 981,
       "rawg_id": "rayman-origins",
     },
@@ -1803,7 +1803,7 @@
     {
       "name": "Magicka",
       "tier": "A",
-      "category": "AAA",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2013,
       "score": 82,
@@ -1901,8 +1901,8 @@
       "score": 71,
       "comment":
       `The plot was lame
-      and missions repoetative.
-      But I genuanly enjoyed the
+      and missions repetitive.
+      But I genuinely enjoyed the
       melee combat and 3Cs of it.
       Finished the whole thing.`,
       "igdb_id": 1833,
@@ -1917,7 +1917,7 @@
       "score": 79,
       "comment":
       `Most polished
-      iteretaion of the
+      iteration of the
       Gravity Defied
       gameplay 💛`,
       "igdb_id": 3191,
@@ -2131,7 +2131,7 @@
       "played_year": 2012,
       "score": 77,
       "comment":
-      `Melee combat and enviorment interactions
+      `Melee combat and environment interactions
       were next level!
       Hong Kong's organized crime aesthetic ✨`,
       "igdb_id": 1267,
@@ -2320,7 +2320,7 @@
     {
       "name": "Kane and Lynch 2 Dog Days",
       "tier": "D",
-      "category": "Indie",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2011,
       "score": 60,
@@ -2338,7 +2338,7 @@
     {
       "name": "Deus Ex: Human Revolution",
       "tier": "B",
-      "category": "Indie",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2011,
       "score": 77,
@@ -3025,7 +3025,7 @@
       "comment":
       `Team-based action-RPG,
       with 23 playable characters,
-      accross different Marvel IPs`,
+      across different Marvel IPs`,
       "igdb_id": 288948, // PS2/PSP version
       "rawg_id": "marvel-ult-alliance",
     },
@@ -3077,7 +3077,7 @@
       "comment":
       `open world
       "GTA" in Springfield,
-      so many cool littel details`,
+      so many cool little details`,
       "igdb_id": 259330,
       "rawg_id": "the-simpsons-game",
     },
@@ -3275,7 +3275,7 @@
     {
       "name": "Worms 4: Mayhem",
       "tier": "A",
-      "category": "AAA",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2007,
       "score": 83,
@@ -3451,7 +3451,7 @@
       "played_year": 2007,
       "score": 79,
       "comment":
-      `Very simmilar to
+      `Very similar to
       Chamber of Secrets.
       KnowWonder still
       made a good game imho`,
@@ -3499,7 +3499,7 @@
       "score": 83,
       "comment":
       `Drifting,
-      so much drifing
+      so much drifting
       + everything neon`,
       "igdb_id": 99,
       "rawg_id": "need-for-speed-carbon"
@@ -3525,7 +3525,7 @@
       "platform": "PC",
       "played_year": 2007,
       "score": 62,
-      "comment": "Remember it being extremly fun. \nMain gameplay is STEALTHing as a bear\n + bunch of well polished mini-games.",
+      "comment": "Remember it being extremely fun. \nMain gameplay is STEALTHing as a bear\n + bunch of well polished mini-games.",
       "igdb_id": 4055,
       "rawg_id": "open-season"
     },
@@ -3922,7 +3922,7 @@
       "score": 72,
       "comment": `Loved those point
       and click quests.
-      Serwing beer to
+      Serving beer to
       the knights 🍺`,
       "igdb_id": 67789,
       "rawg_id": "scooby-doo-phantom-of-the-knight"
