@@ -17,7 +17,7 @@
     {
       "name": "Dota 2",
       "tier": "SSS",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2012,
       "score": 99,
@@ -63,7 +63,7 @@
       "comment": `TODO: still finishing it`,
       "igdb_id": 1342,
       "rawg_id": "beyond-two-souls",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -323,13 +323,13 @@
       Aaaand it's still super hard!`,
       "igdb_id": 885,
       "rawg_id": "super-meat-boy",
-      "vibe": "Sweaty",
-      "ttb": "Medium"
+      "vibe": "Sweaty, Flow",
+      "ttb": "Short"
     },
     {
       "name": "Lara Croft GO",
       "tier": "A",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2025,
       "score": 78,
@@ -395,13 +395,13 @@
       giant walking dice 🎲!`,
       "igdb_id": 102420,
       "rawg_id": "dicey-dungeons",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Flow",
       "ttb": "Medium"
     },
     {
       "name": "Life is Strange",
       "tier": "A",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2024,
       "score": 78,
@@ -491,7 +491,7 @@
       need to finish it`,
       "igdb_id": 101440,
       "rawg_id": "stalker-2",
-      "vibe": "Cinematic, Sweaty",
+      "vibe": "Cinematic, Sweaty, Epic",
       "ttb": "Long"
     },
     {
@@ -521,7 +521,7 @@
       A for now.`,
       "igdb_id": 119171,
       "rawg_id": "baldurs-gate-3",
-      "vibe": "Epic, Brainy",
+      "vibe": "Epic, Brainy, Cinematic",
       "ttb": "Long"
     },
     {
@@ -597,7 +597,7 @@
     {
       "name": "Aliens: Fireteam Elite",
       "tier": "D",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2023,
       "score": 59,
@@ -608,7 +608,7 @@
       Dropped it after ~8 hours.`,
       "igdb_id": 144153,
       "rawg_id": "aliens-fireteam",
-      "vibe": "Sweaty, Cinematic",
+      "vibe": "Sweaty, Epic",
       "ttb": "Medium"
     },
     {
@@ -638,7 +638,7 @@
       Short to beat.`,
       "igdb_id": 7205,
       "rawg_id": "superhot",
-      "vibe": "Flow, Brainy",
+      "vibe": "Flow, Brainy, Cinematic",
       "ttb": "Short"
     },
     {
@@ -667,7 +667,7 @@
       "igdb_id": 186725,
       "rawg_id": "vampire-survivors",
       "vibe": "Flow, Sweaty",
-      "ttb": "Medium"
+      "ttb": "Infinite"
     },
     {
       "name": "Wolfenstein II: The New Colossus",
@@ -679,7 +679,7 @@
       "comment": `TODO: still finishing it`,
       "igdb_id": 36952,
       "rawg_id": "wolfenstein-2-the-new-colossus",
-      "vibe": "Cinematic, Sweaty",
+      "vibe": "Cinematic, Sweaty, Epic",
       "ttb": "Medium"
     },
     {
@@ -1066,7 +1066,7 @@
       "comment": "Cool coop",
       "igdb_id": 131888,
       "rawg_id": "hotshot-Flow",
-      "vibe": "Arcade",
+      "vibe": "Flow",
       "ttb": "Short"
     },
     {
@@ -1094,7 +1094,7 @@
       "comment": "Arcade-style TODO",
       "igdb_id": 75096,
       "rawg_id": "slipstream",
-      "vibe": "Arcade",
+      "vibe": "Flow",
       "ttb": "Short"
     },
     {
@@ -1124,7 +1124,7 @@
       the place 🛋`,
       "igdb_id": 113866,
       "rawg_id": "moving-out-2",
-      "vibe": "Party",
+      "vibe": "Party, Cozy",
       "ttb": "Short"
     },
     {
@@ -1137,7 +1137,7 @@
       "comment": "My fav couch-coop game EVER!\nBeat every level with 3 stars.",
       "igdb_id": 103341,
       "rawg_id": "overcooked-2",
-      "vibe": "Party",
+      "vibe": "Party, Cozy",
       "ttb": "Medium"
     },
     {
@@ -1174,7 +1174,7 @@
     {
       "name": "Rayman Fiesta Run",
       "tier": "A",
-      "category": "",
+      "category": "Indie",
       "platform": "Android",
       "played_year": 2011,
       "score": 82,
@@ -1191,14 +1191,14 @@
     {
       "name": "Jetpack Joyride",
       "tier": "A",
-      "category": "",
+      "category": "Indie",
       "platform": "Android",
       "played_year": 2011,
       "score": 86,
       "comment": "TODO",
       "igdb_id": 8978,
       "rawg_id": "jetpack-joyride",
-      "vibe": "Arcade",
+      "vibe": "Flow",
       "ttb": "Infinite"
     },
     {
@@ -1292,7 +1292,7 @@
       (TODO: see how I geared it up)`,
       "igdb_id": 133887,
       "rawg_id": "tony-hawks-pro-skater-12",
-      "vibe": "Arcade",
+      "vibe": "Flow, Sweaty",
       "ttb": "Medium"
     },
     {
@@ -1426,7 +1426,7 @@
       gameplay is repetitive`,
       "igdb_id": 2552,
       "rawg_id": "mad-max",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -1441,7 +1441,7 @@
       in a slashing action`,
       "igdb_id": 549,
       "rawg_id": "god-of-war",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -1498,7 +1498,7 @@
       God of War.`,
       "igdb_id": 552,
       "rawg_id": "god-of-war-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Short"
     },
     {
@@ -1511,7 +1511,7 @@
       "comment": `What a COMEBACK!`,
       "igdb_id": 19560,
       "rawg_id": "god-of-war-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -1542,20 +1542,20 @@
       "comment": `Super satisfying locomotion`,
       "igdb_id": 19565,
       "rawg_id": "marvels-spider-man",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic, Flow",
       "ttb": "Medium"
     },
     {
       "name": "Q*bert: Rebooted",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PlayStation 4",
       "played_year": 2018,
       "score": 70,
       "comment": "TODO",
       "igdb_id": 17158,
       "rawg_id": "qbert-rebooted",
-      "vibe": "Arcade",
+      "vibe": "Flow",
       "ttb": "Short"
     },
     {
@@ -1569,7 +1569,7 @@
       maybe I should try Batman: The Enemy Within`,
       "igdb_id": 14746,
       "rawg_id": "batman-the-telltale-series",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Brainy",
       "ttb": "Short"
     },
     {
@@ -1582,7 +1582,7 @@
       "comment": "TODO",
       "igdb_id": 11156,
       "rawg_id": "horizon-zero-dawn",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -1608,7 +1608,7 @@
       "comment": "TODO",
       "igdb_id": 7331,
       "rawg_id": "uncharted-4-a-thiefs-end",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -1647,7 +1647,7 @@
       "comment": "Kept playing it for years. \nOne of a kind arcade racing. \nAddictive rinse and repeat gameplay.",
       "igdb_id": 11172,
       "rawg_id": "trackmania-turbo",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Medium"
     },
     {
@@ -1660,7 +1660,7 @@
       "comment": "Heartwarming adventure with \nJourney/The Witness-like visuals that just suck you in. \nNo HUD! But the puzzles are pretty shallow and \nit's more about experiencing the art of it.",
       "igdb_id": 7621,
       "rawg_id": "rime",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Cozy",
       "ttb": "Short"
     },
     {
@@ -1762,7 +1762,7 @@
       p-2-win swamp :(`,
       "igdb_id": 26772,
       "rawg_id": "nba-2k18",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -1778,7 +1778,7 @@
       Wasted 300 hours in it!`,
       "igdb_id": 18819,
       "rawg_id": "nba-2k17",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -1794,7 +1794,7 @@
       long break.`,
       "igdb_id": 1352,
       "rawg_id": "journey",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Cozy",
       "ttb": "Short"
     },
     {
@@ -1810,7 +1810,7 @@
       hold up that well`,
       "igdb_id": 34293,
       "rawg_id": "bioshock",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -1875,7 +1875,7 @@
       FIFA approach :(`,
       "igdb_id": 114285,
       "rawg_id": "nba-2k20",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -1925,7 +1925,7 @@
       gestures IRL.`,
       "igdb_id": 1592,
       "rawg_id": "fable-the-journey",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Cozy",
       "ttb": "Medium"
     },
     {
@@ -1977,7 +1977,7 @@
       "comment": "Unusual combat mechanics \nfor first-person multiplayer.",
       "igdb_id": 2358,
       "rawg_id": "chivalry-medieval-warfare",
-      "vibe": "Cinematic",
+      "vibe": "Sweaty, Epic, Party",
       "ttb": "Infinite"
     },
     {
@@ -2034,7 +2034,7 @@
       Was forced to register an Origin account.`,
       "igdb_id": 343,
       "rawg_id": "battlefield-3",
-      "vibe": "Sweaty",
+      "vibe": "Sweaty, Epic",
       "ttb": "Infinite"
     },
     {
@@ -2049,7 +2049,7 @@
       Final Stand was fun with all the snow.`,
       "igdb_id": 1979,
       "rawg_id": "battlefield-4",
-      "vibe": "Sweaty",
+      "vibe": "Sweaty, Epic",
       "ttb": "Infinite"
     },
     {
@@ -2065,7 +2065,7 @@
       is cool though`,
       "igdb_id": 378,
       "rawg_id": "metal-gear-rising-revengeance",
-      "vibe": "Cinematic, Flow, Epic",
+      "vibe": "Cinematic, Flow, Epic, Sweaty",
       "ttb": "Short"
     },
     {
@@ -2190,7 +2190,7 @@
       Was on 2 discs for Xbox 360 :)`,
       "igdb_id": 38,
       "rawg_id": "dead-space-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -2203,7 +2203,7 @@
       "comment": "God of War clone \nthat lived up to the original. \nEnemy deisgn is next level is whole \nhell's-horror aethtetic stood out so much.",
       "igdb_id": 6958,
       "rawg_id": "dantes-inferno",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Medium"
     },
     {
@@ -2311,7 +2311,7 @@
     {
       "name": "Max Payne 3",
       "tier": "SS",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2012,
       "score": 95,
@@ -2393,7 +2393,7 @@
       combat and bosses.`,
       "igdb_id": 4225,
       "rawg_id": "ultimate-spider-man",
-      "vibe": "Superhero",
+      "vibe": "Flow, Epic",
       "ttb": "Short"
     },
     {
@@ -2439,7 +2439,7 @@
       the Noir Spider-Man🖤`,
       "igdb_id": 553,
       "rawg_id": "spider-man-shattered-dimensions",
-      "vibe": "Cinematic, Flow",
+      "vibe": "Cinematic, Epic, Flow",
       "ttb": "Medium"
     },
     {
@@ -2452,7 +2452,7 @@
       "comment": `Absolute cinema`,
       "igdb_id": 559,
       "rawg_id": "modern-warfare-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Short"
     },
     {
@@ -2479,7 +2479,7 @@
       me install Steam`,
       "igdb_id": 979,
       "rawg_id": "call-of-duty-modern-warfare-3",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Short"
     },
     {
@@ -2524,7 +2524,7 @@
       still haunts me`,
       "igdb_id": 5062,
       "rawg_id": "chaos-on-deponia",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Medium"
     },
     {
@@ -2539,7 +2539,7 @@
       I must play Deponia Doomsday!`,
       "igdb_id": 5064,
       "rawg_id": "goodbye-deponia",
-      "vibe": "Comedy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Medium"
     },
     {
@@ -2555,7 +2555,7 @@
       back to Kuvaq`,
       "igdb_id": 17224,
       "rawg_id": "deponia-the-complete-journey",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Medium"
     },
     {
@@ -2633,7 +2633,7 @@
       "comment": "Face mocap ahead of it's time. \nFelt like an old movie.",
       "igdb_id": 109,
       "rawg_id": "la-noire",
-      "vibe": "Detective",
+      "vibe": "Cinematic, Brainy",
       "ttb": "Long"
     },
     {
@@ -2683,7 +2683,7 @@
       HELL YEAH!`,
       "igdb_id": 7137,
       "rawg_id": "pure",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Short"
     },
     {
@@ -2697,7 +2697,7 @@
       the hype, imho`,
       "igdb_id": 3235,
       "rawg_id": "blur",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Short"
     },
     {
@@ -2725,7 +2725,7 @@
       "comment": "\"Fus Ro Dah!\" \nDream RPG. \nBethesda's PEAK",
       "igdb_id": 472,
       "rawg_id": "the-elder-scrolls-v-skyrim",
-      "vibe": "Cinematic",
+      "vibe": "Epic, Cozy",
       "ttb": "Long"
     },
     {
@@ -2759,7 +2759,7 @@
       combo-system was fun!`,
       "igdb_id": 494,
       "rawg_id": "bulletstorm",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Short"
     },
     {
@@ -2864,7 +2864,7 @@
       "comment": `Only NBA 2K game produced by Jay-Z`,
       "igdb_id": 5058,
       "rawg_id": "nba-2k13",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -2991,7 +2991,7 @@
       pretty satisfying overall!`,
       "igdb_id": 10628,
       "rawg_id": "shrek-superslam",
-      "vibe": "Party",
+      "vibe": "Party, Cozy",
       "ttb": "Short"
     },
     {
@@ -3066,26 +3066,26 @@
       so I played Rogue on release`,
       "igdb_id": 7570,
       "rawg_id": "assassins-creed-rogue-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
       "name": "Assassin's Creed IV Black Flag",
       "tier": "A",
-      "category": "",
+      "category": "AAA",
       "platform": "Xbox 360",
       "played_year": 2013,
       "score": 85,
       "comment": `TODO`,
       "igdb_id": 1970,
       "rawg_id": "assassins-creed-iv-black-flag",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
       "name": "Assassin's Creed III",
       "tier": "S",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2012,
       "score": 91,
@@ -3095,13 +3095,13 @@
       and is still peak`,
       "igdb_id": 1266,
       "rawg_id": "assassins-creed-iii-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
       "name": "Assassin's Creed Revelations",
       "tier": "A",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2011,
       "score": 88,
@@ -3112,13 +3112,13 @@
       Way too short, not polished`,
       "igdb_id": 537,
       "rawg_id": "assassins-creed-revelations",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
       "name": "Assassin's Creed: Brotherhood",
       "tier": "SSS",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2011,
       "score": 97,
@@ -3130,7 +3130,7 @@
       Made in 1 year - insane!`,
       "igdb_id": 113,
       "rawg_id": "assassins-creed-brotherhood-2",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -3152,7 +3152,7 @@
     {
       "name": "Assassin's Creed II",
       "tier": "SSS",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2010,
       "score": 96,
@@ -3170,7 +3170,7 @@
     {
       "name": "Assassin's Creed",
       "tier": "S",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2008,
       "score": 90,
@@ -3183,7 +3183,7 @@
     {
       "name": "Grand Theft Auto: Chinatown Wars",
       "tier": "B",
-      "category": "",
+      "category": "AAA",
       "platform": "PSP",
       "played_year": 2012,
       "score": 77,
@@ -3196,7 +3196,7 @@
     {
       "name": "Assassin's Creed: Bloodlines",
       "tier": "B",
-      "category": "",
+      "category": "AAA",
       "platform": "PSP",
       "played_year": 2010,
       "score": 72,
@@ -3229,7 +3229,7 @@
     {
       "name": "Prince of Persia: The Forgotten Sands",
       "tier": "B",
-      "category": "",
+      "category": "AAA",
       "platform": "PSP",
       "played_year": 2010,
       "score": 72,
@@ -3249,7 +3249,7 @@
       "comment": "Portable AR game in 2010 is wild. \nBoring tomagochi though. \nI got a camera for my PSP, \nso I was pretty happy. \nEnabled me to do some \n'interesting' photography on my portable.",
       "igdb_id": 7303,
       "rawg_id": "eyepet",
-      "vibe": "Casual",
+      "vibe": "Cozy",
       "ttb": "Infinite"
     },
     {
@@ -3289,12 +3289,12 @@
       "igdb_id": 14755,
       "rawg_id": "ace-combat-x-skies-of-deception",
       "vibe": "Flow, Epic",
-      "ttb": "Short"
+      "ttb": "Medium"
     },
     {
       "name": "Star Wars: The Force Unleashed II",
       "tier": "C",
-      "category": "",
+      "category": "AAA",
       "platform": "Xbox 360",
       "played_year": 2014,
       "score": 67,
@@ -3309,14 +3309,14 @@
     {
       "name": "Star Wars: The Force Unleashed",
       "tier": "B",
-      "category": "",
+      "category": "AAA",
       "platform": "PlayStation 2",
       "played_year": 2010,
       "score": 75,
       "comment": `The dark side 🌑`,
       "igdb_id": 475,
       "rawg_id": "star-wars-the-force-unleashed",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Short"
     },
     {
@@ -3387,7 +3387,7 @@
       so many cool little details`,
       "igdb_id": 259330,
       "rawg_id": "the-simpsons-game",
-      "vibe": "Comedy",
+      "vibe": "Party",
       "ttb": "Medium"
     },
     {
@@ -3448,7 +3448,7 @@
       This game is for you`,
       "igdb_id": 7055,
       "rawg_id": "london-2012",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Short"
     },
     {
@@ -3464,7 +3464,7 @@
       exact game each year`,
       "igdb_id": 2153,
       "rawg_id": "fifa-13",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -3477,7 +3477,7 @@
       "comment": `Last WWE I played`,
       "igdb_id": 5295,
       "rawg_id": "wwe-13",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -3548,7 +3548,7 @@
       "comment": "I didn't like \nfeel and look of it :/",
       "igdb_id": 100,
       "rawg_id": "nfs-prostreet",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Medium"
     },
     {
@@ -3566,7 +3566,7 @@
       on the hardware from 2005!`,
       "igdb_id": 1020,
       "rawg_id": "grand-theft-auto-v",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
@@ -3672,7 +3672,7 @@
     {
       "name": "Agent Hugo: RoboRumble",
       "tier": "C",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2007,
       "score": 68,
@@ -3719,7 +3719,7 @@
       a few hours.`,
       "igdb_id": 558,
       "rawg_id": "just-cause-2",
-      "vibe": "Flow",
+      "vibe": "Flow, Epic",
       "ttb": "Long"
     },
     {
@@ -3763,13 +3763,13 @@
       "comment": "Euphoria physics",
       "igdb_id": 731,
       "rawg_id": "grand-theft-auto-iv",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Epic",
       "ttb": "Long"
     },
     {
       "name": "Harry Potter and the Chamber of Secrets",
       "tier": "B",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2007,
       "score": 78,
@@ -3787,7 +3787,7 @@
     {
       "name": "Harry Potter and the Prisoner of Azkaban",
       "tier": "B",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2007,
       "score": 79,
@@ -3846,7 +3846,7 @@
       + everything neon`,
       "igdb_id": 99,
       "rawg_id": "need-for-speed-carbon",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Medium"
     },
     {
@@ -3887,7 +3887,7 @@
       "comment": `Tag-team mode was fun`,
       "igdb_id": 344148,
       "rawg_id": "smackdown-vs-raw-2009",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -3901,7 +3901,7 @@
       good fighting`,
       "igdb_id": 5300,
       "rawg_id": "wwe-smackdown-vs-raw-2010",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -3916,7 +3916,7 @@
       played it for years!`,
       "igdb_id": 2265,
       "rawg_id": "wwe-smackdown-vs-raw-2011",
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Infinite"
     },
     {
@@ -4002,7 +4002,7 @@
       (mini-golf was too hard though)`,
       "igdb_id": 3794,
       "rawg_id": "barnyard",
-      "vibe": "Party, Cozy",
+      "vibe": "Cozy",
       "ttb": "Medium"
     },
     {
@@ -4089,7 +4089,7 @@
     {
       "name": "Prince of Persia: Warrior Within",
       "tier": "S",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2007,
       "score": 91,
@@ -4148,7 +4148,7 @@
     {
       "name": "Prince of Persia: The Two Thrones",
       "tier": "SS",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2006,
       "score": 93,
@@ -4163,14 +4163,14 @@
     {
       "name": "Prince of Persia: The Sands of Time",
       "tier": "A",
-      "category": "",
+      "category": "AAA",
       "platform": "PC",
       "played_year": 2006,
       "score": 83,
       "comment": "TODO",
       "igdb_id": 836,
       "rawg_id": "prince-of-persia-the-sands-of-time",
-      "vibe": "Cinematic",
+      "vibe": "Cinematic, Flow, Epic",
       "ttb": "Medium"
     },
     {
@@ -4230,7 +4230,7 @@
       "comment": "Motion blur is \nthe coolest thing ever",
       "igdb_id": 97,
       "rawg_id": 53446,
-      "vibe": "Flow",
+      "vibe": "Flow, Party",
       "ttb": "Medium"
     },
     {
@@ -4291,7 +4291,7 @@
     {
       "name": "Scooby-Doo: Showdown in Ghost Town",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2006,
       "score": 70,
@@ -4301,13 +4301,13 @@
       Los Burritos!`,
       "igdb_id": 67790,
       "rawg_id": "scooby-doo-showdown-in-ghost-town",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Short"
     },
     {
       "name": "Scooby-Doo! Phantom of the Knight",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2006,
       "score": 72,
@@ -4317,13 +4317,13 @@
       the knights 🍺`,
       "igdb_id": 67789,
       "rawg_id": "scooby-doo-phantom-of-the-knight",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Short"
     },
     {
       "name": "Scooby-Doo: Jinx at the Sphinx",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2006,
       "score": 68,
@@ -4333,13 +4333,13 @@
       kinda boring`,
       "igdb_id": 67791,
       "rawg_id": "scooby-doo-jinx-at-the-sphinx",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Short"
     },
     {
       "name": "Scooby-Doo: Case File 1 - The Glowing Bug Man",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2006,
       "score": 71,
@@ -4348,13 +4348,13 @@
       This one was my fav`,
       "igdb_id": 78685,
       "rawg_id": "scooby-doo-case-file-1-the-glowing-bug-man",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Short"
     },
     {
       "name": "Scooby-Doo: Case File #2 - The Scary Stone Dragon",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2006,
       "score": 72,
@@ -4366,20 +4366,20 @@
       breaking the 4th wall!`,
       "igdb_id": 138946,
       "rawg_id": "scooby-doo-case-file-2-the-scary-stone-dragon",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Short"
     },
     {
       "name": "Scooby-Doo! Two: Monsters Unleashed",
       "tier": "C",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2006,
       "score": 72,
       "comment": `First game I played on my first PC 🎂`,
       "igdb_id": 49184,
       "rawg_id": 35821,
-      "vibe": "Brainy",
+      "vibe": "Brainy, Cozy",
       "ttb": "Short"
     }
   ];

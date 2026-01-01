@@ -1,3 +1,4 @@
+let currentRenderId = 0;
 // ========== DOM ELEMENTS ==========
 const gameContainer = document.getElementById('main-list');
 
@@ -459,59 +460,90 @@ function renderGames(games)
   setupOverlaySides();
 }
 
+let globalRafId = null;
 function renderGamesAnimated(games)
 {
+  currentRenderId++;
+  const thisRenderId = currentRenderId;
   const container = gameContainer;
-  // Lock height to prevent scroll jumping when clearing content
+
+  // --- 1. STOP THE WORLD & GARBAGE COLLECTION ---
+  // Cancel any pending animation frame from a previous rapid click
+  if (globalRafId) {
+    cancelAnimationFrame(globalRafId);
+    globalRafId = null;
+  }
+
+  // Immediately nuke ANY ghost cards from the document.
+  // This cleans up clones from a previous render that might still be animating.
+  document.querySelectorAll('.game-card-wrapper.is-leaving').forEach(el => el.remove());
+
+  // Lock height to prevent scroll jumping
   container.style.minHeight = `${container.offsetHeight}px`;
 
-  // FIRST: Snapshot current positions
+  // --- 2. SNAPSHOT OLD POSITIONS ---
   const oldEls = Array.from(container.querySelectorAll('.game-card-wrapper'));
   const oldRectByKey = new Map();
   for (const el of oldEls) {
-    const key = el.dataset.key;
-    if (key) oldRectByKey.set(key, el.getBoundingClientRect());
+    if (el.dataset.key) {
+      oldRectByKey.set(el.dataset.key, el.getBoundingClientRect());
+    }
   }
 
   const nextKeys = new Set(games.map(gameKey));
 
-  // EXIT: Handle Deletions (Slide RIGHT)
+  // --- 3. HANDLE DELETIONS (Make Ghosts) ---
   for (const el of oldEls) {
     const key = el.dataset.key;
+    // If this card is staying, skip it
     if (!key || nextKeys.has(key)) continue;
 
-    const r = el.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+
+    // Don't clone invisible elements
+    if (rect.width === 0 || rect.height === 0) {
+        el.remove();
+        continue;
+    }
+
     const clone = el.cloneNode(true);
 
-    // Fixed positioning to decouple from the live grid
+    // Freeze it exactly where it is on screen
     Object.assign(clone.style, {
       position: 'fixed',
-      left: `${r.left}px`,
-      top: `${r.top}px`,
-      width: `${r.width}px`,
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
       margin: '0',
       zIndex: '1000',
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      transform: 'none',
+      opacity: '1'
     });
 
     clone.classList.add('is-leaving');
+    clone.classList.remove('is-moving', 'is-entering');
     document.body.appendChild(clone);
 
-    // Trigger Slide Right
-    requestAnimationFrame(() =>
-    {
-      // 50vw travel + fade
+    // Trigger the exit animation next frame
+    requestAnimationFrame(() => {
+      clone.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
       clone.style.transform = `translate3d(${window.innerWidth * 0.5}px, 0, 0)`;
       clone.style.opacity = '0';
     });
 
-    clone.addEventListener('transitionend', () => clone.remove(), { once: true });
+    // FAILSAFE: Remove after 500ms even if transitionend misses
+    setTimeout(() => clone.remove(), 500);
+
+    // Remove original immediately
+    el.remove();
   }
 
-  // RENDER: Injects new DOM nodes
+  // --- 4. RENDER NEW ---
   renderGames(games);
 
-  // INVERT: Calculate offsets for the new positions
+  // --- 5. CALCULATE INVERTS ---
   const newEls = Array.from(container.querySelectorAll('.game-card-wrapper'));
 
   for (const el of newEls) {
@@ -520,13 +552,13 @@ function renderGamesAnimated(games)
     const oldRect = oldRectByKey.get(key);
 
     if (oldRect) {
-      // Logic for sorting/moving existing cards
+      // MOVE: Calculate delta
       const dx = oldRect.left - newRect.left;
       const dy = oldRect.top - newRect.top;
       el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
       el.dataset.animType = 'move';
     } else {
-      // Logic for new cards appearing (The Drop)
+      // ENTER: Drop in
       const dropHeight = Math.max(350, window.innerHeight * 0.45);
       el.style.transform = `translate3d(0, ${-dropHeight}px, 0)`;
       el.style.opacity = '0';
@@ -534,12 +566,14 @@ function renderGamesAnimated(games)
     }
   }
 
-  // PLAY: Trigger the actual movement
-  void container.offsetHeight;
+  // --- 6. PLAY ANIMATION ---
+  void container.offsetHeight; // Force Reflow
 
-  requestAnimationFrame(() =>
+  globalRafId = requestAnimationFrame(() =>
   {
-    // Release the height lock so the page can resize naturally again
+    // Safety check: if user clicked again while waiting for frame, abort
+    if (thisRenderId !== currentRenderId) return;
+
     container.style.minHeight = '';
 
     for (const el of newEls)
@@ -548,24 +582,19 @@ function renderGamesAnimated(games)
 
       if (type === 'move') {
         el.classList.add('is-moving');
-        // Transition to final state (center)
         el.style.transform = 'translate3d(0,0,0)';
         el.style.opacity = '1';
       } else if (type === 'enter') {
-        // CSS @keyframes handles the transform logic here
         el.classList.add('is-entering');
       }
 
-      // Unified Cleanup for both Transitions and Keyframes
+      // Cleanup listener
       const cleanup = (e) => {
-        // Ensure we only clean up the intended property/animation
-        if (e.type === 'transitionend' && e.propertyName !== 'transform') return;
-
+        if (e && e.type === 'transitionend' && e.propertyName !== 'transform') return;
         el.classList.remove('is-moving', 'is-entering');
         el.style.transform = '';
         el.style.opacity = '';
         delete el.dataset.animType;
-
         el.removeEventListener('transitionend', cleanup);
         el.removeEventListener('animationend', cleanup);
       };
@@ -656,8 +685,8 @@ const MAIN_PLATFORMS_FILTER = [
   'xbox 360',
   'playstation 4'
 ];
-// vibe: null | 'Cinematic' | 'Sweaty' | 'Brainy' | 'Party' | 'Cozy' | 'Flow'
-let filterVibe = null;
+// vibe: null | 'Cinematic' | 'Sweaty' | 'Brainy' | 'Party' | 'Cozy' | 'Flow' | 'Epic'
+let filterVibe = [];
 let filterTTB = null;
 
 // Helper to apply all active filters and re-render
@@ -719,12 +748,16 @@ function applyFilters()
    }
   }
 
-  // Vibe
-  if (filterVibe)
+  // Vibe (Intersection / AND logic)
+  if (filterVibe && filterVibe.length > 0)
   {
-    games = games.filter(g =>
-      (g.vibe || '').toLowerCase() === filterVibe.toLowerCase()
-    );
+    games = games.filter(g => {
+      if (!g.vibe) return false;
+      const gameVibes = g.vibe.split(',').map(v => v.trim().toLowerCase());
+
+      // Every selected filter MUST be present in the game's vibes
+      return filterVibe.every(selected => gameVibes.includes(selected.toLowerCase()));
+    });
   }
 
   // TTB
@@ -827,16 +860,14 @@ function setupTabs()
       }
       else if (group === 'vibe')
       {
-        // toggle vibe: click again to clear
-        if (filterVibe === value)
-        {
-          filterVibe = null;
-          vibeButtons.forEach(b => b.classList.remove('active'));
-        }
-        else
-        {
-          filterVibe = value;
-          setActiveInGroup(vibeButtons, btn);
+        // Toggle value in the array
+        const index = filterVibe.indexOf(value);
+        if (index > -1) {
+          filterVibe.splice(index, 1);
+          btn.classList.remove('active');
+        } else {
+          filterVibe.push(value);
+          btn.classList.add('active');
         }
       }
       else if (group === 'ttb')
@@ -929,6 +960,7 @@ function updatePillarInspect(game, isHovering, mouseX = 0)
     // Clear content after fade out to prevent flickering
     setTimeout(() => {
         if(panel.classList.contains('inspect-hidden')) panel.innerHTML = '';
+
     }, 200);
     return;
   }
@@ -968,6 +1000,8 @@ let lastRenderedAxis = null;
 
 function renderPillarView(games)
 {
+  currentRenderId++;
+  const thisRenderId = currentRenderId;
   const container = gameContainer;
   container.classList.add('pillar-view');
 
@@ -1057,6 +1091,7 @@ function renderPillarView(games)
   // ============================================================
   games.forEach(game => {
     const key = gameKey(game);
+    if (thisRenderId !== currentRenderId) return;
     newKeys.add(key);
 
     const val = getVal(game);
@@ -1131,6 +1166,7 @@ function renderPillarView(games)
   // ============================================================
   existingCards.forEach((el, key) => {
     if (!newKeys.has(key)) {
+    if (thisRenderId !== currentRenderId) return;
       if (el._removeTimer) clearTimeout(el._removeTimer);
       if (el.classList.contains('pillar-dissolve')) return;
 
@@ -1138,6 +1174,7 @@ function renderPillarView(games)
 
       el._removeTimer = setTimeout(() => {
         if (el.parentNode) el.remove();
+      if (thisRenderId !== currentRenderId) return;
         el._removeTimer = null;
       }, 350);
     }
@@ -1168,6 +1205,7 @@ function renderPillarView(games)
   // We use a small timeout to let the DOM update the height first
   setTimeout(() => {
     const scrollTarget = container.offsetTop + container.offsetHeight;
+      if (thisRenderId !== currentRenderId) return;
 
     // Only scroll if we aren't already near the bottom
     if ((window.innerHeight + window.scrollY) < scrollTarget - 100) {
