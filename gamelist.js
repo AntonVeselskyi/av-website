@@ -656,6 +656,9 @@ const MAIN_PLATFORMS_FILTER = [
   'xbox 360',
   'playstation 4'
 ];
+// vibe: null | 'Cinematic' | 'Sweaty' | 'Brainy' | 'Party' | 'Cozy' | 'Flow'
+let filterVibe = null;
+let filterTTB = null;
 
 // Helper to apply all active filters and re-render
 function applyFilters()
@@ -716,6 +719,20 @@ function applyFilters()
    }
   }
 
+  // Vibe
+  if (filterVibe)
+  {
+    games = games.filter(g =>
+      (g.vibe || '').toLowerCase() === filterVibe.toLowerCase()
+    );
+  }
+
+  // TTB
+  if (filterTTB)
+  {
+    games = games.filter(g => (g.ttb || '').toLowerCase() === filterTTB.toLowerCase());
+  }
+
   // Sort and Render based on ViewMode
   if (viewMode === 'pillar')
   {
@@ -758,8 +775,12 @@ function setupTabs()
     .filter(b => b.dataset.group === 'decade');
   const platformButtons = Array.from(allButtons)
     .filter(b => b.dataset.group === 'platform');
-    const sortButtons = Array.from(allButtons)
+  const sortButtons = Array.from(allButtons)
     .filter(b => b.dataset.group === 'sort');
+  const vibeButtons = Array.from(allButtons)
+    .filter(b => b.dataset.group === 'vibe');
+  const ttbButtons = Array.from(allButtons)
+    .filter(b => b.dataset.group === 'ttb');
 
   allButtons.forEach(btn =>
   {
@@ -802,6 +823,30 @@ function setupTabs()
         {
           filterPlatform = value;
           setActiveInGroup(platformButtons, btn);
+        }
+      }
+      else if (group === 'vibe')
+      {
+        // toggle vibe: click again to clear
+        if (filterVibe === value)
+        {
+          filterVibe = null;
+          vibeButtons.forEach(b => b.classList.remove('active'));
+        }
+        else
+        {
+          filterVibe = value;
+          setActiveInGroup(vibeButtons, btn);
+        }
+      }
+      else if (group === 'ttb')
+      {
+        if (filterTTB === value) {
+          filterTTB = null;
+          ttbButtons.forEach(b => b.classList.remove('active'));
+        } else {
+          filterTTB = value;
+          setActiveInGroup(ttbButtons, btn);
         }
       }
       else if (group === 'sort')

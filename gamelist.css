@@ -513,56 +513,55 @@ h1
 }
 
 /* Tab button styling */
-/* base: no vertical gap by default */
-.tab-buttons
-{
-  text-align: center;
-  margin: 0;
-}
+/* Tab button styling - FLEXBOX FIX */
 
-/* three rows; same vertical spacing everywhere */
-.tab-row-category
-{
-  margin-top: 10px;   /* gap under the title -> tune this to taste */
-}
-
+/* 1. Turn all row containers into Flex grids */
+.tab-buttons,
+.tab-row-category,
 .tab-row-decade,
-.tab-row-platform
-{
-  margin-top: 10px;   /* same gap between rows */
-}
-
-.tab-row-sort
-{
-  margin-top: 10px;
-  margin-bottom: 20px; /* extra space below last row */
-}
-
+.tab-row-platform,
+.tab-row-vibe,
+.tab-row-sort,
 .tab-row-columns
 {
-  margin-top: 10px;
-  margin-bottom: 20px; /* extra space below last row */
+  display: flex;
+  flex-wrap: wrap;         /* Allows buttons to wrap to next line if needed */
+  justify-content: center; /* Centers them horizontally */
+  align-items: center;     /* Vertically aligns labels with buttons */
+  gap: 15px;               /* THE FIX: Adds consistent space between items (H & V) */
+  margin-top: 20px;        /* Space between the distinct rows */
+  margin-bottom: 0;
+  text-align: center;
 }
 
+/* 2. Specific Tweaks for Bottom Rows */
+.tab-row-sort,
+.tab-row-columns
+{
+  margin-bottom: 30px;     /* Extra space at the bottom of the header area */
+}
+
+/* 3. Labels: Remove margins (Gap handles it now) */
 .sort-label {
   font-family: 'Major Mono Display', monospace;
   font-size: 22px;
   letter-spacing: 7px;
   color: black;
-  padding: 8px 16px;
-  margin-right: 10px;
+  padding: 8px 16px;       /* Matches button padding for perfect alignment */
+  margin: 0;               /* Reset margin */
   display: inline-block;
-
-  /* make it look like a button without the border */
   border: none;
   background: transparent;
-  pointer-events: none; /* can't click it */
+  pointer-events: none;
 }
 
+/* 4. Buttons: Remove margins (Gap handles it now) */
 .tab-buttons .secret-btn
 {
   display: inline-block;
-  /* padding: 8px 16px; */
+  text-align: center;
+  margin: 0;               /* Reset margin (Gap handles it) */
+  padding: 8px 16px;
   border: 3px solid black;
   color: black;
   text-decoration: none;
@@ -578,14 +577,13 @@ h1
   color: white;
 }
 
-/* Active tab state */
 .tab-buttons .secret-btn.active,
 .tab-buttons .secret-btn.active:hover
 {
   background-color: black;
   color: white;
-  border-color: white;        /* extra contrast vs hover */
-  box-shadow: 0 0 0 2px white;/* optional extra highlight */
+  border-color: white;
+  box-shadow: 0 0 0 2px white;
 }
 
 .tier-section
