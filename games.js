@@ -28,6 +28,26 @@
       "ttb": "Infinite"
     },
     {
+      "name": "We Were Here Forever",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 85,
+      "comment":
+      `Escape-puzzle game
+      for two. Most of
+      the time you are
+      in separate rooms,
+      and you can only
+      communicate through
+      radio. OVER.`,
+      "igdb_id": 144455,
+      "rawg_id": "we-were-here-forever",
+      "vibe": "Party, Brainy",
+      "ttb": "Medium"
+    },
+    {
       "name": "The Last of Us Part I",
       "tier": "SS",
       "category": "AAA",
@@ -638,7 +658,7 @@
       Short to beat.`,
       "igdb_id": 7205,
       "rawg_id": "superhot",
-      "vibe": "Flow, Brainy, Cinematic",
+      "vibe": "Flow, Brainy",
       "ttb": "Short"
     },
     {
@@ -1005,7 +1025,7 @@
       "comment": `Fun in coop`,
       "igdb_id": 19935,
       "rawg_id": "wizard-of-legend",
-      "vibe": "Cinematic",
+      "vibe": "Party",
       "ttb": "Short"
     },
     {
@@ -1155,7 +1175,7 @@
       with different builds`,
       "igdb_id": 18263,
       "rawg_id": "moon-hunters",
-      "vibe": "Cinematic",
+      "vibe": "Party",
       "ttb": "Short"
     },
     {
@@ -2712,7 +2732,7 @@
       Very distinct art syle`,
       "igdb_id": 9623,
       "rawg_id": "shank-2",
-      "vibe": "Cinematic",
+      "vibe": "Flow",
       "ttb": "Short"
     },
     {
@@ -3236,7 +3256,7 @@
       "comment": "Decent platformer",
       "igdb_id": 142710,
       "rawg_id": "prince-of-persia-the-forgotten-sands-psp",
-      "vibe": "Cinematic",
+      "vibe": "Flow",
       "ttb": "Medium"
     },
     {
@@ -3331,7 +3351,7 @@
       across different Marvel IPs`,
       "igdb_id": 288948,
       "rawg_id": "marvel-ult-alliance",
-      "vibe": "Cinematic",
+      "vibe": "Party, Epic",
       "ttb": "Medium"
     },
     {
@@ -3930,7 +3950,7 @@
       good hack-n-slash`,
       "igdb_id": 6420,
       "rawg_id": "ghost-rider",
-      "vibe": "Cinematic",
+      "vibe": "",
       "ttb": "Short"
     },
     {
