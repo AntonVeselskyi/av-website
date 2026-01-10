@@ -995,6 +995,28 @@ function updatePillarInspect(game, isHovering, mouseX = 0)
   panel.classList.remove('inspect-hidden');
 }
 
+// ========== HELPER: SHORTEN NAMES ==========
+function shortenPlatformName(platformName) {
+  if (!platformName) return "Unknown";
+
+  // 1. Handle PlayStation (Global replacement for PS 2/3/4/5)
+  let shortName = platformName.replace(/PlayStation/gi, "PS");
+
+  // 2. Handle Xbox Specifics
+  const lower = shortName.toLowerCase();
+  if (lower.includes("xbox series x")) return "Xbox SX";
+  if (lower.includes("xbox series s")) return "Xbox SS";
+  if (lower.includes("xbox one"))      return "Xbox One";
+  if (lower.includes("xbox 360"))      return "Xbox 360";
+
+  if (lower.includes("sony ericsson"))  return "Old Mobile";
+
+  // 3. Handle Nintendo (Optional cleanup)
+  if (lower.includes("nintendo switch")) return "Switch";
+
+  return shortName.trim();
+}
+
 // Global variable to track state between renders
 let lastRenderedAxis = null;
 
@@ -1006,10 +1028,8 @@ function renderPillarView(games)
   container.classList.add('pillar-view');
 
   // ============================================================
-  // 1. CLEANUP PHASE: TRANSITION FROM TIER LIST (GRID -> PILLAR)
+  // 1. CLEANUP PHASE
   // ============================================================
-  // We only destroy cards if we detect Tier Sections (headers).
-  // This ensures the first load gets the "Drop" animation.
   const tierArtifacts = container.querySelectorAll('.tier-section, .art-divider');
   if (tierArtifacts.length > 0) {
     const allNestedCards = container.querySelectorAll('.game-card-wrapper');
@@ -1022,7 +1042,6 @@ function renderPillarView(games)
     lastRenderedAxis = activePillarAxis;
   }
 
-  // Ensure HUD exists
   let hud = document.getElementById('pillar-inspect-panel');
   if (!hud) {
     hud = document.createElement('div');
@@ -1042,44 +1061,59 @@ function renderPillarView(games)
     if (activePillarAxis === 'platform')
     {
         const raw = g.platform || "Unknown";
-        return raw.split('/')[0].trim();
+        // Get the first platform if multiple (e.g., "PS5 / PC")
+        const primary = raw.split('/')[0].trim();
+        // Run it through the shortener
+        return shortenPlatformName(primary);
     }
     return 0;
   };
 
-  // Robust Sorting (Handles Numbers AND Strings for Platforms)
   const uniqueVals = [...new Set(games.map(getVal))];
   const presentValues = uniqueVals.sort((a, b) => {
-    // If comparing strings (platforms), use alphabetical sort
-    if (typeof a === 'string' && typeof b === 'string') {
-      return a.localeCompare(b);
-    }
-    // Otherwise numeric sort
+    if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b);
     return a - b;
   });
+
   const colCount = presentValues.length;
+
+  // --- DYNAMIC SPACING & CENTERING LOGIC ---
+  const MAX_GAP = 18;       // Max distance (%) between columns. Lower = tighter packing.
+  const AVAILABLE_WIDTH = 94; // Use 94% of screen (leaves 3% padding on sides)
+
+  let spacing = 0;
+  let startX = 50; // Default to center
+
+  if (colCount > 1) {
+    // 1. Calculate the spacing required to fill the screen
+    const spreadSpacing = AVAILABLE_WIDTH / (colCount - 1);
+
+    // 2. Clamp it. If we have few items, don't stretch > MAX_GAP.
+    //    If we have many items, 'spreadSpacing' will be small, so use that.
+    spacing = Math.min(spreadSpacing, MAX_GAP);
+
+    // 3. Calculate total width of our cluster and find the starting offset to center it
+    const totalGroupWidth = spacing * (colCount - 1);
+    startX = 50 - (totalGroupWidth / 2);
+  }
+  // -----------------------------------------
 
   // Dimensions
   const cardWidth = 30;
-  // Fixed offset (45px) prevents overlapping
   const yOffset = 45;
   const maxStack = Math.max(...presentValues.map(v => games.filter(g => getVal(g) === v).length));
-
-  // Calculate Height (Stack + Ruler + Buffer)
   const actualChartHeight = (maxStack * yOffset) + 150;
   container.style.height = `${actualChartHeight}px`;
 
-  // Animation Timers (Used for 'isNew' cards only)
+  // Animation Timers
   const colStartTimes = new Map();
-  presentValues.forEach(val =>
-  {
+  presentValues.forEach(val => {
       colStartTimes.set(val, Math.random() * 0.6);
   });
 
-  // Snapshot Current DOM
+  // Snapshot
   const existingCards = new Map();
-  container.querySelectorAll('.game-card-wrapper').forEach(el =>
-  {
+  container.querySelectorAll('.game-card-wrapper').forEach(el => {
     if(el.dataset.key) existingCards.set(el.dataset.key, el);
   });
 
@@ -1098,7 +1132,10 @@ function renderPillarView(games)
     if (!stacks[val]) stacks[val] = 0;
 
     const valIndex = presentValues.indexOf(val);
-    const xPos = colCount <= 1 ? 50 : (valIndex / (colCount - 1)) * 94 + 3;
+
+    // ▼ USE DYNAMIC POSITION ▼
+    const xPos = startX + (valIndex * spacing);
+
     const yPos = stacks[val] * yOffset;
     const depth = 1000 + (valIndex * 100) + stacks[val];
 
@@ -1106,7 +1143,6 @@ function renderPillarView(games)
     let isNew = false;
     let isRevived = false;
 
-    // A. CREATE (Drop In)
     if (!card) {
       isNew = true;
       card = createGameCard(game);
@@ -1115,22 +1151,17 @@ function renderPillarView(games)
       card.addEventListener('mouseleave', () => updatePillarInspect(game, false));
       container.appendChild(card);
     }
-    // B. REVIVE (Card exists but was dissolving)
     else {
-      // Kill pending removal timer
       if (card._removeTimer) {
          clearTimeout(card._removeTimer);
          card._removeTimer = null;
       }
-
       if (card.classList.contains('pillar-dissolve')) {
         isRevived = true;
         card.classList.remove('pillar-dissolve');
       }
     }
 
-    // UPDATE POSITION
-    // The CSS 'transition: left 2.0s' handles the glide here!
     card.style.left = `${xPos}%`;
     card.style.bottom = `${yPos + 40}px`;
     card.style.position = 'absolute';
@@ -1138,20 +1169,16 @@ function renderPillarView(games)
     card.style.zIndex = depth;
     card.style.transform = 'translateX(-50%) translateZ(0)';
 
-    // ANIMATION CONTROL
     if (isNew || isRevived) {
       card.classList.remove('pillar-animate-in');
       card.style.animationDelay = '0s';
       card.style.opacity = '1';
-
-      void card.offsetWidth; // Force Reflow
-
+      void card.offsetWidth;
       card.classList.add('pillar-animate-in');
       const baseDelay = colStartTimes.get(val) || 0;
       const floorDelay = stacks[val] * 0.05;
       card.style.animationDelay = `${baseDelay + floorDelay}s`;
     } else {
-      // Existing cards: Remove animation class so CSS transition takes over
       card.classList.remove('pillar-animate-in');
       card.style.animationDelay = '0s';
       card.classList.remove('pillar-dissolve');
@@ -1166,48 +1193,62 @@ function renderPillarView(games)
   // ============================================================
   existingCards.forEach((el, key) => {
     if (!newKeys.has(key)) {
-    if (thisRenderId !== currentRenderId) return;
+      if (thisRenderId !== currentRenderId) return;
       if (el._removeTimer) clearTimeout(el._removeTimer);
       if (el.classList.contains('pillar-dissolve')) return;
 
       el.classList.add('pillar-dissolve');
-
       el._removeTimer = setTimeout(() => {
         if (el.parentNode) el.remove();
-      if (thisRenderId !== currentRenderId) return;
+        if (thisRenderId !== currentRenderId) return;
         el._removeTimer = null;
       }, 350);
     }
   });
 
   // ============================================================
-  // 5. RULER UPDATE
+  // 5. RULER UPDATE (With Smart Text Alignment)
   // ============================================================
   const oldRulers = container.querySelectorAll('.pillar-ruler');
   oldRulers.forEach(r => r.remove());
 
   const ruler = document.createElement('div');
   ruler.className = 'pillar-ruler';
+
   presentValues.forEach((tick, i) => {
     const marker = document.createElement('span');
     marker.textContent = tick;
     marker.style.position = 'absolute';
-    const xPos = colCount <= 1 ? 50 : (i / (colCount - 1)) * 94 + 3;
+
+    // Use the same dynamic position as the cards
+    const xPos = startX + (i * spacing);
     marker.style.left = `${xPos}%`;
-    marker.style.transform = 'translateX(-50%)';
+
+    // ▼ SMART ALIGNMENT ▼
+    // If the label is extremely close to the left edge (<10%), anchor it left.
+    // If it's extremely close to the right edge (>90%), anchor it right.
+    // Otherwise, center it.
+    if (xPos < 10) {
+        marker.style.transform = 'translateX(-15%)'; // Slight shift to keep first letter visible
+        marker.style.textAlign = 'left';
+    } else if (xPos > 90) {
+        marker.style.transform = 'translateX(-85%)'; // Pull back to keep last letter visible
+        marker.style.textAlign = 'right';
+    } else {
+        marker.style.transform = 'translateX(-50%)';
+        marker.style.textAlign = 'center';
+    }
+
     ruler.appendChild(marker);
   });
   container.appendChild(ruler);
 
   // ============================================================
-  // 6. AUTO-SCROLL TO BOTTOM (Ruler View)
+  // 6. AUTO-SCROLL
   // ============================================================
-  // We use a small timeout to let the DOM update the height first
   setTimeout(() => {
     const scrollTarget = container.offsetTop + container.offsetHeight;
-      if (thisRenderId !== currentRenderId) return;
-
-    // Only scroll if we aren't already near the bottom
+    if (thisRenderId !== currentRenderId) return;
     if ((window.innerHeight + window.scrollY) < scrollTarget - 100) {
         window.scrollTo({
             top: scrollTarget,

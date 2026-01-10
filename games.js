@@ -1144,7 +1144,7 @@
       the place 🛋`,
       "igdb_id": 113866,
       "rawg_id": "moving-out-2",
-      "vibe": "Party, Cozy",
+      "vibe": "Party, Cozy, Sweaty, Brainy",
       "ttb": "Short"
     },
     {
@@ -1157,7 +1157,7 @@
       "comment": "My fav couch-coop game EVER!\nBeat every level with 3 stars.",
       "igdb_id": 103341,
       "rawg_id": "overcooked-2",
-      "vibe": "Party, Cozy",
+      "vibe": "Party, Cozy, Sweaty, Brainy",
       "ttb": "Medium"
     },
     {
@@ -1175,7 +1175,7 @@
       with different builds`,
       "igdb_id": 18263,
       "rawg_id": "moon-hunters",
-      "vibe": "Party",
+      "vibe": "Party, Cozy",
       "ttb": "Short"
     },
     {
@@ -1372,7 +1372,7 @@
       is scary`,
       "igdb_id": 10140,
       "rawg_id": "uncanny-valley",
-      "vibe": "Cinematic",
+      "vibe": "",
       "ttb": "Short"
     },
     {
@@ -1429,7 +1429,7 @@
       SAD that it's DEAD`,
       "igdb_id": 37092,
       "rawg_id": "hidden-agenda",
-      "vibe": "Party",
+      "vibe": "Party, Cinematic",
       "ttb": "Short"
     },
     {
@@ -3365,7 +3365,7 @@
       games and platforming challenges`,
       "igdb_id": 2844,
       "rawg_id": "the-simpsons-hit-run",
-      "vibe": "Brainy",
+      "vibe": "Cozy",
       "ttb": "Medium"
     },
     {
@@ -3392,7 +3392,7 @@
       "comment": `TODO`,
       "igdb_id": 467,
       "rawg_id": "warhammer-40000-dawn-of-war-dark-crusade",
-      "vibe": "Brainy",
+      "vibe": "Brainy, Epic",
       "ttb": "Long"
     },
     {
