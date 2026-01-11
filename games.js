@@ -12,6 +12,7 @@
   const NFS_GET_LOW  = "https://www.youtube.com/watch?v=IYH7_GzP4Tg";
   const HUGO_HOVER  = "https://youtu.be/kxuMYVDcc4A?si=ipWzx0Bo9OPj-M4U&t=1578";
   const VH_GAMEPLAY  = "https://youtu.be/BYnAFOUhJwI?si=PEEgZlJfGc_jCQO7&t=5614";
+  const PH_WEB  = "https://pickle.house/";
 
   const gameMasterList = [
     {
@@ -26,6 +27,59 @@
       "rawg_id": 10213,
       "vibe": "Sweaty, Epic",
       "ttb": "Infinite"
+    },
+    {
+      "name": "Warhammer 40,000: Rogue Trader",
+      "tier": "A",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 80,
+      "comment":
+      `TODO:
+      NOT FINAL SCORE
+      STILL PLAYING`,
+      "igdb_id": 203259,
+      "rawg_id": "warhammer-40000-rogue-trader",
+      "vibe": "Sweaty, Brainy, Epic",
+      "ttb": "Long"
+    },
+    {
+      "name": "Hyperblade",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 74,
+      "comment":
+      `Game by my dear
+      friend <a href=\"${PH_WEB}\" target=\"_blank\">PICKLEHOUSE</a>
+      Ghostrunner-like
+      bullet-time 2D-action
+      with strong Hotline Miami
+      vibes. Wish it was longer!`,
+      "igdb_id": 191070,
+      //"rawg_id": "hyperblade-demo",
+      "vibe": "Sweaty, Flow",
+      "ttb": "Short"
+    },
+    {
+      "name": "Deleveled",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 74,
+      "comment":
+      `Minimalistic
+      single mechanic
+      logic-puzzle.
+      Made my brain hurt
+      quite a few times`,
+      "igdb_id": 116227,
+      "rawg_id": "deleveled-2",
+      "vibe": "Brainy",
+      "ttb": "Short"
     },
     {
       "name": "We Were Here Forever",
@@ -184,7 +238,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2019,
-      "score": 72,
+      "score": 73,
       "comment": `World’s least realistic
       pool simulator
       FUN COUCH COOP`,
@@ -455,7 +509,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2024,
-      "score": 72,
+      "score": 76,
       "comment": `Not as much of a game gameplay-wise,
       but a brilliant showcase
       of how video game medium
@@ -1110,7 +1164,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2019,
-      "score": 72,
+      "score": 73,
       "comment": "Arcade-style TODO",
       "igdb_id": 75096,
       "rawg_id": "slipstream",
@@ -1730,7 +1784,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2018,
-      "score": 72,
+      "score": 74,
       "comment": `First time played it
       on Chirstmas after-party
       from 2am to 6am.
@@ -3652,7 +3706,7 @@
       "category": "AA",
       "platform": "PC",
       "played_year": 2007,
-      "score": 73,
+      "score": 74,
       "comment": `point and click stealth,
       setting up
       chain-reaction pranks`,
@@ -3945,7 +3999,7 @@
       "category": "",
       "platform": "PlayStation 2",
       "played_year": 2009,
-      "score": 72,
+      "score": 71,
       "comment": `Sony exclusive, hehe
       good hack-n-slash`,
       "igdb_id": 6420,
@@ -4141,7 +4195,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2008,
-      "score": 73,
+      "score": 75,
       "comment": `Hoverboards, let's gooo!`,
       "igdb_id": 4158,
       "rawg_id": "sonic-riders",
@@ -4215,7 +4269,7 @@
       "category": "",
       "platform": "PC",
       "played_year": 2006,
-      "score": 73,
+      "score": 76,
       "comment": `My intro to Ubisoft games,
       also first game ever to
       feature the iconic Rabbids!`,
