@@ -45,6 +45,24 @@
       "ttb": "Long"
     },
     {
+      "name": "Turnip Boy Commits Tax Evasion",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 77,
+      "comment":
+      `Cute and funny,
+      silly billy adventure
+      Gave me
+      Minit + Forager
+      vibes`,
+      "igdb_id": 128097,
+      "rawg_id": "turnip-boy-commits-tax-evasion",
+      "vibe": "Cozy",
+      "ttb": "Short"
+    },
+    {
       "name": "Hyperblade",
       "tier": "B",
       "category": "Indie",
@@ -121,7 +139,14 @@
       "platform": "PlayStation 5",
       "played_year": 2025,
       "score": 91,
-      "comment": `TODO: still finishing it`,
+      "comment":
+      `Beat it on HARD.🍡
+      LORD SAITO IS UNREAL
+      on HARD!!! 👿 Took me
+      5 hours to beat Saito.
+      Hand-crafted Ezo looks
+      stunning. 🌸🌸🌸
+      Quests are diverse`,
       "igdb_id": 317627,
       "rawg_id": "ghost-of-yotei",
       "vibe": "Cinematic, Epic",
