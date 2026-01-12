@@ -29,9 +29,25 @@
       "ttb": "Infinite"
     },
     {
+      "name": "Foretales",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 78,
+      "comment":
+      `TODO:
+      NOT FINAL SCORE
+      STILL PLAYING`,
+      "igdb_id": 195096,
+      "rawg_id": "foretales",
+      "vibe": "Cozy",
+      "ttb": "???"
+    },
+    {
       "name": "Warhammer 40,000: Rogue Trader",
       "tier": "A",
-      "category": "",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2026,
       "score": 80,
@@ -313,8 +329,11 @@
       "platform": "PC",
       "played_year": 2025,
       "score": 80,
-      "comment": `Clever commentary on a genre,
-      disguised as a classic action platformer.
+      "comment":
+      `Clever commentary
+      on a genre,
+      disguised as a
+      classic action platformer.
       Medium-challenge.`,
       "igdb_id": 71628,
       "rawg_id": 302239,
@@ -470,12 +489,14 @@
       "platform": "PC",
       "played_year": 2024,
       "score": 78,
-      "comment": `Rogue-lite,
-      during the day: 📜
-      u r a shopkeeper
-      managing artifact prices,
-      at night you loot dungeons
-      and fight monsters`,
+      "comment":
+      `Rogue-lite, during
+      the day: 📜 u r
+      a shopkeeper managing
+      artifact prices,
+      at night you loot
+      dungeons and fight
+      monsters`,
       "igdb_id": 27771,
       "rawg_id": "moonlighter",
       "vibe": "Cozy, Flow",
@@ -717,9 +738,13 @@
       "platform": "PC",
       "played_year": 2023,
       "score": 75,
-      "comment": `Does exactly what you expect from the game.
-      Doodle art style and huge maps are impressive.
-      Cozy “Where’s Waldo?” experience.`,
+      "comment":
+      `Does exactly what you
+      expect from the game.
+      Doodle art style and
+      huge maps are impressive.
+      Cozy “Where’s Waldo?”
+      experience.`,
       "igdb_id": 26809,
       "rawg_id": "hidden-folks",
       "vibe": "Cozy",
@@ -1007,8 +1032,11 @@
       "platform": "PC",
       "played_year": 2020,
       "score": 66,
-      "comment": `Cute tower defence game
-      with rougelite elements`,
+      "comment":
+      `Cute tower
+      defence game
+      with rougelite
+      elements`,
       "igdb_id": 302647,
       "rawg_id": "bad-north-jotunn-edition",
       "vibe": "Brainy, Cozy",
@@ -1037,8 +1065,12 @@
       "platform": "PC",
       "played_year": 2020,
       "score": 78,
-      "comment": `You spy on monkeys and then feed them.
-      Welcome to the 'The Primate Observation Club'`,
+      "comment":
+      `You spy on monkeys
+      and then feed them.
+      Welcome to the
+      'The Primate
+      Observation Club'`,
       "igdb_id": 52014,
       "rawg_id": "do-not-feed-the-monkeys",
       "vibe": "Brainy",
@@ -1079,7 +1111,7 @@
     {
       "name": "Sniper Elite 4",
       "tier": "B",
-      "category": "AAA",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2021,
       "score": 80,
@@ -1273,7 +1305,7 @@
     {
       "name": "Rayman Fiesta Run",
       "tier": "A",
-      "category": "Indie",
+      "category": "",
       "platform": "Android",
       "played_year": 2011,
       "score": 82,
@@ -1811,7 +1843,7 @@
       "played_year": 2018,
       "score": 74,
       "comment": `First time played it
-      on Chirstmas after-party
+      at Christmas after-party
       from 2am to 6am.
       We did not manage
       to escape, sadly`,
@@ -2128,7 +2160,7 @@
       "played_year": 2013,
       "score": 85,
       "comment": `
-      Destruction beyond imaginable for it's time!
+      Destruction beyond imaginable for its time!
       Frostbite 2 ❄
       Was forced to register an Origin account.`,
       "igdb_id": 343,
@@ -2237,7 +2269,7 @@
       "comment": `Parkour game for
       old phones with
       up to 8 (!!!)
-      players competitve
+      players competitive
       races using
       Bluetooth!`,
       "igdb_id": 316708,
@@ -2299,7 +2331,7 @@
       "platform": "Xbox 360",
       "played_year": 2013,
       "score": 78,
-      "comment": "God of War clone \nthat lived up to the original. \nEnemy deisgn is next level is whole \nhell's-horror aethtetic stood out so much.",
+      "comment": "God of War clone \nthat lived up to the original. \nEnemy design is next level is whole \nhell's-horror aethtetic stood out so much.",
       "igdb_id": 6958,
       "rawg_id": "dantes-inferno",
       "vibe": "Cinematic, Epic",
@@ -2401,7 +2433,7 @@
       Was 10/10 for me,
       not mentioning <a href=\"${dmc_combichrist}\" target=\"_blank\">Combichrist soundtrack</a>!
       Wish they went with
-      this version of Date forward.`,
+      this version of Dante forward.`,
       "igdb_id": 1254,
       "rawg_id": "dmc",
       "vibe": "Flow",
@@ -2616,7 +2648,7 @@
       "played_year": 2012,
       "score": 88,
       "comment": `A puzzle where to
-      silent musicians
+      silence musicians
       on a square you
       need to turn off
       music in settings
@@ -2665,8 +2697,8 @@
       "played_year": 2011,
       "score": 60,
       "comment": `I disliked 3Cs so much,
-      everything blury,
-      camera is to shake.
+      everything blurry,
+      camera is too shaky.
       Was just annoying to move
       around and shoot,
       even though it looked
@@ -2683,7 +2715,7 @@
       "platform": "PC",
       "played_year": 2011,
       "score": 77,
-      "comment": `I enhoyed the sandbox aspect of
+      "comment": `I enjoyed the sandbox aspect of
       it, but plot and BOSS fights
       were odd for me at the time.
       Direct combat felt janky and
@@ -3318,7 +3350,7 @@
       "played_year": 2010,
       "score": 57,
       "comment": `<a href=\"${psp_splinter_cell_stealth}\" target=\"_blank\">\"Peak\" stealth...</a>.
-      Remember this game being way to dark,
+      Remember this game being way too dark,
       gray and hard to navigate :/`,
       "igdb_id": 22632,
       "rawg_id": "tom-clancys-splinter-cell-essentials",
@@ -3714,7 +3746,7 @@
     {
       "name": "Worms 3D",
       "tier": "A",
-      "category": "AAA",
+      "category": "Indie",
       "platform": "PC",
       "played_year": 2007,
       "score": 81,
@@ -4166,7 +4198,7 @@
       "comment": `I remember it being super
       engaging and hard.
       The <a href=\"${chaos_mark_cinematic}\" target=\"_blank\">cinematic</a> looks
-      insane event today!`,
+      insane even today!`,
       "igdb_id": 7241,
       "rawg_id": "warhammer-mark-of-chaos",
       "vibe": "Brainy",
@@ -4371,7 +4403,7 @@
       "comment": `"Killing time in the office"-game 🐸`,
       "igdb_id": 20509,
       "rawg_id": "zuma-deluxe",
-      "vibe": "Cozy",
+      "vibe": "Cozy, Brainy",
       "ttb": "Infinite"
     },
     {

@@ -632,7 +632,7 @@ h1
 
 /* ===== LOADER OVERLAY ===== */
 
-loader-overlay
+#loader-overlay
 {
   position: fixed;
   inset: 0;
@@ -690,8 +690,9 @@ loader-overlay
     22px 22px;
 }
 
-.loader-hidden {
-  display: none;
+.loader-hidden
+{
+  display: none !important;
 }
 
 .loader-inner {
@@ -888,7 +889,6 @@ body:not(.pillar-view-active) .tab-row-columns {
 
 /* The Inspect Panel (HUD Window) */
 /* --- PILLAR HUD (INSPECT PANEL) --- */
-
 #pillar-inspect-panel {
   position: fixed;
   top: 26vh;
@@ -910,7 +910,7 @@ body:not(.pillar-view-active) .tab-row-columns {
   /* Two equal columns of 338px */
   grid-template-columns: 338px 338px;
   /* Row 1: Title | Row 2: Image & Comments | Row 3: Details */
-  grid-template-rows: auto 507px auto;
+  grid-template-rows: max-content 507px max-content;
 
   width: auto !important;
   background: transparent;
@@ -993,6 +993,21 @@ body:not(.pillar-view-active) .tab-row-columns {
   overflow: hidden; /* Cut off if comment is too long, keeps alignment */
 }
 
+/* add this class to #pillar-inspect-panel when the panel is on the RIGHT side */
+#pillar-inspect-panel.dock-right .game-title-overlay   { grid-column: 2; grid-row: 1; }
+#pillar-inspect-panel.dock-right .game-card            { grid-column: 2; grid-row: 2; }
+#pillar-inspect-panel.dock-right .game-details-overlay { grid-column: 2; grid-row: 3; }
+
+#pillar-inspect-panel.dock-right .game-exp-overlay
+{
+  grid-column: 1;
+  grid-row: 2;
+
+  /* separator on the inside */
+  border-left: none !important;
+  border-right: 2px solid #333 !important;
+}
+
 /* =========================================
    FLIPPED LAYOUT (Panel on Left)
    [Empty]        [Title]
@@ -1000,19 +1015,6 @@ body:not(.pillar-view-active) .tab-row-columns {
    [Empty]        [Details]
    ========================================= */
 
-/* Move EXP to Left */
-#pillar-inspect-panel.dock-right .game-exp-overlay {
-  grid-column: 1 !important;
-  border-left: none !important;
-  border-right: 2px solid #333 !important;
-}
-
-/* Move Image Stack to Right */
-#pillar-inspect-panel.dock-right .game-title-overlay,
-#pillar-inspect-panel.dock-right .game-card,
-#pillar-inspect-panel.dock-right .game-details-overlay {
-  grid-column: 2 !important;
-}
 
 /* --- POLISH --- */
 /* Fix Comment Spacing to sit in the middle of the box */
