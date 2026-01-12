@@ -190,9 +190,11 @@ function checkAnimationState()
         var textElement = document.getElementById('wavyText');
         textElement.classList.add('glitch');
 
+
+        const current = textElement.textContent.trim();
         setTimeout(function()
         {
-            if (textElement.innerHTML === "Strive for excellence")
+            if (current === "Strive for excellence")
             {
                 textElement.innerHTML = "Працюй краще";
             }

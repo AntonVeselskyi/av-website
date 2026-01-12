@@ -259,6 +259,25 @@
       "ttb": "Long"
     },
     {
+      "name": "Wandersong",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2019,
+      "score": 67,
+      "comment":
+      `Singing different
+      notes (colors)
+      is used to do everything:
+      solve puzzles, use skills,
+      fight. Very unique.
+      Didn't finish it`,
+      "igdb_id": 23851,
+      "rawg_id": "wandersong",
+      "vibe": "Cozy",
+      "ttb": "Short"
+    },
+    {
       "name": "Serial Cleaner",
       "tier": "C",
       "category": "Indie",
@@ -488,7 +507,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2024,
-      "score": 78,
+      "score": 77,
       "comment":
       `Rogue-lite, during
       the day: 📜 u r
@@ -555,7 +574,7 @@
       "category": "Indie",
       "platform": "PC",
       "played_year": 2024,
-      "score": 76,
+      "score": 77,
       "comment": `Not as much of a game gameplay-wise,
       but a brilliant showcase
       of how video game medium
@@ -4512,5 +4531,22 @@
       "rawg_id": 35821,
       "vibe": "Brainy, Cozy",
       "ttb": "Short"
+    },
+    {
+      "name": "Moorhuhn 2",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2006,
+      "score": 71,
+      "comment":
+      `Goofy, arcade,
+       “Duck Hunt”-like
+       shooting-gallery
+       German game 🦆`,
+      "igdb_id": 83238,
+      "rawg_id": "moorhuhn-2",
+      "vibe": "Cozy",
+      "ttb": "Infinite"
     }
   ];
