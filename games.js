@@ -29,8 +29,25 @@
       "ttb": "Infinite"
     },
     {
+      "name": "Aaero",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 77,
+      "comment":
+      `Such a unique
+      rhythm game.
+      Space music
+      SLAPS!!!`,
+      "igdb_id": 18637,
+      "rawg_id": "aaero",
+      "vibe": "Flow",
+      "ttb": "Short"
+    },
+    {
       "name": "Foretales",
-      "tier": "A",
+      "tier": "B",
       "category": "Indie",
       "platform": "PC",
       "played_year": 2026,
@@ -1913,6 +1930,20 @@
       "igdb_id": 26772,
       "rawg_id": "nba-2k18",
       "vibe": "Flow, Party",
+      "ttb": "Infinite"
+    },
+    {
+      "name": "Warhammer 40,000: Dawn of War II",
+      "tier": "B",
+      "category": "AAA",
+      "platform": "PC",
+      "played_year": 2016,
+      "score": 80,
+      "comment":
+      `TODO`,
+      "igdb_id": 466,
+      "rawg_id": "warhammer-40k-dawn-of-war-ii",
+      "vibe": "Epic, Brainy",
       "ttb": "Infinite"
     },
     {
