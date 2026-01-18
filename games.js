@@ -29,6 +29,23 @@
       "ttb": "Infinite"
     },
     {
+      "name": "PUSS!",
+      "tier": "A",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 80,
+      "comment":
+      `IT IS SO
+      SO
+      SOOOOOOOO
+      H A R D!`,
+      "igdb_id": 81128,
+      "rawg_id": "puss",
+      "vibe": "Sweaty",
+      "ttb": "Short"
+    },
+    {
       "name": "Aaero",
       "tier": "B",
       "category": "Indie",
@@ -42,7 +59,7 @@
       SLAPS!!!`,
       "igdb_id": 18637,
       "rawg_id": "aaero",
-      "vibe": "Flow",
+      "vibe": "Flow, Sweaty",
       "ttb": "Short"
     },
     {
