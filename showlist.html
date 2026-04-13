@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AV Show Tier List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Poiret+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gamelist.css" />
+  <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
+</head>
+<body>
+  <!-- Page Title -->
+  <h1 class="title">SHOW LIST</h1>
+  <!-- Views -->
+  <div class="view-toggles">
+    <button class="view-btn active" data-view="grid">TIERLIST</button>
+    <button class="view-btn" data-view="pillar">HISTOGRAM</button>
+  </div>
+
+  <!-- Row 1: category -->
+  <div class="tab-buttons tab-row tab-row-category">
+    <a href="#all"   class="secret-btn active" data-group="category" data-value="all">ALL SHOWS</a>
+    <a href="#drama" class="secret-btn" data-group="category" data-value="Drama">DRAMA</a>
+    <a href="#comedy" class="secret-btn" data-group="category" data-value="Comedy">COMEDY</a>
+    <a href="#anime" class="secret-btn" data-group="category" data-value="Anime">ANIME</a>
+    <a href="#mini"  class="secret-btn" data-group="category" data-value="Miniseries">MINISERIES</a>
+    <a href="#docu"  class="secret-btn" data-group="category" data-value="Documentary">DOCUMENTARY</a>
+  </div>
+
+  <!-- Row 2: decade (by watched_year) -->
+  <div class="tab-buttons tab-row tab-row-decade">
+    <span class="sort-label">DECADE:</span>
+    <a href="#200x" class="secret-btn" data-group="decade" data-value="2000s">200X</a>
+    <a href="#201x" class="secret-btn" data-group="decade" data-value="2010s">201X</a>
+    <a href="#202x" class="secret-btn" data-group="decade" data-value="2020s">202X</a>
+  </div>
+
+  <!-- Row 3: sort -->
+  <div class="tab-buttons tab-row tab-row-sort">
+    <span class="sort-label">SORT&nbsp;BY:</span>
+    <a href="#" class="secret-btn" data-group="sort" data-value="watched">YEAR_WATCHED</a>
+    <a href="#" class="secret-btn" data-group="sort" data-value="released">YEAR_RELEASED</a>
+    <a href="#" class="secret-btn" data-group="sort" data-value="score">SCORE</a>
+    <a href="#" class="secret-btn" data-group="sort" data-value="name">NAME</a>
+  </div>
+
+  <!-- Row 7: pillar axis -->
+  <div class="tab-buttons tab-row tab-row-columns">
+    <span class="sort-label">COLUMNS:</span>
+    <a href="#" class="secret-btn active" data-group="pillarAxis" data-value="score">SCORE</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="watched">YEAR_WATCHED</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="released">YEAR_RELEASED</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="network">NETWORK</a>
+    <a href="#" class="secret-btn" data-group="pillarAxis" data-value="seasons">SEASONS</a>
+  </div>
+
+  <!-- COUNTDOWN LOADER -->
+  <div id="loader-overlay" class="loader-overlay loader-hidden">
+    <div class="loader-inner">
+      <div id="loader-number" class="loader-number">Ⅹ</div>
+      <div class="loader-dots">
+        <span>•</span><span>•</span><span>•</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inspect Panel for Pillar view -->
+  <div id="pillar-inspect-panel" class="inspect-hidden"></div>
+
+  <!-- Main List -->
+  <div id="main-list" class="games-list"></div>
+
+  <script src="show-list.js"></script>
+  <script src="showlist-config.js"></script>
+  <script src="core.js"></script>
+</body>
+</html>

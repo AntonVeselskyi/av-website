@@ -29,6 +29,51 @@
       "ttb": "Infinite"
     },
     {
+      "name": "Slay the Spire 2",
+      "tier": "S",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 88,
+      "comment": `One of my
+      favorite Roguelikes.
+      ADDICTIVE gameplay`,
+      "igdb_id": 40477,
+      "rawg_id": "slay-the-spire",
+      "vibe": "Brainy, Flow",
+      "ttb": "Infinite"
+    },
+    {
+      "name": "Yuppie Psycho",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 88,
+      "comment": `One of my
+      favorite Roguelikes.
+      ADDICTIVE gameplay`,
+      "igdb_id": 40477,
+      "rawg_id": "slay-the-spire",
+      "vibe": "Brainy, Flow",
+      "ttb": "Infinite"
+    },
+    {
+      "name": "The King's Bird",
+      "tier": "C",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2021,
+      "score": 88,
+      "comment": `One of my
+      favorite Roguelikes.
+      ADDICTIVE gameplay`,
+      "igdb_id": 40477,
+      "rawg_id": "slay-the-spire",
+      "vibe": "Brainy, Flow",
+      "ttb": "Infinite"
+    },
+    {
       "name": "PUSS!",
       "tier": "A",
       "category": "Indie",
@@ -3575,6 +3620,19 @@
     },
     {
       "name": "The Simpsons Game",
+      "tier": "B",
+      "category": "",
+      "platform": "PC",
+      "played_year": 2007,
+      "score": 72,
+      "comment": `I do like jazz`,
+      "igdb_id": 259330,
+      "rawg_id": "the-simpsons-game",
+      "vibe": "Cozy",
+      "ttb": "Medium"
+    },
+    {
+      "name": "The Simpsons Game",
       "tier": "A",
       "category": "",
       "platform": "PlayStation 2",
@@ -3585,7 +3643,7 @@
       so many cool little details`,
       "igdb_id": 259330,
       "rawg_id": "the-simpsons-game",
-      "vibe": "Party",
+      "vibe": "Cozy",
       "ttb": "Medium"
     },
     {
