@@ -565,8 +565,8 @@ function setupOverlaySides()
 }
 
 // ==========  SORT STATE ==========
-// sort: null | 'played' | 'released' | 'score' | 'name'
-let sortKey = null;
+// Default to first yearSortKey (e.g. 'watched' for shows, 'played' for games)
+let sortKey = (LIST_CONFIG.yearSortKeys ?? ['played'])[0];
 // 'asc' or 'desc'
 let sortDir = 'desc';
 
@@ -589,8 +589,8 @@ function sortGames(games)
 }
 
 // ========== FILTER STATE ==========
-// category: 'all' | 'indie' | 'ubisoft'
-let filterCategory = 'all';
+// category: [] means all; array of strings means multiselect OR filter
+let filterCategory = [];
 // decade: null | '2000s' | '2010s' | '2020s'
 let filterDecade = null;
 // platform: null | 'psp' | 'ps2' | 'ps4' | 'xbox 360' | 'pc'
@@ -604,13 +604,13 @@ function applyFilters()
 {
   let games = allGames.slice();
 
-  // Category
-  if (filterCategory && filterCategory !== 'all')
+  // Category ([] = all; array = OR multiselect)
+  if (filterCategory.length > 0)
   {
     const categoryFn = LIST_CONFIG.filterFns?.category;
     games = categoryFn
       ? categoryFn(games, filterCategory)
-      : games.filter(g => (g.category || '').toLowerCase() === filterCategory.toLowerCase());
+      : games.filter(g => filterCategory.includes((g.category || '').toLowerCase()));
   }
 
   // Decade
@@ -715,8 +715,15 @@ function setupTabs()
 
       if (group === 'category')
       {
-        // always exactly one category
-        filterCategory = value;
+        if (value === 'all')
+        {
+          filterCategory = [];
+        }
+        else
+        {
+          // Single-select: replaces any previous selection (narrows from ALL)
+          filterCategory = [value];
+        }
         setActiveInGroup(categoryButtons, btn);
       }
       else if (group === 'decade')
@@ -798,14 +805,12 @@ function setupTabs()
     });
   });
 
-  // Mark ALL GAMES as active by default
-  categoryButtons.forEach(b =>
-  {
-    if (b.dataset.value === 'all')
-    {
-      b.classList.add('active');
-    }
-  });
+  // Mark ALL as active by default (filterCategory starts empty = show all)
+  categoryButtons.find(b => b.dataset.value === 'all')?.classList.add('active');
+
+  // Mark default sort button as active
+  const defaultSortBtn = sortButtons.find(b => b.dataset.value === sortKey);
+  if (defaultSortBtn) defaultSortBtn.classList.add('active');
 
   // View Mode Toggles
   const viewButtons = document.querySelectorAll('.view-btn');
@@ -1146,10 +1151,8 @@ async function init()
       allGames = enriched;
       console.log('Enriched items:', allGames);
 
-    //renderGames(allGames); // default to all
-    renderGamesAnimated(allGames);
-
       setupTabs();
+      applyFilters(); // initial render with default sort applied
     }
     catch (e)
     {

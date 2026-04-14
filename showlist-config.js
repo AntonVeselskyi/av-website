@@ -31,7 +31,7 @@ window.LIST_CONFIG = {
 
     return shows.map(show => {
       const enriched = coverMap[String(show.tmdb_id)] || {};
-      return { ...show, ...enriched, image: enriched.image || "img/placeholder.png" };
+      return { ...show, ...enriched, category: show.category || enriched.category, image: enriched.image || "img/placeholder.png" };
     });
   },
 
@@ -76,8 +76,9 @@ window.LIST_CONFIG = {
   pillarAxisFilter: (_games, _axis) => _games, // no special filtering needed
 
   filterFns: {
-    category: (games, value) => {
-      return games.filter(g => (g.category || "").toLowerCase() === value.toLowerCase());
+    category: (games, values) => {
+      const vals = (Array.isArray(values) ? values : [values]).map(v => v.toLowerCase());
+      return games.filter(g => vals.includes((g.category || "").toLowerCase()));
     },
   },
 
