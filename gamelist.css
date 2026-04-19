@@ -541,6 +541,22 @@ h1
   margin-bottom: 30px;     /* Extra space at the bottom of the header area */
 }
 
+/* Search input */
+.search-label { margin-left: auto; }
+.search-input {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 18px;
+  letter-spacing: 4px;
+  color: black;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid black;
+  outline: none;
+  padding: 8px 4px;
+  width: 180px;
+}
+.search-input::placeholder { opacity: 0.3; }
+
 /* 3. Labels: Remove margins (Gap handles it now) */
 .sort-label {
   font-family: 'Major Mono Display', monospace;
@@ -703,8 +719,7 @@ h1
 
 /* NUMBER: same font + size as title */
 .loader-number {
-  /*font-family: "IBM Plex Serif", serif;*/
-  font-family: "DIN", "Inter", sans-serif;
+  font-family: 'Major Mono Display', monospace;
   font-size: 18vw;
   letter-spacing: 12px;
   margin-bottom: 6rem;

@@ -390,7 +390,7 @@ function renderGames(games)
     TIER_ORDER.forEach(tier =>
     {
         if (tierMap[tier].length)
-            {
+        {
             const [section, divider] = buildTierSection(tier, tierMap[tier]);
             gameContainer.appendChild(section);
             gameContainer.appendChild(divider);
@@ -591,6 +591,7 @@ function sortGames(games)
 // ========== FILTER STATE ==========
 // category: [] means all; array of strings means multiselect OR filter
 let filterCategory = [];
+let filterSearch = '';
 // decade: null | '2000s' | '2010s' | '2020s'
 let filterDecade = null;
 // platform: null | 'psp' | 'ps2' | 'ps4' | 'xbox 360' | 'pc'
@@ -603,6 +604,13 @@ let filterTTB = null;
 function applyFilters()
 {
   let games = allGames.slice();
+
+  // Search by name
+  if (filterSearch)
+  {
+    const q = filterSearch.toLowerCase();
+    games = games.filter(g => (g.name || '').toLowerCase().includes(q));
+  }
 
   // Category ([] = all; array = OR multiselect)
   if (filterCategory.length > 0)
@@ -811,6 +819,17 @@ function setupTabs()
   // Mark default sort button as active
   const defaultSortBtn = sortButtons.find(b => b.dataset.value === sortKey);
   if (defaultSortBtn) defaultSortBtn.classList.add('active');
+
+  // Search input
+  const searchInput = document.getElementById('search-input');
+  if (searchInput)
+  {
+    searchInput.addEventListener('input', e =>
+    {
+      filterSearch = e.target.value.trim();
+      applyFilters();
+    });
+  }
 
   // View Mode Toggles
   const viewButtons = document.querySelectorAll('.view-btn');
