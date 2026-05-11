@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHRT — C++ syntax sugar</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-alt: #111111;
+    --ink: #e8e6e1;
+    --ink-dim: #8a8580;
+    --rule: #1f1d1a;
+    --accent: #c9a96e;
+
+    /* VS Code default dark+ */
+    --vs-bg: #1e1e1e;
+    --vs-fg: #d4d4d4;
+    --vs-kw: #569cd6;
+    --vs-type: #4ec9b0;
+    --vs-str: #ce9178;
+    --vs-num: #b5cea8;
+    --vs-com: #6a9955;
+    --vs-fn:  #dcdcaa;
+    --vs-var: #9cdcfe;
+    --vs-op:  #d4d4d4;
+    --vs-pp:  #c586c0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body
+  {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Metamorphous', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--accent); color: #000; }
+
+  /* ────────── HERO ────────── */
+  .hero
+  {
+    background: #000;
+    height: 75vh;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .hero-title
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    font-size: clamp(120px, 22vw, 320px);
+    letter-spacing: -0.02em;
+    color: #f5f3ee;
+    line-height: 0.9;
+    text-align: center;
+    user-select: none;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-sub
+  {
+    font-family: 'Nova Script', serif;
+    color: var(--ink-dim);
+    font-size: clamp(16px, 1.6vw, 22px);
+    margin-top: 1.5rem;
+    letter-spacing: 0.18em;
+    text-transform: lowercase;
+    z-index: 2;
+  }
+
+  .hero-deco
+  {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* ────────── LAYOUT ────────── */
+  section
+  {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 7rem 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  h2
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: clamp(34px, 4vw, 56px);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 2.5rem;
+    line-height: 1;
+  }
+
+  h3
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    margin: 2.5rem 0 1rem;
+  }
+
+  p, li
+  {
+    font-family: 'Metamorphous', serif;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.8;
+    max-width: 70ch;
+  }
+
+  p + p { margin-top: 1.25rem; }
+
+  .lede
+  {
+    font-family: 'Metamorphous', serif;
+    font-size: clamp(20px, 2vw, 26px);
+    color: var(--ink);
+    max-width: 60ch;
+    line-height: 1.6;
+  }
+
+  em.k
+  {
+    color: var(--accent);
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    padding: 0 0.2em;
+  }
+
+  /* ────────── RULES TABLE ────────── */
+  .rules-grid
+  {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .rule
+  {
+    padding: 1.2rem 1.4rem;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    background: var(--bg-alt);
+    transition: background 200ms ease;
+  }
+  .rule:hover { background: #161412; }
+
+  .rule .short
+  {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .rule .long
+  {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink-dim);
+    font-size: 13px;
+  }
+
+  /* ────────── CODE ────────── */
+  pre, code
+  {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+
+  pre.code
+  {
+    background: var(--vs-bg);
+    color: var(--vs-fg);
+    padding: 1.5rem 1.75rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    border: 1px solid #2a2a2a;
+  }
+
+  /* VS Code syntax classes */
+  .kw   { color: var(--vs-kw); }
+  .typ  { color: var(--vs-type); }
+  .str  { color: var(--vs-str); }
+  .num  { color: var(--vs-num); }
+  .com  { color: var(--vs-com); font-style: italic; }
+  .fn   { color: var(--vs-fn); }
+  .var  { color: var(--vs-var); }
+  .pp   { color: var(--vs-pp); }
+  .op   { color: var(--vs-op); }
+
+  /* ────────── EXAMPLE: scroll comparison ────────── */
+  .example { margin: 4rem 0; }
+
+  .example-title
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+  .example-sub
+  {
+    font-family: 'Nova Script', serif;
+    color: var(--ink-dim);
+    font-size: 16px;
+    margin-bottom: 1.8rem;
+    letter-spacing: 0.05em;
+  }
+
+  .scrolls
+  {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .scroll-wrap
+  {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .scroll-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  .scroll
+  {
+    width: 100%;
+    position: relative;
+    transition: transform 600ms ease;
+  }
+
+  .scroll-body
+  {
+    background: var(--vs-bg);
+    border-left: 1px solid #2a2a2a;
+    border-right: 1px solid #2a2a2a;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+  }
+
+  .scroll-body pre
+  {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .scroll.shrt .scroll-body { border-color: var(--accent); }
+
+  .scroll-end
+  {
+    display: block;
+    width: 100%;
+    height: 22px;
+  }
+
+  @media (max-width: 880px)
+  {
+    .scrolls { grid-template-columns: 1fr; gap: 1.5rem; }
+    section { padding: 4rem 1.25rem; }
+  }
+
+  /* ────────── FOOTER ────────── */
+  footer
+  {
+    text-align: center;
+    padding: 3rem 2rem;
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--ink-dim);
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--rule);
+  }
+
+  footer .name
+  {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* ────────── TOP-RIGHT BRAND ────────── */
+  .brand
+  {
+    position: fixed;
+    top: 1.5rem;
+    right: 2rem;
+    z-index: 100;
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--ink-dim);
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ────────── MANIFESTO LINE ────────── */
+  .manifesto
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: clamp(22px, 2.4vw, 32px);
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    margin-top: 2.5rem;
+    line-height: 1.4;
+  }
+
+  /* ────────── MINI INLINE SCROLL (rule demos) ────────── */
+  .mini-scroll
+  {
+    max-width: 480px;
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  .mini-scroll .scroll-body
+  {
+    background: var(--vs-bg);
+    border-left: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+  }
+
+  .mini-scroll pre
+  {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  /* ────────── LANGUAGE NAME ────────── */
+  .lang
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-style: normal;
+    font-size: 0.92em;
+  }
+
+  /* ────────── INLINE pill ────────── */
+  .pill
+  {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    padding: 0.15em 0.5em;
+    background: var(--bg-alt);
+    border: 1px solid var(--rule);
+    color: var(--accent);
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="brand">Anton Veselskyi</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     HERO
+     ════════════════════════════════════════════════════════════ -->
+<header class="hero">
+  <svg class="hero-deco" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+        <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#1a1a1a" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid)"/>
+    <circle cx="150" cy="120" r="2" fill="#c9a96e" opacity="0.4"/>
+    <circle cx="1050" cy="480" r="2" fill="#c9a96e" opacity="0.4"/>
+    <circle cx="950" cy="180" r="1.5" fill="#c9a96e" opacity="0.6"/>
+    <circle cx="220" cy="450" r="1.5" fill="#c9a96e" opacity="0.6"/>
+  </svg>
+  <h1 class="hero-title">SHRT</h1>
+  <div class="hero-sub">syntax sugar for c++</div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════
+     INTRO
+     ════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>What it is</h2>
+  <p class="lede">
+    <span class="lang">shrt</span> is a transpiler — a thin layer of syntax sugar that compiles down to
+    plain C++. Any valid C++ is valid <span class="lang">shrt</span>. You can mix freely.
+  </p>
+  <p style="margin-top: 2rem;">
+    The premise is simple:
+  </p>
+  <p>
+    The language reserves single letters for itself
+    (<em class="k">i</em>, <em class="k">c</em>, <em class="k">s</em>, <em class="k">e</em>,
+    <em class="k">r</em>, <em class="k">f</em>, <em class="k">w</em>, …) so the keywords
+    become mundane and clear, while your variables and functions must be
+    <em>two characters or longer</em> — forcing you to write what you actually mean.
+  </p>
+  <p>
+    No more <span class="pill">int n</span> or <span class="pill">auto x</span> hiding in
+    a function.
+  </p>
+  <p class="manifesto">
+    Be expressive. Be verbose. Be readable.
+  </p>
+  <p>
+    Anything you don't want shortened, just write the original C++ keyword —
+    <em class="k">e</em> means <em class="k">enum class</em> by default, but if you
+    want a plain C-style <em class="k">enum</em>, type it out. <span class="lang">shrt</span> never gets in
+    your way; it only ever adds.
+  </p>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     RULES
+     ════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>The Rules</h2>
+
+  <h3>Rule #1 — One letter belongs to the language</h3>
+  <p>
+    Variable, function, and type names must be at least two characters.
+    Single letters are reserved keywords. Template type parameters
+    (<em class="k">T</em>, <em class="k">U</em>) are exempt.
+  </p>
+
+  <h3>File extensions</h3>
+  <p>
+    Source files use <span class="pill">.shrt</span>. The transpiler emits
+    <span class="pill">.shrt.cpp</span> as an intermediate before the C++ compiler picks it up.
+  </p>
+
+  <h3>Includes</h3>
+  <p>
+    <span class="pill">i vector</span> → <span class="pill">#include &lt;vector&gt;</span>
+    &nbsp;·&nbsp;
+    <span class="pill">li mylib.h</span> → <span class="pill">#include "mylib.h"</span>
+  </p>
+
+  <h3>The <em class="k">$</em> prefix — implicit std::</h3>
+  <p>
+    Prefix any identifier with <em class="k">$</em> and <span class="lang">shrt</span> prepends
+    <em class="k">std::</em> for you. <span class="pill">$vector&lt;int&gt;</span>,
+    <span class="pill">$cout</span>, <span class="pill">$string</span>.
+  </p>
+
+  <h3>Keyword map</h3>
+  <div class="rules-grid">
+    <div class="rule"><span class="short">i</span><span class="long">#include &lt;...&gt;</span></div>
+    <div class="rule"><span class="short">li</span><span class="long">#include "..."</span></div>
+    <div class="rule"><span class="short">c</span><span class="long">class</span></div>
+    <div class="rule"><span class="short">s</span><span class="long">struct</span></div>
+    <div class="rule"><span class="short">e</span><span class="long">enum class</span></div>
+    <div class="rule"><span class="short">a</span><span class="long">auto</span></div>
+    <div class="rule"><span class="short">f</span><span class="long">for</span></div>
+    <div class="rule"><span class="short">w</span><span class="long">while</span></div>
+    <div class="rule"><span class="short">el</span><span class="long">else</span></div>
+    <div class="rule"><span class="short">v</span><span class="long">virtual</span></div>
+    <div class="rule"><span class="short">n</span><span class="long">namespace</span></div>
+    <div class="rule"><span class="short">u</span><span class="long">using</span></div>
+    <div class="rule"><span class="short">k</span><span class="long">const</span></div>
+    <div class="rule"><span class="short">d</span><span class="long">delete</span></div>
+    <div class="rule"><span class="short">o</span><span class="long">override</span></div>
+    <div class="rule"><span class="short">r</span><span class="long">return</span></div>
+    <div class="rule"><span class="short">b</span><span class="long">break</span></div>
+    <div class="rule"><span class="short">cont</span><span class="long">continue</span></div>
+    <div class="rule"><span class="short">ke</span><span class="long">constexpr</span></div>
+    <div class="rule"><span class="short">op</span><span class="long">operator</span></div>
+    <div class="rule"><span class="short">pub</span><span class="long">public</span></div>
+    <div class="rule"><span class="short">pri</span><span class="long">private</span></div>
+    <div class="rule"><span class="short">pro</span><span class="long">protected</span></div>
+    <div class="rule"><span class="short">which</span><span class="long">switch</span></div>
+    <div class="rule"><span class="short">p</span><span class="long">std::cout &lt;&lt; … &lt;&lt; endl</span></div>
+    <div class="rule"><span class="short">defer</span><span class="long">scope-exit cleanup</span></div>
+  </div>
+
+  <h3>Optional parens on conditions</h3>
+  <p>
+    <em class="k">if</em> and <em class="k">w</em> conditions don't need parentheses.
+    The condition is everything between the keyword and the opening
+    <em class="k">{</em>. Parens still work if you want them.
+  </p>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="kw">if</span> health &lt;= <span class="num">0</span>
+{
+    <span class="fn">die</span>();
+}
+
+<span class="kw">w</span> running
+{
+    <span class="fn">tick</span>();
+}</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3>switch → which, case is implicit</h3>
+  <p>
+    <em class="k">which</em> replaces <em class="k">switch</em>, the <em class="k">case</em> keyword disappears,
+    just write the label value followed by a colon.
+  </p>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="kw">which</span> signal
+{
+    <span class="num">1</span>: <span class="fn">start</span>(); <span class="kw">b</span>;
+    <span class="num">2</span>: <span class="fn">stop</span>();  <span class="kw">b</span>;
+    <span class="kw">default</span>: <span class="kw">r</span>;
+}</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3>The Elvis operator — <em class="k">??</em> &amp; <em class="k">??=</em></h3>
+  <p>
+    Truthiness-checked fallback. If the left side is falsy, the right side fires.
+    The right side can be an expression (yields a value) or a statement
+    (returns, calls, breaks — anything). Inspired by GCC's <em class="k">?:</em>,
+    Kotlin's guards, and bash's <em class="k">${var:-default}</em>.
+  </p>
+  <ul style="margin-top: 1rem; padding-left: 1.5rem;">
+    <li><span class="pill">val ?? fallback</span> — expression: <em>val</em> if truthy, else <em>fallback</em></li>
+    <li><span class="pill">val ?? r;</span> — guard: <em>return</em> if val is falsy</li>
+    <li><span class="pill">val ?? r nullptr;</span> — guard with value</li>
+    <li><span class="pill">val ?? foo();</span> — guard with side-effect</li>
+    <li><span class="pill">val ??= fallback;</span> — shorthand for <span class="pill">val = val ?? fallback</span></li>
+  </ul>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="typ">Player</span>* player = <span class="fn">find_player</span>(idx);
+player <span class="op">??</span> <span class="kw">r</span> <span class="kw">nullptr</span>;
+
+player-&gt;name <span class="op">??=</span> <span class="str">"Anonymous"</span>;
+
+<span class="kw">a</span> health = player-&gt;hp <span class="op">??</span> <span class="num">100</span>;</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3>The <em class="k">=&gt;</em> arrow — two meanings, one mental model</h3>
+  <p>
+    <em class="k">=&gt;</em> always means <em>"what follows is the result."</em>
+  </p>
+  <ul style="margin-top: 1rem; padding-left: 1.5rem;">
+    <li><strong>Standalone</strong> — a lambda. No parameters, captures by <em class="k">&amp;</em> by default.
+        Prefix with <em class="k">[=]</em> or <em class="k">[var]</em> to override.</li>
+    <li><strong>After a function signature</strong> — expression body, implicit return. Borrowed from C#.</li>
+  </ul>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="com">// expression body</span>
+<span class="typ">int</span> <span class="fn">square</span>(<span class="typ">int</span> num) <span class="op">=&gt;</span> num * num;
+
+<span class="com">// standalone lambda</span>
+<span class="kw">a</span> bump = <span class="op">=&gt;</span> counter + <span class="num">1</span>;
+<span class="kw">a</span> snapshot = [=] <span class="op">=&gt;</span> counter;</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3>Null-safe access — <em class="k">?.</em></h3>
+  <p>
+    The natural sibling of <em class="k">??</em>. Chains member access without
+    crashing on null pointers along the way. If any link in the chain is null,
+    the whole expression evaluates to null. Borrowed from Kotlin, Swift, C#.
+  </p>
+  <p>
+    Pairs gorgeously with the Elvis: <span class="pill">player?.name ?? "Anonymous"</span>
+    reads almost as English.
+  </p>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="kw">a</span> weapon_name = player<span class="op">?.</span>weapon<span class="op">?.</span>name <span class="op">??</span> <span class="str">"fists"</span>;
+
+shop<span class="op">?.</span><span class="fn">buy</span>(<span class="str">"potion"</span>);    <span class="com">// silently skipped if shop is null</span>
+
+<span class="typ">Player</span>* hero = roster<span class="op">?.</span><span class="fn">find</span>(idx);</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3>String interpolation — <em class="k">$"…"</em></h3>
+  <p>
+    Reuses the <em class="k">$</em> sigil. Anything inside <em class="k">{…}</em>
+    is an expression — interpolated into the string. Transpiles to
+    <em class="k">std::format</em>, so it's type-safe and as fast as
+    <em class="k">printf</em>.
+  </p>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="kw">a</span> greeting = <span class="str">$"Hello </span>{name}<span class="str">, you have </span>{coins}<span class="str"> gold!"</span>;
+
+<span class="kw">a</span> report   = <span class="str">$"HP </span>{player-&gt;hp}<span class="str"> / </span>{player-&gt;max_hp}<span class="str">"</span>;
+
+<span class="kw">a</span> math     = <span class="str">$"sum = </span>{x + y}<span class="str">"</span>;</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3>The <em class="k">p</em> print — a cout wrapper</h3>
+  <p>
+    Thin wrapper around <em class="k">std::cout &lt;&lt; … &lt;&lt; std::endl</em>.
+    Anything streamable into <em class="k">cout</em> can be piped into
+    <em class="k">p</em>. Composes naturally with <em class="k">$"…"</em>
+    interpolation.
+  </p>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="kw">p</span> <span class="str">"starting up"</span>;
+
+<span class="kw">p</span> <span class="str">$"Hello </span>{name}<span class="str">, gold </span>{coins}<span class="str">"</span>;
+
+<span class="kw">p</span> player<span class="op">?.</span>name <span class="op">??</span> <span class="str">"Anonymous"</span>;</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+
+  <h3><em class="k">defer</em> — inline RAII cleanup</h3>
+  <p>
+    Stolen from Go, Zig, and Swift. The statement (or block) following
+    <em class="k">defer</em> is executed at scope exit — no matter how the scope
+    exits (normal return, early return, exception). Fits C++ RAII philosophy
+    without writing a wrapper class for one-off resources.
+  </p>
+  <p>
+    Transpiles into an anonymous scope-guard whose destructor fires the deferred
+    work — same trick libraries like <em>gsl::finally</em> and <em>scope_guard</em> use,
+    just baked into the language.
+  </p>
+  <div class="mini-scroll">
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+    <div class="scroll-body"><pre><span class="typ">void</span> <span class="fn">process</span>(<span class="kw">k</span> <span class="typ">char</span>* path)
+{
+    <span class="kw">a</span>* file = <span class="var">$fopen</span>(path, <span class="str">"r"</span>);
+    file <span class="op">??</span> <span class="kw">r</span>;
+    <span class="kw">defer</span> <span class="var">$fclose</span>(file);
+
+    <span class="com">// ...work with file...</span>
+    <span class="com">// fclose fires automatically on any exit</span>
+}</pre></div>
+    <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     EXAMPLES
+     ════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Side by side</h2>
+  <p class="lede" style="margin-bottom: 4rem;">
+    Ten snippets — C++ on the left, <span class="lang">shrt</span> on the right.
+    The scroll on the right is always shorter — that's the point.
+  </p>
+
+  <!-- 1. HELLO WORLD -->
+  <div class="example">
+    <div class="example-title">Hello, World</div>
+    <div class="example-sub">Kernighan &amp; Ritchie, 1972</div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+
+<span class="typ">int</span> <span class="fn">main</span>()
+{
+    <span class="typ">std</span>::cout &lt;&lt; <span class="str">"Hello, World!"</span> &lt;&lt; <span class="typ">std</span>::endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">i</span> iostream
+
+<span class="typ">int</span> <span class="fn">main</span>()
+{
+    <span class="kw">p</span> <span class="str">"Hello, World!"</span>;
+    <span class="kw">r</span> <span class="num">0</span>;
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. FIBONACCI -->
+  <div class="example">
+    <div class="example-title">Fibonacci</div>
+    <div class="example-sub">Leonardo of Pisa, 1202 · <em>=&gt; expression body</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="typ">int</span> <span class="fn">fibonacci</span>(<span class="typ">int</span> num)
+{
+    <span class="kw">if</span> (num &lt;= <span class="num">1</span>) <span class="kw">return</span> num;
+    <span class="kw">return</span> <span class="fn">fibonacci</span>(num - <span class="num">1</span>)
+         + <span class="fn">fibonacci</span>(num - <span class="num">2</span>);
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="typ">int</span> <span class="fn">fibonacci</span>(<span class="typ">int</span> num) <span class="op">=&gt;</span>
+    num &lt;= <span class="num">1</span>
+        ? num
+        : <span class="fn">fibonacci</span>(num - <span class="num">1</span>) + <span class="fn">fibonacci</span>(num - <span class="num">2</span>);</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. EUCLIDEAN GCD -->
+  <div class="example">
+    <div class="example-title">Euclidean GCD</div>
+    <div class="example-sub">Euclid, ~300 BC · <em>optional parens, w loop</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="typ">int</span> <span class="fn">gcd</span>(<span class="typ">int</span> alpha, <span class="typ">int</span> beta)
+{
+    <span class="kw">while</span> (beta != <span class="num">0</span>)
+    {
+        <span class="typ">int</span> temp = beta;
+        beta = alpha % beta;
+        alpha = temp;
+    }
+    <span class="kw">return</span> alpha;
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="typ">int</span> <span class="fn">gcd</span>(<span class="typ">int</span> alpha, <span class="typ">int</span> beta)
+{
+    <span class="kw">w</span> beta != <span class="num">0</span>
+    {
+        <span class="typ">int</span> temp = beta;
+        beta = alpha % beta;
+        alpha = temp;
+    }
+    <span class="kw">r</span> alpha;
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. LINKED LIST -->
+  <div class="example">
+    <div class="example-title">Linked List Traversal</div>
+    <div class="example-sub">Newell &amp; Shaw, 1955 · <em>?? as a guard</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="kw">struct</span> <span class="typ">Node</span>
+{
+    <span class="typ">int</span> value;
+    <span class="typ">Node</span>* next;
+};
+
+<span class="typ">void</span> <span class="fn">print_list</span>(<span class="typ">Node</span>* head)
+{
+    <span class="kw">if</span> (!head) <span class="kw">return</span>;
+    <span class="kw">while</span> (head != <span class="kw">nullptr</span>)
+    {
+        <span class="typ">std</span>::cout &lt;&lt; head-&gt;value &lt;&lt; <span class="str">" "</span>;
+        head = head-&gt;next;
+    }
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">s</span> <span class="typ">Node</span>
+{
+    <span class="typ">int</span> value;
+    <span class="typ">Node</span>* next;
+};
+
+<span class="typ">void</span> <span class="fn">print_list</span>(<span class="typ">Node</span>* head)
+{
+    head <span class="op">??</span> <span class="kw">r</span>;
+    <span class="kw">w</span> head != <span class="kw">nullptr</span>
+    {
+        <span class="kw">p</span> head-&gt;value;
+        head = head-&gt;next;
+    }
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. SINGLETON -->
+  <div class="example">
+    <div class="example-title">Singleton Pattern</div>
+    <div class="example-sub">Gang of Four, 1994 · <em>??= lazy assignment</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="kw">class</span> <span class="typ">Logger</span>
+{
+<span class="kw">private</span>:
+    <span class="kw">static</span> <span class="typ">Logger</span>* instance;
+    <span class="fn">Logger</span>() {}
+<span class="kw">public</span>:
+    <span class="kw">static</span> <span class="typ">Logger</span>* <span class="fn">get_instance</span>()
+    {
+        <span class="kw">if</span> (instance == <span class="kw">nullptr</span>)
+        {
+            instance = <span class="kw">new</span> <span class="typ">Logger</span>();
+        }
+        <span class="kw">return</span> instance;
+    }
+};</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">c</span> <span class="typ">Logger</span>
+{
+<span class="kw">pri</span>:
+    <span class="kw">static</span> <span class="typ">Logger</span>* instance;
+    <span class="fn">Logger</span>() {}
+<span class="kw">pub</span>:
+    <span class="kw">static</span> <span class="typ">Logger</span>* <span class="fn">get_instance</span>()
+    {
+        instance <span class="op">??=</span> <span class="kw">new</span> <span class="typ">Logger</span>();
+        <span class="kw">r</span> instance;
+    }
+};</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. POINT CLASS (expression bodies) -->
+  <div class="example">
+    <div class="example-title">2D Point</div>
+    <div class="example-sub">classic value type · <em>=&gt; expression bodies</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="kw">class</span> <span class="typ">Point</span>
+{
+    <span class="typ">int</span> px_, py_;
+<span class="kw">public</span>:
+    <span class="fn">Point</span>(<span class="typ">int</span> px, <span class="typ">int</span> py) : px_(px), py_(py) {}
+
+    <span class="typ">int</span> <span class="fn">get_x</span>() <span class="kw">const</span> { <span class="kw">return</span> px_; }
+    <span class="typ">int</span> <span class="fn">get_y</span>() <span class="kw">const</span> { <span class="kw">return</span> py_; }
+    <span class="typ">int</span> <span class="fn">sum</span>()   <span class="kw">const</span> { <span class="kw">return</span> px_ + py_; }
+};</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">c</span> <span class="typ">Point</span>
+{
+    <span class="typ">int</span> px_, py_;
+<span class="kw">pub</span>:
+    <span class="fn">Point</span>(<span class="typ">int</span> px, <span class="typ">int</span> py) : px_(px), py_(py) {}
+
+    <span class="typ">int</span> <span class="fn">get_x</span>() <span class="kw">k</span> <span class="op">=&gt;</span> px_;
+    <span class="typ">int</span> <span class="fn">get_y</span>() <span class="kw">k</span> <span class="op">=&gt;</span> py_;
+    <span class="typ">int</span> <span class="fn">sum</span>()   <span class="kw">k</span> <span class="op">=&gt;</span> px_ + py_;
+};</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. ENUM + WHICH -->
+  <div class="example">
+    <div class="example-title">Direction Enum</div>
+    <div class="example-sub">Tony Hoare's case dispatch, 1965 · <em>e + which + implicit case</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="kw">enum class</span> <span class="typ">Direction</span>
+{
+    North,
+    South,
+    East,
+    West
+};
+
+<span class="typ">int</span> <span class="fn">delta_x</span>(<span class="typ">Direction</span> dir)
+{
+    <span class="kw">switch</span> (dir)
+    {
+        <span class="kw">case</span> <span class="typ">Direction</span>::East:  <span class="kw">return</span>  <span class="num">1</span>;
+        <span class="kw">case</span> <span class="typ">Direction</span>::West:  <span class="kw">return</span> -<span class="num">1</span>;
+        <span class="kw">default</span>:                  <span class="kw">return</span>  <span class="num">0</span>;
+    }
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">e</span> <span class="typ">Direction</span>
+{
+    North,
+    South,
+    East,
+    West
+};
+
+<span class="typ">int</span> <span class="fn">delta_x</span>(<span class="typ">Direction</span> dir)
+{
+    <span class="kw">which</span> dir
+    {
+        <span class="typ">Direction</span>::East:  <span class="kw">r</span>  <span class="num">1</span>;
+        <span class="typ">Direction</span>::West:  <span class="kw">r</span> -<span class="num">1</span>;
+        <span class="kw">default</span>:           <span class="kw">r</span>  <span class="num">0</span>;
+    }
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. GROUP ANAGRAMS (LeetCode, std-heavy) -->
+  <div class="example">
+    <div class="example-title">Group Anagrams</div>
+    <div class="example-sub">LeetCode #49, the classic interview round · <em>$ everywhere</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;unordered_map&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;string&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;algorithm&gt;</span>
+
+<span class="kw">class</span> <span class="typ">Solution</span>
+{
+<span class="kw">public</span>:
+    <span class="typ">std</span>::vector&lt;<span class="typ">std</span>::vector&lt;<span class="typ">std</span>::string&gt;&gt;
+    <span class="fn">groupAnagrams</span>(<span class="typ">std</span>::vector&lt;<span class="typ">std</span>::string&gt;&amp; strs)
+    {
+        <span class="typ">std</span>::unordered_map&lt;
+            <span class="typ">std</span>::string,
+            <span class="typ">std</span>::vector&lt;<span class="typ">std</span>::string&gt;
+        &gt; groups;
+
+        <span class="kw">for</span> (<span class="kw">const</span> <span class="typ">std</span>::string&amp; word : strs)
+        {
+            <span class="typ">std</span>::string key = word;
+            <span class="typ">std</span>::sort(key.begin(), key.end());
+            groups[key].push_back(word);
+        }
+
+        <span class="typ">std</span>::vector&lt;<span class="typ">std</span>::vector&lt;<span class="typ">std</span>::string&gt;&gt; result;
+        <span class="kw">for</span> (<span class="kw">auto</span>&amp; entry : groups)
+        {
+            result.push_back(<span class="typ">std</span>::move(entry.second));
+        }
+        <span class="kw">return</span> result;
+    }
+};</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">i</span> vector
+<span class="kw">i</span> unordered_map
+<span class="kw">i</span> string
+<span class="kw">i</span> algorithm
+
+<span class="kw">c</span> <span class="typ">Solution</span>
+{
+<span class="kw">pub</span>:
+    <span class="var">$vector</span>&lt;<span class="var">$vector</span>&lt;<span class="var">$string</span>&gt;&gt;
+    <span class="fn">groupAnagrams</span>(<span class="var">$vector</span>&lt;<span class="var">$string</span>&gt;&amp; strs)
+    {
+        <span class="var">$unordered_map</span>&lt;
+            <span class="var">$string</span>,
+            <span class="var">$vector</span>&lt;<span class="var">$string</span>&gt;
+        &gt; groups;
+
+        <span class="kw">f</span> (<span class="kw">k</span> <span class="var">$string</span>&amp; word : strs)
+        {
+            <span class="var">$string</span> key = word;
+            <span class="var">$sort</span>(key.begin(), key.end());
+            groups[key].push_back(word);
+        }
+
+        <span class="var">$vector</span>&lt;<span class="var">$vector</span>&lt;<span class="var">$string</span>&gt;&gt; result;
+        <span class="kw">f</span> (<span class="kw">a</span>&amp; entry : groups)
+        {
+            result.push_back(<span class="var">$move</span>(entry.second));
+        }
+        <span class="kw">r</span> result;
+    }
+};</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. PLAYER INSPECTOR — combines ?., $"...", p -->
+  <div class="example">
+    <div class="example-title">Player Inspector</div>
+    <div class="example-sub">gamedev sketch · <em>?. + $"…" + p, all at once</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="pp">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;format&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;string&gt;</span>
+
+<span class="kw">struct</span> <span class="typ">Weapon</span>
+{
+    <span class="typ">std</span>::string name;
+    <span class="typ">int</span> damage;
+};
+
+<span class="kw">struct</span> <span class="typ">Player</span>
+{
+    <span class="typ">std</span>::string name;
+    <span class="typ">Weapon</span>* weapon;
+    <span class="typ">int</span> hp;
+};
+
+<span class="typ">void</span> <span class="fn">inspect</span>(<span class="typ">Player</span>* player)
+{
+    <span class="kw">if</span> (!player) <span class="kw">return</span>;
+
+    <span class="typ">std</span>::string weapon_name = player-&gt;weapon
+        ? player-&gt;weapon-&gt;name
+        : <span class="str">"fists"</span>;
+    <span class="typ">int</span> weapon_dmg = player-&gt;weapon
+        ? player-&gt;weapon-&gt;damage
+        : <span class="num">1</span>;
+
+    <span class="typ">std</span>::cout &lt;&lt; <span class="typ">std</span>::format(
+        <span class="str">"{} wields {} ({}dmg) — {}hp"</span>,
+        player-&gt;name, weapon_name, weapon_dmg, player-&gt;hp
+    ) &lt;&lt; <span class="typ">std</span>::endl;
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">i</span> iostream
+<span class="kw">i</span> format
+<span class="kw">i</span> string
+
+<span class="kw">s</span> <span class="typ">Weapon</span>
+{
+    <span class="var">$string</span> name;
+    <span class="typ">int</span> damage;
+};
+
+<span class="kw">s</span> <span class="typ">Player</span>
+{
+    <span class="var">$string</span> name;
+    <span class="typ">Weapon</span>* weapon;
+    <span class="typ">int</span> hp;
+};
+
+<span class="typ">void</span> <span class="fn">inspect</span>(<span class="typ">Player</span>* player)
+{
+    player <span class="op">??</span> <span class="kw">r</span>;
+
+    <span class="kw">a</span> weapon_name = player-&gt;weapon<span class="op">?.</span>name <span class="op">??</span> <span class="str">"fists"</span>;
+    <span class="kw">a</span> weapon_dmg  = player-&gt;weapon<span class="op">?.</span>damage <span class="op">??</span> <span class="num">1</span>;
+
+    <span class="kw">p</span> <span class="str">$"</span>{player-&gt;name}<span class="str"> wields </span>{weapon_name}<span class="str"> (</span>{weapon_dmg}<span class="str">dmg) — </span>{player-&gt;hp}<span class="str">hp"</span>;
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. GAMEDEV PATHFINDING (BFS) -->
+  <div class="example">
+    <div class="example-title">Grid Pathfinding (BFS)</div>
+    <div class="example-sub">gamedev classic · <em>e + s + ?? guard + standalone =&gt; lambda + expression body</em></div>
+    <div class="scrolls">
+      <div class="scroll-wrap">
+        <div class="scroll-label">C++</div>
+        <div class="scroll">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+          <div class="scroll-body"><pre><span class="pp">#include</span> <span class="str">&lt;queue&gt;</span>
+<span class="pp">#include</span> <span class="str">&lt;vector&gt;</span>
+
+<span class="kw">enum class</span> <span class="typ">Tile</span>
+{
+    Floor,
+    Wall,
+    Goal
+};
+
+<span class="kw">struct</span> <span class="typ">Cell</span>
+{
+    <span class="typ">int</span> px, py;
+
+    <span class="typ">bool</span> <span class="kw">operator</span>==(<span class="kw">const</span> <span class="typ">Cell</span>&amp; other) <span class="kw">const</span>
+    {
+        <span class="kw">return</span> px == other.px &amp;&amp; py == other.py;
+    }
+};
+
+<span class="typ">std</span>::vector&lt;<span class="typ">Cell</span>&gt; <span class="fn">bfs</span>(
+    <span class="kw">const</span> <span class="typ">std</span>::vector&lt;<span class="typ">std</span>::vector&lt;<span class="typ">Tile</span>&gt;&gt;&amp; grid,
+    <span class="typ">Cell</span> start)
+{
+    <span class="typ">std</span>::queue&lt;<span class="typ">Cell</span>&gt; frontier;
+    frontier.push(start);
+
+    <span class="kw">auto</span> in_bounds = [&amp;]()
+    {
+        <span class="kw">return</span> !grid.empty();
+    };
+    <span class="kw">if</span> (!in_bounds()) <span class="kw">return</span> {};
+
+    <span class="kw">while</span> (!frontier.empty())
+    {
+        <span class="typ">Cell</span> cur = frontier.front();
+        frontier.pop();
+        <span class="kw">if</span> (grid[cur.py][cur.px] == <span class="typ">Tile</span>::Goal)
+        {
+            <span class="kw">return</span> {cur};
+        }
+        <span class="com">// expand neighbors...</span>
+    }
+    <span class="kw">return</span> {};
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#2a2a2a"/><circle cx="20" cy="11" r="6" fill="none" stroke="#2a2a2a"/><circle cx="380" cy="11" r="6" fill="none" stroke="#2a2a2a"/></svg>
+        </div>
+      </div>
+      <div class="scroll-wrap">
+        <div class="scroll-label">SHRT</div>
+        <div class="scroll shrt">
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+          <div class="scroll-body"><pre><span class="kw">i</span> queue
+<span class="kw">i</span> vector
+
+<span class="kw">e</span> <span class="typ">Tile</span>
+{
+    Floor,
+    Wall,
+    Goal
+};
+
+<span class="kw">s</span> <span class="typ">Cell</span>
+{
+    <span class="typ">int</span> px, py;
+
+    <span class="typ">bool</span> <span class="kw">op</span>==(<span class="kw">k</span> <span class="typ">Cell</span>&amp; other) <span class="kw">k</span> <span class="op">=&gt;</span>
+        px == other.px &amp;&amp; py == other.py;
+};
+
+<span class="var">$vector</span>&lt;<span class="typ">Cell</span>&gt; <span class="fn">bfs</span>(
+    <span class="kw">k</span> <span class="var">$vector</span>&lt;<span class="var">$vector</span>&lt;<span class="typ">Tile</span>&gt;&gt;&amp; grid,
+    <span class="typ">Cell</span> start)
+{
+    <span class="var">$queue</span>&lt;<span class="typ">Cell</span>&gt; frontier;
+    frontier.push(start);
+
+    <span class="kw">a</span> in_bounds = <span class="op">=&gt;</span> !grid.empty();
+    in_bounds() <span class="op">??</span> <span class="kw">r</span> {};
+
+    <span class="kw">w</span> !frontier.empty()
+    {
+        <span class="typ">Cell</span> cur = frontier.front();
+        frontier.pop();
+        <span class="kw">if</span> grid[cur.py][cur.px] == <span class="typ">Tile</span>::Goal
+        {
+            <span class="kw">r</span> {cur};
+        }
+        <span class="com">// expand neighbors...</span>
+    }
+    <span class="kw">r</span> {};
+}</pre></div>
+          <svg class="scroll-end" viewBox="0 0 400 22" preserveAspectRatio="none"><line x1="0" y1="11" x2="400" y2="11" stroke="#c9a96e"/><circle cx="20" cy="11" r="6" fill="none" stroke="#c9a96e"/><circle cx="380" cy="11" r="6" fill="none" stroke="#c9a96e"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     FOOTER
+     ════════════════════════════════════════════════════════════ -->
+<footer>
+  <div>© 2026 &nbsp;·&nbsp; <span class="name">Anton Veselskyi</span></div>
+</footer>
+
+<script>
+  // Subtle: when a "shrt" scroll comes into view, briefly scale-pulse it
+  // to suggest the rolling/shrinking metaphor.
+  const observer = new IntersectionObserver((entries) =>
+  {
+    entries.forEach(e =>
+    {
+      if (e.isIntersecting)
+      {
+        e.target.style.transform = 'scaleY(1.02)';
+        setTimeout(() => { e.target.style.transform = 'scaleY(1)'; }, 400);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+
+  document.querySelectorAll('.scroll.shrt').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
