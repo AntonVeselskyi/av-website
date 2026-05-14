@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHRT — Playground</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root
+  {
+    --bg: #0a0a0a;
+    --bg-alt: #111111;
+    --ink: #e8e6e1;
+    --ink-dim: #8a8580;
+    --rule: #1f1d1a;
+    --accent: #c9a96e;
+    --vs-bg: #1e1e1e;
+    --vs-fg: #d4d4d4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body
+  {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Metamorphous', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  body
+  {
+    display: flex;
+    flex-direction: column;
+  }
+
+  ::selection { background: var(--accent); color: #000; }
+
+  /* ────────── COMPACT HEADER ────────── */
+  .topbar
+  {
+    background: #000;
+    padding: 0.9rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .topbar .logo
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    color: #f5f3ee;
+    text-decoration: none;
+    user-select: none;
+  }
+
+  .topbar .logo .sub
+  {
+    font-family: 'Nova Script', serif;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--ink-dim);
+    margin-left: 0.9rem;
+    text-transform: lowercase;
+    font-weight: normal;
+  }
+
+  .topbar .brand-mini
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .topbar .brand-mini a
+  {
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 200ms;
+  }
+
+  .topbar .brand-mini a:hover { color: var(--accent); }
+
+  /* ────────── MAIN PLAYGROUND ────────── */
+  main.playground
+  {
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.2rem 1.2rem 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .panes
+  {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .pane
+  {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .pane-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    padding: 0.55rem 0;
+    text-align: center;
+    border: 1px solid var(--rule);
+    border-bottom: none;
+    background: var(--bg-alt);
+    flex-shrink: 0;
+  }
+
+  .pane.shrt-pane .pane-label
+  {
+    color: var(--accent);
+    border-color: rgba(201, 169, 110, 0.4);
+  }
+
+  .editor
+  {
+    flex: 1;
+    min-height: 200px;
+    border: 1px solid var(--rule);
+    border-top: none;
+    background: var(--vs-bg);
+    overflow: hidden;
+  }
+
+  .pane.shrt-pane .editor
+  {
+    border-color: rgba(201, 169, 110, 0.4);
+  }
+
+  /* ────────── MIDDLE CONTROLS ────────── */
+  .middle-controls
+  {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    padding-top: 2rem;
+  }
+
+  .convert-btn
+  {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--rule);
+    background: var(--bg-alt);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 180ms;
+    user-select: none;
+  }
+
+  .convert-btn:hover
+  {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: #161412;
+  }
+
+  .convert-btn:active { transform: scale(0.94); }
+
+  /* ────────── RUN + CONSOLE ────────── */
+  .run-area
+  {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.8rem 0 0.5rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .run-btn
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 0.85rem 2rem;
+    background: var(--bg-alt);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .run-btn:hover:not(:disabled)
+  {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .run-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  .status-line
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .console
+  {
+    border: 1px solid var(--rule);
+    background: var(--vs-bg);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .console-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    padding: 0.55rem 1.2rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg-alt);
+  }
+
+  .console pre
+  {
+    margin: 0;
+    padding: 1rem 1.3rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--vs-fg);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 80px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .console pre:empty::before
+  {
+    content: "ready.";
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  /* ────────── FOOTER ────────── */
+  footer
+  {
+    text-align: center;
+    padding: 0.9rem 2rem 1rem;
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--ink-dim);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--rule);
+    flex-shrink: 0;
+  }
+
+  footer .name { color: var(--ink); font-weight: 700; }
+
+  footer .row { margin-bottom: 0.45rem; }
+  footer .row:last-child { margin-bottom: 0; }
+
+  footer .credit
+  {
+    font-family: 'Nova Script', serif;
+    text-transform: none;
+    letter-spacing: 0.1em;
+    font-size: 11px;
+    color: var(--ink-dim);
+  }
+
+  footer a
+  {
+    color: var(--ink-dim);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+    transition: color 200ms, border-color 200ms;
+  }
+
+  footer a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ────────── RESPONSIVE ────────── */
+  @media (max-width: 900px)
+  {
+    html, body { height: auto; overflow: auto; }
+    main.playground { flex: none; }
+    .panes { grid-template-columns: 1fr; gap: 0.4rem; flex: none; }
+    .middle-controls { flex-direction: row; padding-top: 0.3rem; padding-bottom: 0.3rem; }
+    .convert-btn { width: 44px; height: 44px; font-size: 17px; }
+    .editor { height: 60vh; min-height: 320px; }
+  }
+
+  @media (max-width: 600px)
+  {
+    .topbar .logo { font-size: 22px; }
+    .topbar .logo .sub { display: none; }
+    main.playground { padding: 0.8rem 0.8rem 1.2rem; }
+    .run-btn { font-size: 11px; padding: 0.7rem 1.5rem; letter-spacing: 0.16em; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="https://antonveselskyi.com/shrt.html" class="logo">SHRT<span class="sub">playground</span></a>
+  <div class="brand-mini"><a href="https://antonveselskyi.com">Anton Veselskyi</a></div>
+</header>
+
+<main class="playground">
+  <div class="panes">
+    <div class="pane shrt-pane">
+      <div class="pane-label">SHRT</div>
+      <div id="shrtEditor" class="editor"></div>
+    </div>
+
+    <div class="middle-controls">
+      <button id="toCpp" class="convert-btn" title="SHRT → C++">→</button>
+      <button id="toShrt" class="convert-btn" title="C++ → SHRT">←</button>
+    </div>
+
+    <div class="pane">
+      <div class="pane-label">C++26</div>
+      <div id="cppEditor" class="editor"></div>
+    </div>
+  </div>
+
+  <div class="run-area">
+    <button id="runBtn" class="run-btn">▶ Compile &amp; Run (C++26)</button>
+    <span class="status-line" id="statusLine">idle</span>
+  </div>
+
+  <div class="console">
+    <div class="console-label">Console</div>
+    <pre id="consoleOut"></pre>
+  </div>
+</main>
+
+<footer>
+  <div class="row">© 2026 · <span class="name">Anton Veselskyi</span> · <a href="https://antonveselskyi.com/shrt.html">spec</a></div>
+  <div class="row credit">Compilation by <a href="https://godbolt.org" target="_blank" rel="noopener">Compiler Explorer</a></div>
+</footer>
+
+<!-- Monaco Editor (the actual VS Code editor) -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<script>
+'use strict';
+
+const SAMPLE_SHRT = [
+'i iostream',
+'i format',
+'i string',
+'i cstdio',
+'',
+'// ── enum class (e) with which/case-implicit dispatch ──',
+'e Element',
+'{',
+'    Fire,',
+'    Water,',
+'    Earth,',
+'    Air',
+'};',
+'',
+'k char* element_name(Element elem)',
+'{',
+'    which elem',
+'    {',
+'        Element::Fire:  r "fire";',
+'        Element::Water: r "water";',
+'        Element::Earth: r "earth";',
+'        Element::Air:   r "air";',
+'        default:        r "void";',
+'    }',
+'}',
+'',
+'// ── struct with nested pointer for ?. chains ──',
+'s Weapon',
+'{',
+'    $string name;',
+'    int damage;',
+'    Element element;',
+'};',
+'',
+'s Player',
+'{',
+'    $string name;',
+'    Weapon*  weapon;',
+'    int      hp;',
+'    int      max_hp;',
+'',
+'    // expression-body getters (=>)',
+'    int      get_hp()      k => hp;',
+'    float    health_ratio() k => float(hp) / float(max_hp);',
+'    bool     is_alive()    k => hp > 0;',
+'};',
+'',
+'// ── ??, ?., $"..." and p, all together ──',
+'void describe(Player* player)',
+'{',
+'    player ?? r;                                    // guard',
+'',
+'    a weapon_name = player->weapon?.name   ?? "fists";   // ?. + ??',
+'    a weapon_dmg  = player->weapon?.damage ?? 1;',
+'    a elem        = player->weapon ? element_name(player->weapon->element) : "none";',
+'',
+'    p $"{player->name} wields {weapon_name} ({weapon_dmg}dmg, {elem}) — {player->get_hp()}/{player->max_hp}hp";',
+'}',
+'',
+'// ── defer for cleanup, optional-paren if + w, standalone => lambda ──',
+'void log_session(k char* path)',
+'{',
+'    FILE* file = fopen(path, "w");',
+'    file ?? r;',
+'    defer fclose(file);',
+'',
+'    a write_line = [&](k char* msg) => fprintf(file, "%s\\n", msg);',
+'',
+'    int line_count = 0;',
+'    w line_count < 3',
+'    {',
+'        if line_count == 0',
+'        {',
+'            write_line("session started");',
+'        }',
+'        el',
+'        {',
+'            write_line("...working...");',
+'        }',
+'        line_count++;',
+'    }',
+'    write_line("session ended");',
+'}',
+'',
+'int main()',
+'{',
+'    Weapon excalibur{"Excalibur", 50, Element::Fire};',
+'    Player hero{"Arthur", &excalibur, 80, 100};',
+'    Player peasant{"Bob", nil, 30, 50};',
+'    Player* missing = nil;',
+'',
+'    describe(&hero);',
+'    describe(&peasant);',
+'    describe(missing);            // ?? guard catches the null',
+'',
+'    // ??= for lazy init',
+'    Weapon* shared = nil;',
+'    shared ??= new Weapon{"shared sword", 10, Element::Water};',
+'    p $"shared weapon: {shared->name}";',
+'',
+'    delete shared;',
+'    r 0;',
+'}'
+].join('\n');
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHRT → C++ converter
+   ═══════════════════════════════════════════════════════════════════ */
+
+function shrtToCpp(src)
+{
+    const tokens = [];
+    const protect = (str) =>
+    {
+        const idx = tokens.length;
+        tokens.push(str);
+        return '\x00' + idx + '\x00';
+    };
+
+    let s = src;
+
+    s = s.replace(/\/\*[\s\S]*?\*\//g, m => protect(m));
+    s = s.replace(/\/\/[^\n]*/g, m => protect(m));
+    s = s.replace(/R"\(([\s\S]*?)\)"/g, m => protect(m));
+
+    // $"..." interpolation BEFORE plain-string protection
+    s = s.replace(/\$"((?:[^"\\]|\\.)*)"/g, (m, content) =>
+    {
+        const args = [];
+        const fmt = content.replace(/\{([^}]+)\}/g, (mm, expr) =>
+        {
+            args.push(expr.trim());
+            return '{}';
+        });
+        if (args.length === 0) return '"' + fmt + '"';
+        return 'std::format("' + fmt + '", ' + args.join(', ') + ')';
+    });
+
+    s = s.replace(/"(?:[^"\\]|\\.)*"/g, m => protect(m));
+    s = s.replace(/'(?:[^'\\]|\\.)*'/g, m => protect(m));
+
+    // nil → nullptr — early, after strings are protected, before any structural rewrites
+    s = s.replace(/\bnil\b/g, 'nullptr');
+
+    // includes
+    s = s.replace(/^[ \t]*i[ \t]+([a-zA-Z_][\w./]*)[ \t]*$/gm, '#include <$1>');
+    s = s.replace(/^[ \t]*li[ \t]+"?([\w./]+)"?[ \t]*$/gm, '#include "$1"');
+
+    // $Ident → std::Ident
+    s = s.replace(/\$([a-zA-Z_]\w*)/g, 'std::$1');
+
+    // defer
+    let deferCounter = 0;
+    if (/\bdefer\b/.test(s))
+    {
+        const guardDecl =
+            'namespace shrt_runtime { template<class F> struct ScopeGuard{F f;~ScopeGuard(){f();}}; }\n';
+        if (!s.includes('shrt_runtime'))
+        {
+            const lines = s.split('\n');
+            let lastInc = -1;
+            for (let i = 0; i < lines.length; i++)
+            {
+                if (/^\s*#include/.test(lines[i])) lastInc = i;
+            }
+            if (lastInc >= 0) { lines.splice(lastInc + 1, 0, guardDecl); s = lines.join('\n'); }
+            else              { s = guardDecl + s; }
+        }
+        s = s.replace(/\bdefer\s+([^;]+);/g, (m, body) =>
+        {
+            const v = '_shrt_defer_' + (deferCounter++);
+            return 'shrt_runtime::ScopeGuard ' + v + '{[&]{ ' + body + '; }};';
+        });
+    }
+
+    // p expr;  — match anywhere p appears as a statement-position keyword.
+    // Lookbehind excludes identifier chars so `phoenix`, `cup`, etc. won't trigger.
+    // Whitespace before p is preserved (regex doesn't consume it).
+    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;\n]+?);/g, 'std::cout << $1 << std::endl;');
+
+    // ?? statement guards
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*r\s*;/g, 'if (!($1)) return;');
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*r\s+([^;]+);/g, 'if (!($1)) return $2;');
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*b\s*;/g, 'if (!($1)) break;');
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*cont\s*;/g, 'if (!($1)) continue;');
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*([a-zA-Z_]\w*\s*\([^)]*\))\s*;/g, 'if (!($1)) $2;');
+
+    // ??=
+    s = s.replace(/([\w\.\->]+)\s*\?\?=\s*([^;]+);/g, '$1 = ($1) ? ($1) : ($2);');
+
+    // ?? expression
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*([^;,)\]\}\n]+)/g, '(($1) ? ($1) : ($2))');
+
+    // ?. chains
+    let prev = '';
+    while (prev !== s)
+    {
+        prev = s;
+        s = s.replace(/([\w\.\->\(\)]+?)\?\.([a-zA-Z_]\w*)/g, '(($1) ? ($1)->$2 : nullptr)');
+    }
+
+    // => expression body (const member): Type fn() k => expr;
+    s = s.replace(/\)\s+k\s*=>\s*([^;]+);/g, ') const { return $1; }');
+
+    // => expression body: Type fn(args) => expr;
+    s = s.replace(/\)\s*=>\s*([^;{]+);/g, ') { return $1; }');
+
+    // standalone => { ... }
+    s = s.replace(/(\[[^\]]*\])\s*=>\s*\{/g, '$1() {');
+    s = s.replace(/=>\s*\{/g, '[&]() {');
+
+    // standalone => expr
+    s = s.replace(/(\[[^\]]*\])\s*=>\s*([^;{}\n,)]+)/g, '$1() { return $2; }');
+    s = s.replace(/=>\s*([^;{}\n,)]+)/g, '[&]() { return $1; }');
+
+    // which → switch with implicit case
+    s = s.replace(/\bwhich\b\s*\(?\s*([^){\n]+?)\)?\s*\{([\s\S]*?)\n\s*\}/g,
+        function (m, expr, body)
+        {
+            const newBody = body.replace(
+                /(\n[ \t]*)((?:default)|(?:[a-zA-Z_][\w:]*)|(?:-?\d+(?:\.\d+)?))\s*:/g,
+                function (mm, ws, lbl)
+                {
+                    if (lbl === 'default') return ws + 'default:';
+                    return ws + 'case ' + lbl + ':';
+                });
+            return 'switch (' + expr.trim() + ')\n{' + newBody + '\n}';
+        });
+
+    // optional parens
+    s = s.replace(/\bif\s+(?!\()([^\n{]+?)\s*\{/g, 'if ($1) {');
+    s = s.replace(/\bw\s+(?!\()([^\n{]+?)\s*\{/g, 'while ($1) {');
+
+    // keyword swaps
+    const kwSwap = [
+        ['cont', 'continue'], ['nil', 'nullptr'],
+        ['pub', 'public'], ['pri', 'private'], ['pro', 'protected'],
+        ['ke', 'constexpr'], ['op', 'operator'], ['el', 'else'],
+        ['c', 'class'], ['s', 'struct'], ['e', 'enum class'],
+        ['a', 'auto'], ['f', 'for'], ['w', 'while'],
+        ['v', 'virtual'], ['n', 'namespace'], ['u', 'using'],
+        ['k', 'const'], ['d', 'delete'], ['o', 'override'],
+        ['r', 'return'], ['b', 'break']
+    ];
+
+    for (const [shrt, cpp] of kwSwap)
+    {
+        const re = new RegExp('\\b' + shrt + '\\b', 'g');
+        s = s.replace(re, cpp);
+    }
+
+    s = s.replace(/\x00(\d+)\x00/g, (m, idx) => tokens[+idx]);
+    return s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   C++ → SHRT (light)
+   ═══════════════════════════════════════════════════════════════════ */
+
+function cppToShrt(src)
+{
+    const tokens = [];
+    const protect = (str) => { const idx = tokens.length; tokens.push(str); return '\x00' + idx + '\x00'; };
+
+    let s = src;
+
+    s = s.replace(/\/\*[\s\S]*?\*\//g, m => protect(m));
+    s = s.replace(/\/\/[^\n]*/g, m => protect(m));
+    s = s.replace(/R"\(([\s\S]*?)\)"/g, m => protect(m));
+    s = s.replace(/"(?:[^"\\]|\\.)*"/g, m => protect(m));
+    s = s.replace(/'(?:[^'\\]|\\.)*'/g, m => protect(m));
+
+    s = s.replace(/#include\s*<([^>]+)>/g, 'i $1');
+    s = s.replace(/#include\s*"([^"]+)"/g, 'li $1');
+
+    s = s.replace(/\bstd::([a-zA-Z_]\w*)/g, '$$$1');
+
+    s = s.replace(/\bif\s*\(([^()]+(?:\([^()]*\)[^()]*)*)\)\s*\{/g, 'if $1 {');
+    s = s.replace(/\bwhile\s*\(([^()]+(?:\([^()]*\)[^()]*)*)\)\s*\{/g, 'while $1 {');
+
+    const kwShort = [
+        ['enum\\s+class', 'e'], ['constexpr', 'ke'], ['continue', 'cont'],
+        ['namespace', 'n'], ['protected', 'pro'], ['operator', 'op'],
+        ['override', 'o'], ['virtual', 'v'], ['private', 'pri'],
+        ['public', 'pub'], ['struct', 's'], ['delete', 'd'],
+        ['return', 'r'], ['switch', 'which'], ['while', 'w'],
+        ['class', 'c'], ['const', 'k'], ['using', 'u'],
+        ['break', 'b'], ['else', 'el'], ['auto', 'a'], ['for', 'f']
+    ];
+
+    for (const [cpp, shrt] of kwShort)
+    {
+        const re = new RegExp('\\b' + cpp + '\\b', 'g');
+        s = s.replace(re, shrt);
+    }
+
+    s = s.replace(/\x00(\d+)\x00/g, (m, idx) => tokens[+idx]);
+    return s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Godbolt compile+run
+   ═══════════════════════════════════════════════════════════════════ */
+
+const COMPILER_CANDIDATES = ['gsnapshot', 'g142', 'g141', 'clang_trunk', 'clang1810'];
+
+async function runCpp(code)
+{
+    let lastErr = null;
+    for (const compilerId of COMPILER_CANDIDATES)
+    {
+        try
+        {
+            const res = await fetch('https://godbolt.org/api/compiler/' + compilerId + '/compile',
+            {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify(
+                {
+                    source: code,
+                    options:
+                    {
+                        userArguments: '-std=c++26 -O2',
+                        executeParameters: { args: [], stdin: '' },
+                        compilerOptions: { executorRequest: true },
+                        filters:
+                        {
+                            execute: true, intel: false, demangle: false,
+                            labels: false, directives: false, commentOnly: false, trim: false
+                        }
+                    },
+                    lang: 'c++'
+                })
+            });
+
+            if (!res.ok) { lastErr = 'HTTP ' + res.status + ' from ' + compilerId; continue; }
+            return formatResult(await res.json(), compilerId);
+        }
+        catch (err) { lastErr = err.message; continue; }
+    }
+    return { ok: false, output: 'all compilers failed; last error: ' + (lastErr || 'unknown') };
+}
+
+function formatResult(result, compilerId)
+{
+    const parts = ['── compiler: ' + compilerId + ' (-std=c++26 -O2) ──'];
+    const stderrText = (result.stderr || []).map(x => x.text).join('\n');
+    const stdoutText = (result.stdout || []).map(x => x.text).join('\n');
+
+    if (result.code !== 0)
+    {
+        parts.push('\n⚠ COMPILE FAILED (exit ' + result.code + ')');
+        if (stderrText) parts.push('\n' + stderrText);
+        if (stdoutText) parts.push('\n' + stdoutText);
+        return { ok: false, output: parts.join('\n') };
+    }
+
+    if (stderrText) parts.push('\n── compile warnings ──\n' + stderrText);
+
+    if (result.execResult)
+    {
+        const er = result.execResult;
+        const eOut = (er.stdout || []).map(x => x.text).join('\n');
+        const eErr = (er.stderr || []).map(x => x.text).join('\n');
+
+        if (er.didExecute)
+        {
+            parts.push('\n── program output ──');
+            if (eOut) parts.push(eOut);
+            if (eErr) parts.push('\n[stderr]\n' + eErr);
+            parts.push('\n[exit ' + er.code + ']');
+        }
+        else { parts.push('\n(compile only — no exec)'); }
+    }
+    return { ok: true, output: parts.join('\n') };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Monaco setup + custom SHRT language
+   ═══════════════════════════════════════════════════════════════════ */
+
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+
+let shrtEditor = null;
+let cppEditor  = null;
+
+require(['vs/editor/editor.main'], function ()
+{
+    // ── shared keyword + type sets ──
+    const SHRT_KEYWORDS = [
+        // SHRT shortcuts
+        'i', 'li', 'c', 's', 'e', 'a', 'f', 'w', 'el', 'v', 'n', 'u',
+        'k', 'd', 'o', 'r', 'b', 'cont', 'ke', 'op', 'pub', 'pri', 'pro',
+        'which', 'defer', 'nil', 'p',
+        // Full C++ keywords (still valid in SHRT)
+        'class', 'struct', 'enum', 'auto', 'for', 'while', 'else', 'if',
+        'virtual', 'namespace', 'using', 'const', 'delete', 'override',
+        'return', 'break', 'continue', 'constexpr', 'operator', 'public',
+        'private', 'protected', 'switch', 'case', 'default', 'static',
+        'true', 'false', 'nullptr', 'new', 'this',
+        'template', 'typename', 'concept', 'requires', 'noexcept', 'inline',
+        'extern', 'mutable', 'volatile', 'sizeof', 'decltype', 'try',
+        'catch', 'throw', 'friend', 'explicit'
+    ];
+
+    const CPP_ONLY_KEYWORDS = [
+        // No SHRT shortcuts on the C++ side
+        'class', 'struct', 'enum', 'auto', 'for', 'while', 'else', 'if',
+        'virtual', 'namespace', 'using', 'const', 'delete', 'override',
+        'return', 'break', 'continue', 'constexpr', 'operator', 'public',
+        'private', 'protected', 'switch', 'case', 'default', 'static',
+        'true', 'false', 'nullptr', 'new', 'this',
+        'template', 'typename', 'concept', 'requires', 'noexcept', 'inline',
+        'extern', 'mutable', 'volatile', 'sizeof', 'decltype', 'try',
+        'catch', 'throw', 'friend', 'explicit'
+    ];
+
+    // Built-in types — these will be coloured RED
+    const BUILTIN_TYPES = [
+        'int', 'void', 'float', 'double', 'bool', 'char', 'long', 'short',
+        'unsigned', 'signed', 'wchar_t', 'char8_t', 'char16_t', 'char32_t',
+        'size_t', 'ptrdiff_t', 'intptr_t', 'uintptr_t',
+        'int8_t', 'int16_t', 'int32_t', 'int64_t',
+        'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
+        'FILE', 'nullptr_t'
+    ];
+
+    const OPERATORS = [
+        '=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=',
+        '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^',
+        '%', '<<', '>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=',
+        '%=', '<<=', '>>=', '->', '::',
+        '??', '??=', '?.', '=>'
+    ];
+
+    // factory — builds a Monarch grammar with whichever keyword set you want
+    function makeGrammar(keywordList, includeDollarFeatures)
+    {
+        return {
+            defaultToken: '',
+            ignoreCase: false,
+            keywords: keywordList,
+            builtinTypes: BUILTIN_TYPES,
+            operators: OPERATORS,
+            symbols: /[=><!~?:&|+\-*\/\^%]+/,
+
+            tokenizer:
+            {
+                root: includeDollarFeatures
+                    ? [
+                        // SHRT-only: $"..." interpolated string start
+                        [/\$"/, { token: 'string.quote', next: '@interpString' }],
+                        // SHRT-only: $Ident
+                        [/\$[a-zA-Z_]\w*/, 'variable.predefined'],
+                        // common rules below
+                        { include: '@common' }
+                      ]
+                    : [{ include: '@common' }],
+
+                common:
+                [
+                    // function name followed by `(` — captured BEFORE generic identifier
+                    [/[a-zA-Z_]\w*(?=\s*\()/, {
+                        cases: {
+                            '@keywords':     'keyword',
+                            '@builtinTypes': 'type',
+                            '@default':      'entity.name.function'
+                        }
+                    }],
+
+                    // capitalized identifier  = user-defined type / enum / class
+                    [/[A-Z]\w*/, 'type.identifier'],
+
+                    // anything else
+                    [/[a-zA-Z_]\w*/, {
+                        cases: {
+                            '@builtinTypes': 'type',
+                            '@keywords':     'keyword',
+                            '@default':      'identifier'
+                        }
+                    }],
+
+                    // whitespace + comments
+                    [/[ \t\r\n]+/, ''],
+                    [/\/\*/,       'comment', '@comment'],
+                    [/\/\/.*$/,    'comment'],
+
+                    // preprocessor (#include, #define, etc.)
+                    [/^\s*#\s*\w+/, 'keyword.directive'],
+
+                    // strings + chars
+                    [/"([^"\\]|\\.)*$/, 'string.invalid'],
+                    [/"/,               { token: 'string.quote', next: '@string' }],
+                    [/'[^\\']'/,        'string'],
+                    [/'(\\.)'/,         'string'],
+                    [/'/,               'string.invalid'],
+
+                    // numbers
+                    [/\d*\.\d+([eE][-+]?\d+)?[fFlL]?/, 'number.float'],
+                    [/0[xX][0-9a-fA-F]+[uUlL]*/,        'number.hex'],
+                    [/\d+[uUlL]*/,                       'number'],
+
+                    // brackets + operators + delimiters
+                    [/[{}()\[\]]/, '@brackets'],
+                    [/[<>](?!@symbols)/, '@brackets'],
+                    [/@symbols/, {
+                        cases: {
+                            '@operators': 'operator',
+                            '@default':   ''
+                        }
+                    }],
+                    [/[;,.]/, 'delimiter']
+                ],
+
+                string:
+                [
+                    [/[^\\"]+/, 'string'],
+                    [/\\./,     'string.escape'],
+                    [/"/,       { token: 'string.quote', next: '@pop' }]
+                ],
+
+                interpString:
+                [
+                    [/\{[^}]*\}/, 'variable.predefined'],
+                    [/[^\\"{]+/,  'string'],
+                    [/\\./,       'string.escape'],
+                    [/"/,         { token: 'string.quote', next: '@pop' }]
+                ],
+
+                comment:
+                [
+                    [/[^\/*]+/, 'comment'],
+                    [/\*\//,    'comment', '@pop'],
+                    [/[\/*]/,   'comment']
+                ]
+            }
+        };
+    }
+
+    // ── register both languages ──
+    monaco.languages.register({ id: 'shrt' });
+    monaco.languages.setMonarchTokensProvider('shrt', makeGrammar(SHRT_KEYWORDS, true));
+
+    monaco.languages.register({ id: 'shrt-cpp' });
+    monaco.languages.setMonarchTokensProvider('shrt-cpp', makeGrammar(CPP_ONLY_KEYWORDS, false));
+
+    const langConfig = {
+        brackets: [['{', '}'], ['[', ']'], ['(', ')']],
+        autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+        ],
+        comments: { lineComment: '//', blockComment: ['/*', '*/'] }
+    };
+    monaco.languages.setLanguageConfiguration('shrt',     langConfig);
+    monaco.languages.setLanguageConfiguration('shrt-cpp', langConfig);
+
+    // ── Desert-warm theme, all in the SHRT palette ──
+    monaco.editor.defineTheme('shrt-desert', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+            // base text
+            { token: '',                     foreground: 'e8e6e1' },
+
+            // comments — warm dim, italic
+            { token: 'comment',              foreground: '6e6055', fontStyle: 'italic' },
+
+            // keywords (SHRT shortcuts + C++ keywords) — gold accent
+            { token: 'keyword',              foreground: 'c9a96e' },
+            { token: 'keyword.directive',    foreground: 'b88e58', fontStyle: 'italic' },
+
+            // BUILT-IN TYPES — warm terracotta RED
+            { token: 'type',                 foreground: 'c95c43' },
+
+            // user-defined types (Capitalized) — warm olive green
+            { token: 'type.identifier',      foreground: '98a061' },
+
+            // functions — cream yellow
+            { token: 'entity.name.function', foreground: 'd2c97a' },
+            { token: 'function',             foreground: 'd2c97a' },
+
+            // variables / identifiers — soft off-white parchment
+            { token: 'identifier',           foreground: 'd8d2c4' },
+            { token: 'variable',             foreground: 'd8d2c4' },
+
+            // $Ident (std::) — brighter gold to stand out
+            { token: 'variable.predefined',  foreground: 'e8c989' },
+
+            // strings — dusty rose
+            { token: 'string',               foreground: 'c08a7a' },
+            { token: 'string.quote',         foreground: 'c08a7a' },
+            { token: 'string.escape',        foreground: 'a06860' },
+            { token: 'string.invalid',       foreground: 'a04040' },
+
+            // numbers — pale cream
+            { token: 'number',               foreground: 'd9c8a0' },
+            { token: 'number.hex',           foreground: 'd9c8a0' },
+            { token: 'number.float',         foreground: 'd9c8a0' },
+
+            // operators + punctuation — brass
+            { token: 'operator',             foreground: 'a89a7a' },
+            { token: 'delimiter',            foreground: 'a89a7a' }
+        ],
+        colors:
+        {
+            'editor.background':                  '#1e1e1e',
+            'editor.foreground':                  '#e8e6e1',
+            'editorLineNumber.foreground':        '#4a4540',
+            'editorLineNumber.activeForeground':  '#c9a96e',
+            'editor.selectionBackground':         '#3a3530',
+            'editor.lineHighlightBackground':     '#252320',
+            'editor.lineHighlightBorder':         '#252320',
+            'editorCursor.foreground':            '#c9a96e',
+            'editorGutter.background':            '#1e1e1e',
+            'editorIndentGuide.background':       '#2a2520',
+            'editorIndentGuide.activeBackground': '#3a3530',
+            'editorBracketMatch.background':      '#3a3020',
+            'editorBracketMatch.border':          '#c9a96e',
+            'scrollbarSlider.background':         '#2a2520aa',
+            'scrollbarSlider.hoverBackground':    '#3a3530cc',
+            'scrollbarSlider.activeBackground':   '#4a4540ee'
+        }
+    });
+
+    // ── create editors ──
+    const baseOpts =
+    {
+        theme: 'shrt-desert',
+        fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+        fontSize: 14,
+        lineHeight: 22,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        tabSize: 4,
+        insertSpaces: true,
+        renderLineHighlight: 'gutter',
+        scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 }
+    };
+
+    shrtEditor = monaco.editor.create(document.getElementById('shrtEditor'), Object.assign({}, baseOpts,
+    {
+        value: SAMPLE_SHRT,
+        language: 'shrt'
+    }));
+
+    cppEditor = monaco.editor.create(document.getElementById('cppEditor'), Object.assign({}, baseOpts,
+    {
+        value: shrtToCpp(SAMPLE_SHRT),
+        language: 'shrt-cpp'
+    }));
+
+    document.getElementById('statusLine').textContent = 'ready';
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Wire up UI
+   ═══════════════════════════════════════════════════════════════════ */
+
+const $out    = document.getElementById('consoleOut');
+const $status = document.getElementById('statusLine');
+const $run    = document.getElementById('runBtn');
+
+document.getElementById('toCpp').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    cppEditor.setValue(shrtToCpp(shrtEditor.getValue()));
+    $status.textContent = 'converted → C++';
+});
+
+document.getElementById('toShrt').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    shrtEditor.setValue(cppToShrt(cppEditor.getValue()));
+    $status.textContent = 'converted → SHRT';
+});
+
+$run.addEventListener('click', async () =>
+{
+    if (!cppEditor) return;
+
+    let code = cppEditor.getValue();
+    if (!code.trim() && shrtEditor)
+    {
+        code = shrtToCpp(shrtEditor.getValue());
+        cppEditor.setValue(code);
+    }
+
+    if (!code.trim()) { $out.textContent = 'both panes empty.'; return; }
+
+    $run.disabled = true;
+    $run.textContent = '⏳ compiling…';
+    $status.textContent = 'sending to godbolt…';
+    $out.textContent = '';
+
+    const result = await runCpp(code);
+    $out.textContent = result.output;
+    $status.textContent = result.ok ? 'done' : 'failed';
+
+    $run.disabled = false;
+    $run.textContent = '▶ Compile & Run (C++26)';
+});
+</script>
+
+</body>
+</html>

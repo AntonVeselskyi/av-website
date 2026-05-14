@@ -541,6 +541,7 @@
     <div class="rule"><span class="short">which</span><span class="long">switch</span></div>
     <div class="rule"><span class="short">p</span><span class="long">std::cout &lt;&lt; … &lt;&lt; endl</span></div>
     <div class="rule"><span class="short">defer</span><span class="long">scope-exit cleanup</span></div>
+    <div class="rule"><span class="short">nil</span><span class="long">nullptr</span></div>
   </div>
 
   <h3>Optional parens on conditions</h3>
@@ -843,7 +844,7 @@ shop<span class="op">?.</span><span class="fn">buy</span>(<span class="str">"pot
 <span class="typ">void</span> <span class="fn">print_list</span>(<span class="typ">Node</span>* head)
 {
     <span class="kw">if</span> (!head) <span class="kw">return</span>;
-    <span class="kw">while</span> (head != <span class="kw">nullptr</span>)
+    <span class="kw">while</span> (head != <span class="kw">nil</span>)
     {
         <span class="typ">std</span>::cout &lt;&lt; head-&gt;value &lt;&lt; <span class="str">" "</span>;
         head = head-&gt;next;
@@ -865,7 +866,7 @@ shop<span class="op">?.</span><span class="fn">buy</span>(<span class="str">"pot
 <span class="typ">void</span> <span class="fn">print_list</span>(<span class="typ">Node</span>* head)
 {
     head <span class="op">??</span> <span class="kw">r</span>;
-    <span class="kw">w</span> head != <span class="kw">nullptr</span>
+    <span class="kw">w</span> head != <span class="kw">nil</span>
     {
         <span class="kw">p</span> head-&gt;value;
         head = head-&gt;next;
@@ -894,7 +895,7 @@ shop<span class="op">?.</span><span class="fn">buy</span>(<span class="str">"pot
 <span class="kw">public</span>:
     <span class="kw">static</span> <span class="typ">Logger</span>* <span class="fn">get_instance</span>()
     {
-        <span class="kw">if</span> (instance == <span class="kw">nullptr</span>)
+        <span class="kw">if</span> (instance == <span class="kw">nil</span>)
         {
             instance = <span class="kw">new</span> <span class="typ">Logger</span>();
         }
