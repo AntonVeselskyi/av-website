@@ -203,14 +203,40 @@
   /* ────────── RUN + CONSOLE ────────── */
   .run-area
   {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
     margin: 0.8rem 0 0.5rem;
-    flex-wrap: wrap;
     flex-shrink: 0;
   }
+
+  .run-area .run-actions { grid-column: 1; justify-self: start; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .run-area .run-btn     { grid-column: 2; justify-self: center; }
+  .run-area .status-line { grid-column: 3; justify-self: end; }
+
+  .action-btn
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 0.6rem 0.95rem;
+    background: var(--bg-alt);
+    color: var(--ink-dim);
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+
+  .action-btn:hover
+  {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: #161412;
+  }
+
+  .action-btn:active { transform: scale(0.96); }
 
   .run-btn
   {
@@ -301,7 +327,9 @@
     flex-shrink: 0;
   }
 
-  footer .name { color: var(--ink); font-weight: 700; }
+  footer .name      { color: var(--ink); font-weight: 700; }
+  footer a.name     { color: var(--ink); border-bottom: none; }
+  footer a.name:hover { color: var(--accent); }
 
   footer .row { margin-bottom: 0.45rem; }
   footer .row:last-child { margin-bottom: 0; }
@@ -372,6 +400,11 @@
   </div>
 
   <div class="run-area">
+    <div class="run-actions">
+      <button id="resetBtn"   class="action-btn" title="Reset to empty main">Reset</button>
+      <button id="exampleBtn" class="action-btn" title="Load full SHRT example">Load example</button>
+      <button id="llBtn"      class="action-btn" title="Reverse linked-list demo">Reverse LL</button>
+    </div>
     <button id="runBtn" class="run-btn">▶ Compile &amp; Run (C++26)</button>
     <span class="status-line" id="statusLine">idle</span>
   </div>
@@ -383,7 +416,7 @@
 </main>
 
 <footer>
-  <div class="row">© 2026 · <span class="name">Anton Veselskyi</span> · <a href="https://antonveselskyi.com/shrt.html">spec</a></div>
+  <div class="row">© 2026 · <a class="name" href="https://antonveselskyi.com">Anton Veselskyi</a> · <a href="https://antonveselskyi.com/shrt.html">spec</a></div>
   <div class="row credit">Compilation by <a href="https://godbolt.org" target="_blank" rel="noopener">Compiler Explorer</a></div>
 </footer>
 
@@ -498,6 +531,72 @@ const SAMPLE_SHRT = [
 '}'
 ].join('\n');
 
+const EMPTY_SHRT = [
+'int main()',
+'{',
+'    ',
+'}'
+].join('\n');
+
+const LL_SHRT = [
+'i iostream',
+'',
+'// ── singly-linked list ──',
+'s Node',
+'{',
+'    int   value;',
+'    Node* next;',
+'};',
+'',
+'Node* reverse(Node* head)',
+'{',
+'    Node* prev = nil;',
+'    w head',
+'    {',
+'        Node* nxt = head->next;',
+'        head->next = prev;',
+'        prev = head;',
+'        head = nxt;',
+'    }',
+'    r prev;',
+'}',
+'',
+'void print_list(Node* head)',
+'{',
+'    head ?? r;',
+'    w head',
+'    {',
+'        $cout << head->value;',
+'        if head->next { $cout << " -> "; }',
+'        head = head->next;',
+'    }',
+'    $cout << $endl;',
+'}',
+'',
+'int main()',
+'{',
+'    // (a) nullptr case — should print nothing but not crash',
+'    p "empty list reversed:";',
+'    Node* empty = reverse(nil);',
+'    print_list(empty);',
+'',
+'    // (b) 1 -> 2 -> 3 -> 4',
+'    Node n4{4, nil};',
+'    Node n3{3, &n4};',
+'    Node n2{2, &n3};',
+'    Node n1{1, &n2};',
+'',
+'    p "before:";',
+'    print_list(&n1);',
+'',
+'    Node* rev = reverse(&n1);',
+'    p "after:";',
+'    print_list(rev);',
+'',
+'    r 0;',
+'}'
+].join('\n');
+
 /* ═══════════════════════════════════════════════════════════════════
    SHRT → C++ converter
    ═══════════════════════════════════════════════════════════════════ */
@@ -545,11 +644,22 @@ function shrtToCpp(src)
     s = s.replace(/\$([a-zA-Z_]\w*)/g, 'std::$1');
 
     // defer
+    // ScopeGuard contract:
+    //   * `func` field (NOT `f`) — `f` collides with the SHRT `f → for` kw-swap.
+    //   * Constructor parameter is `fn` (NOT `f`) for the same reason.
+    //   * Explicit ctor + deduction guide — so we don't rely on aggregate CTAD
+    //     (which requires C++20 and silently breaks if the struct ever gains
+    //     extra members).
+    //   * Copy/assignment deleted — prevents the deferred action firing twice
+    //     if a user accidentally takes the guard by value.
+    //   * Lambda is moved into the field; mandatory copy elision (C++17+)
+    //     constructs the parameter directly from the prvalue lambda, so the
+    //     overall cost is one move into `func`.
     let deferCounter = 0;
     if (/\bdefer\b/.test(s))
     {
         const guardDecl =
-            'namespace shrt_runtime { template<class F> struct ScopeGuard{F f;~ScopeGuard(){f();}}; }\n';
+            'namespace shrt_runtime{template<class F>struct ScopeGuard{F func;ScopeGuard(F fn):func(static_cast<F&&>(fn)){}~ScopeGuard(){func();}ScopeGuard(const ScopeGuard&)=delete;ScopeGuard& operator=(const ScopeGuard&)=delete;};template<class F>ScopeGuard(F)->ScopeGuard<F>;}\n';
         if (!s.includes('shrt_runtime'))
         {
             const lines = s.split('\n');
@@ -568,9 +678,18 @@ function shrtToCpp(src)
         });
     }
 
+    // ── IIFE lambda with a `p` statement body: `=> p "msg"` (or `[cap] => p ...`).
+    // Must run BEFORE the bare-`p` and bare-`=>` rules so the `p` inside the lambda
+    // body becomes part of the lambda, not eaten by the surrounding context.
+    // Allows `(=> p "lol");` and `(=> p "lol")();` to round-trip.
+    s = s.replace(/(\[[^\]]*\])\s*=>\s*p\s+([^;{}\n)]+)/g, '$1() { std::cout << $2 << std::endl; }');
+    s = s.replace(/=>\s*p\s+([^;{}\n)]+)/g,                  '[&]() { std::cout << $1 << std::endl; }');
+
     // p expr;  — match anywhere p appears as a statement-position keyword.
     // Lookbehind excludes identifier chars so `phoenix`, `cup`, etc. won't trigger.
-    // Whitespace before p is preserved (regex doesn't consume it).
+    // Whitespace before p is preserved (regex doesn't consume it). The `=> p` rule
+    // above already peeled off the IIFE case, so this rule sees only bare `p` stmts
+    // (where eating up to `;` is correct, including expressions with parens).
     s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;\n]+?);/g, 'std::cout << $1 << std::endl;');
 
     // ?? statement guards
@@ -609,8 +728,10 @@ function shrtToCpp(src)
     s = s.replace(/=>\s*([^;{}\n,)]+)/g, '[&]() { return $1; }');
 
     // which → switch with implicit case
-    s = s.replace(/\bwhich\b\s*\(?\s*([^){\n]+?)\)?\s*\{([\s\S]*?)\n\s*\}/g,
-        function (m, expr, body)
+    // Capture the leading indentation so the emitted `{` / `}` align with `switch`
+    // (Allman) instead of being slammed to column 0.
+    s = s.replace(/^([ \t]*)which\b\s*\(?\s*([^){\n]+?)\)?\s*\{([\s\S]*?)\n[ \t]*\}/gm,
+        function (m, indent, expr, body)
         {
             const newBody = body.replace(
                 /(\n[ \t]*)((?:default)|(?:[a-zA-Z_][\w:]*)|(?:-?\d+(?:\.\d+)?))\s*:/g,
@@ -619,12 +740,22 @@ function shrtToCpp(src)
                     if (lbl === 'default') return ws + 'default:';
                     return ws + 'case ' + lbl + ':';
                 });
-            return 'switch (' + expr.trim() + ')\n{' + newBody + '\n}';
+            return indent + 'switch (' + expr.trim() + ')\n' + indent + '{' + newBody + '\n' + indent + '}';
         });
 
     // optional parens
     s = s.replace(/\bif\s+(?!\()([^\n{]+?)\s*\{/g, 'if ($1) {');
     s = s.replace(/\bw\s+(?!\()([^\n{]+?)\s*\{/g, 'while ($1) {');
+
+    // Allman brace style for control flow: `if (cond) {` → `if (cond)\n{`
+    // (the rest of the emitted C++ uses Allman; this restores consistency).
+    s = s.replace(/^([ \t]*)(if|while|for)(\s*\([^\n]*?\))[ \t]*\{[ \t]*(?=\n|$)/gm,
+        '$1$2$3\n$1{');
+
+    // `u e Foo` → `using enum Foo`  (NOT `using enum class Foo` — C++20's
+    // `using enum` is followed by an enum-type-name only). Must run BEFORE the
+    // single-letter kw-swap pass that would otherwise expand `e` → `enum class`.
+    s = s.replace(/\bu\s+e\b/g, 'u enum');
 
     // keyword swaps
     const kwSwap = [
@@ -739,31 +870,43 @@ async function runCpp(code)
 function formatResult(result, compilerId)
 {
     const parts = ['── compiler: ' + compilerId + ' (-std=c++26 -O2) ──'];
-    const stderrText = (result.stderr || []).map(x => x.text).join('\n');
-    const stdoutText = (result.stdout || []).map(x => x.text).join('\n');
 
-    if (result.code !== 0)
+    // Godbolt returns two distinct shapes:
+    //   executor mode  (executorRequest: true)  →  build info under `buildResult`,
+    //                                              program stdout/stderr/code/didExecute
+    //                                              live at the root of the response.
+    //   compile mode   (filters.execute only)   →  build info at the root,
+    //                                              exec info under `execResult`.
+    // We send executorRequest: true above, so the program's cout output lands in
+    // `result.stdout`, NOT `result.execResult.stdout`. Handle both shapes.
+    const isExecutorMode = !!result.buildResult;
+    const build = isExecutorMode ? result.buildResult : result;
+    const exec  = isExecutorMode ? result             : result.execResult;
+
+    const buildErr = (build.stderr || []).map(x => x.text).join('\n');
+    const buildOut = (build.stdout || []).map(x => x.text).join('\n');
+
+    if (build.code !== 0)
     {
-        parts.push('\n⚠ COMPILE FAILED (exit ' + result.code + ')');
-        if (stderrText) parts.push('\n' + stderrText);
-        if (stdoutText) parts.push('\n' + stdoutText);
+        parts.push('\n⚠ COMPILE FAILED (exit ' + build.code + ')');
+        if (buildErr) parts.push('\n' + buildErr);
+        if (buildOut) parts.push('\n' + buildOut);
         return { ok: false, output: parts.join('\n') };
     }
 
-    if (stderrText) parts.push('\n── compile warnings ──\n' + stderrText);
+    if (buildErr) parts.push('\n── compile warnings ──\n' + buildErr);
 
-    if (result.execResult)
+    if (exec)
     {
-        const er = result.execResult;
-        const eOut = (er.stdout || []).map(x => x.text).join('\n');
-        const eErr = (er.stderr || []).map(x => x.text).join('\n');
+        const eOut = (exec.stdout || []).map(x => x.text).join('\n');
+        const eErr = (exec.stderr || []).map(x => x.text).join('\n');
 
-        if (er.didExecute)
+        if (exec.didExecute)
         {
             parts.push('\n── program output ──');
             if (eOut) parts.push(eOut);
             if (eErr) parts.push('\n[stderr]\n' + eErr);
-            parts.push('\n[exit ' + er.code + ']');
+            parts.push('\n[exit ' + exec.code + ']');
         }
         else { parts.push('\n(compile only — no exec)'); }
     }
@@ -953,71 +1096,76 @@ require(['vs/editor/editor.main'], function ()
     monaco.languages.setLanguageConfiguration('shrt',     langConfig);
     monaco.languages.setLanguageConfiguration('shrt-cpp', langConfig);
 
-    // ── Desert-warm theme, all in the SHRT palette ──
+    // ── Desert-inspired warm theme (higher contrast pass) ──
+    //   Real Vim Desert mixes warm + cool (sky-blue comments, salmon strings,
+    //   khaki keywords). SHRT stays all-warm but pushes saturation up so
+    //   tokens read clearly against #1e1e1e. Built-in types stay RED per spec.
     monaco.editor.defineTheme('shrt-desert', {
         base: 'vs-dark',
         inherit: true,
         rules: [
-            // base text
-            { token: '',                     foreground: 'e8e6e1' },
+            // base text — bright parchment
+            { token: '',                     foreground: 'f0ebde' },
 
-            // comments — warm dim, italic
-            { token: 'comment',              foreground: '6e6055', fontStyle: 'italic' },
+            // comments — muted but legible, italic
+            { token: 'comment',              foreground: '8a7a6a', fontStyle: 'italic' },
 
-            // keywords (SHRT shortcuts + C++ keywords) — gold accent
-            { token: 'keyword',              foreground: 'c9a96e' },
-            { token: 'keyword.directive',    foreground: 'b88e58', fontStyle: 'italic' },
+            // keywords — vivid Desert khaki/gold
+            { token: 'keyword',              foreground: 'f0c878' },
+            { token: 'keyword.directive',    foreground: 'd8a062', fontStyle: 'italic' },
 
-            // BUILT-IN TYPES — warm terracotta RED
-            { token: 'type',                 foreground: 'c95c43' },
+            // BUILT-IN TYPES — vibrant warm red
+            { token: 'type',                 foreground: 'ea5a3a' },
 
-            // user-defined types (Capitalized) — warm olive green
-            { token: 'type.identifier',      foreground: '98a061' },
+            // user-defined types (Capitalized) — bright olive/lime
+            { token: 'type.identifier',      foreground: 'c4d070' },
 
-            // functions — cream yellow
-            { token: 'entity.name.function', foreground: 'd2c97a' },
-            { token: 'function',             foreground: 'd2c97a' },
+            // functions — saturated cream yellow
+            { token: 'entity.name.function', foreground: 'f5dc7e' },
+            { token: 'function',             foreground: 'f5dc7e' },
 
-            // variables / identifiers — soft off-white parchment
-            { token: 'identifier',           foreground: 'd8d2c4' },
-            { token: 'variable',             foreground: 'd8d2c4' },
+            // variables / identifiers — clear parchment
+            { token: 'identifier',           foreground: 'e6dccb' },
+            { token: 'variable',             foreground: 'e6dccb' },
 
-            // $Ident (std::) — brighter gold to stand out
-            { token: 'variable.predefined',  foreground: 'e8c989' },
+            // $Ident (std::) — punchy gold, brighter than keywords
+            { token: 'variable.predefined',  foreground: 'ffd685' },
 
-            // strings — dusty rose
-            { token: 'string',               foreground: 'c08a7a' },
-            { token: 'string.quote',         foreground: 'c08a7a' },
-            { token: 'string.escape',        foreground: 'a06860' },
-            { token: 'string.invalid',       foreground: 'a04040' },
+            // strings — vivid warm rose / salmon
+            { token: 'string',               foreground: 'ee9682' },
+            { token: 'string.quote',         foreground: 'ee9682' },
+            { token: 'string.escape',        foreground: 'cf7060' },
+            { token: 'string.invalid',       foreground: 'c04040' },
 
-            // numbers — pale cream
-            { token: 'number',               foreground: 'd9c8a0' },
-            { token: 'number.hex',           foreground: 'd9c8a0' },
-            { token: 'number.float',         foreground: 'd9c8a0' },
+            // numbers — warm cream
+            { token: 'number',               foreground: 'f0d8a0' },
+            { token: 'number.hex',           foreground: 'f0d8a0' },
+            { token: 'number.float',         foreground: 'f0d8a0' },
 
-            // operators + punctuation — brass
-            { token: 'operator',             foreground: 'a89a7a' },
-            { token: 'delimiter',            foreground: 'a89a7a' }
+            // operators + punctuation — bright brass
+            { token: 'operator',             foreground: 'c8b890' },
+            { token: 'delimiter',            foreground: 'c8b890' }
         ],
         colors:
         {
             'editor.background':                  '#1e1e1e',
-            'editor.foreground':                  '#e8e6e1',
-            'editorLineNumber.foreground':        '#4a4540',
-            'editorLineNumber.activeForeground':  '#c9a96e',
-            'editor.selectionBackground':         '#3a3530',
-            'editor.lineHighlightBackground':     '#252320',
-            'editor.lineHighlightBorder':         '#252320',
-            'editorCursor.foreground':            '#c9a96e',
+            'editor.foreground':                  '#f0ebde',
+            'editorLineNumber.foreground':        '#605850',
+            'editorLineNumber.activeForeground':  '#f0c878',
+            'editor.selectionBackground':         '#4a3e2c',
+            'editor.selectionHighlightBackground':'#3a3020',
+            'editor.lineHighlightBackground':     '#2a2520',
+            'editor.lineHighlightBorder':         '#2a2520',
+            'editorCursor.foreground':            '#f0c878',
             'editorGutter.background':            '#1e1e1e',
-            'editorIndentGuide.background':       '#2a2520',
-            'editorIndentGuide.activeBackground': '#3a3530',
-            'editorBracketMatch.background':      '#3a3020',
-            'editorBracketMatch.border':          '#c9a96e',
-            'scrollbarSlider.background':         '#2a2520aa',
-            'scrollbarSlider.hoverBackground':    '#3a3530cc',
-            'scrollbarSlider.activeBackground':   '#4a4540ee'
+            'editorIndentGuide.background':       '#2e2820',
+            'editorIndentGuide.activeBackground': '#4a4030',
+            'editorBracketMatch.background':      '#4a3820',
+            'editorBracketMatch.border':          '#f0c878',
+            'editorWhitespace.foreground':        '#2a2520',
+            'scrollbarSlider.background':         '#2e2820aa',
+            'scrollbarSlider.hoverBackground':    '#3e3528cc',
+            'scrollbarSlider.activeBackground':   '#504530ee'
         }
     });
 
@@ -1039,15 +1187,19 @@ require(['vs/editor/editor.main'], function ()
 
     shrtEditor = monaco.editor.create(document.getElementById('shrtEditor'), Object.assign({}, baseOpts,
     {
-        value: SAMPLE_SHRT,
+        value: EMPTY_SHRT,
         language: 'shrt'
     }));
 
     cppEditor = monaco.editor.create(document.getElementById('cppEditor'), Object.assign({}, baseOpts,
     {
-        value: shrtToCpp(SAMPLE_SHRT),
+        value: shrtToCpp(EMPTY_SHRT),
         language: 'shrt-cpp'
     }));
+
+    // land the cursor inside the empty main body
+    shrtEditor.setPosition({ lineNumber: 3, column: 5 });
+    shrtEditor.focus();
 
     document.getElementById('statusLine').textContent = 'ready';
 });
@@ -1072,6 +1224,32 @@ document.getElementById('toShrt').addEventListener('click', () =>
     if (!shrtEditor || !cppEditor) return;
     shrtEditor.setValue(cppToShrt(cppEditor.getValue()));
     $status.textContent = 'converted → SHRT';
+});
+
+document.getElementById('resetBtn').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    shrtEditor.setValue(EMPTY_SHRT);
+    cppEditor.setValue(shrtToCpp(EMPTY_SHRT));
+    shrtEditor.setPosition({ lineNumber: 3, column: 5 });
+    shrtEditor.focus();
+    $status.textContent = 'reset';
+});
+
+document.getElementById('exampleBtn').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    shrtEditor.setValue(SAMPLE_SHRT);
+    cppEditor.setValue(shrtToCpp(SAMPLE_SHRT));
+    $status.textContent = 'example loaded';
+});
+
+document.getElementById('llBtn').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    shrtEditor.setValue(LL_SHRT);
+    cppEditor.setValue(shrtToCpp(LL_SHRT));
+    $status.textContent = 'reverse-LL loaded';
 });
 
 $run.addEventListener('click', async () =>
