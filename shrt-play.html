@@ -102,10 +102,9 @@
   /* ────────── MAIN PLAYGROUND ────────── */
   main.playground
   {
-    max-width: 1500px;
     width: 100%;
-    margin: 0 auto;
-    padding: 1.2rem 1.2rem 1rem;
+    margin: 0;
+    padding: 0.55rem 0.5rem 0.55rem;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -116,11 +115,33 @@
   {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    gap: 1rem;
+    gap: 0.55rem;
     align-items: stretch;
     flex: 1;
     min-height: 0;
   }
+
+  /* in game mode, push the right pane all the way to the edge */
+  main.playground.game-mode { padding-right: 0; }
+  main.playground.game-mode .panes { gap: 0.55rem 0.4rem; }
+  /* keep the run-area visible so user can switch back to playground via Reset/Load Example */
+  /* but swap which big button is shown */
+  main.playground.game-mode #runBtn          { display: none; }
+  main.playground.game-mode .game-only       { display: inline-flex; }
+  main.playground:not(.game-mode) .game-only { display: none; }
+  main.playground.game-mode .console         { display: none; }
+
+  .game-only.run-btn.secondary
+  {
+    background: linear-gradient(180deg, #2a221a, #181210);
+    color: #f0c878;
+  }
+  .game-only.run-btn.secondary:hover
+  {
+    background: linear-gradient(180deg, #3a2c20, #221814);
+    color: #ffd779;
+  }
+
 
   .pane
   {
@@ -306,11 +327,1326 @@
     overflow-y: auto;
   }
 
+  .console-line
+  {
+    display: block;
+    white-space: pre-wrap;
+  }
+
+  .console-line.header
+  {
+    color: #f0c878;
+  }
+
+  .console-line.banner-fail
+  {
+    color: #ff9d86;
+    font-weight: 700;
+  }
+
+  .console-line.banner-warn
+  {
+    color: #f5d27c;
+  }
+
+  .console-line.error-line
+  {
+    color: #ffd8cf;
+    background: rgba(160, 39, 31, 0.16);
+  }
+
+  .console-line.note-line
+  {
+    color: #d9ecff;
+    background: rgba(56, 103, 161, 0.12);
+  }
+
+  .console-line.warning-line
+  {
+    color: #f8ebbf;
+    background: rgba(143, 112, 24, 0.12);
+  }
+
+  .console-line.pointer-line
+  {
+    color: #ff9d86;
+  }
+
+  .console-line.fixit-line
+  {
+    color: #9fe1b8;
+    background: rgba(40, 108, 62, 0.12);
+  }
+
+  .console-line.shrt-doom-title
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 22px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #ffb29f;
+    text-shadow: 0 0 18px rgba(255, 98, 72, 0.35), 0 2px 0 rgba(20, 8, 7, 0.9);
+    margin-bottom: 0.45rem;
+  }
+
+  .console-line.shrt-doom-sub
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f2dfc7;
+  }
+
+  .console-line.shrt-doom-hit
+  {
+    font-family: 'JetBrains Mono', monospace;
+    color: #ffd8cf;
+    background: rgba(160, 39, 31, 0.14);
+    border-left: 2px solid rgba(255, 113, 84, 0.55);
+  }
+
+  .console-line.shrt-doom-footer
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    color: #f0b79d;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .console-line.location-line
+  {
+    color: #e9dcc2;
+  }
+
+  .console-tag
+  {
+    font-weight: 700;
+  }
+
+  .console-tag.error { color: #ff8f78; }
+  .console-tag.note { color: #8cc8ff; }
+  .console-tag.warning { color: #f0d27d; }
+
+  .console-loc
+  {
+    color: #f0c878;
+  }
+
+  .console-include
+  {
+    color: #9fe1b8;
+  }
+
   .console pre:empty::before
   {
     content: "ready.";
     color: var(--ink-dim);
     font-style: italic;
+  }
+
+  .right-pane
+  {
+    position: relative;
+  }
+
+  .editor-shell
+  {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── GAME PANEL CHROME ── */
+  .game-panel
+  {
+    flex: 1;
+    min-height: 0;
+    display: none;
+    flex-direction: column;
+    border: 1px solid rgba(201, 169, 110, 0.4);
+    border-top: none;
+    background:
+      radial-gradient(circle at top left, rgba(240, 200, 120, 0.07), transparent 38%),
+      linear-gradient(180deg, #181411 0%, #100d0b 100%);
+    overflow: hidden;
+  }
+  .pane.game-active .game-panel { display: flex; }
+  .pane.game-active .editor-shell { display: none; }
+
+  .game-panel-top
+  {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid rgba(201, 169, 110, 0.22);
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .game-meta { display: flex; flex-direction: column; gap: 0.18rem; }
+
+  .game-title
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    color: #f5e7c0;
+    text-transform: uppercase;
+  }
+
+  .game-substatus
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.06em;
+  }
+
+  .game-tools
+  {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .mini-btn
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 0.45rem 0.7rem;
+    background: rgba(17, 17, 17, 0.9);
+    color: var(--ink-dim);
+    border: 1px solid rgba(201, 169, 110, 0.2);
+    cursor: pointer;
+    transition: all 180ms;
+  }
+  .mini-btn:hover { color: var(--accent); border-color: var(--accent); background: #161412; }
+
+  .peek-cpp-drawer
+  {
+    display: none;
+    border-bottom: 1px solid rgba(201, 169, 110, 0.22);
+    background: #12100f;
+    max-height: 180px;
+    overflow: auto;
+  }
+  .peek-cpp-drawer.open { display: block; }
+  .peek-cpp-drawer pre
+  {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #e7decc;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .game-body
+  {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 7fr 3fr;
+  }
+
+  .game-main
+  {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    border-right: 1px solid rgba(201, 169, 110, 0.18);
+  }
+
+  .game-viewport
+  {
+    min-height: 0;
+    padding: 0.9rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255, 179, 140, 0.06), transparent 32%),
+      radial-gradient(circle at 80% 90%, rgba(84, 173, 136, 0.05), transparent 36%);
+  }
+
+  /* ── SHARED CARD STYLES ── */
+  .arena-stage,
+  .roulette-stage
+  {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .section-band
+  {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid rgba(201, 169, 110, 0.18);
+    background: rgba(20, 16, 13, 0.7);
+  }
+
+  .section-band-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #f0c878;
+  }
+
+  .section-band-value
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #ddd2c0;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── ARENA: hero portrait cards ── */
+  .arena-fighters
+  {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .fighter-row
+  {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .fighter-row.enemies { gap: 0.55rem; }
+
+  .hero-card
+  {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgba(201, 169, 110, 0.22);
+    background:
+      linear-gradient(180deg, rgba(40, 30, 22, 0.85), rgba(14, 12, 11, 0.92));
+    min-width: 220px;
+    flex: 1 1 220px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-card.player
+  {
+    background:
+      radial-gradient(circle at top right, rgba(143, 210, 167, 0.16), transparent 60%),
+      linear-gradient(180deg, rgba(38, 58, 48, 0.75), rgba(14, 18, 14, 0.95));
+    border-color: rgba(143, 210, 167, 0.35);
+    flex: 1 1 100%;
+  }
+
+  .hero-card.enemy
+  {
+    background:
+      radial-gradient(circle at top right, rgba(230, 120, 101, 0.14), transparent 60%),
+      linear-gradient(180deg, rgba(58, 30, 26, 0.78), rgba(14, 12, 11, 0.95));
+    border-color: rgba(230, 140, 101, 0.32);
+  }
+
+  .hero-card.down
+  {
+    opacity: 0.4;
+    filter: grayscale(0.85);
+  }
+
+  .hero-icon
+  {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid rgba(240, 200, 120, 0.45);
+    overflow: hidden;
+    background: #050505;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    transform-origin: 50% 100%;
+  }
+
+  .hero-icon img
+  {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* charging enemy: jumps in anticipation of its big swing */
+  .hero-icon.is-charging
+  {
+    animation: hero-bounce 1.3s ease-in-out infinite;
+  }
+
+  /* low-hp (≤ 33% of max): trembles. Wins priority if also charging. */
+  .hero-icon.is-low-hp,
+  .hero-icon.is-charging.is-low-hp
+  {
+    animation: hero-shake 0.42s ease-in-out infinite;
+  }
+
+  .hero-card.player .hero-icon { border-color: rgba(143, 210, 167, 0.7); }
+
+  .stat-hp  { color: #8fd2a7; font-weight: 700; }
+  .stat-pwr { color: #ff8f78; font-weight: 700; }
+  .stat-sep { color: var(--ink-dim); padding: 0 0.25rem; }
+
+  .level-banner
+  {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid rgba(240, 200, 120, 0.4);
+    background:
+      linear-gradient(90deg, rgba(60, 42, 22, 0.85), rgba(20, 15, 11, 0.85));
+    box-shadow: 0 0 22px rgba(240, 200, 120, 0.08);
+  }
+
+  .level-banner .lvl-num
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #ffd779;
+  }
+
+  .level-banner .lvl-name
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 16px;
+    color: #f4e0b3;
+    letter-spacing: 0.1em;
+  }
+
+  .level-banner .lvl-pips
+  {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .lvl-pip
+  {
+    width: 18px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 240, 216, 0.12);
+    border: 1px solid rgba(201, 169, 110, 0.3);
+  }
+
+  .lvl-pip.cleared { background: linear-gradient(90deg, #ffd779, #d8a04b); border-color: #ffd779; box-shadow: 0 0 8px rgba(255, 215, 121, 0.5); }
+  .lvl-pip.active  { background: rgba(255, 215, 121, 0.5); border-color: #ffd779; }
+  .hero-card.enemy .hero-icon  { border-color: rgba(255, 145, 108, 0.6); }
+  /* stagger only applies when actively animating */
+  .fighter-row.enemies .hero-card:nth-child(2) .hero-icon.is-charging { animation-delay: 0.18s; }
+  .fighter-row.enemies .hero-card:nth-child(3) .hero-icon.is-charging { animation-delay: 0.36s; }
+
+  .hero-card.down .hero-icon { animation: none; }
+
+  @keyframes hero-bounce
+  {
+    0%, 100% { transform: translateY(0)   scale(1); }
+    45%      { transform: translateY(-7px) scale(1.04); }
+    55%      { transform: translateY(-7px) scale(1.04); }
+  }
+
+  @keyframes hero-shake
+  {
+    0%, 100% { transform: translate(0, 0)   rotate(0deg); }
+    20%      { transform: translate(-2px, 1px) rotate(-5deg); }
+    40%      { transform: translate( 2px,-1px) rotate( 4deg); }
+    60%      { transform: translate(-1px,-1px) rotate(-3deg); }
+    80%      { transform: translate( 2px, 1px) rotate( 5deg); }
+  }
+
+  .hero-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+
+  .hero-name
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: #f4e0b3;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .hero-idx
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    letter-spacing: 0;
+  }
+
+  .hero-hp-bar
+  {
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+  }
+
+  .hero-hp-fill
+  {
+    height: 100%;
+    background: linear-gradient(90deg, #ff916c, #ffd57b);
+    transition: width 240ms ease;
+  }
+
+  .hero-card.player .hero-hp-fill
+  {
+    background: linear-gradient(90deg, #8fd2a7, #d8f1c5);
+  }
+
+  .hero-stats
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #ddd2c0;
+    letter-spacing: 0.04em;
+  }
+
+  .hero-badges
+  {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.28rem;
+    margin-top: 0.15rem;
+  }
+
+  .hero-badge
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    padding: 0.12rem 0.4rem;
+    border: 1px solid rgba(201, 169, 110, 0.25);
+    color: #d9c4a0;
+    background: rgba(0, 0, 0, 0.32);
+    letter-spacing: 0.05em;
+    text-transform: lowercase;
+  }
+
+  .hero-badge.charging { color: #ffd479; border-color: rgba(255, 212, 121, 0.45); }
+  .hero-badge.stunned  { color: #a3c7ff; border-color: rgba(163, 199, 255, 0.45); }
+  .hero-badge.block    { color: #8fd2a7; border-color: rgba(143, 210, 167, 0.45); }
+  .hero-badge.down     { color: #ff8b78; border-color: rgba(255, 139, 120, 0.45); }
+
+  /* ── ARENA: action deck ── */
+  .action-deck
+  {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 0.55rem;
+  }
+
+  .action-card
+  {
+    position: relative;
+    padding: 0.65rem 0.55rem 0.7rem;
+    border: 1px solid rgba(201, 169, 110, 0.3);
+    background:
+      linear-gradient(180deg, rgba(45, 32, 22, 0.85), rgba(20, 14, 11, 0.92));
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-height: 92px;
+    overflow: hidden;
+    transition: transform 180ms, border-color 180ms;
+  }
+
+  .action-card:hover { transform: translateY(-2px); border-color: rgba(240, 200, 120, 0.6); }
+
+  .action-card.cooldown
+  {
+    opacity: 0.42;
+    filter: grayscale(0.8);
+  }
+
+  .action-card.cooldown::after
+  {
+    content: "CD " attr(data-cd);
+    position: absolute;
+    top: 0.35rem;
+    right: 0.4rem;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: #ff9d86;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 157, 134, 0.5);
+    padding: 0.08rem 0.36rem;
+    border-radius: 2px;
+  }
+
+  .action-cost
+  {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.45rem;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.32), transparent 40%),
+      linear-gradient(180deg, #ffd57b, #c98a3a);
+    color: #1c0e05;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+  }
+
+  .action-name
+  {
+    margin-top: 1.6rem;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: #f4e0b3;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .action-desc
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #c9bea8;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .action-tag
+  {
+    margin-top: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-dim);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  /* ── ARENA: plan slots ── */
+  .plan-slots
+  {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.55rem;
+  }
+
+  .plan-slot
+  {
+    padding: 0.65rem 0.7rem;
+    border: 1px dashed rgba(201, 169, 110, 0.25);
+    background: rgba(20, 16, 13, 0.5);
+    min-height: 84px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    position: relative;
+  }
+
+  .plan-slot.filled
+  {
+    border: 1px solid rgba(240, 200, 120, 0.5);
+    background:
+      linear-gradient(180deg, rgba(60, 42, 24, 0.85), rgba(22, 16, 11, 0.95));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+
+  .plan-slot-head
+  {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .plan-slot-num
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+
+  .plan-slot.filled .plan-slot-num { color: #f0c878; }
+
+  .plan-slot-cost
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #ffd479;
+  }
+
+  .plan-slot-action
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    color: #f4e0b3;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .plan-slot-target
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #c9bea8;
+  }
+
+  .plan-slot-empty
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  .plan-meta
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #ddd2c0;
+  }
+
+  .plan-meta-line
+  {
+    color: var(--ink-dim);
+  }
+
+  /* ── ROULETTE OVERHAUL: clean stage ── */
+  .roulette-stage
+  {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .roulette-board
+  {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(260px, 0.95fr);
+    gap: 0.7rem;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+
+  @media (max-width: 1280px) { .roulette-board { grid-template-columns: 1fr; } }
+
+  /* responsive roulette grid — numbers don't overlap on narrow viewports */
+  @media (max-width: 1000px)
+  {
+    .rcell             { font-size: 17px; min-height: 50px; }
+    .rcell.green       { font-size: 30px; }
+    .roulette-table-grid { grid-template-columns: 58px repeat(12, minmax(0, 1fr)) 58px; gap: 0.3rem; }
+    .rcell-col         { font-size: 10px; padding: 0 0.2rem; }
+    .rcell-outside     { font-size: 11px; min-height: 40px; letter-spacing: 0.1em; }
+    .roulette-outside  { gap: 0.3rem; }
+    .rchip             { min-width: 24px; height: 20px; font-size: 9px; padding: 0 0.32rem; }
+  }
+
+  @media (max-width: 720px)
+  {
+    .rcell             { font-size: 13px; min-height: 38px; }
+    .rcell.green       { font-size: 20px; }
+    .roulette-table-grid { grid-template-columns: 42px repeat(12, minmax(0, 1fr)) 42px; gap: 0.2rem; }
+    .rcell-col         { font-size: 8.5px; padding: 0 0.15rem; line-height: 1.1; }
+    .rcell-outside     { font-size: 9.5px; min-height: 32px; letter-spacing: 0.06em; }
+    .roulette-outside  { gap: 0.2rem; }
+    .rchip             { min-width: 20px; height: 18px; font-size: 8.5px; padding: 0 0.25rem; top: 0.1rem; right: 0.1rem; }
+  }
+
+  .roulette-table
+  {
+    border: 1px solid rgba(201, 169, 110, 0.25);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255, 179, 140, 0.06), transparent 40%),
+      linear-gradient(180deg, rgba(20, 56, 36, 0.95), rgba(10, 26, 18, 0.98));
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-height: 0;
+  }
+
+  .roulette-table-grid
+  {
+    display: grid;
+    grid-template-columns: 76px repeat(12, minmax(0, 1fr)) 76px;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .rcell-col
+  {
+    border: 1px solid rgba(255, 240, 216, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: #f0c878;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, rgba(38, 30, 22, 0.92), rgba(18, 14, 10, 0.95));
+    position: relative;
+    text-align: center;
+    padding: 0 0.3rem;
+  }
+
+  .rcell-col.active
+  {
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 217, 132, 0.7),
+      0 0 18px rgba(255, 186, 96, 0.3);
+  }
+
+  .rcell-col.last-hit
+  {
+    box-shadow:
+      inset 0 0 0 2px rgba(143, 218, 173, 0.9),
+      0 0 22px rgba(143, 218, 173, 0.35);
+  }
+
+  .rcell
+  {
+    position: relative;
+    min-height: 64px;
+    border: 1px solid rgba(255, 240, 216, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f7f0e2;
+    letter-spacing: 0.02em;
+    transition: box-shadow 200ms;
+  }
+
+  .rcell.red   { background: linear-gradient(180deg, rgba(126, 27, 25, 0.96), rgba(70, 11, 13, 0.98)); }
+  .rcell.black { background: linear-gradient(180deg, rgba(52, 52, 57, 0.96), rgba(15, 15, 18, 0.98)); }
+  .rcell.green
+  {
+    grid-row: 1 / span 3;
+    background: linear-gradient(180deg, rgba(49, 122, 92, 0.96), rgba(17, 71, 52, 0.98));
+    min-height: 100%;
+    font-size: 36px;
+  }
+
+  .rcell.active
+  {
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 217, 132, 0.7),
+      0 0 18px rgba(255, 186, 96, 0.3);
+  }
+
+  .rcell.last-hit
+  {
+    box-shadow:
+      inset 0 0 0 2px rgba(143, 218, 173, 0.9),
+      0 0 22px rgba(143, 218, 173, 0.4);
+  }
+
+  .rchip
+  {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    min-width: 30px;
+    height: 26px;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 251, 238, 0.95);
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 40%),
+      linear-gradient(180deg, #f9d56f, #ec8d5d);
+    color: #24130c;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      0 4px 10px rgba(0, 0, 0, 0.32),
+      inset 0 0 0 1px rgba(90, 38, 18, 0.3);
+  }
+
+  .roulette-outside
+  {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .rcell-outside
+  {
+    min-height: 46px;
+    border: 1px solid rgba(255, 240, 216, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: #f0c878;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  .rcell-outside.red   { background: linear-gradient(180deg, rgba(150, 50, 44, 0.9), rgba(77, 19, 18, 0.98)); color: #ffc8b8; }
+  .rcell-outside.black { background: linear-gradient(180deg, rgba(62, 62, 70, 0.95), rgba(15, 15, 18, 0.98)); color: #efe8db; }
+
+  .rcell-outside.active
+  {
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 217, 132, 0.7),
+      0 0 18px rgba(255, 186, 96, 0.3);
+  }
+
+  /* ── ROULETTE: side panel ── */
+  .roulette-side
+  {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .balance-card
+  {
+    padding: 0.85rem 0.95rem;
+    border: 1px solid rgba(240, 200, 120, 0.32);
+    background:
+      radial-gradient(circle at top right, rgba(255, 215, 119, 0.12), transparent 70%),
+      linear-gradient(180deg, rgba(30, 22, 14, 0.95), rgba(14, 10, 8, 0.98));
+  }
+
+  .balance-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 0.35rem;
+  }
+
+  .balance-value
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 32px;
+    color: #ffd777;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .balance-sub
+  {
+    margin-top: 0.4rem;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .balance-sub .net-pos { color: #8fd2a7; }
+  .balance-sub .net-neg { color: #ff9d86; }
+
+  .wheel-mini
+  {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid rgba(201, 169, 110, 0.25);
+    background: rgba(14, 10, 8, 0.85);
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .wheel-disc
+  {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    border: 3px solid rgba(229, 192, 109, 0.45);
+    background:
+      radial-gradient(circle at center, rgba(255, 255, 255, 0.06), transparent 50%),
+      conic-gradient(
+        from -90deg,
+        #1c864f 0deg 9.73deg,
+        #8f2a25 9.73deg 19.46deg,
+        #121215 19.46deg 29.19deg,
+        #8f2a25 29.19deg 38.92deg,
+        #121215 38.92deg 48.65deg,
+        #8f2a25 48.65deg 58.38deg,
+        #121215 58.38deg 68.11deg,
+        #8f2a25 68.11deg 77.84deg,
+        #121215 77.84deg 87.57deg,
+        #8f2a25 87.57deg 97.30deg,
+        #121215 97.30deg 107.03deg,
+        #8f2a25 107.03deg 116.76deg,
+        #121215 116.76deg 126.49deg,
+        #8f2a25 126.49deg 136.22deg,
+        #121215 136.22deg 145.95deg,
+        #8f2a25 145.95deg 155.68deg,
+        #121215 155.68deg 165.41deg,
+        #8f2a25 165.41deg 175.14deg,
+        #121215 175.14deg 184.87deg,
+        #8f2a25 184.87deg 194.60deg,
+        #121215 194.60deg 204.33deg,
+        #8f2a25 204.33deg 214.06deg,
+        #121215 214.06deg 223.79deg,
+        #8f2a25 223.79deg 233.52deg,
+        #121215 233.52deg 243.25deg,
+        #8f2a25 243.25deg 252.98deg,
+        #121215 252.98deg 262.71deg,
+        #8f2a25 262.71deg 272.44deg,
+        #121215 272.44deg 282.17deg,
+        #8f2a25 282.17deg 291.90deg,
+        #121215 291.90deg 301.63deg,
+        #8f2a25 301.63deg 311.36deg,
+        #121215 311.36deg 321.09deg,
+        #8f2a25 321.09deg 330.82deg,
+        #121215 330.82deg 340.55deg,
+        #8f2a25 340.55deg 350.28deg,
+        #121215 350.28deg 360deg
+      );
+    box-shadow:
+      inset 0 0 0 8px rgba(20, 14, 10, 0.7),
+      0 6px 14px rgba(0, 0, 0, 0.4);
+    position: relative;
+    transition: transform 900ms cubic-bezier(.17,.9,.28,1);
+  }
+
+  .wheel-disc::after
+  {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 12px solid #f4c979;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  }
+
+  .wheel-readout
+  {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .wheel-last-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 9px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .wheel-last-number
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 36px;
+    color: #f6e6bf;
+    line-height: 1;
+  }
+
+  .wheel-last-color { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; }
+  .wheel-last-color.red { color: #ff8f78; }
+  .wheel-last-color.black { color: #e8e0d0; }
+  .wheel-last-color.green { color: #8fdaad; }
+
+  .history-strip
+  {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid rgba(201, 169, 110, 0.25);
+    background: rgba(14, 10, 8, 0.75);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .history-pip
+  {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #f5edde;
+  }
+
+  .history-pip.red   { background: #8b2120; border: 1px solid rgba(255, 200, 184, 0.3); }
+  .history-pip.black { background: #1d1d22; border: 1px solid rgba(255, 255, 255, 0.18); }
+  .history-pip.green { background: #1c8651; border: 1px solid rgba(187, 255, 215, 0.3); }
+
+  /* ── ROULETTE: bet slip ── */
+  .bet-slip-card
+  {
+    padding: 0.65rem 0.8rem;
+    border: 1px solid rgba(201, 169, 110, 0.22);
+    background: rgba(14, 10, 8, 0.75);
+  }
+
+  .bet-slip-list
+  {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.45rem;
+  }
+
+  .bet-slip-row
+  {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.42rem 0.55rem;
+    border: 1px solid rgba(201, 169, 110, 0.18);
+    background: rgba(0, 0, 0, 0.32);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  .bet-slip-row .bet-kind   { color: #f0c878; letter-spacing: 0.06em; }
+  .bet-slip-row .bet-result { color: var(--ink-dim); font-size: 10px; letter-spacing: 0.04em; }
+  .bet-slip-row .bet-result.win  { color: #8fd2a7; }
+  .bet-slip-row .bet-result.loss { color: #ff9d86; }
+  .bet-slip-row .bet-amount { color: #ffd779; }
+
+  .bet-slip-empty
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    padding: 0.3rem 0;
+    font-style: italic;
+  }
+
+  /* ── GAME CONTROLS ── */
+  .game-controls
+  {
+    border-top: 1px solid rgba(201, 169, 110, 0.18);
+    background: rgba(0, 0, 0, 0.28);
+    padding: 0.75rem 1rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .game-controls-row
+  {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+
+  .game-buttons { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+  .game-btn
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 0.62rem 1rem;
+    border: 1px solid rgba(201, 169, 110, 0.3);
+    background: #15110e;
+    color: #f0c878;
+    cursor: pointer;
+    transition: all 180ms;
+  }
+
+  .game-btn:hover { background: #221a13; border-color: #f0c878; }
+  .game-btn.primary
+  {
+    background: linear-gradient(180deg, #d8a04b, #a3742b);
+    color: #1a0d04;
+    border-color: #f0c878;
+  }
+  .game-btn.primary:hover { background: linear-gradient(180deg, #f0c878, #c08d3a); }
+
+  .game-run-status
+  {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #d9cbb6;
+    letter-spacing: 0.06em;
+  }
+
+  .game-event-log
+  {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(201, 169, 110, 0.18);
+    background: rgba(0, 0, 0, 0.45);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.55;
+    color: #ddd3c2;
+    white-space: pre-wrap;
+    min-height: 70px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  /* ── GAME INFO (right rail) ── */
+  .game-info
+  {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 0.85rem;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.16);
+  }
+
+  .game-info-section
+  {
+    border: 1px solid rgba(201, 169, 110, 0.15);
+    background: rgba(17, 14, 12, 0.62);
+    padding: 0.7rem 0.8rem;
+  }
+
+  .game-info-label
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #f0c878;
+    margin-bottom: 0.45rem;
+  }
+
+  .game-description
+  {
+    font-size: 13px;
+    color: #e5ddd0;
+    line-height: 1.55;
+  }
+
+  .achievement-list { list-style: none; display: flex; flex-direction: column; gap: 0.42rem; }
+  .achievement-item
+  {
+    position: relative;
+    padding: 0.5rem 0.55rem;
+    border: 1px solid rgba(201, 169, 110, 0.12);
+    background: rgba(0, 0, 0, 0.2);
+  }
+  .achievement-item.locked   { opacity: 0.42; filter: grayscale(0.85); }
+  .achievement-item.unlocked { border-color: rgba(240, 200, 120, 0.42); background: rgba(240, 200, 120, 0.08); }
+
+  .achievement-name
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #efe0bc;
+  }
+
+  .achievement-hover
+  {
+    display: none;
+    margin-top: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.4;
+    color: #dfd5c5;
+  }
+
+  .achievement-item:hover .achievement-hover { display: block; }
+
+  /* ── GAME TABS ── */
+  .game-tabs
+  {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.7rem 0 0.5rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .game-tab
+  {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid var(--rule);
+    background: rgba(17, 17, 17, 0.82);
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all 180ms;
+  }
+
+  .game-tab.arena    { --tab-accent: #ff8f78; }
+  .game-tab.roulette { --tab-accent: #90d5ab; }
+
+  .game-tab:hover { color: var(--tab-accent); border-color: var(--tab-accent); background: #181411; }
+  .game-tab.active
+  {
+    color: #111;
+    background: var(--tab-accent);
+    border-color: var(--tab-accent);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
   }
 
   /* ────────── FOOTER ────────── */
@@ -355,6 +1691,11 @@
   footer a:hover { color: var(--accent); border-color: var(--accent); }
 
   /* ────────── RESPONSIVE ────────── */
+  @media (max-width: 1400px)
+  {
+    .roulette-wheel { grid-template-columns: 1fr; }
+  }
+
   @media (max-width: 900px)
   {
     html, body { height: auto; overflow: auto; }
@@ -363,6 +1704,9 @@
     .middle-controls { flex-direction: row; padding-top: 0.3rem; padding-bottom: 0.3rem; }
     .convert-btn { width: 44px; height: 44px; font-size: 17px; }
     .editor { height: 60vh; min-height: 320px; }
+    .game-body { grid-template-columns: 1fr; }
+    .game-main { border-right: none; border-bottom: 1px solid rgba(201, 169, 110, 0.18); }
+    .game-panel { min-height: 640px; }
   }
 
   @media (max-width: 600px)
@@ -371,6 +1715,16 @@
     .topbar .logo .sub { display: none; }
     main.playground { padding: 0.8rem 0.8rem 1.2rem; }
     .run-btn { font-size: 11px; padding: 0.7rem 1.5rem; letter-spacing: 0.16em; }
+    .game-panel-top,
+    .game-controls-row { align-items: flex-start; }
+    .game-tools,
+    .game-buttons { width: 100%; justify-content: flex-start; }
+    .roulette-wheel,
+    .roulette-table { grid-template-columns: 1fr; }
+    .number-grid { grid-template-columns: repeat(6, minmax(40px, 1fr)); }
+    .outside-row { grid-template-columns: 1fr; }
+    .zero-cell { min-height: 92px; }
+    .wheel-shell { min-height: 280px; }
   }
 </style>
 </head>
@@ -393,20 +1747,63 @@
       <button id="toShrt" class="convert-btn" title="C++ → SHRT">←</button>
     </div>
 
-    <div class="pane">
-      <div class="pane-label">C++26</div>
-      <div id="cppEditor" class="editor"></div>
+    <div class="pane right-pane" id="rightPane">
+      <div class="pane-label" id="rightPaneLabel">C++26</div>
+      <div class="editor-shell" id="cppEditorShell">
+        <div id="cppEditor" class="editor"></div>
+      </div>
+      <div class="game-panel" id="gamePanel">
+        <div class="game-panel-top">
+          <div class="game-meta">
+            <div class="game-title" id="gameTitle">Arena Sandbox</div>
+            <div class="game-substatus" id="gameSubstatus">ready</div>
+          </div>
+          <div class="game-tools">
+            <button id="peekCppBtn" class="mini-btn" title="Peek at transpiled C++">Peek C++</button>
+          </div>
+        </div>
+        <div class="peek-cpp-drawer" id="peekCppDrawer">
+          <pre id="peekCppPre"></pre>
+        </div>
+        <div class="game-body">
+          <div class="game-main">
+            <div id="gameViewport" class="game-viewport"></div>
+            <div class="game-controls">
+              <div id="gameRunStatus" class="game-run-status">arena loaded</div>
+              <pre id="gameEventLog" class="game-event-log"></pre>
+            </div>
+          </div>
+          <aside class="game-info">
+            <section class="game-info-section">
+              <div class="game-info-label">Scenario</div>
+              <div id="gameDescription" class="game-description"></div>
+            </section>
+            <section class="game-info-section">
+              <div class="game-info-label">Achievements</div>
+              <ul id="achievementList" class="achievement-list"></ul>
+            </section>
+          </aside>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="run-area">
     <div class="run-actions">
-      <button id="resetBtn"   class="action-btn" title="Reset to empty main">Reset</button>
-      <button id="exampleBtn" class="action-btn" title="Load full SHRT example">Load example</button>
-      <button id="llBtn"      class="action-btn" title="Reverse linked-list demo">Reverse LL</button>
+      <button id="resetBtn"    class="action-btn" title="Load empty main()">empty main()</button>
+      <button id="exampleBtn"  class="action-btn" title="Load enum + pythony SHRT example">Load example</button>
+      <button id="llBtn"       class="action-btn" title="Reverse linked-list demo">Reverse LL</button>
+      <button id="fizzbuzzBtn" class="action-btn" title="Python-style FizzBuzz: enum + which + =>">FizzBuzz</button>
     </div>
     <button id="runBtn" class="run-btn">▶ Compile &amp; Run (C++26)</button>
+    <button id="gameRunBtn" class="run-btn game-only" title="Advance one turn">▶ Run Turn</button>
+    <button id="gameResetBtn" class="run-btn game-only secondary" title="Reset the current run">↻ Reset Run</button>
     <span class="status-line" id="statusLine">idle</span>
+  </div>
+
+  <div class="game-tabs" id="gameTabs">
+    <button class="game-tab arena active" data-game="arena">Arena</button>
+    <button class="game-tab roulette" data-game="roulette">Roulette</button>
   </div>
 
   <div class="console">
@@ -531,10 +1928,154 @@ const SAMPLE_SHRT = [
 '}'
 ].join('\n');
 
+const PYTHONY_ENUM_SHRT = [
+'i iostream',
+'i string',
+'i vector',
+'',
+'// using enum + pythony SHRT flow',
+'e Mood',
+'{',
+'    Sleepy,',
+'    Hungry,',
+'    Zooming',
+'};',
+'',
+'u e Mood;',
+'',
+'s Cat',
+'{',
+'    $string name;',
+'    Mood mood;',
+'    int naps;',
+'',
+'    bool needs_snack() k => mood == Hungry;',
+'    bool should_hide_vase() k => mood == Zooming;',
+'};',
+'',
+'k char* mood_name(Mood mood)',
+'{',
+'    which mood',
+'    {',
+'        Sleepy:  r "sleepy";',
+'        Hungry:  r "hungry";',
+'        Zooming: r "zooming";',
+'        default: r "mysterious";',
+'    }',
+'}',
+'',
+'void narrate(k Cat& cat)',
+'{',
+'    p $"{cat.name} is {mood_name(cat.mood)}";',
+'',
+'    if cat.needs_snack()',
+'    {',
+'        p "  -> open snacks";',
+'    }',
+'    el if cat.should_hide_vase()',
+'    {',
+'        p "  -> protect the curtains";',
+'    }',
+'    el',
+'    {',
+'        p $"  -> naps today: {cat.naps}";',
+'    }',
+'}',
+'',
+'int main()',
+'{',
+'    $vector<Cat> cats',
+'    {',
+'        {"Miso", Hungry, 1},',
+'        {"Pebble", Sleepy, 4},',
+'        {"Comet", Zooming, 0}',
+'    };',
+'',
+'    f (k Cat& cat : cats)',
+'    {',
+'        narrate(cat);',
+'    }',
+'',
+'    r 0;',
+'}'
+].join('\n');
+
 const EMPTY_SHRT = [
 'int main()',
 '{',
 '    ',
+'}'
+].join('\n');
+
+// Python community\'s most iconic interview problem — FizzBuzz —
+// recast in idiomatic SHRT: enum class + ternary chain expression body
+// + `which`/case-implicit dispatch + $"…{expr}…" interpolation.
+//
+// The Python equivalent (with enum.Enum + match/case + f-strings):
+//
+//     class Bucket(Enum):
+//         Fizz, Buzz, FizzBuzz, Number = range(4)
+//
+//     def classify(n):
+//         return (Bucket.FizzBuzz if n % 15 == 0
+//                 else Bucket.Fizz if n % 3 == 0
+//                 else Bucket.Buzz if n % 5 == 0
+//                 else Bucket.Number)
+//
+//     def describe(n):
+//         match classify(n):
+//             case Bucket.Fizz:     return "Fizz"
+//             case Bucket.Buzz:     return "Buzz"
+//             case Bucket.FizzBuzz: return "FizzBuzz"
+//             case _:               return str(n)
+//
+//     for i in range(1, 16):
+//         print(f"{i} → {describe(i)}")
+const FIZZBUZZ_SHRT = [
+'i iostream',
+'i string',
+'i format',
+'',
+'// ──── Python-style FizzBuzz ──────────────────────────────────',
+'//      enum class + `which`/case + `=>` ternary chain body',
+'//      + $"…" interpolation. Equivalent to Python\'s match/case',
+'//      over enum.Enum with f-strings.',
+'// ────────────────────────────────────────────────────────────',
+'',
+'e Bucket',
+'{',
+'    Fizz,',
+'    Buzz,',
+'    FizzBuzz,',
+'    Number',
+'};',
+'',
+'// expression-body classifier — pure ternary chain, no statement body',
+'Bucket classify(int num) =>',
+'    num % 15 == 0 ? Bucket::FizzBuzz',
+'  : num %  3 == 0 ? Bucket::Fizz',
+'  : num %  5 == 0 ? Bucket::Buzz',
+'  :                 Bucket::Number;',
+'',
+'$string describe(int num)',
+'{',
+'    which classify(num)',
+'    {',
+'        Bucket::Fizz:     r "Fizz";',
+'        Bucket::Buzz:     r "Buzz";',
+'        Bucket::FizzBuzz: r "FizzBuzz";',
+'        Bucket::Number:   r $"{num}";',
+'    }',
+'    r "?";  // unreachable — keeps the compiler happy',
+'}',
+'',
+'int main()',
+'{',
+'    f (int idx = 1; idx <= 15; idx++)',
+'    {',
+'        p $"{idx} → {describe(idx)}";',
+'    }',
+'    r 0;',
 '}'
 ].join('\n');
 
@@ -567,7 +2108,10 @@ const LL_SHRT = [
 '    w head',
 '    {',
 '        $cout << head->value;',
-'        if head->next { $cout << " -> "; }',
+'        if head->next',
+'        {',
+'            $cout << " -> ";',
+'        }',
 '        head = head->next;',
 '    }',
 '    $cout << $endl;',
@@ -600,6 +2144,237 @@ const LL_SHRT = [
 /* ═══════════════════════════════════════════════════════════════════
    SHRT → C++ converter
    ═══════════════════════════════════════════════════════════════════ */
+
+const ARENA_GAME_SHRT = [
+'i iostream',
+'i string',
+'i vector',
+'',
+'e ActionKind',
+'{',
+'    Attack,    // 1 energy, 5 dmg          — cd 0 (spammable)',
+'    Heavy,     // 2 energy, 12 dmg         — cd 2',
+'    Defend,    // 1 energy, +6 block       — cd 1',
+'    Stun,      // 2 energy, skip 1 turn    — cd 2',
+'    Heal,      // 2 energy, +6 HP          — cd 3',
+'    Sweep      // 3 energy, 5 dmg to all   — cd 2',
+'};',
+'',
+'s Action',
+'{',
+'    ActionKind kind;',
+'    int target;       // enemy index, -1 if N/A',
+'    int cost;         // energy cost',
+'};',
+'',
+'s Enemy',
+'{',
+'    $string name;',
+'    int hp;',
+'    int max_hp;',
+'    int power;',
+'    bool charging;',
+'    int stunned_turns;',
+'};',
+'',
+'s ArenaState',
+'{',
+'    // ── read-only snapshot (k = const) — runtime copies these in,',
+'    //    your plan_turn cannot mutate them, return Actions to act ──',
+'    k int energy_budget;          // total energy per turn (5)',
+'    k int turn;',
+'    k int player_hp;',
+'    k int player_max_hp;',
+'    k int player_block;',
+'    k $vector<Enemy> enemies;',
+'    k $vector<ActionKind> cooldowns; // action kinds used last turn',
+'',
+'    // ── action builders — return Action structs, do NOT execute ──',
+'    Action attack(int idx);       // cost 1, dmg 4',
+'    Action heavy(int idx);        // cost 2, dmg 8',
+'    Action defend();              // cost 1, +5 block',
+'    Action stun(int idx);         // cost 2, skip 1 turn',
+'    Action heal();                // cost 2, +5 HP',
+'    Action sweep();               // cost 3, dmg 3 AoE',
+'',
+'    // ── query helpers ──',
+'    bool on_cooldown(ActionKind kind) k;',
+'    int  enemy_count() k;',
+'    bool enemy_alive(int idx) k;',
+'    int  first_alive() k;',
+'    int  weakest_enemy() k;',
+'    int  most_dangerous() k;      // first charging enemy, else first alive',
+'};',
+'',
+'// ── Pre-code your 3-slot strategy ──',
+'//   Return up to 3 actions. Same kind cannot repeat in one turn.',
+'//   Each kind has its own cooldown — heavy/stun/sweep:2, defend:1, heal:3, attack:0',
+'//   Total cost must be ≤ 5 energy. Charging enemies hit for power × 2 next turn.',
+'$vector<Action> plan_turn(ArenaState& state)',
+'{',
+'    $vector<Action> plan;',
+'',
+'    // emergency heal — low HP and heal is ready',
+'    if state.player_hp <= 12 && !state.on_cooldown(ActionKind::Heal)',
+'    {',
+'        plan.push_back(state.heal());',
+'    }',
+'',
+'    // stun the most dangerous charging enemy',
+'    a danger = state.most_dangerous();',
+'    if danger >= 0 && state.enemies[danger].charging && !state.on_cooldown(ActionKind::Stun)',
+'    {',
+'        plan.push_back(state.stun(danger));',
+'    }',
+'',
+'    // big damage on the weakest — heavy off cd, else attack (spammable)',
+'    a target = state.weakest_enemy();',
+'    if target >= 0 && !state.on_cooldown(ActionKind::Heavy)',
+'    {',
+'        plan.push_back(state.heavy(target));',
+'    }',
+'    el if target >= 0',
+'    {',
+'        plan.push_back(state.attack(target));',
+'    }',
+'',
+'    // brace if a charge is incoming and defend is up',
+'    a danger2 = state.most_dangerous();',
+'    if danger2 >= 0 && state.enemies[danger2].charging && !state.on_cooldown(ActionKind::Defend)',
+'    {',
+'        plan.push_back(state.defend());',
+'    }',
+'',
+'    r plan;',
+'}'
+].join('\n');
+
+const ARENA_GAME_HIDDEN_SHRT = [
+'',
+'void ArenaState_log(k $string& msg) { $cout << msg << $endl; }',
+'',
+'// real implementations live in the JS sandbox; this is here only so',
+'// the compile-and-run path produces a complete C++ program.',
+'int main()',
+'{',
+'    $cout << "arena harness — sandbox runs in JS." << $endl;',
+'    r 0;',
+'}'
+].join('\n');
+
+const ROULETTE_GAME_SHRT = [
+'i iostream',
+'i string',
+'i vector',
+'',
+'e BetKind',
+'{',
+'    Red,         // 1:1',
+'    Black,       // 1:1',
+'    Even,        // 1:1',
+'    Odd,         // 1:1',
+'    Low,         // 1-18, 1:1',
+'    High,        // 19-36, 1:1',
+'    Dozen,       // 1st/2nd/3rd 12 → 2:1',
+'    Column,      // 1st/2nd/3rd column → 2:1',
+'    DoubleRow,   // 2 adjacent rows (6 nums) → 5:1',
+'    Row,         // 1 row (3 nums)           → 11:1',
+'    Square,      // 2×2 corner (4 nums)      → 8:1',
+'    Pair,        // 2 adjacent numbers       → 17:1',
+'    Number       // straight up              → 35:1',
+'};',
+'',
+'s Bet',
+'{',
+'    BetKind kind;',
+'    int value;      // number 0-36, or dozen 1-3, otherwise -1',
+'    int amount;',
+'};',
+'',
+'s RouletteState',
+'{',
+'    // ── read-only snapshot (k = const) — runtime copies these in,',
+'    //    your plan_bets cannot mutate them, return Bets to act ──',
+'    k int spin;',
+'    k int balance;',
+'    k int max_bet;                // hard cap per single bet',
+'    k int last_number;',
+'    k bool last_red;              // true if last_number was red',
+'    k $vector<int> recent_numbers;// last 6 spins, newest first',
+'',
+'    // ── bet builders — return Bet structs ──',
+'    Bet bet_red(int amount);      // 1:1',
+'    Bet bet_black(int amount);    // 1:1',
+'    Bet bet_even(int amount);     // 1:1',
+'    Bet bet_odd(int amount);      // 1:1',
+'    Bet bet_low(int amount);      // 1-18, 1:1',
+'    Bet bet_high(int amount);     // 19-36, 1:1',
+'    Bet bet_dozen(int dozen, int amount);     // 1, 2, or 3 → 2:1',
+'    Bet bet_column(int col, int amount);      // 1, 2, or 3 → 2:1',
+'    Bet bet_row(int row_start, int amount);   // row of 3 (start = 1,4,7,…,34) → 11:1',
+'    Bet bet_double_row(int row_start, int amount); // 2 rows = 6 nums → 5:1',
+'    Bet bet_pair(int low, int high, int amount);   // 2 numbers → 17:1',
+'    Bet bet_square(int top_left, int amount);      // 2x2 block (top-left = 1,4,7…31, must end %3==1) → 8:1',
+'    Bet bet_number(int value, int amount);    // straight up, 35:1',
+'',
+'    // ── query helpers ──',
+'    int reds_in_a_row() k;        // recent_numbers streak counts',
+'    int blacks_in_a_row() k;',
+'};',
+'',
+'// ── Pre-code your bets each spin ──',
+'//   Return up to 3 bets, total amount ≤ balance.',
+'//   Same bet kind/value cannot repeat within one spin.',
+'$vector<Bet> plan_bets(RouletteState& state)',
+'{',
+'    $vector<Bet> bets;',
+'',
+'    // martingale-ish: chase opposite of last color',
+'    if state.last_red',
+'    {',
+'        bets.push_back(state.bet_black(2));',
+'    }',
+'    el',
+'    {',
+'        bets.push_back(state.bet_red(2));',
+'    }',
+'',
+'    // sprinkle a number when feeling lucky',
+'    if state.balance > 24',
+'    {',
+'        bets.push_back(state.bet_number(17, 1));',
+'    }',
+'',
+'    // hedge with a dozen or a column when flush',
+'    if state.balance > 30',
+'    {',
+'        bets.push_back(state.bet_dozen(2, 1));',
+'    }',
+'    el if state.balance > 22',
+'    {',
+'        bets.push_back(state.bet_column(1, 1));',
+'    }',
+'',
+'    // try a fancy bet sometimes for the achievements',
+'    // bets.push_back(state.bet_row(13, 1));        // row of 13,14,15 → 11:1',
+'    // bets.push_back(state.bet_pair(17, 18, 1));   // adjacent pair  → 17:1',
+'    // bets.push_back(state.bet_square(1, 1));      // 1,2,4,5 corner → 8:1',
+'    // bets.push_back(state.bet_double_row(7, 1));  // 7-12 six-line  → 5:1',
+'',
+'    r bets;',
+'}'
+].join('\n');
+
+const ROULETTE_GAME_HIDDEN_SHRT = [
+'',
+'void roulette_log(k $string& msg) { $cout << msg << $endl; }',
+'',
+'int main()',
+'{',
+'    $cout << "roulette harness — sandbox runs in JS." << $endl;',
+'    r 0;',
+'}'
+].join('\n');
 
 function shrtToCpp(src)
 {
@@ -659,7 +2434,7 @@ function shrtToCpp(src)
     if (/\bdefer\b/.test(s))
     {
         const guardDecl =
-            'namespace shrt_runtime{template<class F>struct ScopeGuard{F func;ScopeGuard(F fn):func(static_cast<F&&>(fn)){}~ScopeGuard(){func();}ScopeGuard(const ScopeGuard&)=delete;ScopeGuard& operator=(const ScopeGuard&)=delete;};template<class F>ScopeGuard(F)->ScopeGuard<F>;}\n';
+            'namespace shrt_runtime\n{\ntemplate<class F>\nstruct ScopeGuard\n{\n    F func;\n    ScopeGuard(F fn)\n        : func(static_cast<F&&>(fn))\n    {\n    }\n    ~ScopeGuard()\n    {\n        func();\n    }\n    ScopeGuard(const ScopeGuard&) = delete;\n    ScopeGuard& operator=(const ScopeGuard&) = delete;\n};\ntemplate<class F>\nScopeGuard(F) -> ScopeGuard<F>;\n}\n';
         if (!s.includes('shrt_runtime'))
         {
             const lines = s.split('\n');
@@ -674,7 +2449,7 @@ function shrtToCpp(src)
         s = s.replace(/\bdefer\s+([^;]+);/g, (m, body) =>
         {
             const v = '_shrt_defer_' + (deferCounter++);
-            return 'shrt_runtime::ScopeGuard ' + v + '{[&]{ ' + body + '; }};';
+            return 'shrt_runtime::ScopeGuard ' + v + '\n{\n    [&]()\n    {\n        ' + body + ';\n    }\n};';
         });
     }
 
@@ -682,15 +2457,62 @@ function shrtToCpp(src)
     // Must run BEFORE the bare-`p` and bare-`=>` rules so the `p` inside the lambda
     // body becomes part of the lambda, not eaten by the surrounding context.
     // Allows `(=> p "lol");` and `(=> p "lol")();` to round-trip.
-    s = s.replace(/(\[[^\]]*\])\s*=>\s*p\s+([^;{}\n)]+)/g, '$1() { std::cout << $2 << std::endl; }');
-    s = s.replace(/=>\s*p\s+([^;{}\n)]+)/g,                  '[&]() { std::cout << $1 << std::endl; }');
+    s = s.replace(/(\[[^\]]*\])\s*=>\s*p\s+([^;{}\n)]+)/g, '$1()\n{\n    std::cout << $2 << std::endl;\n}');
+    s = s.replace(/=>\s*p\s+([^;{}\n)]+)/g,                  '[&]()\n{\n    std::cout << $1 << std::endl;\n}');
 
     // p expr;  — match anywhere p appears as a statement-position keyword.
-    // Lookbehind excludes identifier chars so `phoenix`, `cup`, etc. won't trigger.
-    // Whitespace before p is preserved (regex doesn't consume it). The `=> p` rule
-    // above already peeled off the IIFE case, so this rule sees only bare `p` stmts
-    // (where eating up to `;` is correct, including expressions with parens).
-    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;\n]+?);/g, 'std::cout << $1 << std::endl;');
+    // Keep the expression from swallowing a closing `}` so block lambdas like
+    // `=> {foo(); p "str"};` and `=> {foo(); p "str"}();` survive long enough
+    // for the later `=> {` rewrite to turn them into lambdas.
+    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;{}\n]+?);/g, 'std::cout << $1 << std::endl;');
+    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;{}\n]+?)\s*(?=\})/g, 'std::cout << $1 << std::endl;');
+
+    // ?. chains and ?. chain ?? fallback
+    // The old iterative regex only handled one hop because the first rewrite injected
+    // spaces and `?: nullptr`, which made the next `?.` unmatchable. Rewriting the
+    // whole chain at once keeps `player?.weapon?.name` and `player->weapon?.name ?? "fists"`
+    // valid in the playground transpiler.
+    const shrtChainCore = /[a-zA-Z_][\w]*(?:(?:->|\.)[a-zA-Z_]\w*|\([^()\n]*\)|\[[^\]\n]*\])*(?:\?\.[a-zA-Z_]\w+)+/g;
+    let shrtChainCounter = 0;
+    const makeNullSafeChain = (chain, fallbackExpr) =>
+    {
+        const parts = chain.split('?.');
+        const base = parts[0].trim();
+        const members = parts.slice(1);
+        let finalExpr = '(' + base + ')';
+        for (const member of members)
+        {
+            finalExpr = '(' + finalExpr + ')->' + member;
+        }
+
+        const returnType = 'decltype(' + finalExpr + ')';
+        const onNull = fallbackExpr === null
+            ? returnType + '{}'
+            : 'static_cast<' + returnType + '>(' + fallbackExpr.trim() + ')';
+
+        const lines = [];
+        const firstTemp = '_shrt_chain_' + (shrtChainCounter++);
+        lines.push('([&]() -> ' + returnType + '\n{');
+        lines.push('auto ' + firstTemp + ' = (' + base + ');');
+        lines.push('if (!' + firstTemp + ') return ' + onNull + ';');
+
+        let currentTemp = firstTemp;
+        for (let index = 0; index < members.length - 1; ++index)
+        {
+            const nextTemp = '_shrt_chain_' + (shrtChainCounter++);
+            lines.push('auto ' + nextTemp + ' = ' + currentTemp + '->' + members[index] + ';');
+            lines.push('if (!' + nextTemp + ') return ' + onNull + ';');
+            currentTemp = nextTemp;
+        }
+
+        lines.push('return ' + currentTemp + '->' + members[members.length - 1] + ';');
+        lines.push('}())');
+        return lines.join(' ');
+    };
+
+    s = s.replace(/([a-zA-Z_][\w]*(?:(?:->|\.)[a-zA-Z_]\w*|\([^()\n]*\)|\[[^\]\n]*\])*(?:\?\.[a-zA-Z_]\w+)+)\s*\?\?\s*([^;,)\]\}\n]+)/g,
+        (m, chain, fallbackExpr) => makeNullSafeChain(chain, fallbackExpr));
+    s = s.replace(shrtChainCore, chain => makeNullSafeChain(chain, null));
 
     // ?? statement guards
     s = s.replace(/([\w\.\->]+)\s*\?\?\s*r\s*;/g, 'if (!($1)) return;');
@@ -703,29 +2525,24 @@ function shrtToCpp(src)
     s = s.replace(/([\w\.\->]+)\s*\?\?=\s*([^;]+);/g, '$1 = ($1) ? ($1) : ($2);');
 
     // ?? expression
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*([^;,)\]\}\n]+)/g, '(($1) ? ($1) : ($2))');
+    s = s.replace(/([\w\.\->]+)\s*\?\?\s*([^;,\?\)\]\}\n][^;,)\]\}\n]*)/g, '(($1) ? ($1) : ($2))');
 
-    // ?. chains
-    let prev = '';
-    while (prev !== s)
-    {
-        prev = s;
-        s = s.replace(/([\w\.\->\(\)]+?)\?\.([a-zA-Z_]\w*)/g, '(($1) ? ($1)->$2 : nullptr)');
-    }
+    // lambda expression body: `a fn = [&](...) => expr;`
+    s = s.replace(/(\[[^\]]*\]\s*\([^)]*\))\s*=>\s*([^;{]+);/g, '$1\n{\n    return $2;\n};');
 
     // => expression body (const member): Type fn() k => expr;
-    s = s.replace(/\)\s+k\s*=>\s*([^;]+);/g, ') const { return $1; }');
+    s = s.replace(/\)\s+k\s*=>\s*([^;]+);/g, ') const\n{\n    return $1;\n}');
 
     // => expression body: Type fn(args) => expr;
-    s = s.replace(/\)\s*=>\s*([^;{]+);/g, ') { return $1; }');
+    s = s.replace(/\)\s*=>\s*([^;{]+);/g, ')\n{\n    return $1;\n}');
 
     // standalone => { ... }
-    s = s.replace(/(\[[^\]]*\])\s*=>\s*\{/g, '$1() {');
-    s = s.replace(/=>\s*\{/g, '[&]() {');
+    s = s.replace(/(\[[^\]]*\])\s*=>\s*\{/g, '$1()\n{');
+    s = s.replace(/=>\s*\{/g, '[&]()\n{');
 
     // standalone => expr
-    s = s.replace(/(\[[^\]]*\])\s*=>\s*([^;{}\n,)]+)/g, '$1() { return $2; }');
-    s = s.replace(/=>\s*([^;{}\n,)]+)/g, '[&]() { return $1; }');
+    s = s.replace(/(\[[^\]]*\])\s*=>\s*([^;{}\n,)]+)/g, '$1()\n{\n    return $2;\n}');
+    s = s.replace(/=>\s*([^;{}\n,)]+)/g, '[&]()\n{\n    return $1;\n}');
 
     // which → switch with implicit case
     // Capture the leading indentation so the emitted `{` / `}` align with `switch`
@@ -751,6 +2568,11 @@ function shrtToCpp(src)
     // (the rest of the emitted C++ uses Allman; this restores consistency).
     s = s.replace(/^([ \t]*)(if|while|for)(\s*\([^\n]*?\))[ \t]*\{[ \t]*(?=\n|$)/gm,
         '$1$2$3\n$1{');
+    s = s.replace(/^([ \t]*else)[ \t]*\{[ \t]*(?=\n|$)/gm, '$1\n{');
+    s = s.replace(/^([ \t]*)(namespace\b[^\n{]*)[ \t]*\{[ \t]*(?=\n|$)/gm, '$1$2\n$1{');
+    s = s.replace(/^([ \t]*)(class\b[^\n{]*|struct\b[^\n{]*|enum class\b[^\n{]*)[ \t]*\{[ \t]*(?=\n|$)/gm, '$1$2\n$1{');
+    s = s.replace(/^([ \t]*)(?!if\b|while\b|for\b|switch\b|else\b|catch\b)([~A-Za-z_][^=\n;{}]*\([^;\n{}]*\)(?:[ \t]+const|[ \t]+noexcept|[ \t]+override|[ \t]+final|[ \t]*:[^{}\n]+)*)[ \t]*\{[ \t]*(?=\n|$)/gm,
+        '$1$2\n$1{');
 
     // `u e Foo` → `using enum Foo`  (NOT `using enum class Foo` — C++20's
     // `using enum` is followed by an enum-type-name only). Must run BEFORE the
@@ -867,6 +2689,146 @@ async function runCpp(code)
     return { ok: false, output: 'all compilers failed; last error: ' + (lastErr || 'unknown') };
 }
 
+function stripAnsi(text)
+{
+    return String(text || '').replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
+}
+
+function escapeHtml(text)
+{
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function stylizeConsoleLine(line)
+{
+    let html = escapeHtml(line);
+    html = html.replace(/(&lt;source&gt;:\d+:\d+:)/g, '<span class="console-loc">$1</span>');
+    html = html.replace(/\b(error:)\b/g, '<span class="console-tag error">$1</span>');
+    html = html.replace(/\b(note:)\b/g, '<span class="console-tag note">$1</span>');
+    html = html.replace(/\b(warning:)\b/g, '<span class="console-tag warning">$1</span>');
+    html = html.replace(/(#include &lt;[^&]+&gt;)/g, '<span class="console-include">$1</span>');
+    return html;
+}
+
+function renderConsoleOutput(text)
+{
+    const clean = stripAnsi(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    return clean.split('\n').map(line =>
+    {
+        let cls = 'console-line';
+        if (line.startsWith('── compiler:')) cls += ' header';
+        else if (line.includes('COMPILE FAILED')) cls += ' banner-fail';
+        else if (line.includes('compile warnings')) cls += ' banner-warn';
+        else if (/\berror:/.test(line)) cls += ' error-line';
+        else if (/\bnote:/.test(line)) cls += ' note-line';
+        else if (/\bwarning:/.test(line)) cls += ' warning-line';
+        else if (/^\s*\+\+\+\s+\|/.test(line) || /#include <[^>]+>/.test(line)) cls += ' fixit-line';
+        else if (/^\s*\|?\s*\^~*/.test(line) || /^\s*\|?\s+\^~*/.test(line)) cls += ' pointer-line';
+        else if (/^<source>:\d+:\d+:/.test(line)) cls += ' location-line';
+
+        return '<span class="' + cls + '">' + (line ? stylizeConsoleLine(line) : '&nbsp;') + '</span>';
+    }).join('');
+}
+
+function renderShrtIdentifierError(errors)
+{
+    const preview = errors.slice(0, 8).map(error =>
+        '<span class="console-line shrt-doom-hit">line ' + error.lineNumber + ', col ' + error.column + ' → `' + escapeHtml(error.name) + '` must not exist as a one-letter identifier</span>'
+    ).join('');
+
+    const extra = errors.length > 8
+        ? '<span class="console-line shrt-doom-hit">…and ' + (errors.length - 8) + ' more.</span>'
+        : '';
+
+    return [
+        '<span class="console-line shrt-doom-title">SHRT Forbids The Lone Letter</span>',
+        '<span class="console-line shrt-doom-sub">One-letter identifiers are illegal in SHRT. Keywords may stay short. Your names may not.</span>',
+        preview,
+        extra,
+        '<span class="console-line shrt-doom-footer">Rename them into something with weight.</span>'
+    ].join('');
+}
+
+function findOneLetterIdentifiers(source)
+{
+    if (!globalThis.monaco || !monaco.editor) return [];
+
+    const lines = source.split('\n');
+    const tokenLines = monaco.editor.tokenize(source, 'shrt');
+    const offenders = [];
+    const identifierKinds = ['identifier', 'entity.name.function', 'type.identifier'];
+
+    for (let lineIndex = 0; lineIndex < tokenLines.length; ++lineIndex)
+    {
+        const lineText = lines[lineIndex] ?? '';
+        const tokens = tokenLines[lineIndex] || [];
+
+        for (let tokenIndex = 0; tokenIndex < tokens.length; ++tokenIndex)
+        {
+            const token = tokens[tokenIndex];
+            const nextOffset = tokenIndex + 1 < tokens.length ? tokens[tokenIndex + 1].offset : lineText.length;
+            const text = lineText.slice(token.offset, nextOffset).trim();
+            if (!/^[A-Za-z]$/.test(text)) continue;
+            if (!identifierKinds.some(kind => token.type.includes(kind))) continue;
+
+            offenders.push({
+                name: text,
+                lineNumber: lineIndex + 1,
+                column: token.offset + 1,
+                endColumn: token.offset + 2
+            });
+        }
+    }
+
+    return offenders;
+}
+
+function updateShrtIdentifierMarkers(source)
+{
+    if (!globalThis.monaco || !shrtEditor) return [];
+    const model = shrtEditor.getModel();
+    if (!model) return [];
+
+    const offenders = findOneLetterIdentifiers(source);
+    monaco.editor.setModelMarkers(model, 'shrt-identifiers', offenders.map(error => ({
+        severity: monaco.MarkerSeverity.Error,
+        message: 'SHRT forbids one-letter identifiers: `' + error.name + '`.',
+        startLineNumber: error.lineNumber,
+        startColumn: error.column,
+        endLineNumber: error.lineNumber,
+        endColumn: error.endColumn
+    })));
+    return offenders;
+}
+
+function ensureValidShrtSource(source, options)
+{
+    const settings = Object.assign({
+        renderToConsole: true,
+        updateMarkers: true,
+        setStatus: true
+    }, options || {});
+
+    const offenders = settings.updateMarkers ? updateShrtIdentifierMarkers(source) : findOneLetterIdentifiers(source);
+    if (!offenders.length) return { ok: true, offenders: [], cpp: shrtToCpp(source) };
+
+    if (settings.renderToConsole && typeof $out !== 'undefined' && $out)
+    {
+        $out.innerHTML = renderShrtIdentifierError(offenders);
+    }
+
+    if (settings.setStatus && typeof $status !== 'undefined' && $status)
+    {
+        $status.textContent = 'shrt identifier error';
+    }
+
+    return { ok: false, offenders, cpp: '' };
+}
+
 function formatResult(result, compilerId)
 {
     const parts = ['── compiler: ' + compilerId + ' (-std=c++26 -O2) ──'];
@@ -883,8 +2845,8 @@ function formatResult(result, compilerId)
     const build = isExecutorMode ? result.buildResult : result;
     const exec  = isExecutorMode ? result             : result.execResult;
 
-    const buildErr = (build.stderr || []).map(x => x.text).join('\n');
-    const buildOut = (build.stdout || []).map(x => x.text).join('\n');
+    const buildErr = stripAnsi((build.stderr || []).map(x => x.text).join('\n'));
+    const buildOut = stripAnsi((build.stdout || []).map(x => x.text).join('\n'));
 
     if (build.code !== 0)
     {
@@ -898,8 +2860,8 @@ function formatResult(result, compilerId)
 
     if (exec)
     {
-        const eOut = (exec.stdout || []).map(x => x.text).join('\n');
-        const eErr = (exec.stderr || []).map(x => x.text).join('\n');
+        const eOut = stripAnsi((exec.stdout || []).map(x => x.text).join('\n'));
+        const eErr = stripAnsi((exec.stderr || []).map(x => x.text).join('\n'));
 
         if (exec.didExecute)
         {
@@ -913,6 +2875,1375 @@ function formatResult(result, compilerId)
     return { ok: true, output: parts.join('\n') };
 }
 
+const GAME_COOKIE_PREFIX = 'shrt_play_achievements_';
+const gameDrafts = { arena: ARENA_GAME_SHRT, roulette: ROULETTE_GAME_SHRT };
+const gameRuns = { arena: null, roulette: null };
+const unlockedAchievements = { arena: new Set(), roulette: new Set() };
+
+let currentMode = 'playground';
+let currentGameId = null;
+let peekCppOpen = false;
+
+const DOTA_ICON = name => 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/' + name + '.png';
+
+const ARENA_ACTION_DEFS = [
+    { kind: 'attack',  cost: 1, cooldown: 0, name: 'Attack',  desc: '5 dmg single', targeted: true  },
+    { kind: 'heavy',   cost: 2, cooldown: 2, name: 'Heavy',   desc: '12 dmg single',targeted: true  },
+    { kind: 'defend',  cost: 1, cooldown: 1, name: 'Defend',  desc: '+6 block',     targeted: false },
+    { kind: 'stun',    cost: 2, cooldown: 2, name: 'Stun',    desc: 'skip 1 turn',  targeted: true  },
+    { kind: 'heal',    cost: 2, cooldown: 3, name: 'Heal',    desc: '+6 HP',        targeted: false },
+    { kind: 'sweep',   cost: 3, cooldown: 2, name: 'Sweep',   desc: '-5 to all',    targeted: false }
+];
+const ARENA_ACTION_BY_KIND = Object.fromEntries(ARENA_ACTION_DEFS.map(d => [d.kind, d]));
+
+const ROULETTE_BET_DEFS = [
+    { kind: 'red',    label: 'Red',    payout: 1 },
+    { kind: 'black',  label: 'Black',  payout: 1 },
+    { kind: 'even',   label: 'Even',   payout: 1 },
+    { kind: 'odd',    label: 'Odd',    payout: 1 },
+    { kind: 'low',    label: 'Low 1-18',  payout: 1 },
+    { kind: 'high',   label: 'High 19-36',payout: 1 },
+    { kind: 'dozen',  label: 'Dozen',  payout: 2 },
+    { kind: 'number', label: 'Number', payout: 35 }
+];
+
+const GAME_CONFIG = {
+    arena:
+    {
+        title: 'Arena Deck',
+        description: 'Three levels. Pre-code 3 actions per turn, max 5 energy, each kind on its own cooldown. Clear Lvl 1 to advance — Lvl 3 is the boss room.',
+        starter: ARENA_GAME_SHRT,
+        achievements:
+        [
+            { id: 'arena_first_blood',  name: 'First Blood',     description: 'Kill any enemy. Don\'t embarrass yourself.', check: rt => rt.stats.kills > 0 },
+            { id: 'arena_charge_deny',  name: 'Denied!',         description: 'Stun a charging enemy mid-windup. Bonus rep.', check: rt => rt.stats.stunOnCharge > 0 },
+            { id: 'arena_wombo',        name: 'Wombo Combo',     description: 'Spend a full 5 energy across 3 actions in one turn.', check: rt => rt.stats.wombo > 0 },
+            { id: 'arena_lvl2',         name: 'Mid-Game Macro',  description: 'Clear Lvl 2. Three enemies, no problem.', check: rt => rt.stats.levelsCleared >= 2 },
+            { id: 'arena_lvl3',         name: 'Roshan Slayer',   description: 'Clear Lvl 3. The aegis is yours.', check: rt => rt.outcome === 'victory' },
+            { id: 'arena_speedrun',     name: 'Any% Speedrun',   description: 'Clear Lvl 1 in 3 turns or fewer. WR pace.', check: rt => rt.stats.levelsCleared >= 1 && rt.stats.l1TurnsTaken > 0 && rt.stats.l1TurnsTaken <= 3 },
+            { id: 'arena_methodist',    name: 'The Methodist',   description: 'Use all 6 action kinds across a single run.', check: rt => rt.stats.kindsUsed && rt.stats.kindsUsed.size >= 6 },
+            { id: 'arena_tank',         name: 'Tank Andy',       description: 'Hold 12+ block at end of any turn.', check: rt => rt.stats.maxBlockHeld >= 12 },
+            { id: 'arena_pacifist',     name: 'Pacifist Run',    description: 'Clear Lvl 1 without ever casting Heavy. Soft DPS only.', check: rt => rt.stats.levelsCleared >= 1 && !rt.stats.usedHeavy },
+            { id: 'arena_healslut',     name: 'Healslut',        description: 'Cast Heal 3+ times in one run. Hydration matters.', check: rt => rt.stats.healsUsed >= 3 },
+            { id: 'arena_cc_master',    name: 'CC Master',       description: 'Stun 3 different enemies in one run.', check: rt => rt.stats.stunnedTargets && rt.stats.stunnedTargets.size >= 3 },
+            { id: 'arena_flawless_lvl', name: 'Flawless Lap',    description: 'Clear a level taking ZERO damage. Untouchable.', check: rt => rt.stats.levelsCleared >= 1 && rt.stats.cleanLevelWin && rt.stats.damageTaken === 0 }
+        ]
+    },
+    roulette:
+    {
+        title: 'Roulette Deck',
+        description: 'Plan up to 3 bets per spin from your balance. Pair/Square/Row/Double-Row + the classics. Survive variance, chase the funny achievements.',
+        starter: ROULETTE_GAME_SHRT,
+        achievements:
+        [
+            { id: 'roulette_first',      name: 'Beginner\'s Luck', description: 'Net positive on your very first spin. RNGesus blessed you.', check: rt => rt.stats.wonFirstSpin },
+            { id: 'roulette_17',         name: 'Lucky 17',           description: 'Hit a straight bet on the number 17 specifically. Bond-style.', check: rt => rt.stats.lucky17Hits > 0 },
+            { id: 'roulette_pair',       name: 'Pair-a-Dice Lost',   description: 'Win a pair (split) bet. The pun was worth it.', check: rt => rt.stats.pairWins > 0 },
+            { id: 'roulette_square',     name: 'Squared Up',         description: 'Win a square (corner) bet. Hits four at once.', check: rt => rt.stats.squareWins > 0 },
+            { id: 'roulette_row',        name: 'Down the Street',    description: 'Win a row (street) bet. 11:1 reward.', check: rt => rt.stats.rowWins > 0 },
+            { id: 'roulette_drow',       name: 'Six-Liner',          description: 'Win a double-row (six-line). 6 numbers in your favor.', check: rt => rt.stats.doubleRowWins > 0 },
+            { id: 'roulette_phd',        name: 'Roulette PhD',       description: 'Use 6+ distinct bet kinds across a session. You read the manual.', check: rt => rt.stats.betKindsUsed && rt.stats.betKindsUsed.size >= 6 },
+            { id: 'roulette_hedge',      name: 'Hedger\'s Folly',    description: 'Bet on both red AND black in the same spin. -EV but funny.', check: rt => rt.stats.hedgedSpins > 0 },
+            { id: 'roulette_whale',      name: 'Whale Watching',     description: 'Stake $12+ on a single bet. The pit boss noticed.', check: rt => rt.stats.maxSingleWager >= 12 },
+            { id: 'roulette_streak',     name: 'Hot Hand Fallacy',   description: 'Win 3 profitable spins in a row. (No it does not mean you\'re due.)', check: rt => rt.stats.bestProfitStreak >= 3 },
+            { id: 'roulette_zero',       name: 'Black Hole',         description: 'Watch the wheel land on 0. House always wins something.', check: rt => rt.stats.zeroHits > 0 },
+            { id: 'roulette_comeback',   name: 'Comeback Kid',       description: 'Be at balance ≤ $10 and recover to $30+. Variance demon defeated.', check: rt => rt.stats.lowestBalance <= 10 && rt.stats.highestBalanceAfterLow >= 30 }
+        ]
+    }
+};
+
+function escapeHtml(text)
+{
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function setCookie(name, value, days)
+{
+    const ttlDays = days || 365;
+    const expires = new Date(Date.now() + ttlDays * 86400000).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+}
+
+function getCookie(name)
+{
+    const prefix = name + '=';
+    for (const rawPart of document.cookie.split(';'))
+    {
+        const part = rawPart.trim();
+        if (part.startsWith(prefix)) return decodeURIComponent(part.slice(prefix.length));
+    }
+    return '';
+}
+
+function loadUnlockedAchievements(gameId)
+{
+    try
+    {
+        const raw = getCookie(GAME_COOKIE_PREFIX + gameId);
+        if (!raw) return new Set();
+        return new Set(JSON.parse(raw));
+    }
+    catch (err) { return new Set(); }
+}
+
+function saveUnlockedAchievements(gameId)
+{
+    setCookie(GAME_COOKIE_PREFIX + gameId, JSON.stringify([...unlockedAchievements[gameId]]), 365);
+}
+
+function addRuntimeLog(runtime, message)
+{
+    runtime.logs.push(String(message));
+    if (runtime.logs.length > 12) runtime.logs = runtime.logs.slice(runtime.logs.length - 12);
+}
+
+function formatMoney(amount) { return '$' + amount; }
+function formatSignedMoney(amount) { return (amount >= 0 ? '+' : '-') + '$' + Math.abs(amount); }
+
+/* ──────────────── ARENA RUNTIME ──────────────── */
+
+const ARENA_LEVELS = [
+    {
+        name: 'Tavern Brawl',
+        intro: 'Two thugs. Warm up.',
+        enemies: () => [
+            { name: 'Pudge', icon: 'pudge', hp: 14, maxHp: 14, power: 2, charging: false, stunnedTurns: 0 },
+            { name: 'Lion',  icon: 'lion',  hp: 10, maxHp: 10, power: 3, charging: true,  stunnedTurns: 0 }
+        ]
+    },
+    {
+        name: 'Mid Lane Skirmish',
+        intro: 'Now there are three of them.',
+        enemies: () => [
+            { name: 'Pudge',  icon: 'pudge',  hp: 16, maxHp: 16, power: 3, charging: false, stunnedTurns: 0 },
+            { name: 'Lion',   icon: 'lion',   hp: 12, maxHp: 12, power: 3, charging: false, stunnedTurns: 0 },
+            { name: 'Sniper', icon: 'sniper', hp:  9, maxHp:  9, power: 4, charging: true,  stunnedTurns: 0 }
+        ]
+    },
+    {
+        name: 'Roshan Pit',
+        intro: 'Elite squad. Bring your A-game.',
+        enemies: () => [
+            { name: 'Doom',         icon: 'doom',         hp: 18, maxHp: 18, power: 4, charging: false, stunnedTurns: 0 },
+            { name: 'Spectre',      icon: 'spectre',      hp: 14, maxHp: 14, power: 3, charging: true,  stunnedTurns: 0 },
+            { name: 'Shadow Fiend', icon: 'shadow_fiend', hp: 12, maxHp: 12, power: 3, charging: false, stunnedTurns: 0 }
+        ]
+    }
+];
+
+function createArenaRuntime()
+{
+    const lvl = ARENA_LEVELS[0];
+    return {
+        level: 1,
+        turn: 1,
+        energyBudget: 5,
+        player: { hp: 32, maxHp: 32, block: 0, icon: 'crystal_maiden', name: 'Crystal Maiden' },
+        enemies: lvl.enemies(),
+        levelName: lvl.name,
+        cooldowns: [],
+        lastPlan: [],
+        lastSpend: 0,
+        logs: ['Lvl 1 — ' + lvl.name + '. ' + lvl.intro],
+        outcome: 'ongoing',
+        stats: {
+            kills: 0,
+            stunOnCharge: 0,
+            damageTaken: 0,
+            fullSpendTurns: 0,
+            sweepsHit: 0,
+            healsUsed: 0,
+            maxBlockHeld: 0,
+            wombo: 0,
+            kindsUsed: new Set(),       // unique action kinds across this run
+            stunnedTargets: new Set(),  // unique enemy names stunned
+            levelsCleared: 0,
+            l1TurnsTaken: 0,
+            usedHeavy: false,
+            cleanLevelWin: true,        // turned false if took damage during level
+            lowestHpEndOfLevel: 999
+        }
+    };
+}
+
+function advanceArenaLevel(runtime)
+{
+    runtime.stats.levelsCleared += 1;
+
+    if (runtime.level === 1) runtime.stats.l1TurnsTaken = runtime.turn;
+    runtime.stats.lowestHpEndOfLevel = Math.min(runtime.stats.lowestHpEndOfLevel, runtime.player.hp);
+
+    if (runtime.level >= ARENA_LEVELS.length)
+    {
+        runtime.outcome = 'victory';
+        addRuntimeLog(runtime, '── arena master — all levels cleared ──');
+        return;
+    }
+
+    runtime.level += 1;
+    const lvl = ARENA_LEVELS[runtime.level - 1];
+    runtime.enemies = lvl.enemies();
+    runtime.levelName = lvl.name;
+    runtime.player.hp = runtime.player.maxHp;
+    runtime.player.block = 0;
+    runtime.cooldowns = [];
+    runtime.turn = 1;
+    runtime.stats.cleanLevelWin = true;
+    addRuntimeLog(runtime, '── lvl ' + runtime.level + ' — ' + lvl.name + ' — full HP, cooldowns cleared ──');
+    addRuntimeLog(runtime, lvl.intro);
+}
+
+function buildArenaSandboxState(runtime)
+
+{
+    const enemySnapshot = runtime.enemies.map(e => Object.freeze({
+        name: e.name,
+        hp: e.hp,
+        max_hp: e.maxHp,
+        power: e.power,
+        charging: e.charging,
+        stunned_turns: e.stunnedTurns
+    }));
+
+    const mkAction = (kind, target) =>
+    {
+        const def = ARENA_ACTION_BY_KIND[kind];
+        return { kind, target: target == null ? -1 : target, cost: def ? def.cost : 0 };
+    };
+
+    // ── const snapshot: copy values in, freeze so plan_turn can't mutate ──
+    return Object.freeze({
+        energy_budget: 5,
+        turn: runtime.turn,
+        player_hp: runtime.player.hp,
+        player_max_hp: runtime.player.maxHp,
+        player_block: runtime.player.block,
+        enemies: Object.freeze(enemySnapshot),
+        cooldowns: Object.freeze(runtime.cooldowns.map(c => c.kind)),
+
+        attack: idx => mkAction('attack', idx),
+        heavy:  idx => mkAction('heavy', idx),
+        defend: () => mkAction('defend'),
+        stun:   idx => mkAction('stun', idx),
+        heal:   () => mkAction('heal'),
+        sweep:  () => mkAction('sweep'),
+
+        on_cooldown: kind => runtime.cooldowns.some(c => c.kind === String(kind)),
+        enemy_count: () => runtime.enemies.length,
+        enemy_alive: idx => idx >= 0 && idx < runtime.enemies.length && runtime.enemies[idx].hp > 0,
+        first_alive: () =>
+        {
+            for (let i = 0; i < runtime.enemies.length; ++i) if (runtime.enemies[i].hp > 0) return i;
+            return -1;
+        },
+        weakest_enemy: () =>
+        {
+            let best = -1, bestHp = Infinity;
+            runtime.enemies.forEach((e, i) =>
+            {
+                if (e.hp > 0 && e.hp < bestHp) { best = i; bestHp = e.hp; }
+            });
+            return best;
+        },
+        most_dangerous: () =>
+        {
+            for (let i = 0; i < runtime.enemies.length; ++i)
+                if (runtime.enemies[i].hp > 0 && runtime.enemies[i].charging) return i;
+            for (let i = 0; i < runtime.enemies.length; ++i)
+                if (runtime.enemies[i].hp > 0) return i;
+            return -1;
+        },
+        log: m => addRuntimeLog(runtime, m)
+    });
+}
+
+function executeArenaAction(runtime, action)
+{
+    const kind = action.kind;
+    runtime.stats.kindsUsed.add(kind);
+    if (kind === 'heavy') runtime.stats.usedHeavy = true;
+    if (kind === 'attack')
+    {
+        const e = runtime.enemies[action.target];
+        if (!e || e.hp <= 0) { addRuntimeLog(runtime, 'attack: no target'); return; }
+        e.hp = Math.max(0, e.hp - 5);
+        addRuntimeLog(runtime, 'attack → ' + e.name + ' (-5)');
+        if (e.hp === 0) { runtime.stats.kills += 1; addRuntimeLog(runtime, e.name + ' falls.'); }
+    }
+    else if (kind === 'heavy')
+    {
+        const e = runtime.enemies[action.target];
+        if (!e || e.hp <= 0) { addRuntimeLog(runtime, 'heavy: no target'); return; }
+        e.hp = Math.max(0, e.hp - 12);
+        addRuntimeLog(runtime, 'heavy → ' + e.name + ' (-12)');
+        if (e.hp === 0) { runtime.stats.kills += 1; addRuntimeLog(runtime, e.name + ' falls.'); }
+    }
+    else if (kind === 'defend')
+    {
+        runtime.player.block += 6;
+        addRuntimeLog(runtime, 'defend (+6 block, total ' + runtime.player.block + ')');
+    }
+    else if (kind === 'stun')
+    {
+        const e = runtime.enemies[action.target];
+        if (!e || e.hp <= 0) { addRuntimeLog(runtime, 'stun: no target'); return; }
+        if (e.charging) runtime.stats.stunOnCharge += 1;
+        e.stunnedTurns = 1;
+        e.charging = false;
+        runtime.stats.stunnedTargets.add(e.name);
+        addRuntimeLog(runtime, 'stun → ' + e.name);
+    }
+    else if (kind === 'heal')
+    {
+        const before = runtime.player.hp;
+        runtime.player.hp = Math.min(runtime.player.maxHp, runtime.player.hp + 6);
+        runtime.stats.healsUsed += 1;
+        addRuntimeLog(runtime, 'heal (+' + (runtime.player.hp - before) + ' HP)');
+    }
+    else if (kind === 'sweep')
+    {
+        let hit = 0;
+        for (const e of runtime.enemies)
+        {
+            if (e.hp <= 0) continue;
+            e.hp = Math.max(0, e.hp - 5);
+            hit += 1;
+            if (e.hp === 0) runtime.stats.kills += 1;
+        }
+        if (hit >= 2) runtime.stats.sweepsHit += 1;
+        addRuntimeLog(runtime, 'sweep (-5 × ' + hit + ')');
+    }
+}
+
+function enemyPhaseArena(runtime)
+{
+    for (const e of runtime.enemies)
+    {
+        if (e.hp <= 0) continue;
+        if (e.stunnedTurns > 0)
+        {
+            e.stunnedTurns -= 1;
+            addRuntimeLog(runtime, e.name + ' is stunned.');
+            continue;
+        }
+        let damage = e.charging ? e.power * 2 : e.power;
+        const blocked = Math.min(runtime.player.block, damage);
+        const real = damage - blocked;
+        runtime.player.block -= blocked;
+        runtime.player.hp = Math.max(0, runtime.player.hp - real);
+        runtime.stats.damageTaken += real;
+        if (real > 0) runtime.stats.cleanLevelWin = false;
+        if (blocked > 0)
+            addRuntimeLog(runtime, e.name + ' hits ' + damage + ' (blocked ' + blocked + ', -' + real + ' HP)');
+        else
+            addRuntimeLog(runtime, e.name + ' hits for ' + damage);
+        e.charging = !e.charging;
+    }
+}
+
+function stepArenaRuntime(runtime, planFn)
+{
+    if (runtime.outcome !== 'ongoing')
+    {
+        addRuntimeLog(runtime, 'Arena ended. Reset to play again.');
+        return;
+    }
+
+    // block decays between turns
+    runtime.player.block = 0;
+
+    const state = buildArenaSandboxState(runtime);
+    let rawPlan = [];
+    try
+    {
+        const result = planFn(state);
+        rawPlan = Array.isArray(result) ? result : [];
+    }
+    catch (err)
+    {
+        addRuntimeLog(runtime, 'plan_turn error: ' + err.message);
+        return;
+    }
+
+    // validate
+    const validated = [];
+    const usedKinds = new Set();
+    let totalCost = 0;
+    const cooldownKinds = new Set(runtime.cooldowns.map(c => c.kind));
+
+    for (const a of rawPlan)
+    {
+        if (validated.length >= 3) break;
+        if (!a || typeof a !== 'object') continue;
+        const kind = String(a.kind);
+        const def = ARENA_ACTION_BY_KIND[kind];
+        if (!def) { addRuntimeLog(runtime, 'unknown action ' + kind); continue; }
+        if (cooldownKinds.has(kind)) { addRuntimeLog(runtime, kind + ' on cooldown'); continue; }
+        if (usedKinds.has(kind)) { addRuntimeLog(runtime, kind + ' already in plan'); continue; }
+        if (totalCost + def.cost > 5) { addRuntimeLog(runtime, kind + ' over energy budget'); continue; }
+        usedKinds.add(kind);
+        totalCost += def.cost;
+        validated.push({ kind, target: typeof a.target === 'number' ? a.target : -1, cost: def.cost });
+    }
+
+    runtime.lastPlan = validated.map(a => ({ ...a }));
+    runtime.lastSpend = totalCost;
+    if (totalCost === 5) runtime.stats.fullSpendTurns += 1;
+    if (totalCost === 5 && validated.length === 3) runtime.stats.wombo += 1;
+
+    if (!validated.length)
+    {
+        addRuntimeLog(runtime, 'no actions planned this turn');
+    }
+
+    for (const action of validated) executeArenaAction(runtime, action);
+
+    enemyPhaseArena(runtime);
+
+    // tick existing cooldowns down by 1, drop expired
+    runtime.cooldowns = runtime.cooldowns
+        .map(c => ({ kind: c.kind, turns: c.turns - 1 }))
+        .filter(c => c.turns > 0);
+
+    // add newly-used kinds with their per-action cooldown
+    for (const kind of usedKinds)
+    {
+        const def = ARENA_ACTION_BY_KIND[kind];
+        if (def && def.cooldown > 0)
+        {
+            runtime.cooldowns.push({ kind, turns: def.cooldown });
+        }
+    }
+
+    if (runtime.enemies.every(e => e.hp <= 0))
+    {
+        addRuntimeLog(runtime, '── lvl ' + runtime.level + ' cleared (' + runtime.turn + ' turns) ──');
+        advanceArenaLevel(runtime);
+    }
+    else if (runtime.player.hp <= 0)
+    {
+        runtime.outcome = 'defeat';
+        addRuntimeLog(runtime, '── you fall on lvl ' + runtime.level + ' ──');
+    }
+    else
+    {
+        runtime.turn += 1;
+        runtime.stats.maxBlockHeld = Math.max(runtime.stats.maxBlockHeld, runtime.player.block);
+    }
+}
+
+/* ──────────────── ROULETTE RUNTIME ──────────────── */
+
+const ROULETTE_RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const ROULETTE_TABLE_ROWS = [
+    [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
+    [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35],
+    [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34]
+];
+
+function colorForNumber(number)
+{
+    if (number === 0) return 'green';
+    return ROULETTE_RED_NUMBERS.has(number) ? 'red' : 'black';
+}
+
+function createRouletteRuntime()
+{
+    return {
+        spin: 1,
+        balance: 30,
+        bestBalance: 30,
+        maxBet: 8,
+        seed: 17,
+        lastNumber: 0,
+        lastColor: 'green',
+        recentNumbers: [],
+        lastBets: [],            // bets from previous spin with .result/.win
+        lastNet: 0,
+        lastPayout: 0,
+        wheelRotation: 0,
+        logs: ['Roulette loaded. Write plan_bets(state) and press Spin.'],
+        outcome: 'ongoing',
+        stats: {
+            straightHits: 0,
+            dozenWins: 0,
+            columnWins: 0,
+            pairWins: 0,
+            squareWins: 0,
+            rowWins: 0,
+            doubleRowWins: 0,
+            lucky17Hits: 0,
+            profitStreak: 0,
+            bestProfitStreak: 0,
+            totalWagered: 0,
+            betKindsUsed: new Set(),
+            maxSingleWager: 0,
+            wonFirstSpin: false,
+            hedgedSpins: 0,        // bet both red and black in same spin
+            maxBetsPerSpin: 0,
+            zeroHits: 0,           // spun a 0
+            lowestBalance: 30,
+            highestBalanceAfterLow: 30
+        }
+    };
+}
+
+function rouletteRecentColors(runtime)
+{
+    return runtime.recentNumbers.map(n => colorForNumber(n));
+}
+
+function buildRouletteSandboxState(runtime)
+{
+    const mkBet = (kind, value, amount) =>
+    {
+        const amt = Math.max(0, Math.floor(Number(amount) || 0));
+        return { kind, value: value == null ? -1 : value, amount: amt };
+    };
+
+    const reds_in_a_row = () =>
+    {
+        let count = 0;
+        for (const n of runtime.recentNumbers) { if (colorForNumber(n) === 'red') count += 1; else break; }
+        return count;
+    };
+
+    const blacks_in_a_row = () =>
+    {
+        let count = 0;
+        for (const n of runtime.recentNumbers) { if (colorForNumber(n) === 'black') count += 1; else break; }
+        return count;
+    };
+
+    // ── const snapshot: copy values in, freeze so plan_bets can't mutate ──
+    return Object.freeze({
+        spin: runtime.spin,
+        balance: runtime.balance,
+        max_bet: runtime.maxBet,
+        last_number: runtime.lastNumber,
+        last_red: runtime.lastColor === 'red',
+        recent_numbers: Object.freeze([...runtime.recentNumbers]),
+
+        bet_red:    amount => mkBet('red', -1, amount),
+        bet_black:  amount => mkBet('black', -1, amount),
+        bet_even:   amount => mkBet('even', -1, amount),
+        bet_odd:    amount => mkBet('odd', -1, amount),
+        bet_low:    amount => mkBet('low', -1, amount),
+        bet_high:   amount => mkBet('high', -1, amount),
+        bet_dozen:  (dozen,  amount) => mkBet('dozen',  Math.max(1, Math.min(3, Math.floor(Number(dozen)  || 1))), amount),
+        bet_column: (column, amount) => mkBet('column', Math.max(1, Math.min(3, Math.floor(Number(column) || 1))), amount),
+        bet_row:    (start,  amount) =>
+        {
+            const s = Math.floor(Number(start) || 0);
+            // row starts: 1, 4, 7, …, 34 (i.e., s in [1..34] with (s-1) % 3 === 0)
+            if (s < 1 || s > 34 || (s - 1) % 3 !== 0) return mkBet('row', -1, 0);
+            return mkBet('row', s, amount);
+        },
+        bet_double_row: (start, amount) =>
+        {
+            const s = Math.floor(Number(start) || 0);
+            // double-row starts: 1, 4, 7, …, 31 (covers s..s+5)
+            if (s < 1 || s > 31 || (s - 1) % 3 !== 0) return mkBet('double_row', -1, 0);
+            return mkBet('double_row', s, amount);
+        },
+        bet_pair: (low, high, amount) =>
+        {
+            const lo = Math.floor(Number(low)  || 0);
+            const hi = Math.floor(Number(high) || 0);
+            if (lo < 0 || hi < 0 || lo > 36 || hi > 36) return mkBet('pair', -1, 0);
+            // store as encoded value: lo * 100 + hi for label/resolve
+            return mkBet('pair', lo * 100 + hi, amount);
+        },
+        bet_square: (topLeft, amount) =>
+        {
+            const tl = Math.floor(Number(topLeft) || 0);
+            // top-left of a 2×2 must be in rows 1,4,…,31 AND column 1 or 2 (so tl+1 is the same row)
+            // Layout: top row = nums % 3 === 0 (3,6,…), bottom row n %3 === 1 (1,4,…). A square covers tl, tl+1, tl+3, tl+4.
+            if (tl < 1 || tl > 32) return mkBet('square', -1, 0);
+            if ((tl - 1) % 3 === 2) return mkBet('square', -1, 0); // last column, no square possible
+            return mkBet('square', tl, amount);
+        },
+        bet_number: (value, amount) =>
+        {
+            const v = Math.floor(Number(value));
+            if (!Number.isFinite(v) || v < 0 || v > 36) return mkBet('number', -1, 0);
+            return mkBet('number', v, amount);
+        },
+
+        reds_in_a_row,
+        blacks_in_a_row,
+        log: m => addRuntimeLog(runtime, m)
+    });
+}
+
+function nextRouletteNumber(runtime)
+{
+    runtime.seed = (runtime.seed * 1103515245 + 12345) & 0x7fffffff;
+    return runtime.seed % 37;
+}
+
+function betKey(bet)
+{
+    if (bet.kind === 'number')     return 'number:'     + bet.value;
+    if (bet.kind === 'dozen')      return 'dozen:'      + bet.value;
+    if (bet.kind === 'column')     return 'column:'     + bet.value;
+    if (bet.kind === 'row')        return 'row:'        + bet.value;
+    if (bet.kind === 'double_row') return 'double_row:' + bet.value;
+    if (bet.kind === 'pair')       return 'pair:'       + bet.value;
+    if (bet.kind === 'square')     return 'square:'     + bet.value;
+    return bet.kind;
+}
+
+function pairNumbers(encoded) { return [Math.floor(encoded / 100), encoded % 100]; }
+function squareNumbers(tl)    { return [tl, tl + 1, tl + 3, tl + 4]; }
+
+function betLabel(bet)
+{
+    if (bet.kind === 'number')     return 'straight ' + bet.value;
+    if (bet.kind === 'dozen')      return 'dozen '    + bet.value;
+    if (bet.kind === 'column')     return 'column '   + bet.value;
+    if (bet.kind === 'row')        return 'row '      + bet.value + '-' + (bet.value + 2);
+    if (bet.kind === 'double_row') return 'rows '     + bet.value + '-' + (bet.value + 5);
+    if (bet.kind === 'pair')       { const [a, b] = pairNumbers(bet.value); return 'pair ' + a + '/' + b; }
+    if (bet.kind === 'square')     { const [a, , , d] = squareNumbers(bet.value); return 'square ' + a + '-' + d; }
+    if (bet.kind === 'low')        return 'low (1-18)';
+    if (bet.kind === 'high')       return 'high (19-36)';
+    return bet.kind;
+}
+
+// column N covers numbers ending in row N (1: 1,4,7…34 ; 2: 2,5,8…35 ; 3: 3,6,9…36)
+function columnOfNumber(number)
+{
+    if (number === 0) return 0;
+    const mod = number % 3;
+    return mod === 0 ? 3 : mod;
+}
+
+function resolveBet(bet, number, color)
+{
+    if (bet.kind === 'number') return number === bet.value ? bet.amount * 35 : -bet.amount;
+    if (bet.kind === 'red')    return color === 'red'   ? bet.amount : -bet.amount;
+    if (bet.kind === 'black')  return color === 'black' ? bet.amount : -bet.amount;
+    if (bet.kind === 'even')   return (number !== 0 && number % 2 === 0) ? bet.amount : -bet.amount;
+    if (bet.kind === 'odd')    return (number % 2 === 1) ? bet.amount : -bet.amount;
+    if (bet.kind === 'low')    return (number >= 1 && number <= 18) ? bet.amount : -bet.amount;
+    if (bet.kind === 'high')   return (number >= 19 && number <= 36) ? bet.amount : -bet.amount;
+    if (bet.kind === 'dozen')
+    {
+        const lo = (bet.value - 1) * 12 + 1;
+        const hi = bet.value * 12;
+        return (number >= lo && number <= hi) ? bet.amount * 2 : -bet.amount;
+    }
+    if (bet.kind === 'column')
+    {
+        return columnOfNumber(number) === bet.value ? bet.amount * 2 : -bet.amount;
+    }
+    if (bet.kind === 'row')
+    {
+        return (number >= bet.value && number <= bet.value + 2) ? bet.amount * 11 : -bet.amount;
+    }
+    if (bet.kind === 'double_row')
+    {
+        return (number >= bet.value && number <= bet.value + 5) ? bet.amount * 5 : -bet.amount;
+    }
+    if (bet.kind === 'pair')
+    {
+        const [a, b] = pairNumbers(bet.value);
+        return (number === a || number === b) ? bet.amount * 17 : -bet.amount;
+    }
+    if (bet.kind === 'square')
+    {
+        return squareNumbers(bet.value).includes(number) ? bet.amount * 8 : -bet.amount;
+    }
+    return -bet.amount;
+}
+
+function stepRouletteRuntime(runtime, planFn)
+{
+    if (runtime.outcome !== 'ongoing')
+    {
+        addRuntimeLog(runtime, 'Run ended. Reset to play again.');
+        return;
+    }
+
+    const balanceBefore = runtime.balance;
+    const state = buildRouletteSandboxState(runtime);
+
+    let rawBets = [];
+    try
+    {
+        const result = planFn(state);
+        rawBets = Array.isArray(result) ? result : [];
+    }
+    catch (err)
+    {
+        addRuntimeLog(runtime, 'plan_bets error: ' + err.message);
+        return;
+    }
+
+    // validate
+    const seenKeys = new Set();
+    const validated = [];
+    let totalWager = 0;
+    for (const b of rawBets)
+    {
+        if (validated.length >= 3) break;
+        if (!b || typeof b !== 'object') continue;
+        const amount = Math.max(0, Math.floor(Number(b.amount) || 0));
+        if (amount <= 0) continue;
+        if (amount > runtime.maxBet) { addRuntimeLog(runtime, b.kind + ' over max bet'); continue; }
+        const key = betKey({ ...b, amount });
+        if (seenKeys.has(key)) { addRuntimeLog(runtime, key + ' already in plan'); continue; }
+        if (totalWager + amount > runtime.balance) { addRuntimeLog(runtime, b.kind + ' insufficient balance'); continue; }
+        seenKeys.add(key);
+        totalWager += amount;
+        validated.push({ kind: b.kind, value: b.value, amount });
+    }
+
+    runtime.balance -= totalWager;
+    runtime.stats.totalWagered += totalWager;
+    runtime.stats.maxBetsPerSpin = Math.max(runtime.stats.maxBetsPerSpin, validated.length);
+    let hadRed = false, hadBlack = false;
+    for (const b of validated)
+    {
+        runtime.stats.betKindsUsed.add(b.kind);
+        runtime.stats.maxSingleWager = Math.max(runtime.stats.maxSingleWager, b.amount);
+        if (b.kind === 'red')   hadRed = true;
+        if (b.kind === 'black') hadBlack = true;
+    }
+    if (hadRed && hadBlack) runtime.stats.hedgedSpins += 1;
+
+    const number = nextRouletteNumber(runtime);
+    const color = colorForNumber(number);
+    runtime.lastNumber = number;
+    runtime.lastColor = color;
+    runtime.recentNumbers.unshift(number);
+    if (runtime.recentNumbers.length > 6) runtime.recentNumbers.length = 6;
+    runtime.wheelRotation = (runtime.wheelRotation + 540 + number * (360 / 37)) % 360;
+
+    let payout = 0;
+    const resolved = [];
+    for (const bet of validated)
+    {
+        const delta = resolveBet(bet, number, color);
+        const win = delta > 0;
+        if (win)
+        {
+            payout += bet.amount + delta;
+            if (bet.kind === 'number')     runtime.stats.straightHits += 1;
+            if (bet.kind === 'dozen')      runtime.stats.dozenWins += 1;
+            if (bet.kind === 'column')     runtime.stats.columnWins += 1;
+            if (bet.kind === 'pair')       runtime.stats.pairWins += 1;
+            if (bet.kind === 'square')     runtime.stats.squareWins += 1;
+            if (bet.kind === 'row')        runtime.stats.rowWins += 1;
+            if (bet.kind === 'double_row') runtime.stats.doubleRowWins += 1;
+            if (bet.kind === 'number' && bet.value === 17) runtime.stats.lucky17Hits += 1;
+        }
+        resolved.push({ ...bet, delta, win });
+    }
+
+    runtime.balance += payout;
+    runtime.bestBalance = Math.max(runtime.bestBalance, runtime.balance);
+    runtime.lastPayout = payout;
+    runtime.lastNet = runtime.balance - balanceBefore;
+    runtime.lastBets = resolved;
+    if (runtime.spin === 1 && runtime.lastNet > 0) runtime.stats.wonFirstSpin = true;
+    runtime.stats.lowestBalance = Math.min(runtime.stats.lowestBalance, runtime.balance);
+    if (runtime.stats.lowestBalance <= 10)
+        runtime.stats.highestBalanceAfterLow = Math.max(runtime.stats.highestBalanceAfterLow, runtime.balance);
+
+    if (number === 0) runtime.stats.zeroHits += 1;
+    addRuntimeLog(runtime, 'wheel landed on ' + number + ' (' + color + ')');
+    if (payout > 0) addRuntimeLog(runtime, 'payout +' + formatMoney(payout));
+    if (!validated.length) addRuntimeLog(runtime, 'no bets placed');
+
+    if (runtime.lastNet > 0)
+    {
+        runtime.stats.profitStreak += 1;
+        runtime.stats.bestProfitStreak = Math.max(runtime.stats.bestProfitStreak, runtime.stats.profitStreak);
+    }
+    else
+    {
+        runtime.stats.profitStreak = 0;
+    }
+
+    runtime.spin += 1;
+    if (runtime.balance <= 0)
+    {
+        runtime.outcome = 'busted';
+        addRuntimeLog(runtime, '── balance busted ──');
+    }
+}
+
+/* ──────────────── RENDERERS ──────────────── */
+
+function renderArena(runtime)
+{
+    const playerRatio = Math.max(0, Math.min(100, (runtime.player.hp / runtime.player.maxHp) * 100));
+
+    const playerBadges = [];
+    if (runtime.player.block > 0) playerBadges.push('<span class="hero-badge block">' + runtime.player.block + ' block</span>');
+    if (runtime.outcome !== 'ongoing') playerBadges.push('<span class="hero-badge down">' + runtime.outcome + '</span>');
+
+    const playerLowHp = runtime.player.hp > 0 && (runtime.player.hp / runtime.player.maxHp) < 0.34;
+    const playerIconCls = 'hero-icon' + (playerLowHp ? ' is-low-hp' : '');
+
+    const playerCard = [
+        '<div class="hero-card player">',
+        '  <div class="' + playerIconCls + '"><img src="' + DOTA_ICON(runtime.player.icon) + '" alt="" loading="lazy"/></div>',
+        '  <div class="hero-info">',
+        '    <div class="hero-name">' + escapeHtml(runtime.player.name) + '</div>',
+        '    <div class="hero-hp-bar"><div class="hero-hp-fill" style="width:' + playerRatio + '%"></div></div>',
+        '    <div class="hero-stats"><span class="stat-hp">HP ' + runtime.player.hp + '/' + runtime.player.maxHp + '</span><span class="stat-sep">·</span>turn ' + runtime.turn + '</div>',
+        '    <div class="hero-badges">' + playerBadges.join('') + '</div>',
+        '  </div>',
+        '</div>'
+    ].join('');
+
+    const enemyCards = runtime.enemies.map((e, idx) =>
+    {
+        const ratio = Math.max(0, Math.min(100, (e.hp / e.maxHp) * 100));
+        const badges = [];
+        if (e.charging) badges.push('<span class="hero-badge charging">⚡ charging</span>');
+        if (e.stunnedTurns > 0) badges.push('<span class="hero-badge stunned">stunned</span>');
+        if (e.hp <= 0) badges.push('<span class="hero-badge down">down</span>');
+
+        const downClass = e.hp <= 0 ? ' down' : '';
+        const lowHp = e.hp > 0 && (e.hp / e.maxHp) < 0.34;
+        const iconCls = 'hero-icon'
+            + (e.charging ? ' is-charging' : '')
+            + (lowHp     ? ' is-low-hp'   : '');
+        return [
+            '<div class="hero-card enemy' + downClass + '">',
+            '  <div class="' + iconCls + '"><img src="' + DOTA_ICON(e.icon) + '" alt="" loading="lazy"/></div>',
+            '  <div class="hero-info">',
+            '    <div class="hero-name">' + escapeHtml(e.name) + ' <span class="hero-idx">#' + idx + '</span></div>',
+            '    <div class="hero-hp-bar"><div class="hero-hp-fill" style="width:' + ratio + '%"></div></div>',
+            '    <div class="hero-stats"><span class="stat-hp">HP ' + e.hp + '/' + e.maxHp + '</span><span class="stat-sep">·</span><span class="stat-pwr">pwr ' + e.power + '</span></div>',
+            '    <div class="hero-badges">' + badges.join('') + '</div>',
+            '  </div>',
+            '</div>'
+        ].join('');
+    }).join('');
+
+    const cdMap = new Map(runtime.cooldowns.map(c => [c.kind, c.turns]));
+    const deckCards = ARENA_ACTION_DEFS.map(def =>
+    {
+        const cdLeft = cdMap.get(def.kind) || 0;
+        const onCd = cdLeft > 0;
+        const tag = def.cooldown > 0 ? ('cd ' + def.cooldown + ' · ' + (def.targeted ? 'target' : 'self')) : (def.targeted ? 'target idx' : 'self');
+        return [
+            '<div class="action-card' + (onCd ? ' cooldown' : '') + '"' + (onCd ? ' data-cd="' + cdLeft + '"' : '') + '>',
+            '  <div class="action-cost">' + def.cost + '</div>',
+            '  <div class="action-name">' + escapeHtml(def.name) + '</div>',
+            '  <div class="action-desc">' + escapeHtml(def.desc) + '</div>',
+            '  <div class="action-tag">' + tag + '</div>',
+            '</div>'
+        ].join('');
+    }).join('');
+
+    const slots = [0, 1, 2].map(i =>
+    {
+        const a = runtime.lastPlan[i];
+        if (!a)
+        {
+            return [
+                '<div class="plan-slot">',
+                '  <div class="plan-slot-head"><span class="plan-slot-num">slot ' + (i+1) + '</span><span class="plan-slot-cost">—</span></div>',
+                '  <div class="plan-slot-empty">unused</div>',
+                '</div>'
+            ].join('');
+        }
+        const targetName = a.target >= 0 && runtime.enemies[a.target] ? runtime.enemies[a.target].name : '';
+        return [
+            '<div class="plan-slot filled">',
+            '  <div class="plan-slot-head"><span class="plan-slot-num">slot ' + (i+1) + '</span><span class="plan-slot-cost">' + a.cost + 'E</span></div>',
+            '  <div class="plan-slot-action">' + escapeHtml(a.kind) + '</div>',
+            '  <div class="plan-slot-target">' + (targetName ? '→ ' + escapeHtml(targetName) : '') + '</div>',
+            '</div>'
+        ].join('');
+    }).join('');
+
+    const cooldownTxt = runtime.cooldowns.length
+        ? runtime.cooldowns.map(c => c.kind + '(' + c.turns + ')').join(' · ')
+        : 'none';
+
+    const pips = [1, 2, 3].map(n =>
+    {
+        const cls = n < runtime.level ? 'cleared' : (n === runtime.level && runtime.outcome === 'ongoing' ? 'active' : '');
+        return '<span class="lvl-pip ' + cls + '"></span>';
+    }).join('');
+
+    return [
+        '<div class="arena-stage">',
+        '  <div class="level-banner">',
+        '    <span class="lvl-num">Lvl ' + runtime.level + ' / 3</span>',
+        '    <span class="lvl-name">' + escapeHtml(runtime.levelName) + '</span>',
+        '    <span class="lvl-pips">' + pips + '</span>',
+        '  </div>',
+        '  <div class="section-band">',
+        '    <span class="section-band-label">Turn ' + runtime.turn + ' · ' + escapeHtml(runtime.outcome) + '</span>',
+        '    <span class="section-band-value">spent ' + runtime.lastSpend + ' / 5 · CD: ' + escapeHtml(cooldownTxt) + '</span>',
+        '  </div>',
+        '  <div class="arena-fighters">',
+        '    <div class="fighter-row">' + playerCard + '</div>',
+        '    <div class="fighter-row enemies">' + enemyCards + '</div>',
+        '  </div>',
+        '  <div class="section-band">',
+        '    <span class="section-band-label">Deck</span>',
+        '    <span class="section-band-value">pick 3 · ≤5 energy · no repeats · cooldown lasts 1 turn</span>',
+        '  </div>',
+        '  <div class="action-deck">' + deckCards + '</div>',
+        '  <div class="section-band">',
+        '    <span class="section-band-label">Last Plan</span>',
+        '    <span class="section-band-value">slots executed in order</span>',
+        '  </div>',
+        '  <div class="plan-slots">' + slots + '</div>',
+        '</div>'
+    ].join('');
+}
+
+function buildRouletteChipMap(bets)
+{
+    const m = new Map();
+    for (const b of bets)
+    {
+        m.set(betKey(b), (m.get(betKey(b)) || 0) + b.amount);
+    }
+    return m;
+}
+
+function renderRouletteTable(runtime)
+{
+    const chipMap = buildRouletteChipMap(runtime.lastBets);
+    const lastNumber = runtime.lastNumber;
+    const lastCol = columnOfNumber(lastNumber);
+
+    // grid layout: [0 spanning 3 rows] [12 number cells] [col bet]  × 3 rows
+    // ROULETTE_TABLE_ROWS top→bottom = columns 3, 2, 1 (matches n % 3 math)
+    const rowColumnNum = [3, 2, 1];
+
+    let cells = '';
+    cells += '<div class="rcell green' + (lastNumber === 0 ? ' last-hit' : '') + (chipMap.get('number:0') ? ' active' : '') + '" style="grid-row: 1 / span 3;">0' +
+        (chipMap.get('number:0') ? '<span class="rchip">' + chipMap.get('number:0') + '</span>' : '') +
+        '</div>';
+
+    for (let r = 0; r < ROULETTE_TABLE_ROWS.length; r++)
+    {
+        const row = ROULETTE_TABLE_ROWS[r];
+        for (const n of row)
+        {
+            const color = colorForNumber(n);
+            const chip = chipMap.get('number:' + n);
+            const cls = ['rcell', color];
+            if (chip) cls.push('active');
+            if (n === lastNumber) cls.push('last-hit');
+            cells += '<div class="' + cls.join(' ') + '">' + n +
+                (chip ? '<span class="rchip">' + chip + '</span>' : '') +
+                '</div>';
+        }
+        // column bet at the end of each row
+        const colNum = rowColumnNum[r];
+        const colChip = chipMap.get('column:' + colNum);
+        const colActive = (colChip ? ' active' : '') + (lastCol === colNum && lastNumber > 0 ? ' last-hit' : '');
+        cells += '<div class="rcell-col' + colActive + '">2:1<br>col ' + colNum +
+            (colChip ? '<span class="rchip">' + colChip + '</span>' : '') +
+            '</div>';
+    }
+
+    // outside row: 1-18, even, red, black, odd, 19-36
+    const outsides = [
+        { k: 'low',   label: 'low 1-18',  cls: 'black' },
+        { k: 'even',  label: 'even',      cls: 'black' },
+        { k: 'red',   label: 'red',       cls: 'red'   },
+        { k: 'black', label: 'black',     cls: 'black' },
+        { k: 'odd',   label: 'odd',       cls: 'black' },
+        { k: 'high',  label: 'high 19-36',cls: 'black' }
+    ];
+
+    const outsideHtml = outsides.map(o =>
+    {
+        const chip = chipMap.get(o.k);
+        return '<div class="rcell-outside ' + o.cls + (chip ? ' active' : '') + '">' + escapeHtml(o.label) +
+            (chip ? '<span class="rchip">' + chip + '</span>' : '') +
+            '</div>';
+    }).join('');
+
+    const dozenChips = [1, 2, 3].map(d =>
+    {
+        const chip = chipMap.get('dozen:' + d);
+        return '<div class="rcell-outside black' + (chip ? ' active' : '') + '">dozen ' + d +
+            (chip ? '<span class="rchip">' + chip + '</span>' : '') +
+            '</div>';
+    }).join('');
+
+    return [
+        '<div class="roulette-table">',
+        '  <div class="roulette-table-grid">' + cells + '</div>',
+        '  <div class="roulette-outside">' + outsideHtml + '</div>',
+        '  <div class="roulette-outside" style="grid-template-columns: repeat(3, 1fr);">' + dozenChips + '</div>',
+        '</div>'
+    ].join('');
+}
+
+function renderRouletteSide(runtime)
+{
+    const netClass = runtime.lastNet >= 0 ? 'net-pos' : 'net-neg';
+    const history = (runtime.recentNumbers.length ? runtime.recentNumbers : []).map(n =>
+    {
+        const color = colorForNumber(n);
+        return '<span class="history-pip ' + color + '">' + n + '</span>';
+    }).join('') || '<span class="bet-slip-empty">no spins yet</span>';
+
+    const betSlip = runtime.lastBets.length
+        ? runtime.lastBets.map(b =>
+            {
+                const result = b.win ? 'win +' + formatMoney(b.delta) : 'loss -' + formatMoney(b.amount);
+                const cls = b.win ? 'win' : 'loss';
+                return '<div class="bet-slip-row"><span class="bet-kind">' + escapeHtml(betLabel(b)) + '</span><span class="bet-amount">' + formatMoney(b.amount) + '</span><span class="bet-result ' + cls + '">' + result + '</span></div>';
+            }).join('')
+        : '<div class="bet-slip-empty">no bets last spin</div>';
+
+    return [
+        '<div class="roulette-side">',
+        '  <div class="balance-card">',
+        '    <div class="balance-label">Balance</div>',
+        '    <div class="balance-value">' + formatMoney(runtime.balance) + '</div>',
+        '    <div class="balance-sub">',
+        '      <span>best ' + formatMoney(runtime.bestBalance) + '</span>',
+        '      <span class="' + netClass + '">last ' + formatSignedMoney(runtime.lastNet) + '</span>',
+        '    </div>',
+        '  </div>',
+        '  <div class="wheel-mini">',
+        '    <div class="wheel-disc" style="transform: rotate(' + runtime.wheelRotation.toFixed(1) + 'deg)"></div>',
+        '    <div class="wheel-readout">',
+        '      <div class="wheel-last-label">last spin</div>',
+        '      <div class="wheel-last-number">' + runtime.lastNumber + '</div>',
+        '      <div class="wheel-last-color ' + runtime.lastColor + '">' + runtime.lastColor + '</div>',
+        '    </div>',
+        '  </div>',
+        '  <div class="bet-slip-card">',
+        '    <div class="game-info-label">Bet Slip</div>',
+        '    <div class="bet-slip-list">' + betSlip + '</div>',
+        '  </div>',
+        '  <div class="bet-slip-card">',
+        '    <div class="game-info-label">History</div>',
+        '    <div class="history-strip">' + history + '</div>',
+        '  </div>',
+        '</div>'
+    ].join('');
+}
+
+function renderRoulette(runtime)
+{
+    return [
+        '<div class="roulette-stage">',
+        '  <div class="section-band">',
+        '    <span class="section-band-label">Spin ' + runtime.spin + ' · ' + escapeHtml(runtime.outcome) + '</span>',
+        '    <span class="section-band-value">streak ' + runtime.stats.profitStreak + ' · wagered ' + formatMoney(runtime.stats.totalWagered) + '</span>',
+        '  </div>',
+        '  <div class="roulette-board">',
+        '    ' + renderRouletteTable(runtime),
+        '    ' + renderRouletteSide(runtime),
+        '  </div>',
+        '</div>'
+    ].join('');
+}
+
+/* ──────────────── SANDBOX TRANSLATOR ──────────────── */
+
+function findMatchingBrace(source, openIndex)
+{
+    let depth = 0;
+    let inSingle = false, inDouble = false, inLineComment = false, inBlockComment = false;
+
+    for (let i = openIndex; i < source.length; ++i)
+    {
+        const ch = source[i];
+        const next = source[i + 1];
+
+        if (inLineComment)  { if (ch === '\n') inLineComment = false; continue; }
+        if (inBlockComment) { if (ch === '*' && next === '/') { inBlockComment = false; i += 1; } continue; }
+        if (inSingle) { if (ch === '\\') { i += 1; continue; } if (ch === '\'') inSingle = false; continue; }
+        if (inDouble) { if (ch === '\\') { i += 1; continue; } if (ch === '"')  inDouble = false; continue; }
+
+        if (ch === '/' && next === '/') { inLineComment = true; i += 1; continue; }
+        if (ch === '/' && next === '*') { inBlockComment = true; i += 1; continue; }
+        if (ch === '\'') { inSingle = true; continue; }
+        if (ch === '"')  { inDouble = true; continue; }
+        if (ch === '{') depth += 1;
+        if (ch === '}') { depth -= 1; if (depth === 0) return i; }
+    }
+    return -1;
+}
+
+function extractPlanDefinition(source, fnName)
+{
+    const re = new RegExp('\\b' + fnName + '\\s*\\(([^)]*)\\)\\s*\\{');
+    const match = re.exec(source);
+    if (!match) throw new Error('Sandbox mode requires a `' + fnName + '(state)` function.');
+
+    const openIndex = match.index + match[0].lastIndexOf('{');
+    const closeIndex = findMatchingBrace(source, openIndex);
+    if (closeIndex < 0) throw new Error('Could not find the end of ' + fnName + '(state).');
+
+    const paramTokens = (match[1].match(/[A-Za-z_]\w*/g) || []);
+    const paramName = paramTokens.length ? paramTokens[paramTokens.length - 1] : 'state';
+
+    return { paramName, body: source.slice(openIndex + 1, closeIndex) };
+}
+
+function translateInterpolationToTemplate(content)
+{
+    const replaced = content.replace(/\{([^}]+)\}/g, '${$1}');
+    return '`' + replaced.replace(/`/g, '\\`') + '`';
+}
+
+function translatePlanBody(body, paramName)
+{
+    const tokens = [];
+    const protect = (str) =>
+    {
+        const idx = tokens.length;
+        tokens.push(str);
+        return '\x00' + idx + '\x00';
+    };
+
+    let s = body;
+    s = s.replace(/\/\*[\s\S]*?\*\//g, '');
+    s = s.replace(/\/\/[^\n]*/g, '');
+    s = s.replace(/\$"((?:[^"\\]|\\.)*)"/g, (m, content) => protect(translateInterpolationToTemplate(content)));
+    s = s.replace(/"(?:[^"\\]|\\.)*"/g, m => protect(m));
+    s = s.replace(/'(?:[^'\\]|\\.)*'/g, m => protect(m));
+
+    // ActionKind::Heal / BetKind::Red → "heal" / "red"
+    // (sandbox stores kinds as lowercase strings internally)
+    s = s.replace(/\b(?:ActionKind|BetKind)::([A-Z]\w*)/g, (m, name) => '"' + name.toLowerCase() + '"');
+
+    s = s.replace(/([A-Za-z_][\w\.\[\]\(\)]*)\s*\?\?\s*r\s*;/g, 'if (!($1)) return;');
+    s = s.replace(/\bif\s+(?!\()([^\n{]+?)\s*\{/g, 'if ($1) {');
+    s = s.replace(/\bw\s+(?!\()([^\n{]+?)\s*\{/g, 'while ($1) {');
+    s = s.replace(/\bf\s*\(/g, 'for (');
+    s = s.replace(/\bel\s+if\b/g, 'else if');
+    s = s.replace(/\bel\b/g, 'else');
+    s = s.replace(/\bcont\b/g, 'continue');
+    s = s.replace(/\bb\s*;/g, 'break;');
+    s = s.replace(/\bnil\b/g, 'null');
+    s = s.replace(/(?<![A-Za-z0-9_$])p\s+([^;{}\n]+?);/g, paramName + '.log(String($1));');
+    s = s.replace(/\b(?:a|int|bool|float|double|long|size_t)\s+([A-Za-z_]\w*)\s*=/g, 'let $1 =');
+    s = s.replace(/\$vector\s*<[^>]+>\s+([A-Za-z_]\w*)\s*;/g, 'let $1 = [];');
+    s = s.replace(/\.push_back\s*\(/g, '.push(');
+    s = s.replace(/\br\s*;/g, 'return;');
+    s = s.replace(/\br\s+([^;]+);/g, 'return $1;');
+
+    s = s.replace(/\x00(\d+)\x00/g, (m, idx) => tokens[+idx]);
+    return s;
+}
+
+function compileSandboxPlan(gameId, source)
+{
+    const fnName = gameId === 'arena' ? 'plan_turn' : 'plan_bets';
+    const plan = extractPlanDefinition(source, fnName);
+    const jsBody = translatePlanBody(plan.body, plan.paramName);
+    try { return new Function(plan.paramName, '"use strict";\n' + jsBody); }
+    catch (err) { throw new Error('Sandbox JS compile failed: ' + err.message); }
+}
+
+function buildGameCompileSource(gameId, source)
+{
+    if (gameId === 'arena')    return source + '\n\n' + ARENA_GAME_HIDDEN_SHRT;
+    if (gameId === 'roulette') return source + '\n\n' + ROULETTE_GAME_HIDDEN_SHRT;
+    return source;
+}
+
+function ensureGameRuntime(gameId)
+{
+    if (!gameRuns[gameId])
+    {
+        gameRuns[gameId] = gameId === 'arena' ? createArenaRuntime() : createRouletteRuntime();
+    }
+    return gameRuns[gameId];
+}
+
+function refreshPeekCpp()
+{
+    if (!shrtEditor) return '';
+    const cpp = shrtToCpp(shrtEditor.getValue());
+    if (cppEditor) cppEditor.setValue(cpp);
+    const peek = document.getElementById('peekCppPre');
+    if (peek) peek.textContent = cpp;
+    return cpp;
+}
+
+function renderAchievements(gameId)
+{
+    const list = document.getElementById('achievementList');
+    if (!list) return;
+
+    const unlocked = unlockedAchievements[gameId];
+    list.innerHTML = GAME_CONFIG[gameId].achievements.map(achievement =>
+    {
+        const isUnlocked = unlocked.has(achievement.id);
+        return [
+            '<li class="achievement-item ' + (isUnlocked ? 'unlocked' : 'locked') + '">',
+            '  <div class="achievement-name">' + escapeHtml(achievement.name) + '</div>',
+            '  <div class="achievement-hover">' + escapeHtml(achievement.description) + '</div>',
+            '</li>'
+        ].join('');
+    }).join('');
+}
+
+function unlockAchievementsFor(gameId, runtime)
+{
+    let changed = false;
+    for (const achievement of GAME_CONFIG[gameId].achievements)
+    {
+        if (!unlockedAchievements[gameId].has(achievement.id) && achievement.check(runtime))
+        {
+            unlockedAchievements[gameId].add(achievement.id);
+            addRuntimeLog(runtime, 'achievement unlocked: ' + achievement.name);
+            changed = true;
+        }
+    }
+    if (changed) saveUnlockedAchievements(gameId);
+}
+
+function renderGame()
+{
+    if (currentMode !== 'game' || !currentGameId) return;
+
+    const runtime = ensureGameRuntime(currentGameId);
+    const rightPane = document.getElementById('rightPane');
+    const label = document.getElementById('rightPaneLabel');
+    const title = document.getElementById('gameTitle');
+    const substatus = document.getElementById('gameSubstatus');
+    const viewport = document.getElementById('gameViewport');
+    const description = document.getElementById('gameDescription');
+    const eventLog = document.getElementById('gameEventLog');
+    const runStatus = document.getElementById('gameRunStatus');
+
+    rightPane.classList.add('game-active');
+    label.textContent = GAME_CONFIG[currentGameId].title;
+    title.textContent = GAME_CONFIG[currentGameId].title;
+    description.textContent = GAME_CONFIG[currentGameId].description;
+
+    if (currentGameId === 'arena')
+    {
+        substatus.textContent = 'lvl ' + runtime.level + ' • turn ' + runtime.turn + ' • spent ' + runtime.lastSpend + ' / 5 • ' + runtime.outcome;
+        viewport.innerHTML = renderArena(runtime);
+    }
+    else
+    {
+        substatus.textContent = 'spin ' + runtime.spin + ' • balance ' + formatMoney(runtime.balance) + ' • ' + runtime.outcome;
+        viewport.innerHTML = renderRoulette(runtime);
+    }
+
+    eventLog.textContent = runtime.logs.length ? runtime.logs.slice(-8).join('\n') : 'ready.';
+    runStatus.textContent = runtime.outcome === 'ongoing'
+        ? 'waiting for next turn'
+        : runtime.outcome;
+
+    renderAchievements(currentGameId);
+    document.querySelectorAll('.game-tab').forEach(button =>
+    {
+        button.classList.toggle('active', button.dataset.game === currentGameId);
+    });
+}
+
+function setPlaygroundMode()
+{
+    currentMode = 'playground';
+    peekCppOpen = false;
+    document.getElementById('peekCppDrawer').classList.remove('open');
+    document.getElementById('rightPane').classList.remove('game-active');
+    document.getElementById('rightPaneLabel').textContent = 'C++26';
+    document.querySelector('main.playground').classList.remove('game-mode');
+    document.querySelectorAll('.game-tab').forEach(button => button.classList.remove('active'));
+    if (cppEditor) cppEditor.layout();
+}
+
+function openGameTab(gameId)
+{
+    if (!shrtEditor) return;
+
+    if (currentMode === 'game' && currentGameId)
+    {
+        gameDrafts[currentGameId] = shrtEditor.getValue();
+    }
+
+    currentMode = 'game';
+    currentGameId = gameId;
+    peekCppOpen = false;
+    document.getElementById('peekCppDrawer').classList.remove('open');
+    document.querySelector('main.playground').classList.add('game-mode');
+
+    const source = gameDrafts[gameId] || GAME_CONFIG[gameId].starter;
+    shrtEditor.setValue(source);
+    refreshPeekCpp();
+    renderGame();
+    $status.textContent = GAME_CONFIG[gameId].title.toLowerCase() + ' ready';
+}
+
+function resetCurrentGameRun()
+{
+    if (!currentGameId) return;
+
+    gameRuns[currentGameId] = currentGameId === 'arena' ? createArenaRuntime() : createRouletteRuntime();
+    renderGame();
+    $status.textContent = 'run reset';
+}
+
+function runGameTurn()
+{
+    if (!currentGameId || !shrtEditor) return;
+
+    const source = shrtEditor.getValue();
+    const check = ensureValidShrtSource(source);
+    if (!check.ok)
+    {
+        document.getElementById('gameRunStatus').textContent = 'identifier error';
+        return;
+    }
+    gameDrafts[currentGameId] = source;
+
+    let tickFn = null;
+    try
+    {
+        tickFn = compileSandboxPlan(currentGameId, source);
+        refreshPeekCpp();
+    }
+    catch (err)
+    {
+        const runtime = ensureGameRuntime(currentGameId);
+        addRuntimeLog(runtime, err.message);
+        renderGame();
+        document.getElementById('gameRunStatus').textContent = 'sandbox error';
+        $status.textContent = 'sandbox error';
+        return;
+    }
+
+    const runtime = ensureGameRuntime(currentGameId);
+    try
+    {
+        if (currentGameId === 'arena') stepArenaRuntime(runtime, tickFn);
+        else stepRouletteRuntime(runtime, tickFn);
+        unlockAchievementsFor(currentGameId, runtime);
+        renderGame();
+        $status.textContent = 'turn advanced';
+    }
+    catch (err)
+    {
+        addRuntimeLog(runtime, 'runtime error: ' + err.message);
+        renderGame();
+        document.getElementById('gameRunStatus').textContent = 'runtime error';
+        $status.textContent = 'runtime error';
+    }
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    Monaco setup + custom SHRT language
    ═══════════════════════════════════════════════════════════════════ */
@@ -921,6 +4252,7 @@ require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0
 
 let shrtEditor = null;
 let cppEditor  = null;
+let syncingEditors = false;
 
 require(['vs/editor/editor.main'], function ()
 {
@@ -1197,11 +4529,52 @@ require(['vs/editor/editor.main'], function ()
         language: 'shrt-cpp'
     }));
 
+    function syncEditorScroll(sourceEditor, targetEditor)
+    {
+        if (syncingEditors || !sourceEditor || !targetEditor) return;
+
+        syncingEditors = true;
+        targetEditor.setScrollTop(sourceEditor.getScrollTop());
+        targetEditor.setScrollLeft(sourceEditor.getScrollLeft());
+        syncingEditors = false;
+    }
+
+    shrtEditor.onDidScrollChange(() =>
+    {
+        syncEditorScroll(shrtEditor, cppEditor);
+    });
+
+    cppEditor.onDidScrollChange(() =>
+    {
+        syncEditorScroll(cppEditor, shrtEditor);
+    });
+
+    shrtEditor.onDidChangeModelContent(() =>
+    {
+        if (currentMode === 'game' && currentGameId)
+        {
+            gameDrafts[currentGameId] = shrtEditor.getValue();
+        }
+
+        updateShrtIdentifierMarkers(shrtEditor.getValue());
+
+        if (peekCppOpen)
+        {
+            refreshPeekCpp();
+        }
+    });
+
     // land the cursor inside the empty main body
     shrtEditor.setPosition({ lineNumber: 3, column: 5 });
     shrtEditor.focus();
 
+    unlockedAchievements.arena = loadUnlockedAchievements('arena');
+    unlockedAchievements.roulette = loadUnlockedAchievements('roulette');
+
+    updateShrtIdentifierMarkers(shrtEditor.getValue());
+
     document.getElementById('statusLine').textContent = 'ready';
+    openGameTab('arena');
 });
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1215,13 +4588,17 @@ const $run    = document.getElementById('runBtn');
 document.getElementById('toCpp').addEventListener('click', () =>
 {
     if (!shrtEditor || !cppEditor) return;
-    cppEditor.setValue(shrtToCpp(shrtEditor.getValue()));
+    const check = ensureValidShrtSource(shrtEditor.getValue());
+    if (!check.ok) return;
+    setPlaygroundMode();
+    cppEditor.setValue(check.cpp);
     $status.textContent = 'converted → C++';
 });
 
 document.getElementById('toShrt').addEventListener('click', () =>
 {
     if (!shrtEditor || !cppEditor) return;
+    setPlaygroundMode();
     shrtEditor.setValue(cppToShrt(cppEditor.getValue()));
     $status.textContent = 'converted → SHRT';
 });
@@ -1229,38 +4606,88 @@ document.getElementById('toShrt').addEventListener('click', () =>
 document.getElementById('resetBtn').addEventListener('click', () =>
 {
     if (!shrtEditor || !cppEditor) return;
+    setPlaygroundMode();
     shrtEditor.setValue(EMPTY_SHRT);
     cppEditor.setValue(shrtToCpp(EMPTY_SHRT));
     shrtEditor.setPosition({ lineNumber: 3, column: 5 });
     shrtEditor.focus();
-    $status.textContent = 'reset';
+    $status.textContent = 'empty main() loaded';
 });
 
 document.getElementById('exampleBtn').addEventListener('click', () =>
 {
     if (!shrtEditor || !cppEditor) return;
-    shrtEditor.setValue(SAMPLE_SHRT);
-    cppEditor.setValue(shrtToCpp(SAMPLE_SHRT));
-    $status.textContent = 'example loaded';
+    setPlaygroundMode();
+    shrtEditor.setValue(PYTHONY_ENUM_SHRT);
+    cppEditor.setValue(shrtToCpp(PYTHONY_ENUM_SHRT));
+    $status.textContent = 'enum example loaded';
 });
 
 document.getElementById('llBtn').addEventListener('click', () =>
 {
     if (!shrtEditor || !cppEditor) return;
+    setPlaygroundMode();
     shrtEditor.setValue(LL_SHRT);
     cppEditor.setValue(shrtToCpp(LL_SHRT));
     $status.textContent = 'reverse-LL loaded';
+});
+
+document.getElementById('fizzbuzzBtn').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    setPlaygroundMode();
+    shrtEditor.setValue(FIZZBUZZ_SHRT);
+    cppEditor.setValue(shrtToCpp(FIZZBUZZ_SHRT));
+    $status.textContent = 'FizzBuzz loaded (enum + which + =>)';
+});
+
+document.querySelectorAll('.game-tab').forEach(button =>
+{
+    button.addEventListener('click', () => openGameTab(button.dataset.game));
+});
+
+// the only Run Turn / Reset Run buttons — sit in the run-area row,
+// visible only when game-mode is active
+document.getElementById('gameRunBtn').addEventListener('click', () =>
+{
+    runGameTurn();
+});
+
+document.getElementById('gameResetBtn').addEventListener('click', () =>
+{
+    resetCurrentGameRun();
+});
+
+document.getElementById('peekCppBtn').addEventListener('click', () =>
+{
+    peekCppOpen = !peekCppOpen;
+    document.getElementById('peekCppDrawer').classList.toggle('open', peekCppOpen);
+    if (peekCppOpen)
+    {
+        refreshPeekCpp();
+        $status.textContent = 'peeking at transpiled C++';
+    }
 });
 
 $run.addEventListener('click', async () =>
 {
     if (!cppEditor) return;
 
-    let code = cppEditor.getValue();
-    if (!code.trim() && shrtEditor)
+    let code = '';
+    if (shrtEditor)
     {
-        code = shrtToCpp(shrtEditor.getValue());
-        cppEditor.setValue(code);
+        const source = shrtEditor.getValue();
+        const visibleCheck = ensureValidShrtSource(source);
+        if (!visibleCheck.ok) return;
+        const compileSource = currentMode === 'game' && currentGameId
+            ? buildGameCompileSource(currentGameId, source)
+            : source;
+        code = shrtToCpp(compileSource);
+        cppEditor.setValue(visibleCheck.cpp);
+    }
+    else
+    {
+        code = cppEditor.getValue();
     }
 
     if (!code.trim()) { $out.textContent = 'both panes empty.'; return; }
@@ -1271,7 +4698,7 @@ $run.addEventListener('click', async () =>
     $out.textContent = '';
 
     const result = await runCpp(code);
-    $out.textContent = result.output;
+    $out.innerHTML = renderConsoleOutput(result.output);
     $status.textContent = result.ok ? 'done' : 'failed';
 
     $run.disabled = false;
