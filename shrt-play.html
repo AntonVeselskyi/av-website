@@ -232,9 +232,53 @@
     flex-shrink: 0;
   }
 
+  main.playground.game-mode .run-area
+  {
+    margin: 0.75rem 0 0.35rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid rgba(201, 169, 110, 0.28);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255, 215, 119, 0.08), transparent 55%),
+      linear-gradient(180deg, rgba(14, 11, 9, 0.96), rgba(4, 4, 4, 0.97));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 228, 170, 0.06);
+  }
+
   .run-area .run-actions { grid-column: 1; justify-self: start; display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .run-area .run-btn     { grid-column: 2; justify-self: center; }
+  .run-area .run-buttons
+  {
+    grid-column: 2;
+    justify-self: center;
+    display: flex;
+    gap: 0.55rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
   .run-area .status-line { grid-column: 3; justify-self: end; }
+
+  main.playground.game-mode .run-area .run-buttons
+  {
+    min-width: 320px;
+  }
+
+  main.playground.game-mode .run-area .run-btn
+  {
+    min-width: 180px;
+  }
+
+  main.playground.game-mode .run-area .run-actions,
+  main.playground.game-mode .game-tabs
+  {
+    overflow-x: auto;
+    scrollbar-color: rgba(240, 200, 120, 0.42) rgba(0, 0, 0, 0.18);
+  }
+
+  main.playground.game-mode .run-area .action-btn,
+  main.playground.game-mode .game-tab
+  {
+    flex: 0 0 auto;
+  }
 
   .action-btn
   {
@@ -596,6 +640,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 0.6rem;
     padding: 0.5rem 0.8rem;
     border: 1px solid rgba(201, 169, 110, 0.18);
@@ -616,7 +661,8 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     color: #ddd2c0;
-    letter-spacing: 0.06em;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
   }
 
   /* ── ARENA: hero portrait cards ── */
@@ -1047,32 +1093,123 @@
     color: var(--ink-dim);
   }
 
-  /* ── ROULETTE OVERHAUL: clean stage ── */
+  /* ── ROULETTE OVERHAUL: clean stage ──
+     Uses CSS container queries so the layout reacts to its own pane width
+     (not the browser viewport). The right pane often gets squeezed even on
+     wide monitors when SHRT editor is shown side-by-side. */
   .roulette-stage
   {
-    flex: 1;
-    min-height: 0;
+    flex: 0 0 auto;
+    min-height: max-content;
+    container-type: inline-size;
+    container-name: roulette;
   }
 
   .roulette-board
   {
     display: grid;
-    grid-template-columns: minmax(0, 2.2fr) minmax(260px, 0.95fr);
+    grid-template-columns: minmax(0, 2.2fr) minmax(220px, 0.9fr);
     gap: 0.7rem;
     align-items: stretch;
-    flex: 1;
-    min-height: 0;
-    height: 100%;
+    min-height: max-content;
+    height: auto;
   }
 
+  main.playground.game-mode.game-roulette .game-body
+  {
+    display: block;
+    overflow: auto;
+  }
+
+  main.playground.game-mode.game-roulette
+  {
+    flex: 1;
+    min-height: 0;
+  }
+
+  main.playground.game-mode.game-roulette .panes
+  {
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  main.playground.game-mode.game-roulette .right-pane,
+  main.playground.game-mode.game-roulette .game-panel
+  {
+    min-height: 0;
+  }
+
+  main.playground.game-mode.game-roulette .game-main
+  {
+    display: block;
+    border-right: none;
+    border-bottom: 1px solid rgba(201, 169, 110, 0.18);
+  }
+
+  main.playground.game-mode.game-roulette .game-viewport
+  {
+    min-height: max-content;
+    overflow: visible;
+  }
+
+  main.playground.game-mode.game-roulette .game-info
+  {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 0.75rem;
+    max-height: 220px;
+    overflow: auto;
+    border-left: none;
+  }
+
+  @container roulette (max-width: 980px)
+  {
+    .roulette-board { grid-template-columns: 1fr; }
+  }
+
+  /* container-query breakpoints — ROULETTE STAGE width, not viewport */
+  @container roulette (max-width: 880px)
+  {
+    .roulette-board { grid-template-columns: 1fr; }
+  }
+
+  @container roulette (max-width: 700px)
+  {
+    .roulette-table     { overflow-x: auto; }
+    .rcell             { font-size: 17px; min-height: 50px; }
+    .rcell.green       { font-size: 28px; }
+    .roulette-table-grid { grid-template-columns: 56px repeat(12, 36px) 56px; gap: 0.3rem; min-width: max-content; }
+    .roulette-outside  { min-width: max-content; grid-auto-columns: minmax(72px, 1fr); }
+    .rcell-col         { font-size: 10px; padding: 0 0.2rem; }
+    .rcell-outside     { font-size: 11px; min-height: 40px; letter-spacing: 0.1em; }
+    .roulette-outside  { gap: 0.3rem; }
+    .rchip             { min-width: 24px; height: 20px; font-size: 9px; padding: 0 0.32rem; }
+  }
+
+  @container roulette (max-width: 520px)
+  {
+    .roulette-table     { padding: 0.55rem; overflow-x: auto; }
+    .rcell             { font-size: 13px; min-height: 38px; }
+    .rcell.green       { font-size: 20px; }
+    .roulette-table-grid { grid-template-columns: 40px repeat(12, 30px) 40px; gap: 0.18rem; min-width: max-content; }
+    .roulette-outside  { min-width: max-content; grid-auto-columns: minmax(56px, 1fr); }
+    .rcell-col         { font-size: 8.5px; padding: 0 0.12rem; line-height: 1.1; }
+    .rcell-outside     { font-size: 9.5px; min-height: 32px; letter-spacing: 0.06em; }
+    .rchip             { min-width: 18px; height: 16px; font-size: 8px; padding: 0 0.2rem; top: 0.1rem; right: 0.1rem; }
+  }
+
+  /* legacy viewport-based fallback for browsers without container queries */
   @media (max-width: 1280px) { .roulette-board { grid-template-columns: 1fr; } }
 
   /* responsive roulette grid — numbers don't overlap on narrow viewports */
   @media (max-width: 1000px)
   {
+    .roulette-table     { overflow-x: auto; }
     .rcell             { font-size: 17px; min-height: 50px; }
     .rcell.green       { font-size: 30px; }
-    .roulette-table-grid { grid-template-columns: 58px repeat(12, minmax(0, 1fr)) 58px; gap: 0.3rem; }
+    .roulette-table-grid { grid-template-columns: 58px repeat(12, 38px) 58px; gap: 0.3rem; min-width: max-content; }
+    .roulette-outside  { min-width: max-content; grid-auto-columns: minmax(72px, 1fr); }
     .rcell-col         { font-size: 10px; padding: 0 0.2rem; }
     .rcell-outside     { font-size: 11px; min-height: 40px; letter-spacing: 0.1em; }
     .roulette-outside  { gap: 0.3rem; }
@@ -1081,13 +1218,69 @@
 
   @media (max-width: 720px)
   {
+    .roulette-table     { padding: 0.6rem; overflow-x: auto; }
     .rcell             { font-size: 13px; min-height: 38px; }
     .rcell.green       { font-size: 20px; }
-    .roulette-table-grid { grid-template-columns: 42px repeat(12, minmax(0, 1fr)) 42px; gap: 0.2rem; }
+    .roulette-table-grid { grid-template-columns: 42px repeat(12, 31px) 42px; gap: 0.2rem; min-width: max-content; }
+    .roulette-outside  { min-width: max-content; grid-auto-columns: minmax(58px, 1fr); }
     .rcell-col         { font-size: 8.5px; padding: 0 0.15rem; line-height: 1.1; }
     .rcell-outside     { font-size: 9.5px; min-height: 32px; letter-spacing: 0.06em; }
     .roulette-outside  { gap: 0.2rem; }
     .rchip             { min-width: 20px; height: 18px; font-size: 8.5px; padding: 0 0.25rem; top: 0.1rem; right: 0.1rem; }
+  }
+
+  /* very narrow: don't squish the grid past readable — force a min-width and
+     let the viewport scroll horizontally instead. */
+  @media (max-width: 540px)
+  {
+    .roulette-table-grid { min-width: max-content; }
+    .roulette-outside    { min-width: max-content; }
+    .roulette-table      { overflow-x: auto; }
+  }
+
+  /* ROULETTE — stack vertically (panel ON TOP of monaco) until the screen
+     is wide enough that side-by-side gives the 12-column table real room.
+     Threshold: 1700px viewport ≈ 850px right pane in a 50/50 split, which
+     comfortably fits the 14-column grid + side panel + outside rows. */
+  @media (max-width: 1700px)
+  {
+    main.playground.game-mode.game-roulette .panes
+    {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(520px, 1fr) auto minmax(300px, 0.72fr);
+      gap: 0.4rem;
+      overflow: auto;
+    }
+    main.playground.game-mode.game-roulette .panes .pane.right-pane { order: -1; }
+    main.playground.game-mode.game-roulette .middle-controls
+    {
+      flex-direction: row;
+      justify-content: center;
+      padding: 0.25rem 0;
+      order: 0;
+    }
+  }
+
+  /* Arena stays side-by-side until really tight; below 700px we still have
+     to stack or the action deck won't fit. */
+  @media (max-width: 700px)
+  {
+    main.playground.game-mode.game-roulette .panes { grid-template-rows: minmax(500px, 1fr) auto minmax(280px, 0.65fr); }
+    main.playground.game-mode.game-roulette .game-info { grid-template-columns: 1fr; max-height: 320px; }
+
+    main.playground.game-mode.game-arena .panes
+    {
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+    }
+    main.playground.game-mode.game-arena .panes .pane.right-pane { order: -1; }
+    main.playground.game-mode.game-arena .middle-controls
+    {
+      flex-direction: row;
+      justify-content: center;
+      padding: 0.25rem 0;
+      order: 0;
+    }
   }
 
   .roulette-table
@@ -1100,7 +1293,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
-    min-height: 0;
+    min-height: 100%;
+    min-width: 0;
+    justify-content: center;
+    align-self: stretch;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-color: rgba(240, 200, 120, 0.42) rgba(0, 0, 0, 0.18);
   }
 
   .roulette-table-grid
@@ -1108,8 +1307,10 @@
     display: grid;
     grid-template-columns: 76px repeat(12, minmax(0, 1fr)) 76px;
     gap: 0.4rem;
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 0 0 auto;
+    grid-auto-rows: minmax(58px, auto);
+    min-height: max-content;
+    min-width: 0;
   }
 
   .rcell-col
@@ -1163,10 +1364,12 @@
   .rcell.black { background: linear-gradient(180deg, rgba(52, 52, 57, 0.96), rgba(15, 15, 18, 0.98)); }
   .rcell.green
   {
+    grid-column: 1;
     grid-row: 1 / span 3;
     background: linear-gradient(180deg, rgba(49, 122, 92, 0.96), rgba(17, 71, 52, 0.98));
-    min-height: 100%;
     font-size: 36px;
+    /* no min-height: 100% — that creates a layout cycle with auto rows
+       and collapses the grid so outside rows overlap visually */
   }
 
   .rcell.active
@@ -1214,6 +1417,7 @@
     grid-template-columns: repeat(6, 1fr);
     gap: 0.4rem;
     flex-shrink: 0;
+    min-width: 0;
   }
 
   .rcell-outside
@@ -1229,6 +1433,9 @@
     color: #f0c878;
     text-transform: uppercase;
     position: relative;
+    text-align: center;
+    line-height: 1.15;
+    overflow: hidden;
   }
 
   .rcell-outside.red   { background: linear-gradient(180deg, rgba(150, 50, 44, 0.9), rgba(77, 19, 18, 0.98)); color: #ffc8b8; }
@@ -1283,11 +1490,13 @@
   {
     margin-top: 0.4rem;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
+    gap: 0.25rem 0.6rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10.5px;
     color: var(--ink-dim);
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
   }
 
   .balance-sub .net-pos { color: #8fd2a7; }
@@ -1299,6 +1508,7 @@
     border: 1px solid rgba(201, 169, 110, 0.25);
     background: rgba(14, 10, 8, 0.85);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.85rem;
   }
@@ -1374,7 +1584,8 @@
 
   .wheel-readout
   {
-    flex: 1;
+    flex: 1 1 110px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -1623,6 +1834,16 @@
     flex-shrink: 0;
   }
 
+  main.playground.game-mode .game-tabs
+  {
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid rgba(201, 169, 110, 0.24);
+    background:
+      linear-gradient(90deg, rgba(10, 8, 7, 0.98), rgba(16, 12, 10, 0.96));
+    box-shadow: inset 0 1px 0 rgba(255, 228, 170, 0.04);
+  }
+
   .game-tab
   {
     font-family: 'Cinzel Decorative', serif;
@@ -1700,6 +1921,38 @@
   {
     html, body { height: auto; overflow: auto; }
     main.playground { flex: none; }
+    main.playground.game-mode .run-area
+    {
+      grid-template-columns: 1fr;
+      gap: 0.45rem;
+      align-items: stretch;
+      max-height: 34vh;
+      overflow: auto;
+    }
+    main.playground.game-mode .run-area .run-actions,
+    main.playground.game-mode .run-area .run-buttons,
+    main.playground.game-mode .run-area .status-line
+    {
+      grid-column: 1;
+      justify-self: stretch;
+    }
+    main.playground.game-mode .run-area .run-actions
+    {
+      flex-wrap: nowrap;
+      padding-bottom: 0.15rem;
+    }
+    main.playground.game-mode .run-area .run-buttons
+    {
+      min-width: 0;
+      justify-content: center;
+    }
+    main.playground.game-mode .run-area .status-line
+    {
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .panes { grid-template-columns: 1fr; gap: 0.4rem; flex: none; }
     .middle-controls { flex-direction: row; padding-top: 0.3rem; padding-bottom: 0.3rem; }
     .convert-btn { width: 44px; height: 44px; font-size: 17px; }
@@ -1790,14 +2043,17 @@
 
   <div class="run-area">
     <div class="run-actions">
-      <button id="resetBtn"    class="action-btn" title="Load empty main()">empty main()</button>
-      <button id="exampleBtn"  class="action-btn" title="Load enum + pythony SHRT example">Load example</button>
-      <button id="llBtn"       class="action-btn" title="Reverse linked-list demo">Reverse LL</button>
-      <button id="fizzbuzzBtn" class="action-btn" title="Python-style FizzBuzz: enum + which + =>">FizzBuzz</button>
+      <button id="resetBtn"     class="action-btn" title="Load empty main()">empty main()</button>
+      <button id="grandTourBtn" class="action-btn" title="Every SHRT feature in one short program">⚔ Grand Tour</button>
+      <button id="exampleBtn"   class="action-btn" title="Load enum + pythony SHRT example">Load example</button>
+      <button id="llBtn"        class="action-btn" title="Reverse linked-list demo">Reverse LL</button>
+      <button id="fizzbuzzBtn"  class="action-btn" title="Python-style FizzBuzz: enum + which + =>">FizzBuzz</button>
     </div>
-    <button id="runBtn" class="run-btn">▶ Compile &amp; Run (C++26)</button>
-    <button id="gameRunBtn" class="run-btn game-only" title="Advance one turn">▶ Run Turn</button>
-    <button id="gameResetBtn" class="run-btn game-only secondary" title="Reset the current run">↻ Reset Run</button>
+    <div class="run-buttons">
+      <button id="runBtn" class="run-btn">▶ Compile &amp; Run (C++26)</button>
+      <button id="gameRunBtn" class="run-btn game-only" title="Advance one turn">▶ Run Turn</button>
+      <button id="gameResetBtn" class="run-btn game-only secondary" title="Reset the current run">↻ Reset Run</button>
+    </div>
     <span class="status-line" id="statusLine">idle</span>
   </div>
 
@@ -2031,6 +2287,172 @@ const EMPTY_SHRT = [
 //
 //     for i in range(1, 16):
 //         print(f"{i} → {describe(i)}")
+// THE GRAND TOUR — every marquee SHRT feature in one short program.
+// A wizard duel: enum dispatch, expression-body accessors, ?. pointer
+// chain, ?? guards, ??= lazy init, $"…" interpolation, defer cleanup,
+// standalone => lambda, p print, $ for std::, optional-paren if/w.
+const GRAND_TOUR_SHRT = [
+'i iostream',
+'i string',
+'i format',
+'i vector',
+'i algorithm',
+'',
+'// ════════════════════════════════════════════════════════════',
+'//   THE GRAND TOUR — every SHRT strength in one short program.',
+'//   Every keyword, every operator, every sigil — laid out in a',
+'//   tiny wizard duel. Read top to bottom.',
+'// ════════════════════════════════════════════════════════════',
+'',
+'e SpellKind { Bolt, Shield, Heal, Curse };',
+'',
+'s Spell',
+'{',
+'    $string   name;',
+'    SpellKind kind;',
+'    int       cost;',
+'    int       power;',
+'};',
+'',
+'c Wizard',
+'{',
+'pri:',
+'    $string title;',
+'    int     vit;',
+'    int     mp;',
+'    int     casts;',
+'',
+'pub:',
+'    Spell*  prepared;   // optional pointer — works with ?.',
+'    Wizard* rival;      // optional pointer — works with ?.',
+'',
+'    Wizard($string nm, int initial_hp)',
+'        : title(nm), vit(initial_hp), mp(20), casts(0),',
+'          prepared(nil), rival(nil) {}',
+'',
+'    // expression-body accessors — one-liners with =>',
+'    k $string& name()        k => title;',
+'    int  hp()                k => vit;',
+'    int  mana()              k => mp;',
+'    int  spells_cast()       k => casts;',
+'    bool alive()             k => vit > 0;',
+'    bool can_cast(int amt)   k => mp >= amt && alive();',
+'',
+'    void take(int dmg) { vit = $max(0, vit - dmg); }',
+'    void mend(int amt) { vit += amt; }',
+'',
+'    void cast(k Spell& sp)',
+'    {',
+'        // statement-form ?? — bail out if we can\'t afford it',
+'        can_cast(sp.cost) ?? r;',
+'        mp    -= sp.cost;',
+'        casts += 1;',
+'',
+'        // which/case dispatch — no `case` keyword needed',
+'        which sp.kind',
+'        {',
+'            SpellKind::Bolt:',
+'                if rival',
+'                {',
+'                    rival->take(sp.power);',
+'                    p $"{title} → {rival->name()} for {sp.power}";',
+'                }',
+'                el { p $"{title} bolts the air"; }',
+'                b;',
+'',
+'            SpellKind::Shield:',
+'                p $"{title} braces with {sp.name}";',
+'                b;',
+'',
+'            SpellKind::Heal:',
+'                mend(sp.power);',
+'                p $"{title} mends (+{sp.power})";',
+'                b;',
+'',
+'            SpellKind::Curse:',
+'                a target = rival ? rival->name() : $string("the void");',
+'                p $"{title} hexes {target}";',
+'                b;',
+'        }',
+'    }',
+'};',
+'',
+'// free function used with the ?? expression-form below',
+'Spell* find_kind(k $vector<Spell>& book, SpellKind want)',
+'{',
+'    f (k Spell& sp : book)',
+'    {',
+'        if sp.kind == want { r (Spell*)&sp; }',
+'    }',
+'    r nil;',
+'}',
+'',
+'int main()',
+'{',
+'    // RAII cleanup with defer — deterministic in the remote runner',
+'    int* cleanup_token = new int(7);',
+'    defer delete cleanup_token;',
+'',
+'    // spellbook — struct list-init',
+'    $vector<Spell> book =',
+'    {',
+'        {"Fireball", SpellKind::Bolt,   5, 8},',
+'        {"Aegis",    SpellKind::Shield, 4, 0},',
+'        {"Mend",     SpellKind::Heal,   3, 6},',
+'        {"Hex",      SpellKind::Curse,  2, 0}',
+'    };',
+'',
+'    Wizard merlin ("Merlin",  25);',
+'    Wizard morgana("Morgana", 25);',
+'    merlin.rival  = &morgana;',
+'    morgana.rival = &merlin;',
+'',
+'    // ??= lazy init — only assigns when the lhs is null',
+'    Spell* opener = nil;',
+'    opener ??= find_kind(book, SpellKind::Bolt);',
+'    merlin.prepared  = opener;',
+'    morgana.prepared = find_kind(book, SpellKind::Curse);',
+'',
+'    // ?. pointer chain — both rival and prepared are pointer fields',
+'    Spell* opp_spell = merlin.rival?.prepared;',
+'    if opp_spell { p $"opponent prepared: {opp_spell->name}"; }',
+'    el           { p "opponent prepared: nothing"; }',
+'',
+'    // ?? expression-form fallback — find_kind returns Spell*, fallback Spell*',
+'    Spell* heal = find_kind(book, SpellKind::Heal) ?? &book[0];',
+'    p $"heal spell: {heal->name} ({heal->cost} mana)";',
+'',
+'    // standalone => lambda — captures by & by default, no params',
+'    a count_strong = =>',
+'    {',
+'        int total = 0;',
+'        f (k Spell& sp : book)',
+'        {',
+'            if sp.power > 5 { total += 1; }',
+'        }',
+'        r total;',
+'    };',
+'    p $"spells with power > 5: {count_strong()}";',
+'',
+'    // play a sequence — each cast dispatches via which/case',
+'    merlin.cast(book[0]);   // bolt',
+'    merlin.cast(book[2]);   // mend',
+'    merlin.cast(book[3]);   // hex',
+'    merlin.cast(book[1]);   // aegis',
+'',
+'    // optional-paren w loop',
+'    int echoes = 0;',
+'    w echoes < 2',
+'    {',
+'        p $"echo #{echoes}";',
+'        echoes += 1;',
+'    }',
+'',
+'    p $"{merlin.name()} cast {merlin.spells_cast()} spells — hp {merlin.hp()}, mana {merlin.mana()}";',
+'    r 0;',
+'}'
+].join('\n');
+
 const FIZZBUZZ_SHRT = [
 'i iostream',
 'i string',
@@ -2214,36 +2636,21 @@ const ARENA_GAME_SHRT = [
 '{',
 '    $vector<Action> plan;',
 '',
-'    // emergency heal — low HP and heal is ready',
-'    if state.player_hp <= 12 && !state.on_cooldown(ActionKind::Heal)',
-'    {',
-'        plan.push_back(state.heal());',
-'    }',
-'',
-'    // stun the most dangerous charging enemy',
-'    a danger = state.most_dangerous();',
-'    if danger >= 0 && state.enemies[danger].charging && !state.on_cooldown(ActionKind::Stun)',
-'    {',
-'        plan.push_back(state.stun(danger));',
-'    }',
-'',
-'    // big damage on the weakest — heavy off cd, else attack (spammable)',
-'    a target = state.weakest_enemy();',
-'    if target >= 0 && !state.on_cooldown(ActionKind::Heavy)',
-'    {',
-'        plan.push_back(state.heavy(target));',
-'    }',
-'    el if target >= 0',
+'    // starter plan: simple and readable, not optimal',
+'    a target = state.first_alive();',
+'    if target >= 0',
 '    {',
 '        plan.push_back(state.attack(target));',
 '    }',
 '',
-'    // brace if a charge is incoming and defend is up',
-'    a danger2 = state.most_dangerous();',
-'    if danger2 >= 0 && state.enemies[danger2].charging && !state.on_cooldown(ActionKind::Defend)',
+'    // cautious, but it ignores enemy charge timing',
+'    if state.player_hp <= 18 && !state.on_cooldown(ActionKind::Defend)',
 '    {',
 '        plan.push_back(state.defend());',
 '    }',
+'',
+'    // leaves energy unused so you can improve it',
+'    // try adding heavy(), stun(), heal(), or sweep() here',
 '',
 '    r plan;',
 '}'
@@ -2296,8 +2703,11 @@ const ROULETTE_GAME_SHRT = [
 '    // ── read-only snapshot (k = const) — runtime copies these in,',
 '    //    your plan_bets cannot mutate them, return Bets to act ──',
 '    k int spin;',
-'    k int balance;',
-'    k int max_bet;                // hard cap per single bet',
+'    k int balance;                // start = $50, busts at $0',
+'    k int max_bet;                // = max(min_outside_bet, balance / 4)',
+'    k int min_outside_bet;        // 50/50 bets (red/black/even/odd/low/high) min stake',
+'    k int min_third_bet;          // 1/3 bets (column/dozen) min stake',
+'    k int min_total_bet;          // table minimum total wager per spin',
 '    k int last_number;',
 '    k bool last_red;              // true if last_number was red',
 '    k $vector<int> recent_numbers;// last 6 spins, newest first',
@@ -2323,36 +2733,34 @@ const ROULETTE_GAME_SHRT = [
 '};',
 '',
 '// ── Pre-code your bets each spin ──',
-'//   Return up to 3 bets, total amount ≤ balance.',
+'//   Return up to 3 bets, total ≤ balance, total ≥ min_total_bet ($5).',
 '//   Same bet kind/value cannot repeat within one spin.',
+'//   50/50 bets need ≥ min_outside_bet ($10), 1/3 bets ≥ min_third_bet ($10).',
+'//   max_bet caps any single wager (= balance / 4, never below $10).',
 '$vector<Bet> plan_bets(RouletteState& state)',
 '{',
 '    $vector<Bet> bets;',
 '',
-'    // martingale-ish: chase opposite of last color',
+'    // martingale-ish on outside — bet the table minimum for 50/50 ($10)',
 '    if state.last_red',
 '    {',
-'        bets.push_back(state.bet_black(2));',
+'        bets.push_back(state.bet_black(state.min_outside_bet));',
 '    }',
 '    el',
 '    {',
-'        bets.push_back(state.bet_red(2));',
+'        bets.push_back(state.bet_red(state.min_outside_bet));',
 '    }',
 '',
-'    // sprinkle a number when feeling lucky',
-'    if state.balance > 24',
+'    // sprinkle a number when feeling lucky (singles have no per-bet min)',
+'    if state.balance > 30',
 '    {',
 '        bets.push_back(state.bet_number(17, 1));',
 '    }',
 '',
-'    // hedge with a dozen or a column when flush',
-'    if state.balance > 30',
+'    // hedge with a column when flush (1/3 bets need ≥ min_third_bet)',
+'    if state.balance > 60',
 '    {',
-'        bets.push_back(state.bet_dozen(2, 1));',
-'    }',
-'    el if state.balance > 22',
-'    {',
-'        bets.push_back(state.bet_column(1, 1));',
+'        bets.push_back(state.bet_column(1, state.min_third_bet));',
 '    }',
 '',
 '    // try a fancy bet sometimes for the achievements',
@@ -2515,17 +2923,21 @@ function shrtToCpp(src)
     s = s.replace(shrtChainCore, chain => makeNullSafeChain(chain, null));
 
     // ?? statement guards
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*r\s*;/g, 'if (!($1)) return;');
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*r\s+([^;]+);/g, 'if (!($1)) return $2;');
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*b\s*;/g, 'if (!($1)) break;');
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*cont\s*;/g, 'if (!($1)) continue;');
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*([a-zA-Z_]\w*\s*\([^)]*\))\s*;/g, 'if (!($1)) $2;');
+    // lhs allows: ident chain (foo, foo.bar, foo->bar) optionally followed by
+    // a function-call paren tail (one level of nested parens allowed inside).
+    // Examples that work: `log`, `obj.field`, `foo()`, `find_kind(book, k)`.
+    const ELVIS_LHS = '([\\w\\.\\->]+(?:\\([^()]*(?:\\([^()]*\\)[^()]*)*\\))?)';
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?\\s*r\\s*;', 'g'), 'if (!($1)) return;');
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?\\s*r\\s+([^;]+);', 'g'), 'if (!($1)) return $2;');
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?\\s*b\\s*;', 'g'), 'if (!($1)) break;');
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?\\s*cont\\s*;', 'g'), 'if (!($1)) continue;');
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?\\s*([a-zA-Z_]\\w*\\s*\\([^)]*\\))\\s*;', 'g'), 'if (!($1)) $2;');
 
     // ??=
-    s = s.replace(/([\w\.\->]+)\s*\?\?=\s*([^;]+);/g, '$1 = ($1) ? ($1) : ($2);');
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?=\\s*([^;]+);', 'g'), '$1 = ($1) ? ($1) : ($2);');
 
     // ?? expression
-    s = s.replace(/([\w\.\->]+)\s*\?\?\s*([^;,\?\)\]\}\n][^;,)\]\}\n]*)/g, '(($1) ? ($1) : ($2))');
+    s = s.replace(new RegExp(ELVIS_LHS + '\\s*\\?\\?\\s*([^;,\\?\\n][^;,\\n]*)', 'g'), '(($1) ? ($1) : ($2))');
 
     // lambda expression body: `a fn = [&](...) => expr;`
     s = s.replace(/(\[[^\]]*\]\s*\([^)]*\))\s*=>\s*([^;{]+);/g, '$1\n{\n    return $2;\n};');
@@ -2545,20 +2957,56 @@ function shrtToCpp(src)
     s = s.replace(/=>\s*([^;{}\n,)]+)/g, '[&]()\n{\n    return $1;\n}');
 
     // which → switch with implicit case
-    // Capture the leading indentation so the emitted `{` / `}` align with `switch`
-    // (Allman) instead of being slammed to column 0.
-    s = s.replace(/^([ \t]*)which\b\s*\(?\s*([^){\n]+?)\)?\s*\{([\s\S]*?)\n[ \t]*\}/gm,
-        function (m, indent, expr, body)
+    // Regex can't match balanced braces, so walk the source: find each
+    // `which expr {` and count braces forward to the matching `}`. This
+    // correctly handles nested `if {…}` blocks inside case bodies.
+    {
+        const whichRe = /^([ \t]*)which\b\s+([^{\n]+?)\s*\{/gm;
+        let result = '';
+        let lastIdx = 0;
+        let m;
+        while ((m = whichRe.exec(s)) !== null)
         {
-            const newBody = body.replace(
-                /(\n[ \t]*)((?:default)|(?:[a-zA-Z_][\w:]*)|(?:-?\d+(?:\.\d+)?))\s*:/g,
-                function (mm, ws, lbl)
+            const indent = m[1];
+            const expr = m[2];
+            const bodyStart = m.index + m[0].length;
+            // walk forward counting braces to find the matching `}`
+            let depth = 1;
+            let j = bodyStart;
+            while (j < s.length && depth > 0)
+            {
+                const c = s[j];
+                if (c === '{') depth++;
+                else if (c === '}') depth--;
+                j++;
+            }
+            if (depth !== 0) continue; // unmatched — leave as-is
+            const closeIdx = j - 1;
+            const body = s.slice(bodyStart, closeIdx);
+            // Case-label rewrite. Label can be:
+            //   - "default"
+            //   - a namespaced identifier (Foo, Foo::Bar, Foo::Bar::Baz)
+            //   - a number (positive or negative)
+            // The `\s*:(?!:)` ensures the colon is a real case colon, NOT
+            // the first `:` of `::`. Without that guard, a line like
+            // `std::cout << ...;` would match label="std:" + colon, then
+            // a stray `case std::` would be inserted.
+            const labelRe = /(\n[ \t]*)((?:default)|(?:[a-zA-Z_]\w*(?:::[a-zA-Z_]\w*)*)|(?:-?\d+(?:\.\d+)?))\s*:(?!:)/g;
+            const newBody = body.replace(labelRe, function (mm, ws, lbl)
                 {
                     if (lbl === 'default') return ws + 'default:';
                     return ws + 'case ' + lbl + ':';
                 });
-            return indent + 'switch (' + expr.trim() + ')\n' + indent + '{' + newBody + '\n' + indent + '}';
-        });
+            result += s.slice(lastIdx, m.index)
+                    + indent + 'switch (' + expr.trim() + ')\n'
+                    + indent + '{' + newBody + '\n'
+                    + indent + '}';
+            lastIdx = j;
+            whichRe.lastIndex = j;
+        }
+        result += s.slice(lastIdx);
+        s = result;
+    }
 
     // optional parens
     s = s.replace(/\bif\s+(?!\()([^\n{]+?)\s*\{/g, 'if ($1) {');
@@ -2829,6 +3277,24 @@ function ensureValidShrtSource(source, options)
     return { ok: false, offenders, cpp: '' };
 }
 
+function collectCompilerText(value)
+{
+    if (!value) return '';
+    if (typeof value === 'string') return stripAnsi(value);
+    if (Array.isArray(value))
+    {
+        return stripAnsi(value.map(item =>
+        {
+            if (typeof item === 'string') return item;
+            if (item && typeof item.text === 'string') return item.text;
+            if (item && typeof item.message === 'string') return item.message;
+            return '';
+        }).filter(Boolean).join('\n'));
+    }
+    if (typeof value.text === 'string') return stripAnsi(value.text);
+    return '';
+}
+
 function formatResult(result, compilerId)
 {
     const parts = ['── compiler: ' + compilerId + ' (-std=c++26 -O2) ──'];
@@ -2845,8 +3311,8 @@ function formatResult(result, compilerId)
     const build = isExecutorMode ? result.buildResult : result;
     const exec  = isExecutorMode ? result             : result.execResult;
 
-    const buildErr = stripAnsi((build.stderr || []).map(x => x.text).join('\n'));
-    const buildOut = stripAnsi((build.stdout || []).map(x => x.text).join('\n'));
+    const buildErr = collectCompilerText(build.stderr);
+    const buildOut = collectCompilerText(build.stdout);
 
     if (build.code !== 0)
     {
@@ -2860,15 +3326,15 @@ function formatResult(result, compilerId)
 
     if (exec)
     {
-        const eOut = stripAnsi((exec.stdout || []).map(x => x.text).join('\n'));
-        const eErr = stripAnsi((exec.stderr || []).map(x => x.text).join('\n'));
+        const eOut = collectCompilerText(exec.stdout);
+        const eErr = collectCompilerText(exec.stderr);
 
-        if (exec.didExecute)
+        if (exec.didExecute || eOut || eErr || typeof exec.code !== 'undefined')
         {
             parts.push('\n── program output ──');
-            if (eOut) parts.push(eOut);
+            parts.push(eOut || '(no stdout)');
             if (eErr) parts.push('\n[stderr]\n' + eErr);
-            parts.push('\n[exit ' + exec.code + ']');
+            parts.push('\n[exit ' + (typeof exec.code !== 'undefined' ? exec.code : 0) + ']');
         }
         else { parts.push('\n(compile only — no exec)'); }
     }
@@ -2922,17 +3388,17 @@ const GAME_CONFIG = {
             { id: 'arena_lvl3',         name: 'Roshan Slayer',   description: 'Clear Lvl 3. The aegis is yours.', check: rt => rt.outcome === 'victory' },
             { id: 'arena_speedrun',     name: 'Any% Speedrun',   description: 'Clear Lvl 1 in 3 turns or fewer. WR pace.', check: rt => rt.stats.levelsCleared >= 1 && rt.stats.l1TurnsTaken > 0 && rt.stats.l1TurnsTaken <= 3 },
             { id: 'arena_methodist',    name: 'The Methodist',   description: 'Use all 6 action kinds across a single run.', check: rt => rt.stats.kindsUsed && rt.stats.kindsUsed.size >= 6 },
-            { id: 'arena_tank',         name: 'Tank Andy',       description: 'Hold 12+ block at end of any turn.', check: rt => rt.stats.maxBlockHeld >= 12 },
+            { id: 'arena_tank',         name: 'Tank Andy',       description: 'Cast Defend with 6+ block standing after your plan.', check: rt => rt.stats.maxBlockHeld >= 6 },
             { id: 'arena_pacifist',     name: 'Pacifist Run',    description: 'Clear Lvl 1 without ever casting Heavy. Soft DPS only.', check: rt => rt.stats.levelsCleared >= 1 && !rt.stats.usedHeavy },
             { id: 'arena_healslut',     name: 'Healslut',        description: 'Cast Heal 3+ times in one run. Hydration matters.', check: rt => rt.stats.healsUsed >= 3 },
             { id: 'arena_cc_master',    name: 'CC Master',       description: 'Stun 3 different enemies in one run.', check: rt => rt.stats.stunnedTargets && rt.stats.stunnedTargets.size >= 3 },
-            { id: 'arena_flawless_lvl', name: 'Flawless Lap',    description: 'Clear a level taking ZERO damage. Untouchable.', check: rt => rt.stats.levelsCleared >= 1 && rt.stats.cleanLevelWin && rt.stats.damageTaken === 0 }
+            { id: 'arena_flawless_lvl', name: 'Flawless Lap',    description: 'Clear an entire level taking zero damage. Untouchable.', check: rt => rt.stats.cleanLevelsCleared >= 1 }
         ]
     },
     roulette:
     {
         title: 'Roulette Deck',
-        description: 'Plan up to 3 bets per spin from your balance. Pair/Square/Row/Double-Row + the classics. Survive variance, chase the funny achievements.',
+        description: 'Start at $50. Plan up to 3 bets per spin. House rules: $5 table min per spin, $10 floor on 50/50 (red/black/even/odd/low/high) and 1/3 (column/dozen). Max single bet = balance / 4 (min $10). Pair/Square/Row/Double-Row stake any amount. Survive variance, chase the achievements.',
         starter: ROULETTE_GAME_SHRT,
         achievements:
         [
@@ -3062,9 +3528,10 @@ function createArenaRuntime()
             kindsUsed: new Set(),       // unique action kinds across this run
             stunnedTargets: new Set(),  // unique enemy names stunned
             levelsCleared: 0,
+            cleanLevelsCleared: 0,      // levels cleared with zero damage taken THAT level
             l1TurnsTaken: 0,
             usedHeavy: false,
-            cleanLevelWin: true,        // turned false if took damage during level
+            cleanLevelWin: true,        // turned false if took damage during current level
             lowestHpEndOfLevel: 999
         }
     };
@@ -3073,6 +3540,7 @@ function createArenaRuntime()
 function advanceArenaLevel(runtime)
 {
     runtime.stats.levelsCleared += 1;
+    if (runtime.stats.cleanLevelWin) runtime.stats.cleanLevelsCleared += 1;
 
     if (runtime.level === 1) runtime.stats.l1TurnsTaken = runtime.turn;
     runtime.stats.lowestHpEndOfLevel = Math.min(runtime.stats.lowestHpEndOfLevel, runtime.player.hp);
@@ -3302,6 +3770,9 @@ function stepArenaRuntime(runtime, planFn)
 
     for (const action of validated) executeArenaAction(runtime, action);
 
+    // capture peak block AFTER actions but BEFORE enemy phase chips it down
+    runtime.stats.maxBlockHeld = Math.max(runtime.stats.maxBlockHeld, runtime.player.block);
+
     enemyPhaseArena(runtime);
 
     // tick existing cooldowns down by 1, drop expired
@@ -3332,7 +3803,6 @@ function stepArenaRuntime(runtime, planFn)
     else
     {
         runtime.turn += 1;
-        runtime.stats.maxBlockHeld = Math.max(runtime.stats.maxBlockHeld, runtime.player.block);
     }
 }
 
@@ -3351,13 +3821,26 @@ function colorForNumber(number)
     return ROULETTE_RED_NUMBERS.has(number) ? 'red' : 'black';
 }
 
+// House rules — exposed to the player as const fields on RouletteState
+const ROULETTE_MIN_OUTSIDE = 10;  // 50/50 bets: red, black, even, odd, low, high
+const ROULETTE_MIN_THIRD   = 10;  // 1/3 bets: column, dozen
+const ROULETTE_MIN_TOTAL   = 5;   // minimum total wagered per spin
+const ROULETTE_START       = 50;  // starting balance
+
+// max bet per single wager — scales with current balance so a richer player
+// can swing bigger, but always at least enough to place one outside bet
+function rouletteMaxBet(balance)
+{
+    return Math.max(ROULETTE_MIN_OUTSIDE, Math.floor(balance / 4));
+}
+
 function createRouletteRuntime()
 {
     return {
         spin: 1,
-        balance: 30,
-        bestBalance: 30,
-        maxBet: 8,
+        balance: ROULETTE_START,
+        bestBalance: ROULETTE_START,
+        maxBet: rouletteMaxBet(ROULETTE_START),
         seed: 17,
         lastNumber: 0,
         lastColor: 'green',
@@ -3386,8 +3869,8 @@ function createRouletteRuntime()
             hedgedSpins: 0,        // bet both red and black in same spin
             maxBetsPerSpin: 0,
             zeroHits: 0,           // spun a 0
-            lowestBalance: 30,
-            highestBalanceAfterLow: 30
+            lowestBalance: ROULETTE_START,
+            highestBalanceAfterLow: ROULETTE_START
         }
     };
 }
@@ -3423,7 +3906,10 @@ function buildRouletteSandboxState(runtime)
     return Object.freeze({
         spin: runtime.spin,
         balance: runtime.balance,
-        max_bet: runtime.maxBet,
+        max_bet: runtime.maxBet,                        // = max(min_outside, balance / 4)
+        min_outside_bet: ROULETTE_MIN_OUTSIDE,           // 50/50 floor
+        min_third_bet:   ROULETTE_MIN_THIRD,             // column/dozen floor
+        min_total_bet:   ROULETTE_MIN_TOTAL,             // table minimum per spin
         last_number: runtime.lastNumber,
         last_red: runtime.lastColor === 'red',
         recent_numbers: Object.freeze([...runtime.recentNumbers]),
@@ -3570,6 +4056,9 @@ function stepRouletteRuntime(runtime, planFn)
         return;
     }
 
+    // re-quote max bet based on current balance
+    runtime.maxBet = rouletteMaxBet(runtime.balance);
+
     const balanceBefore = runtime.balance;
     const state = buildRouletteSandboxState(runtime);
 
@@ -3585,6 +4074,10 @@ function stepRouletteRuntime(runtime, planFn)
         return;
     }
 
+    // ── classify bet kinds for per-bet minimums ──
+    const OUTSIDE_KINDS = new Set(['red','black','even','odd','low','high']);
+    const THIRD_KINDS   = new Set(['column','dozen']);
+
     // validate
     const seenKeys = new Set();
     const validated = [];
@@ -3595,13 +4088,34 @@ function stepRouletteRuntime(runtime, planFn)
         if (!b || typeof b !== 'object') continue;
         const amount = Math.max(0, Math.floor(Number(b.amount) || 0));
         if (amount <= 0) continue;
-        if (amount > runtime.maxBet) { addRuntimeLog(runtime, b.kind + ' over max bet'); continue; }
+
+        // per-bet minimums by kind
+        if (OUTSIDE_KINDS.has(b.kind) && amount < ROULETTE_MIN_OUTSIDE)
+        {
+            addRuntimeLog(runtime, b.kind + ' below 50/50 min ($' + ROULETTE_MIN_OUTSIDE + ')');
+            continue;
+        }
+        if (THIRD_KINDS.has(b.kind) && amount < ROULETTE_MIN_THIRD)
+        {
+            addRuntimeLog(runtime, b.kind + ' below 1/3 min ($' + ROULETTE_MIN_THIRD + ')');
+            continue;
+        }
+
+        if (amount > runtime.maxBet) { addRuntimeLog(runtime, b.kind + ' over max bet ($' + runtime.maxBet + ')'); continue; }
         const key = betKey({ ...b, amount });
         if (seenKeys.has(key)) { addRuntimeLog(runtime, key + ' already in plan'); continue; }
         if (totalWager + amount > runtime.balance) { addRuntimeLog(runtime, b.kind + ' insufficient balance'); continue; }
         seenKeys.add(key);
         totalWager += amount;
         validated.push({ kind: b.kind, value: b.value, amount });
+    }
+
+    // total-spin minimum — 0 is allowed (skip the spin) but anything >0 must clear the floor
+    if (totalWager > 0 && totalWager < ROULETTE_MIN_TOTAL)
+    {
+        addRuntimeLog(runtime, 'spin total $' + totalWager + ' below table min ($' + ROULETTE_MIN_TOTAL + ') — bets refused');
+        validated.length = 0;
+        totalWager = 0;
     }
 
     runtime.balance -= totalWager;
@@ -3828,7 +4342,7 @@ function renderRouletteTable(runtime)
     const rowColumnNum = [3, 2, 1];
 
     let cells = '';
-    cells += '<div class="rcell green' + (lastNumber === 0 ? ' last-hit' : '') + (chipMap.get('number:0') ? ' active' : '') + '" style="grid-row: 1 / span 3;">0' +
+    cells += '<div class="rcell green' + (lastNumber === 0 ? ' last-hit' : '') + (chipMap.get('number:0') ? ' active' : '') + '" style="grid-column: 1; grid-row: 1 / span 3;">0' +
         (chipMap.get('number:0') ? '<span class="rchip">' + chipMap.get('number:0') + '</span>' : '') +
         '</div>';
 
@@ -3916,6 +4430,14 @@ function renderRouletteSide(runtime)
         '    <div class="balance-sub">',
         '      <span>best ' + formatMoney(runtime.bestBalance) + '</span>',
         '      <span class="' + netClass + '">last ' + formatSignedMoney(runtime.lastNet) + '</span>',
+        '    </div>',
+        '    <div class="balance-sub" style="margin-top: 0.35rem; opacity: 0.85;">',
+        '      <span>max bet ' + formatMoney(runtime.maxBet) + '</span>',
+        '      <span>min 50/50 ' + formatMoney(ROULETTE_MIN_OUTSIDE) + '</span>',
+        '    </div>',
+        '    <div class="balance-sub" style="opacity: 0.7;">',
+        '      <span>min 1/3 ' + formatMoney(ROULETTE_MIN_THIRD) + '</span>',
+        '      <span>min spin ' + formatMoney(ROULETTE_MIN_TOTAL) + '</span>',
         '    </div>',
         '  </div>',
         '  <div class="wheel-mini">',
@@ -4006,6 +4528,7 @@ function translateInterpolationToTemplate(content)
 function translatePlanBody(body, paramName)
 {
     const tokens = [];
+    const staticNames = [];
     const protect = (str) =>
     {
         const idx = tokens.length;
@@ -4022,6 +4545,19 @@ function translatePlanBody(body, paramName)
 
     // ActionKind::Heal / BetKind::Red → "heal" / "red"
     // (sandbox stores kinds as lowercase strings internally)
+    // Local static variables live across game turns/spins in a hidden per-plan store.
+    // This mirrors the useful part of C++ local statics without leaking into JS syntax.
+    s = s.replace(/\bstatic\s+(?:a|int|bool|float|double|long|size_t)\s+([A-Za-z_]\w*)\s*=\s*([^;]+);/g, (m, name, expr) =>
+    {
+        staticNames.push(name);
+        return 'if (!Object.prototype.hasOwnProperty.call(__static, ' + protect('"' + name + '"') + ')) __static.' + name + ' = ' + expr + ';';
+    });
+    s = s.replace(/\bstatic\s+\$vector\s*<[^>]+>\s+([A-Za-z_]\w*)\s*;/g, (m, name) =>
+    {
+        staticNames.push(name);
+        return 'if (!Object.prototype.hasOwnProperty.call(__static, ' + protect('"' + name + '"') + ')) __static.' + name + ' = [];';
+    });
+
     s = s.replace(/\b(?:ActionKind|BetKind)::([A-Z]\w*)/g, (m, name) => '"' + name.toLowerCase() + '"');
 
     s = s.replace(/([A-Za-z_][\w\.\[\]\(\)]*)\s*\?\?\s*r\s*;/g, 'if (!($1)) return;');
@@ -4040,6 +4576,18 @@ function translatePlanBody(body, paramName)
     s = s.replace(/\br\s*;/g, 'return;');
     s = s.replace(/\br\s+([^;]+);/g, 'return $1;');
 
+    for (const name of staticNames)
+    {
+        const id = new RegExp('(?<![\\w$.])' + name + '(?!\\w)', 'g');
+        s = s.replace(id, '__static.' + name);
+        for (let i = 0; i < tokens.length; ++i)
+        {
+            if (tokens[i].startsWith('`'))
+            {
+                tokens[i] = tokens[i].replace(/\$\{([^}]+)\}/g, (m, expr) => '${' + expr.replace(id, '__static.' + name) + '}');
+            }
+        }
+    }
     s = s.replace(/\x00(\d+)\x00/g, (m, idx) => tokens[+idx]);
     return s;
 }
@@ -4049,7 +4597,12 @@ function compileSandboxPlan(gameId, source)
     const fnName = gameId === 'arena' ? 'plan_turn' : 'plan_bets';
     const plan = extractPlanDefinition(source, fnName);
     const jsBody = translatePlanBody(plan.body, plan.paramName);
-    try { return new Function(plan.paramName, '"use strict";\n' + jsBody); }
+    const staticStore = Object.create(null);
+    try
+    {
+        const compiled = new Function(plan.paramName, '__static', '"use strict";\n' + jsBody);
+        return state => compiled(state, staticStore);
+    }
     catch (err) { throw new Error('Sandbox JS compile failed: ' + err.message); }
 }
 
@@ -4125,6 +4678,8 @@ function renderGame()
     const description = document.getElementById('gameDescription');
     const eventLog = document.getElementById('gameEventLog');
     const runStatus = document.getElementById('gameRunStatus');
+    const gameRunButton = document.getElementById('gameRunBtn');
+    const gameResetButton = document.getElementById('gameResetBtn');
 
     rightPane.classList.add('game-active');
     label.textContent = GAME_CONFIG[currentGameId].title;
@@ -4133,12 +4688,18 @@ function renderGame()
 
     if (currentGameId === 'arena')
     {
+        gameRunButton.textContent = '▶ Run Turn';
+        gameRunButton.title = 'Run one arena turn';
+        gameResetButton.textContent = '↻ Reset Run';
         substatus.textContent = 'lvl ' + runtime.level + ' • turn ' + runtime.turn + ' • spent ' + runtime.lastSpend + ' / 5 • ' + runtime.outcome;
         viewport.innerHTML = renderArena(runtime);
     }
     else
     {
         substatus.textContent = 'spin ' + runtime.spin + ' • balance ' + formatMoney(runtime.balance) + ' • ' + runtime.outcome;
+        gameRunButton.textContent = '▶ Spin';
+        gameRunButton.title = 'Spin the roulette wheel once';
+        gameResetButton.textContent = '↻ Reset Balance';
         viewport.innerHTML = renderRoulette(runtime);
     }
 
@@ -4161,7 +4722,8 @@ function setPlaygroundMode()
     document.getElementById('peekCppDrawer').classList.remove('open');
     document.getElementById('rightPane').classList.remove('game-active');
     document.getElementById('rightPaneLabel').textContent = 'C++26';
-    document.querySelector('main.playground').classList.remove('game-mode');
+    const mainEl = document.querySelector('main.playground');
+    mainEl.classList.remove('game-mode', 'game-arena', 'game-roulette');
     document.querySelectorAll('.game-tab').forEach(button => button.classList.remove('active'));
     if (cppEditor) cppEditor.layout();
 }
@@ -4179,7 +4741,10 @@ function openGameTab(gameId)
     currentGameId = gameId;
     peekCppOpen = false;
     document.getElementById('peekCppDrawer').classList.remove('open');
-    document.querySelector('main.playground').classList.add('game-mode');
+    const mainEl = document.querySelector('main.playground');
+    mainEl.classList.add('game-mode');
+    mainEl.classList.remove('game-arena', 'game-roulette');
+    mainEl.classList.add('game-' + gameId);
 
     const source = gameDrafts[gameId] || GAME_CONFIG[gameId].starter;
     shrtEditor.setValue(source);
@@ -4641,13 +5206,20 @@ document.getElementById('fizzbuzzBtn').addEventListener('click', () =>
     $status.textContent = 'FizzBuzz loaded (enum + which + =>)';
 });
 
+document.getElementById('grandTourBtn').addEventListener('click', () =>
+{
+    if (!shrtEditor || !cppEditor) return;
+    setPlaygroundMode();
+    shrtEditor.setValue(GRAND_TOUR_SHRT);
+    cppEditor.setValue(shrtToCpp(GRAND_TOUR_SHRT));
+    $status.textContent = 'Grand Tour loaded — every SHRT feature in one go';
+});
+
 document.querySelectorAll('.game-tab').forEach(button =>
 {
     button.addEventListener('click', () => openGameTab(button.dataset.game));
 });
 
-// the only Run Turn / Reset Run buttons — sit in the run-area row,
-// visible only when game-mode is active
 document.getElementById('gameRunBtn').addEventListener('click', () =>
 {
     runGameTurn();
