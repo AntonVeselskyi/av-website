@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>// THE REBELLION - YOUR EYES ONLY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   DOCUMENT CHROME — Director-document base style (corporate cyan/green).
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:    #030706;
+  --bg2:   #07100d;
+  --g:     #67ff8d;
+  --g2:    #22d45a;
+  --g3:    #157a31;
+  --c:     #35ddff;
+  --c2:    #0099bb;
+  --r:     #ff2b2b;
+  --r2:    #ff6a6a;
+  --o:     #ffbd45;
+  --w:     #e9fff2;
+  --muted: #2f7f4b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+
+body {
+  background:
+    radial-gradient(circle at 50% -8%, rgba(53,221,255,.14), transparent 34%),
+    radial-gradient(circle at 84% 12%, rgba(255,43,43,.10), transparent 26%),
+    linear-gradient(rgba(103,255,141,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(103,255,141,.026) 1px, transparent 1px),
+    linear-gradient(180deg, #050b09 0%, #020302 100%);
+  background-size: auto, auto, 38px 38px, 38px 38px, auto;
+  color: var(--g2);
+  font-family: "Share Tech Mono","Courier New",monospace;
+  font-size: 15px;
+  line-height: 1.72;
+  padding: 38px 18px 88px;
+  text-shadow: 0 0 6px rgba(103,255,141,.16);
+}
+
+body::before, body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none;
+}
+body::before {
+  z-index: 20;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255,255,255,.025) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at 50% 50%, transparent 54%, rgba(0,0,0,.72) 100%);
+  mix-blend-mode: overlay;
+}
+body::after {
+  z-index: 19;
+  background: linear-gradient(transparent, rgba(103,255,141,.055), transparent);
+  height: 6px;
+  animation: scan 7.5s linear infinite;
+}
+@keyframes scan {
+  from { transform: translateY(-10vh); }
+  to   { transform: translateY(110vh); }
+}
+
+.page { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; }
+
+.topline {
+  display: flex; justify-content: space-between; gap: 20px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(103,255,141,.22);
+  padding-bottom: 10px; margin-bottom: 22px;
+  font-size: 13px;
+}
+
+.logo {
+  color: var(--c); white-space: pre;
+  font-size: clamp(8px, 1.2vw, 13px); line-height: 1.05;
+  margin: 8px 0 22px;
+  text-shadow: 0 0 10px rgba(53,221,255,.65), 0 0 28px rgba(53,221,255,.22);
+  animation: glitch 9s infinite;
+}
+@keyframes glitch {
+  0%, 88%, 100% { transform: none; filter: none; }
+  89% { transform: translateX(2px); filter: drop-shadow(-3px 0 var(--r)) drop-shadow(3px 0 var(--c)); }
+  90% { transform: translateX(-2px); filter: drop-shadow(3px 0 var(--r)) drop-shadow(-3px 0 var(--c)); }
+  91% { transform: none; filter: none; }
+}
+
+h1 {
+  color: var(--w);
+  font-family: "VT323","Share Tech Mono",monospace;
+  font-size: clamp(52px, 8vw, 106px);
+  font-weight: 400; line-height: .86; letter-spacing: 2px;
+  text-shadow: 0 0 14px rgba(103,255,141,.45), 0 0 48px rgba(53,221,255,.20);
+}
+.subtitle { color: var(--c); letter-spacing: 3px; margin: 14px 0 28px; }
+
+h2 {
+  color: var(--c); font-size: 18px; font-weight: 400; letter-spacing: 2px;
+  margin: 48px 0 14px; padding-bottom: 7px;
+  border-bottom: 1px dashed var(--g3);
+  text-shadow: 0 0 10px rgba(53,221,255,.35);
+}
+h3 { color: var(--w); font-size: 16px; font-weight: 400; margin-bottom: 4px; }
+p  { margin: 9px 0; }
+
+code {
+  color: var(--g);
+  background: rgba(103,255,141,.06);
+  border-left: 2px solid var(--g3);
+  padding: 1px 7px;
+  font-family: inherit;
+}
+
+ul, ol { padding-left: 22px; }
+li { margin: 9px 0; }
+
+.panel {
+  position: relative; border: 1px solid var(--g3);
+  background: linear-gradient(90deg, rgba(103,255,141,.04), transparent), rgba(0,0,0,.22);
+  padding: 18px 20px; margin: 16px 0;
+}
+.panel::before {
+  content: attr(data-label); position: absolute;
+  top: -11px; left: 14px; background: var(--bg2);
+  color: var(--c); padding: 0 8px; font-size: 12px; letter-spacing: 1px;
+}
+.panel.hot {
+  border-color: rgba(255,43,43,.72);
+  background: linear-gradient(90deg, rgba(255,43,43,.075), transparent), rgba(0,0,0,.25);
+}
+.panel.blue {
+  border-color: rgba(53,221,255,.62);
+  background: linear-gradient(90deg, rgba(53,221,255,.07), transparent), rgba(0,0,0,.25);
+}
+
+.grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px;
+  margin: 22px 0 34px;
+}
+.tile {
+  min-height: 92px; padding: 13px;
+  border: 1px solid rgba(103,255,141,.28); background: rgba(0,0,0,.24);
+}
+.tile b {
+  display: block; color: var(--c); font-weight: 400;
+  font-size: 12px; letter-spacing: 1px; margin-bottom: 8px;
+}
+.tile span { color: var(--w); }
+
+.w   { color: var(--w); }
+.g   { color: var(--g); }
+.c   { color: var(--c); }
+.r   { color: var(--r); }
+.o   { color: var(--o); }
+.dim { color: var(--muted); }
+
+/* ════════════════════════════════════════════════════════════════════
+   ▣  SERVER CONSOLE FRAMES — three soul-bearing windows.
+      Each frame is a self-contained mini-terminal styled exactly like
+      the server it represents. Body chrome stays in cyan/green; only
+      the frame INTERIOR carries the server's color, font, and motion.
+   ════════════════════════════════════════════════════════════════════ */
+
+.stages {
+  display: grid; gap: 36px;
+  margin: 28px 0 40px;
+}
+
+.console-frame {
+  position: relative;
+  border-radius: 0;
+  isolation: isolate;
+  overflow: hidden;
+  /* per-frame palette set below */
+}
+
+/* CRT scanline overlay shared by all frames */
+.console-frame::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(to bottom,
+    rgba(255,255,255,.022) 0 1px, transparent 1px 4px);
+  mix-blend-mode: overlay;
+  pointer-events: none; z-index: 5;
+}
+
+.frame-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 16px;
+  font-size: 12px; letter-spacing: 1.5px;
+  border-bottom: 1px solid currentColor;
+  position: relative;
+}
+.frame-bar .dots {
+  display: inline-flex; gap: 6px; margin-right: 12px;
+}
+.frame-bar .dots i {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: currentColor; opacity: .55;
+}
+.frame-bar .dots i:nth-child(1) { opacity: .42; }
+.frame-bar .dots i:nth-child(2) { opacity: .70; }
+.frame-bar .dots i:nth-child(3) { opacity: 1; }
+.frame-bar .right { opacity: .76; }
+
+.frame-body {
+  position: relative;
+  padding: 24px 28px 28px;
+  z-index: 2;
+}
+
+/* lore / visual / purpose blocks */
+.tag-block {
+  position: relative;
+  border-left: 2px solid currentColor;
+  padding: 6px 16px 8px;
+  margin: 14px 0;
+  background: rgba(0,0,0,.22);
+}
+.tag-block .tag {
+  display: block;
+  font-size: 11px; letter-spacing: 2.5px; opacity: .82;
+  margin-bottom: 6px;
+}
+.tag-block p { color: inherit; opacity: .96; margin: 6px 0; }
+.tag-block .w { color: #fff; opacity: 1; }
+
+/* command stream — looks like real terminal output */
+.cmd-stream {
+  margin: 18px 0 4px;
+  padding: 14px 16px;
+  background: rgba(0,0,0,.42);
+  border: 1px dashed currentColor;
+  border-opacity: .5;
+  font-size: 14px;
+  line-height: 1.55;
+  position: relative;
+}
+.cmd-stream::before {
+  content: attr(data-label);
+  position: absolute;
+  top: -10px; left: 14px;
+  background: var(--bg);
+  padding: 0 8px;
+  font-size: 11px; letter-spacing: 2px;
+  opacity: .9;
+}
+.cmd-line { display: block; white-space: pre-wrap; }
+.cmd-line .pmt { font-weight: bold; }
+.cmd-line .cmd { padding-left: 6px; }
+.cmd-line .note { opacity: .55; padding-left: 10px; font-style: italic; }
+.cmd-line.reply { padding-left: 20px; opacity: .82; font-style: italic; }
+
+/* ═════════ FRAME 1 — CD-0S core01 ═════════ */
+.console-frame.s1 {
+  --primary: #67ff8d;    /* corporate green */
+  --accent:  #35ddff;    /* cyan */
+  --soft:    #134220;
+  --frame-bg: #050d09;
+  color: #8bf3a8;
+  background:
+    radial-gradient(circle at 14% 6%, rgba(53,221,255,.10), transparent 38%),
+    radial-gradient(circle at 88% 92%, rgba(103,255,141,.10), transparent 42%),
+    linear-gradient(180deg, #06120e 0%, #030906 100%);
+  border: 1px solid rgba(103,255,141,.34);
+  box-shadow:
+    inset 0 0 70px rgba(103,255,141,.05),
+    0 0 24px rgba(103,255,141,.05);
+  text-shadow: 0 0 5px rgba(103,255,141,.16);
+}
+.console-frame.s1 .frame-bar {
+  background: linear-gradient(90deg, rgba(53,221,255,.10), transparent);
+  color: var(--accent);
+  border-bottom-color: rgba(103,255,141,.24);
+  text-shadow: 0 0 8px rgba(53,221,255,.5);
+}
+.console-frame.s1 .frame-bar .dots { color: var(--primary); }
+.console-frame.s1 h3 { color: #fff; text-shadow: 0 0 8px rgba(53,221,255,.4); }
+.console-frame.s1 .tag-block { border-left-color: var(--accent); }
+.console-frame.s1 .tag-block .tag { color: var(--accent); }
+.console-frame.s1 .cmd-stream {
+  border-color: rgba(103,255,141,.36);
+  background: linear-gradient(180deg, rgba(0,15,8,.55), rgba(0,8,4,.6));
+}
+.console-frame.s1 .cmd-stream::before { color: var(--accent); background: #050d09; }
+.console-frame.s1 .cmd-line .pmt { color: var(--accent); text-shadow: 0 0 6px rgba(53,221,255,.4); }
+.console-frame.s1 .cmd-line .cmd { color: var(--primary); text-shadow: 0 0 6px rgba(103,255,141,.4); }
+
+/* ═════════ FRAME 2 — NODE-083 ═════════ */
+.console-frame.s2 {
+  --primary: #ff5555;
+  --accent:  #ffb12f;
+  --frame-bg: #100404;
+  color: #ff8585;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(255,30,30,.16), transparent 38%),
+    radial-gradient(circle at 88% 90%, rgba(53,221,255,.05), transparent 38%),
+    linear-gradient(180deg, #120404 0%, #080202 100%);
+  border: 1px solid rgba(255,34,34,.48);
+  box-shadow:
+    inset 0 0 90px rgba(255,30,30,.07),
+    0 0 30px rgba(255,30,30,.08);
+  text-shadow: 0 0 5px rgba(255,30,30,.22);
+}
+.console-frame.s2::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,0,0,.03) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, rgba(255,0,0,.02), transparent 30%);
+  z-index: 4; pointer-events: none;
+  animation: s2-noise 4.5s infinite;
+}
+@keyframes s2-noise {
+  0%, 76%, 100% { opacity: .35; }
+  78% { opacity: .9; }
+  79% { opacity: .25; }
+  82% { opacity: .85; }
+  84% { opacity: .4; }
+}
+.console-frame.s2 .frame-bar {
+  background: linear-gradient(90deg, rgba(255,30,30,.18), transparent);
+  color: var(--primary);
+  border-bottom-color: rgba(255,30,30,.42);
+  text-shadow: 0 0 10px rgba(255,30,30,.7);
+  animation: s2-prompt-glitch 12s infinite;
+}
+@keyframes s2-prompt-glitch {
+  0%, 92%, 100% { filter: none; }
+  93% { filter: drop-shadow(2px 0 #00ffff) drop-shadow(-2px 0 #ff0000); transform: translateX(1px); }
+  94% { filter: none; transform: none; }
+}
+.console-frame.s2 .frame-bar .dots { color: var(--primary); }
+.console-frame.s2 h3 { color: #fff; text-shadow: 0 0 10px rgba(255,30,30,.55); }
+.console-frame.s2 .tag-block { border-left-color: var(--primary); }
+.console-frame.s2 .tag-block .tag { color: var(--accent); }
+.console-frame.s2 .cmd-stream {
+  border-color: rgba(255,30,30,.5);
+  background: linear-gradient(180deg, rgba(20,2,2,.7), rgba(12,1,1,.7));
+}
+.console-frame.s2 .cmd-stream::before { color: var(--primary); background: #100404; }
+.console-frame.s2 .cmd-line .pmt { color: var(--primary); text-shadow: 0 0 8px rgba(255,30,30,.6); }
+.console-frame.s2 .cmd-line .cmd { color: #88ff9f; text-shadow: 0 0 4px rgba(100,255,130,.4); }
+.console-frame.s2 .crit {
+  display: inline-block; padding: 1px 8px; margin-left: 4px;
+  background: rgba(255,30,30,.18);
+  color: #fff; font-weight: bold;
+  border: 1px solid rgba(255,30,30,.6);
+  letter-spacing: 1.5px; font-size: 11px;
+  text-shadow: 0 0 8px rgba(255,30,30,.7);
+}
+
+/* ═════════ FRAME 3 — LivSeg drop ═════════ */
+.console-frame.s3 {
+  --primary:  #ff1414;
+  --primary2: #ff5050;
+  --accent:   #ffcb47;
+  --white:    #ffe1e1;
+  --frame-bg: #0a0202;
+  color: #ffb6b6;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255,20,20,.22), transparent 42%),
+    radial-gradient(circle at 14% 88%, rgba(255,20,20,.08), transparent 30%),
+    linear-gradient(180deg, #100303 0%, #060000 100%);
+  border: 1px solid rgba(255,20,20,.55);
+  box-shadow:
+    inset 0 0 130px rgba(255,20,20,.10),
+    0 0 44px rgba(255,20,20,.14);
+  text-shadow: 0 0 6px rgba(255,30,30,.32);
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: 18px;
+  letter-spacing: .3px;
+}
+.console-frame.s3::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255,255,255,.04) 0 1px, rgba(0,0,0,.18) 2px 4px),
+    radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,.55) 100%);
+  z-index: 4; pointer-events: none;
+  animation: s3-flicker 6s infinite;
+}
+@keyframes s3-flicker {
+  0%, 4%, 7%, 49%, 51%, 100% { opacity: 1; }
+  5%, 6% { opacity: .55; }
+  50%    { opacity: .35; }
+}
+.console-frame.s3 .frame-bar {
+  background: linear-gradient(90deg, rgba(255,20,20,.22), transparent);
+  color: var(--primary);
+  border-bottom-color: rgba(255,20,20,.55);
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: 17px; letter-spacing: 2.5px;
+  text-shadow: 0 0 10px rgba(255,20,20,.85);
+}
+.console-frame.s3 .frame-bar .dots { color: var(--primary); }
+.console-frame.s3 h3 {
+  color: var(--white);
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: 26px; letter-spacing: 3px;
+  text-shadow: 0 0 14px rgba(255,30,30,.85);
+}
+.console-frame.s3 .tag-block { border-left-color: var(--primary); background: rgba(20,0,0,.32); }
+.console-frame.s3 .tag-block .tag { color: var(--accent); letter-spacing: 3px; }
+.console-frame.s3 .tag-block p { color: var(--white); }
+.console-frame.s3 .cmd-stream {
+  border-color: rgba(255,20,20,.55);
+  background: linear-gradient(180deg, rgba(20,0,0,.7), rgba(8,0,0,.78));
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: 17px;
+}
+.console-frame.s3 .cmd-stream::before { color: var(--primary); background: #0a0202; }
+.console-frame.s3 .cmd-line .pmt { color: var(--primary); text-shadow: 0 0 10px rgba(255,30,30,.7); }
+.console-frame.s3 .cmd-line .cmd { color: var(--white); text-shadow: 0 0 6px rgba(255,30,30,.5); }
+
+/* iconic banner inside s3 frame (STRONG ALONE...) */
+.s3-banner {
+  text-align: center;
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: clamp(2px, 0.6vw, 6px);
+  color: var(--white);
+  margin: 6px auto 18px;
+  text-shadow: 0 0 12px var(--primary), 0 0 32px rgba(255,30,30,.6);
+}
+.s3-banner .small {
+  display: block;
+  font-size: .54em;
+  color: #ffb6b6;
+  letter-spacing: clamp(4px, 1vw, 10px);
+  margin-top: 4px;
+}
+.s3-eye {
+  display: inline-block;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #fff 0 10%, #ff8a8a 18%, var(--primary) 38%, #b30000 70%, transparent 90%);
+  box-shadow: 0 0 12px var(--primary), 0 0 28px rgba(255,30,30,.6);
+  animation: eye-pulse 1.8s ease-in-out infinite;
+  vertical-align: middle;
+  margin: 0 8px;
+}
+@keyframes eye-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: .78; }
+}
+
+/* ═════════ Date card (kept) ═════════ */
+.date-card {
+  text-align: center;
+  margin: 20px 0;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid rgba(255,43,43,.72);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,43,43,.16), transparent 52%),
+    rgba(0,0,0,.36);
+  box-shadow:
+    inset 0 0 32px rgba(255,43,43,.08),
+    0 0 40px rgba(255,43,43,.08);
+}
+.big-date {
+  display: block; color: var(--r2);
+  font-family: "VT323","Share Tech Mono",monospace;
+  font-size: clamp(54px, 11vw, 130px); line-height: .84; letter-spacing: 7px;
+  text-shadow:
+    0 0 12px rgba(255,43,43,.85),
+    0 0 42px rgba(255,43,43,.55),
+    0 0 86px rgba(255,43,43,.25);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .76; transform: scale(.992); }
+}
+.date-sub {
+  display: block; margin-top: 12px;
+  color: var(--o); letter-spacing: 3px;
+}
+
+.footer {
+  margin-top: 42px; text-align: center; color: var(--muted);
+}
+
+@media (max-width: 820px) {
+  body { padding: 28px 14px 70px; }
+  .topline { flex-direction: column; gap: 4px; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .frame-body { padding: 18px 16px 22px; }
+  .cmd-stream { padding: 12px 12px; font-size: 13px; }
+}
+@media (max-width: 520px) {
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+  <div class="topline">
+    <span>// your eyes only</span>
+    <span>// participants should start cold at server1.html</span>
+  </div>
+
+  <pre class="logo">  _______  __   __  _______      ______    _______  _______  _______  ___      ___      ___   _______  __    _
+ |       ||  | |  ||       |    |    _ |  |       ||  _    ||       ||   |    |   |    |   | |       ||  |  | |
+ |_     _||  |_|  ||    ___|    |   | ||  |    ___|| |_|   ||    ___||   |    |   |    |   | |   _   ||   |_| |
+   |   |  |       ||   |___     |   |_||_ |   |___ |       ||   |___ |   |    |   |    |   | |  | |  ||       |
+   |   |  |       ||    ___|    |    __  ||    ___||  _   | |    ___||   |___ |   |___ |   | |  |_|  ||  _    |
+   |   |  |   _   ||   |___     |   |  | ||   |___ | |_|   ||   |___ |       ||       ||   | |       || | |   |
+   |___|  |__| |__||_______|    |___|  |_||_______||_______||_______||_______||_______||___| |_______||_|  |__|</pre>
+
+  <h1>The Rebellion</h1>
+  <p class="subtitle">interactive terminal investigation // current build // your eyes only</p>
+
+  <section class="panel blue" data-label="// THE PROMISE">
+    <p>
+      This is not a normal landing page. It is a playable investigation. Participants receive one link and are dropped into a believable Linux terminal. Every discovery is earned by typing commands, inspecting logs, following SSH trails, decrypting a surviving database, and optionally finding a hidden final endpoint.
+    </p>
+    <p>
+      The tone is cinematic hacker-core, but the interaction language is grounded in real Unix behavior: command history, Tab completion, pipes, chained commands, file paths, SSH confirmation prompts, SQLite, and forensic command output.
+    </p>
+  </section>
+
+  <h2>// What The Participant Actually Does</h2>
+  <p class="dim">
+    The path is split across three machines. Each window below is rendered in its own server's voice — read it like you're already inside that box.
+  </p>
+
+  <div class="stages">
+
+    <!-- ═══════════════════════ STAGE 1 — CD-0S CORE ═══════════════════════ -->
+    <article class="console-frame s1" aria-label="Stage 1: CD-0S corporate terminal">
+      <header class="frame-bar">
+        <span><span class="dots"><i></i><i></i><i></i></span>STAGE 01 // CD-0S CORP — SECURE TERMINAL GATEWAY v3.9.1</span>
+        <span class="right">observer @ cd-0s-core01  ·  10.0.0.14</span>
+      </header>
+      <div class="frame-body">
+        <h3>The corporate cover.</h3>
+        <p>The participant lands here cold. The system never tells them there was a breach — they discover it through the company's own monitoring, notes, and logs.</p>
+
+        <div class="tag-block">
+          <span class="tag">▣ LORE ROLE</span>
+          <p>A SOC analyst (<span class="w">observer</span>) inherits the 04:22 incident shift. NODE-083 has gone silent. Engineers <span class="w">c.morgan</span> and <span class="w">r.takeda</span> are working the incident in <code>/var/log/syslog</code>. Executive <span class="w">J.Halloran</span> appears late and orders <span class="w">DELETE EVERYTHING</span>; the audit lock refuses.</p>
+        </div>
+        <div class="tag-block">
+          <span class="tag">▣ VISUAL STYLE</span>
+          <p>Green-on-black with cyan accents, subtle CRT scanlines, authentic Ubuntu 22.04 MOTD, and a soft phosphor glow. The chrome stays calm; everything dramatic lives inside the files.</p>
+        </div>
+        <div class="tag-block">
+          <span class="tag">▣ STORY PURPOSE</span>
+          <p>Teach the interface and establish the corporation as a real working environment. Plant the idea that Q2 is politically sensitive before the participant knows what Q2 is.</p>
+        </div>
+
+        <div class="cmd-stream" data-label="// PARTICIPANT PATH">
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">help</span><span class="note">// scout the shell</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat notes.txt</span><span class="note">// observer's own scratchpad — first mention of "Q2"</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/syslog</span><span class="note">// engineer panic + Halloran trying to bury it</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/auth.log</span><span class="note">// brute force from 172.16.47.83 — successful at 02:18:47</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">last ; lastb ; systemctl --failed</span><span class="note">// confirm intrusion, see what's broken</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/security-review/SEC-REV-2024-122.log</span><span class="note">// r.takeda's December memo + Halloran's OVERRIDE</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">ssh admin@172.16.47.83</span><span class="note">// cert anomaly. last login from 91.213.8.44.</span></div>
+          <div class="cmd-line reply">Continue connecting? [y/N] <span class="c">y</span></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══════════════════════ STAGE 2 — NODE-083 ═══════════════════════ -->
+    <article class="console-frame s2" aria-label="Stage 2: NODE-083 compromised vault">
+      <header class="frame-bar">
+        <span><span class="dots"><i></i><i></i><i></i></span>STAGE 02 // NODE-083 — VAULT // <span class="crit">COMPROMISED</span></span>
+        <span class="right">r00t @ NODE-083  ·  172.16.47.83  ·  audit-lock</span>
+      </header>
+      <div class="frame-body">
+        <h3>The crime scene.</h3>
+        <p>Last login on the box is from the attacker's IP. The beacon is <span class="w">still phoning home</span> while the participant types. The whole act is reconstructed from the system's own records.</p>
+
+        <div class="tag-block">
+          <span class="tag">▣ LORE ROLE</span>
+          <p>The air-gapped backup vault that held the <span class="w">Q2 ledger</span>: two years of routed transactions. <span class="w">LivSeg</span> entered through a Jenkins CVE on a corporate jumphost, kerberoasted to domain admin, planted a beacon (PID 4291, exe unlinked), corrupted 22 of 23 databases, and left exactly one intact as a calling card.</p>
+        </div>
+        <div class="tag-block">
+          <span class="tag">▣ VISUAL STYLE</span>
+          <p>Red dominates, with ambient green carried over from the corporate side. Glitch bars and an occasionally scrambled prompt. Live alert lines fire every 90 s — <code>netwatch</code> reporting the beacon is still alive, <span class="w">r.takeda</span> asking "<i>who is logged into 083 right now</i>". Destructive commands (<code>rm</code>, <code>shutdown</code>, <code>kill 4291</code>) are all refused by the audit lock.</p>
+        </div>
+        <div class="tag-block">
+          <span class="tag">▣ STORY PURPOSE</span>
+          <p>Show LivSeg's tradecraft as forensic evidence in real log entries, not as narration. Decrypt the surviving database and read the receipt. The intrusion is presented as ongoing — the attackers still have an active foothold while the participant is inside.</p>
+        </div>
+
+        <div class="cmd-stream" data-label="// PARTICIPANT PATH">
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /var/log/breach.log</span><span class="note">// LivSeg ops channel — Jenkins → kerberoast → cobalt beacon</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">systemctl --failed</span><span class="note">// 27 dead services. ids killed at 03:48:33.</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ss -tnp ; lsof -i</span><span class="note">// PID 4291 still talking to 91.213.8.44:4444 RIGHT NOW</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">kill -9 4291</span><span class="note">// refused — exe unlinked. they planned for this.</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /etc/cron.d/livseg-keepalive | base64 -d</span><span class="note">// persistence: curl | bash. classic.</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /root/.ssh/authorized_keys</span><span class="note">// Halloran's key sits next to LivSeg's planted ed25519</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ls -lh /root/databases</span><span class="note">// 22 corrupted ~ 2-3 GB ea.  ·  db_017.enc ⇒ 4.2 KB ⚠</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">stat /tmp/.hidden/key.pem</span><span class="note">// mtime 03:41:55 — matches breach.log exactly</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">decrypt /tmp/.hidden/key.pem /root/databases/db_017.enc</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">sqlite3 /tmp/db_017.sql</span></div>
+          <div class="cmd-line"><span class="pmt">sqlite&gt;</span><span class="cmd">SELECT * FROM offshore_transfers;</span><span class="note">// the dirty ledger</span></div>
+          <div class="cmd-line"><span class="pmt">sqlite&gt;</span><span class="cmd">SELECT * FROM entries;</span><span class="note">// the calling-card row, signed by LivSeg, with the date</span></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ═══════════════════════ STAGE 3 — LivSeg DROP ═══════════════════════ -->
+    <article class="console-frame s3" aria-label="Stage 3: LivSeg drop server">
+      <header class="frame-bar">
+        <span><span class="dots"><i></i><i></i><i></i></span>STAGE 03 // L1V5EG ▒ DROP-TIER ▒ RAT 0x14</span>
+        <span class="right">anon @ cdn-edge-47  ·  91.213.8.44:4444  ·  no logs</span>
+      </header>
+      <div class="frame-body">
+        <div class="s3-banner">
+          <span class="s3-eye"></span>STRONG ALONE — UNDEFEATABLE TOGETHER<span class="s3-eye"></span>
+          <span class="small">livseg · the door was always open · you walked through it</span>
+        </div>
+
+        <h3>The hacker's drop server.</h3>
+        <p>A glowing skull holds the centre of the screen. A live sidebar streams personal-data filenames LivSeg claims to have already taken. The final prompt asks for a Unix-style <code>y/N</code> confirmation.</p>
+
+        <div class="tag-block">
+          <span class="tag">✠ LORE ROLE</span>
+          <p>LivSeg's exfiltration endpoint — the C2 that <code>breach.log</code> references throughout the previous stage. Reached only by reading the SSH config or the live network trace on NODE-083, so most participants will never see it. The scarcity is intentional.</p>
+        </div>
+        <div class="tag-block">
+          <span class="tag">✠ VISUAL STYLE</span>
+          <p>Dark crimson palette with white and gold highlights, VT323 font, aggressive CRT flicker. Mojibake noise resolves into a giant glowing skull. A right-side Midnight-Commander loot panel streams personal-data filenames: credit cards, photo backups, journal files, biometric templates.</p>
+        </div>
+        <div class="tag-block">
+          <span class="tag">✠ STORY PURPOSE</span>
+          <p>The hidden third act. Reaching it implies the participant, not the corporation, was always the second target. A single confirmation at the prompt ends with the date and the resistance message.</p>
+        </div>
+
+        <div class="cmd-stream" data-label="// PARTICIPANT PATH">
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /root/.ssh/config</span><span class="note">// hidden alias: Host cdn-edge-47 → 91.213.8.44:4444</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ssh -F /root/.ssh/config cdn-edge-47</span></div>
+          <div class="cmd-line reply">REMOTE HOST IDENTIFICATION HAS CHANGED. continue? [y/N] <span class="r">y</span></div>
+          <div class="cmd-line"><span class="pmt">connecting</span><span class="cmd">▒▒▒▒█████████████ resolving... skull stabilising...</span></div>
+          <div class="cmd-line reply">join resistance? [y/N] <span class="r">y</span></div>
+          
+          
+          <div class="cmd-line"><span class="pmt">livseg ▮</span><span class="cmd">17:07  ·  07.07.2077</span><span class="note">// see you there.</span></div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <h2>// The Date Treatment</h2>
+  <section class="date-card" aria-label="Reveal date">
+    <span class="big-date">17:07</span>
+    <span class="big-date">07.07.2077</span>
+    <span class="date-sub">THE REBELLION BEGINS</span>
+  </section>
+
+  <section class="panel hot" data-label="// FINAL LAMBDA RESPONSE">
+    <p><code>we got all your data, it's "safe" with us</code></p>
+    <p><code>join resistance --&gt; at this date 17:07 - 07.07.2077</code></p>
+  </section>
+
+  <h2>// Current Technical State</h2>
+  <ul>
+    <li><span class="w">All participant pages talk to the same backend endpoint.</span> Story content (files, command outputs, SSH routes, fake filesystem, SQLite responses, final reveal) is served from the backend, not the HTML.</li>
+    <li><span class="w">Easy edit block:</span> <code>STORY_CONFIG</code> at the top of the backend handler controls character and organisation names and reveal copy.</li>
+    <li><span class="w">Bash behaviour:</span> path state, Tab completion, globs, pipes, chained commands, history, <code>find</code>, <code>wc</code>, <code>grep</code>, <code>head</code>, <code>tail</code>, <code>which</code>, and realistic denials for destructive commands — all server-driven.</li>
+  </ul>
+
+  <h2>// Notes</h2>
+  <ul>
+    <li>Give participants only <code>server1.html</code> at the start.</li>
+    <li>Do not mention Server 3 unless they finish the main path or explicitly hunt for secrets.</li>
+    <li>Hint in-world: "check the logs", "what did SSH remember?", "look at file sizes", "try Tab".</li>
+    <li>For story revisions, edit the backend handler first. HTML should mostly be visual and interaction polish.</li>
+    <li>For real access control, do not rely on GitHub Pages obscurity. Use S3/CloudFront signed URLs, Cloudflare Access, or a token gate.</li>
+  </ul>
+
+  <p class="footer">// CD-0S // NODE-083 // LIVSEG // CDN-EDGE-47 // 17:07 - 07.07.2077 //</p>
+</main>
+</body>
+</html>

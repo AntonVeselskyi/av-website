@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LivSeg :: drop</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #060000;
+  --bg2:   #100303;
+  --r:     #ff1414;
+  --r2:    #ff5050;
+  --r3:    #7a0606;
+  --eye:   #ff2a2a;
+  --w:     #ffe1e1;
+  --w2:    #ff9b9b;
+  --dim:   #802424;
+  --dim2:  #571313;
+  --gold:  #ffcb47;
+  --panel: rgba(60,2,2,.62);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; }
+
+body {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,30,30,.16), transparent 38%),
+    radial-gradient(circle at 14% 90%, rgba(255,20,20,.06), transparent 35%),
+    radial-gradient(circle at 86% 12%, rgba(255,20,20,.05), transparent 36%),
+    linear-gradient(90deg, rgba(255,0,0,.04) 1px, transparent 1px),
+    linear-gradient(rgba(255,0,0,.03) 1px, transparent 1px),
+    var(--bg);
+  background-size: auto, auto, auto, 38px 38px, 38px 38px, auto;
+  color: var(--r2);
+  font-family: 'Share Tech Mono', 'VT323', 'Courier New', monospace;
+  font-size: clamp(14px, 1.35vw, 17px);
+  line-height: 1.65;
+  animation: crt-shake 11s infinite, brutal-flicker 7s infinite;
+  text-shadow: 0 0 6px rgba(255,30,30,.42);
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(to bottom,
+    rgba(255,255,255,.02) 0, rgba(255,255,255,.02) 1px,
+    rgba(0,0,0,.14) 2px, rgba(0,0,0,.14) 4px);
+  pointer-events: none; z-index: 9999;
+  mix-blend-mode: overlay;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.5), transparent 8%, transparent 92%, rgba(0,0,0,.5)),
+    radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,.85) 100%);
+  pointer-events: none; z-index: 9998;
+}
+@keyframes brutal-flicker {
+  0%, 6%, 8%, 24%, 26%, 48%, 50%, 100% { opacity: 1; }
+  7%, 25%, 49% { opacity: .85; }
+  47% { opacity: .55; }
+}
+@keyframes crt-shake {
+  0%, 3%, 100% { transform: translate(0); }
+  4% { transform: translate(1px, -2px); }
+  5% { transform: translate(-2px, 1px); }
+  6% { transform: translate(0); }
+  50%, 51% { transform: translate(0); }
+  52% { transform: translate(-2px, 0); }
+  53% { transform: translate(2px, 0); }
+  54% { transform: translate(0); }
+}
+
+/* moving scan lines */
+.scan-move {
+  position: fixed; left:0; right:0; height: 6px;
+  background: linear-gradient(transparent, rgba(255,30,30,.28), transparent);
+  animation: scanMove 4.5s linear infinite;
+  pointer-events: none; z-index: 9997;
+  mix-blend-mode: screen;
+}
+@keyframes scanMove { 0%{ top:-6px; } 100%{ top:100%; } }
+
+/* random glitch bars */
+.glitch-bar {
+  position: fixed; left:0; right:0;
+  background: rgba(255,0,0,.18);
+  pointer-events: none; z-index: 9996;
+  animation: gbar 3.5s infinite;
+  height: 2px;
+}
+@keyframes gbar {
+  0%, 79%, 100% { opacity: 0; top: 20%; }
+  80% { opacity: 1; top: 18%; height: 14px; }
+  81% { opacity: 0; top: 51%; }
+  87% { opacity: 1; top: 73%; height: 4px; }
+  88% { opacity: 0; }
+}
+
+/* ════════ LAYOUT ════════ */
+#root {
+  position: fixed; inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 0;
+}
+@media (max-width: 760px) {
+  #root { grid-template-columns: 1fr; }
+  #loot { display: none; }
+}
+
+#main {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 2.4vw, 30px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+#out {
+  flex: 1;
+  overflow-y: auto;
+  text-align: center;
+}
+#out::-webkit-scrollbar { width:4px; }
+#out::-webkit-scrollbar-track { background: transparent; }
+#out::-webkit-scrollbar-thumb { background: var(--r3); border-radius: 2px; }
+
+.line { display: block; white-space: pre-wrap; word-break: break-word; min-height: 1em; }
+
+/* ════════ SKULL ════════ */
+#skull-wrap {
+  position: relative;
+  margin: 4px auto 0;
+  display: inline-block;
+  filter:
+    drop-shadow(0 0 18px rgba(255,30,30,.48))
+    drop-shadow(0 0 64px rgba(255,30,30,.22));
+}
+#skull {
+  color: var(--r);
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: clamp(12px, 1.4vw, 18px);
+  line-height: 1;
+  white-space: pre;
+  text-shadow:
+    0 0 8px rgba(255,30,30,.7),
+    0 0 22px rgba(255,30,30,.45),
+    0 0 60px rgba(255,30,30,.25);
+  animation: skull-pulse 4.2s ease-in-out infinite, skull-glitch 9s infinite;
+}
+#skull-mask {
+  width: min(66vw, 760px);
+  aspect-ratio: 920 / 500;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255,42,42,.22), transparent 38%),
+    radial-gradient(ellipse at 50% 52%, transparent 44%, rgba(0,0,0,.92) 78%);
+  animation: skull-pulse 4.2s ease-in-out infinite, skull-glitch 9s infinite;
+}
+#skull-mask::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.16) 0 1px, rgba(255,0,0,.08) 1px 3px, transparent 3px 6px),
+    linear-gradient(90deg, transparent 0 18%, rgba(255,30,30,.16) 50%, transparent 82%);
+  mix-blend-mode: screen;
+  opacity: .72;
+  z-index: 3;
+  pointer-events: none;
+}
+#skull-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  filter:
+    contrast(1.18)
+    brightness(1.04)
+    drop-shadow(0 0 12px rgba(255,0,0,.92))
+    drop-shadow(0 0 38px rgba(255,0,0,.45));
+  mix-blend-mode: screen;
+  opacity: 1;
+  z-index: 1;
+}
+#skull-ascii {
+  position: absolute;
+  inset: 7% 16%;
+  color: rgba(255,230,230,.58);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(7px, .78vw, 12px);
+  line-height: .86;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  mix-blend-mode: screen;
+  opacity: .48;
+  text-shadow: 0 0 6px rgba(255,20,20,.8);
+  z-index: 2;
+  -webkit-mask: radial-gradient(ellipse at 50% 45%, #000 0 48%, transparent 72%);
+  mask: radial-gradient(ellipse at 50% 45%, #000 0 48%, transparent 72%);
+}
+#skull-ascii.fallback {
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--r);
+  font-size: clamp(10px, 1.1vw, 15px);
+  line-height: 1;
+  opacity: .95;
+  -webkit-mask: none;
+  mask: none;
+}
+@keyframes skull-pulse {
+  0%, 100% { color: var(--r);  filter: brightness(1); }
+  50% { color: #ff7878; filter: brightness(1.18); }
+}
+@keyframes skull-glitch {
+  0%, 88%, 100% { filter: none; transform: none; }
+  89% { filter: drop-shadow(-4px 0 #00ffff) drop-shadow(4px 0 #ff0000); transform: translateX(2px); }
+  90% { filter: drop-shadow(4px 0 #00ffff) drop-shadow(-4px 0 #ff0000); transform: translateX(-2px) skewX(-1deg); }
+  91% { filter: none; transform: none; }
+  94% { filter: drop-shadow(-2px 0 #00ffff) drop-shadow(2px 0 #ff0000); }
+  95% { filter: none; }
+}
+
+/* corner surveillance lens */
+#hal-eye {
+  position: fixed;
+  top: clamp(8px, 1.4vw, 18px);
+  right: clamp(8px, 1.4vw, 18px);
+  left: auto;
+  width: clamp(34px, 3.4vw, 52px);
+  height: clamp(34px, 3.4vw, 52px);
+  transform: none;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 78, 78, .34);
+  background:
+    radial-gradient(circle at 42% 38%, rgba(255, 255, 255, .94) 0 4%, rgba(255, 168, 168, .82) 5% 10%, transparent 12%),
+    radial-gradient(circle at 50% 52%, #ff4d4d 0 9%, #ba0808 18%, #3b0000 45%, #090000 70%),
+    conic-gradient(from 18deg, rgba(255, 76, 76, .28), rgba(20, 0, 0, .72), rgba(255, 76, 76, .20), rgba(6, 0, 0, .9), rgba(255, 76, 76, .28));
+  box-shadow:
+    0 0 8px rgba(255, 42, 42, .42),
+    0 0 24px rgba(255, 42, 42, .20),
+    inset 0 0 7px rgba(255, 190, 190, .22),
+    inset 0 0 18px rgba(0, 0, 0, .82);
+  animation: eye-pulse 3.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 9995;
+  opacity: .86;
+}
+#hal-eye::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 42, 42, .18);
+  background:
+    linear-gradient(transparent 0 44%, rgba(255, 90, 90, .18) 45% 47%, transparent 48%),
+    radial-gradient(circle, transparent 55%, rgba(0, 0, 0, .56) 72%);
+  box-shadow:
+    inset 0 0 18px rgba(255, 42, 42, .08),
+    0 0 12px rgba(255, 42, 42, .12);
+}
+#hal-eye::after {
+  content: '';
+  position: absolute;
+  inset: 26% 18%;
+  border-radius: 50%;
+  background: linear-gradient(120deg, rgba(255,255,255,.22), transparent 42%);
+  transform: rotate(-18deg);
+  mix-blend-mode: screen;
+}
+@keyframes eye-pulse {
+  0%, 100% { opacity: .82; transform: scale(1); filter: brightness(.96); }
+  45% { opacity: .94; transform: scale(1.025); filter: brightness(1.12); }
+  47% { opacity: .56; transform: scale(.99); filter: brightness(.72); }
+  50% { opacity: .9; transform: scale(1.015); filter: brightness(1.05); }
+}
+
+/* ════════ BANNER ════════ */
+#banner {
+  margin: 18px auto 0;
+  color: var(--w);
+  font-family: 'VT323', 'Share Tech Mono', monospace;
+  font-size: clamp(20px, 2.6vw, 34px);
+  letter-spacing: clamp(2px, 0.6vw, 8px);
+  text-align: center;
+  line-height: 1.05;
+  text-shadow:
+    0 0 8px #ff2a2a,
+    0 0 24px rgba(255,42,42,.6),
+    0 0 55px rgba(255,42,42,.35);
+  animation: banner-flicker 5.5s infinite;
+}
+#banner .small {
+  display: block;
+  font-size: .54em;
+  letter-spacing: clamp(4px, 1vw, 14px);
+  color: var(--w2);
+  margin-top: 6px;
+}
+@keyframes banner-flicker {
+  0%, 8%, 10%, 90%, 92%, 100% { opacity: 1; }
+  9%, 91% { opacity: .35; }
+}
+
+/* sub-banner / motto */
+.motto {
+  margin: 14px auto 0;
+  text-align: center;
+  color: var(--w2);
+  font-size: .94em;
+}
+.motto .gold { color: var(--gold); }
+
+/* ════════ PROMPT ════════ */
+#inp-row {
+  display: flex;
+  align-items: baseline;
+  margin-top: auto;
+  padding: 18px clamp(8px, 2vw, 24px) 0;
+  position: relative; cursor: text;
+  border-top: 1px solid rgba(255,30,30,.28);
+  justify-content: center;
+  gap: 8px;
+}
+#prompt {
+  color: var(--w);
+  white-space: nowrap;
+  font-size: 1.2em;
+  text-shadow: 0 0 10px var(--eye);
+}
+#typed {
+  color: var(--w);
+  white-space: pre;
+  font-size: 1.2em;
+  text-shadow: 0 0 8px var(--eye);
+  padding-left: 6px;
+}
+#cur {
+  display: inline-block; color: var(--w); font-weight: bold;
+  font-size: 1.2em;
+  animation: cblink .85s steps(2,start) infinite;
+  margin-left: -3px;
+  text-shadow: 0 0 12px var(--eye);
+}
+@keyframes cblink { 0%,49% { opacity:1; } 50%,100% { opacity:0; } }
+#cmd {
+  position: absolute; inset: 0;
+  background: transparent; border: none; outline: none;
+  color: transparent; caret-color: transparent;
+  font: inherit; padding: 0; margin: 0;
+  text-align: center;
+}
+
+/* ════════ LOOT SIDEBAR (MC style) ════════ */
+#loot {
+  background: linear-gradient(180deg, rgba(70,2,2,.45), rgba(40,0,0,.6));
+  border-left: 1px solid rgba(255,30,30,.32);
+  padding: 14px 14px;
+  display: flex; flex-direction: column;
+  font-family: 'Share Tech Mono','VT323',monospace;
+  font-size: 12.5px;
+  overflow: hidden;
+}
+#loot h2 {
+  font-weight: normal;
+  color: var(--w);
+  font-size: 13px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255,30,30,.4);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 8px var(--eye);
+}
+#loot .sub { font-size: 10.5px; color: var(--w2); letter-spacing: 1px; }
+#loot-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+#loot-list::-webkit-scrollbar { width:3px; }
+#loot-list::-webkit-scrollbar-track { background: transparent; }
+#loot-list::-webkit-scrollbar-thumb { background: var(--r3); }
+.loot-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 0;
+  border-bottom: 1px dotted rgba(255,30,30,.16);
+  color: var(--r2);
+  text-shadow: 0 0 4px rgba(255,30,30,.3);
+}
+.loot-item .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex:1; }
+.loot-item .sz { color: var(--w2); font-size: 11px; flex-shrink:0; }
+.loot-item.new {
+  animation: loot-flash 1.2s ease-out;
+}
+@keyframes loot-flash {
+  0% { background: rgba(255,30,30,.5); color: #fff; }
+  100% { background: transparent; color: var(--r2); }
+}
+
+#loot-footer {
+  border-top: 1px solid rgba(255,30,30,.4);
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--w2);
+  text-align: center;
+}
+#loot-footer .gold { color: var(--gold); }
+
+/* big "OBEY" reply */
+.obey-reply {
+  display: inline-block;
+  font-family: 'VT323','Share Tech Mono',monospace;
+  font-size: clamp(40px, 7vw, 90px);
+  letter-spacing: clamp(6px, 1.4vw, 20px);
+  color: var(--r);
+  text-shadow:
+    0 0 10px var(--eye),
+    0 0 30px var(--eye),
+    0 0 70px rgba(255,30,30,.6);
+  margin: 14px 0;
+  animation: obey-pulse .6s ease-out 3;
+}
+@keyframes obey-pulse {
+  0% { transform: scale(.92); opacity: 0; }
+  40% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* incoming mojibake noise (resolves into skull) */
+.noise {
+  font-family: 'VT323','Share Tech Mono',monospace;
+  color: var(--r3);
+  font-size: 14px;
+  line-height: 1.05;
+  text-align: center;
+  word-break: break-all;
+  filter: blur(.3px);
+  opacity: .85;
+}
+
+.hl { color: var(--w); }
+.gold { color: var(--gold); }
+.dim { color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="scan-move"></div>
+<div class="glitch-bar"></div>
+
+<div id="root">
+
+  <!-- ═══ MAIN ═══ -->
+  <div id="main">
+    <div id="out">
+      <!-- skull + banner injected here -->
+    </div>
+
+    <div id="inp-row">
+      <span id="prompt">join resistance? [y/N]</span><span id="typed"></span><span id="cur">▮</span>
+      <input id="cmd" type="text" autocomplete="off" spellcheck="false" autofocus>
+    </div>
+  </div>
+
+  <!-- ═══ LOOT SIDEBAR ═══ -->
+  <aside id="loot">
+    <h2>LOOT MANIFEST <span class="sub">(live)</span></h2>
+    <div id="loot-list"></div>
+    <div id="loot-footer">
+      total exfil: <span id="loot-total" class="gold">0.0 GB</span><br>
+      target: <span class="hl">YOU</span><br>
+      session: <span class="hl">livseg / RAT 0x14</span>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+'use strict';
+
+const out      = document.getElementById('out');
+const cmdEl    = document.getElementById('cmd');
+const typedEl  = document.getElementById('typed');
+const lootList = document.getElementById('loot-list');
+const lootTot  = document.getElementById('loot-total');
+const API_URL = 'https://bzfclyzne3.execute-api.us-east-2.amazonaws.com/default/hackingEP';
+const RESISTANCE_COMMAND = 'join resistance';
+const YES_VALUES = new Set(['y', 'yes']);
+const NO_VALUES = new Set(['', 'n', 'no']);
+const FALLBACK_REVEAL_DATE = '17:07 · 07.07.2077';
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function syncTyped() { typedEl.textContent = cmdEl.value; }
+function setCmd(v)   { cmdEl.value = v; syncTyped(); }
+cmdEl.addEventListener('input', syncTyped);
+
+document.addEventListener('mousedown', () => setTimeout(() => cmdEl.focus(), 0));
+document.addEventListener('keydown', (e) => {
+  if (document.activeElement !== cmdEl) cmdEl.focus();
+});
+
+// ════════════════════════════════════════════════════════════════════
+// SKULL (the centerpiece)
+// ════════════════════════════════════════════════════════════════════
+const SKULL = `
+              ▄▄▓▓▓▓▓▓▓▓▓▓▓▓▄▄
+          ▄▓▓▓▀▀▀          ▀▀▀▓▓▓▄
+       ▄▓▓▀                       ▀▓▓▄
+      ▓▓▀                           ▀▓▓
+     ▓▓                               ▓▓
+    ▓▓     ▄▄▄▄              ▄▄▄▄     ▓▓
+    ▓▓   ▓▓▀▀▀▀▓▓          ▓▓▀▀▀▀▓▓   ▓▓
+    ▓▓  ▓▓      ▓▓        ▓▓      ▓▓  ▓▓
+    ▓▓  ▓▓  ██  ▓▓        ▓▓  ██  ▓▓  ▓▓
+    ▓▓  ▓▓      ▓▓        ▓▓      ▓▓  ▓▓
+    ▓▓   ▓▓▄▄▄▄▓▓          ▓▓▄▄▄▄▓▓   ▓▓
+    ▓▓                                 ▓▓
+     ▓▓        ▄▄▄▄▄▄▄▄▄▄▄▄▄         ▓▓
+      ▓▓      ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓     ▓▓
+       ▓▓▄    ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀   ▄▓▓
+         ▓▓▄                    ▄▓▓
+           ▓▓▄▄              ▄▄▓▓
+              ▀▓▓▓▓▄▄▄▄▄▄▓▓▓▓▀
+                 ▀▀▓▓▓▓▓▓▓▀▀
+`;
+
+// ════════════════════════════════════════════════════════════════════
+// MOJIBAKE NOISE → SKULL RESOLUTION
+// ════════════════════════════════════════════════════════════════════
+const NOISE_CHARS = '▓▒░█▌▐│┤╡╢╖╕╣║╗╝╜╛╓╔╨╤╥╙╘╒╓╫╪┘┌╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒░▒▓█абвгджзийклмнопрстуфх¥¤§¶®©µ™';
+function mojibake(len) {
+  let s = '';
+  for (let i = 0; i < len; i++) s += NOISE_CHARS[Math.floor(Math.random() * NOISE_CHARS.length)];
+  return s;
+}
+
+function skullTexture() {
+  const chars = '01#@$%&*+=-:_/\\\\|[]{}<>JOINRESISTANCE';
+  const rows = [];
+  for (let y = 0; y < 42; y++) {
+    let row = '';
+    for (let x = 0; x < 96; x++) row += chars[Math.floor(Math.random() * chars.length)];
+    rows.push(row);
+  }
+  return rows.join('\n');
+}
+
+function addLine(text, cls = '') {
+  const d = document.createElement('div');
+  d.className = 'line' + (cls ? ' ' + cls : '');
+  d.textContent = text;
+  out.appendChild(d);
+  return d;
+}
+
+async function bootSequence() {
+  // 1. Heavy mojibake noise (frame-by-frame)
+  const noiseEl = document.createElement('pre');
+  noiseEl.className = 'noise';
+  out.appendChild(noiseEl);
+  for (let frame = 0; frame < 12; frame++) {
+    const blob = [];
+    for (let r = 0; r < 14; r++) blob.push(mojibake(48 + Math.floor(Math.random() * 14)));
+    noiseEl.textContent = blob.join('\n');
+    await sleep(45);
+  }
+  // 2. Quick black flash
+  document.body.style.background = '#000';
+  await sleep(80);
+  document.body.style.background = '';
+  await sleep(60);
+  // 3. Reveal skull
+  noiseEl.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'skull-wrap';
+  wrap.innerHTML = `<div id="skull-mask"><img id="skull-img" src="skull-crt.png" alt=""><div id="skull-ascii"></div></div><div id="hal-eye"></div>`;
+  out.appendChild(wrap);
+  const skullAscii = document.getElementById('skull-ascii');
+  const skullImg = document.getElementById('skull-img');
+  let skullFallbackTried = false;
+  skullImg.addEventListener('error', () => {
+    if (!skullFallbackTried) {
+      skullFallbackTried = true;
+      skullImg.src = 'skull.png';
+      return;
+    }
+    skullImg.remove();
+    skullAscii.classList.add('fallback');
+    skullAscii.textContent = SKULL;
+  });
+  skullAscii.textContent = skullTexture();
+  setInterval(() => {
+    if (!skullAscii.classList.contains('fallback')) skullAscii.textContent = skullTexture();
+  }, 240);
+  await sleep(800);
+  // 4. Banner
+  await sleep(300);
+  const banner = document.createElement('div');
+  banner.id = 'banner';
+  banner.innerHTML = `STRONG ALONE<span class="small">UNDEFEATABLE  TOGETHER</span>`;
+  out.appendChild(banner);
+
+  // 5. Motto / connection notice
+  await sleep(280);
+  const motto = document.createElement('div');
+  motto.className = 'motto';
+  motto.innerHTML =
+    `<span class="dim">// session opened ?</span> <span class="gold">livseg</span> <span class="dim">? uid=anon ? no logs kept</span><br>` +
+    `<span class="dim">// invitation pending: </span><span class="hl">join resistance? [y/N]</span>`;
+  out.appendChild(motto);
+
+  // 6. Start streaming loot in
+  startLootStream();
+  // 7. Focus the prompt
+  cmdEl.focus();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// LOOT STREAM — items appear over time, building dread
+// ════════════════════════════════════════════════════════════════════
+const LOOT_POOL = [
+  { name: 'vault/root_access_tokens.bundle',       sz: '4.7 MB' },
+  { name: 'mail/full_export_2010_2077.mbox',       sz: '18.4 GB' },
+  { name: 'phones/backup_ios_primary.img',         sz: '42.8 GB' },
+  { name: 'photos/private_archive_redacted.tar',   sz: '31.2 GB' },
+  { name: 'browser/password_store_decrypted.json', sz: '1.6 MB' },
+  { name: 'browser/history_all_profiles.sqlite',   sz: '244 MB' },
+  { name: 'cloud/drive_takeout_complete.zip',      sz: '63.9 GB' },
+  { name: 'identity/passport_scan_front.png',      sz: '2.8 MB' },
+  { name: 'identity/license_scan_back.png',        sz: '1.9 MB' },
+  { name: 'finance/bank_statements_10y.tar',       sz: '310 MB' },
+  { name: 'finance/tax_returns_full.zip',          sz: '22 MB' },
+  { name: 'crypto/wallet_seed_phrases.locked',     sz: '18 KB' },
+  { name: 'crypto/exchange_sessions.cookiejar',    sz: '96 KB' },
+  { name: 'chat/signal_archive.db',                sz: '2.1 GB' },
+  { name: 'chat/telegram_secret_export.json',      sz: '740 MB' },
+  { name: 'chat/discord_private_channels.tar',     sz: '1.8 GB' },
+  { name: 'location/timeline_15y.geojson',         sz: '984 MB' },
+  { name: 'devices/webcam_motion_cache.mkv',       sz: '8.4 GB' },
+  { name: 'devices/microphone_buffer_72h.flac',    sz: '6.1 GB' },
+  { name: 'work/vpn_certs_and_keys.p12',           sz: '54 KB' },
+  { name: 'work/hr_salary_threads.eml',            sz: '18 MB' },
+  { name: 'home/router_wifi_passwords.txt',        sz: '4 KB' },
+  { name: 'home/doorlock_pin_history.csv',         sz: '9 KB' },
+  { name: 'biometric/face_template.bin',           sz: '8.4 KB' },
+  { name: 'biometric/fingerprint_template.bin',    sz: '12 KB' },
+  { name: 'notes/private_journal_merged.txt',      sz: '5.2 MB' },
+];
+
+let lootIdx = 0;
+let lootTotalGB = 0;
+
+function parseSize(s) {
+  const m = s.match(/^([\d.]+)\s*(B|KB|MB|GB)/i);
+  if (!m) return 0;
+  const n = parseFloat(m[1]);
+  switch (m[2].toUpperCase()) {
+    case 'B':  return n / 1024 / 1024 / 1024;
+    case 'KB': return n / 1024 / 1024;
+    case 'MB': return n / 1024;
+    case 'GB': return n;
+  }
+  return 0;
+}
+
+function pushLoot() {
+  if (lootIdx >= LOOT_POOL.length) return;
+  // shuffle order: pop from random remaining position
+  const remaining = LOOT_POOL.slice(lootIdx);
+  const pick = remaining[Math.floor(Math.random() * remaining.length)];
+  const idx = LOOT_POOL.indexOf(pick);
+  // swap to front
+  [LOOT_POOL[lootIdx], LOOT_POOL[idx]] = [LOOT_POOL[idx], LOOT_POOL[lootIdx]];
+  lootIdx++;
+
+  const row = document.createElement('div');
+  row.className = 'loot-item new';
+  row.innerHTML = `<span class="name">▣ ${pick.name}</span><span class="sz">${pick.sz}</span>`;
+  lootList.appendChild(row);
+  lootList.scrollTop = lootList.scrollHeight;
+  setTimeout(() => row.classList.remove('new'), 1200);
+
+  lootTotalGB += parseSize(pick.sz);
+  lootTot.textContent = (lootTotalGB < 1 ? (lootTotalGB * 1024).toFixed(1) + ' MB' : lootTotalGB.toFixed(1) + ' GB');
+}
+
+let lootTimer = null;
+function startLootStream() {
+  // Burst the first 6 quickly to set the tone
+  for (let i = 0; i < 6; i++) setTimeout(pushLoot, 200 + i * 220);
+  // Then a steady drip
+  lootTimer = setInterval(() => {
+    if (lootIdx >= LOOT_POOL.length) { clearInterval(lootTimer); return; }
+    pushLoot();
+  }, 1700);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// PROMPT - final consent uses a Unix-style y/N confirmation
+let revealShown = false;
+cmdEl.addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  const raw = cmdEl.value.trim().toLowerCase();
+  setCmd('');
+
+  const ok = YES_VALUES.has(raw);
+  const no = NO_VALUES.has(raw);
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'text-align:center; padding: 6px 0;';
+  wrap.innerHTML = '<div class="obey-reply">' + (ok ? 'JOIN' : (no ? 'NO' : 'RESIST')) + '</div>';
+  out.appendChild(wrap);
+  out.scrollTop = out.scrollHeight;
+  flash();
+
+  if (ok && !revealShown) {
+    revealShown = true;
+    await revealEnd();
+  }
+});
+
+function flash() {
+  const f = document.createElement('div');
+  f.style.cssText = 'position:fixed;inset:0;background:rgba(255,30,30,.25);pointer-events:none;z-index:9999';
+  document.body.appendChild(f);
+  setTimeout(() => f.style.background = 'rgba(255,30,30,.55)', 30);
+  setTimeout(() => f.style.background = 'rgba(0,0,0,.6)', 70);
+  setTimeout(() => f.remove(), 140);
+}
+
+async function fetchReveal() {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ server: 'node083', raw: RESISTANCE_COMMAND, state: { cwd: '/root', prevCwd: '/root' } })
+    });
+    const payload = await res.json();
+    const output = String(payload.output || '');
+    const lines = output.split('\n').filter(Boolean);
+    const dateLine = lines.find(line => line.includes('at this date')) || '';
+    const date = dateLine.replace(/^.*at this date\s*/i, '').trim() || FALLBACK_REVEAL_DATE;
+    return { output, date, prefix: dateLine || ('join resistance --> at this date ' + date) };
+  } catch {
+    return {
+      output: 'we got all your data, it\'s "safe" with us\njoin resistance --> at this date ' + FALLBACK_REVEAL_DATE,
+      date: FALLBACK_REVEAL_DATE,
+      prefix: 'join resistance --> at this date ' + FALLBACK_REVEAL_DATE
+    };
+  }
+}
+
+async function revealEnd() {
+  await sleep(400);
+  const reveal = await fetchReveal();
+  const e = document.createElement('div');
+  e.style.cssText = 'text-align:center; margin: 24px auto; padding: 18px;';
+  const safeLine = escapeHTML(reveal.output.split('\n')[0] || 'good.');
+  e.innerHTML =
+    '<div style="font-family:VT323,monospace; font-size:clamp(28px,4vw,52px); letter-spacing:6px; color:#fff; text-shadow:0 0 10px #ff2a2a, 0 0 28px #ff2a2a;">' + safeLine + '</div>' +
+    '<div style="font-family:VT323,monospace; font-size:clamp(46px,8vw,96px); letter-spacing:8px; color:#ff2a2a; text-shadow:0 0 18px #ff2a2a, 0 0 50px #ff2a2a; margin: 14px 0;">' + escapeHTML(reveal.date) + '</div>' +
+    '<div style="color:#ffe1e1; font-size:1.1em; letter-spacing:3px;">' + escapeHTML(reveal.prefix) + '</div>';
+  out.appendChild(e);
+  out.scrollTop = out.scrollHeight;
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+}
+// boot
+bootSequence();
+</script>
+</body>
+</html>

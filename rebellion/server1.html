@@ -1,0 +1,730 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CD-0S CORP // SECURE TERMINAL</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g:  #67ff8d;
+  --g2: #22d45a;
+  --g3: #157a31;
+  --c:  #35ddff;
+  --c2: #13a9c9;
+  --r:  #ff4b4b;
+  --o:  #ffb02e;
+  --w:  #f3fff5;
+  --bg: #030706;
+  --panel: rgba(3, 18, 13, .72);
+  --line-glow: rgba(103,255,141,.16);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(53,221,255,.12), transparent 34%),
+    radial-gradient(circle at 80% 82%, rgba(103,255,141,.08), transparent 34%),
+    linear-gradient(rgba(53,221,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(103,255,141,.026) 1px, transparent 1px),
+    var(--bg);
+  background-size: 40px 40px;
+  color: var(--g);
+  font-family: 'Share Tech Mono','Courier New','Lucida Console',monospace;
+  font-size: clamp(15px, 1.45vw, 18px);
+  line-height: 1.72;
+  animation: flicker 15s infinite;
+  text-shadow: 0 0 5px rgba(103,255,141,.22);
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(to bottom,
+    rgba(255,255,255,.015) 0, rgba(255,255,255,.015) 1px,
+    rgba(0,0,0,.08) 2px, rgba(0,0,0,.08) 4px);
+  pointer-events: none; z-index: 9999;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.34), transparent 16%, transparent 84%, rgba(0,0,0,.34)),
+    radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(0,0,0,.52) 100%);
+  pointer-events: none; z-index: 9998;
+}
+@keyframes flicker {
+  0%,19%,21%,23%,25%,54%,56%,100% { opacity: 1; }
+  20%,55% { opacity: .985; }
+  24% { opacity: .98; }
+}
+
+.scan-move {
+  position: fixed; left: 0; right: 0; height: 3px;
+  background: linear-gradient(transparent, rgba(103,255,141,.18), transparent);
+  animation: scanMove 12s linear infinite;
+  pointer-events: none; z-index: 9997;
+}
+@keyframes scanMove { 0% { top: -3px; } 100% { top: 100%; } }
+
+#screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  padding: clamp(18px, 3vw, 34px);
+  background:
+    linear-gradient(180deg, rgba(103,255,141,.055), transparent 18%, transparent 82%, rgba(53,221,255,.035)),
+    var(--panel);
+  border: 1px solid rgba(103,255,141,.14);
+  box-shadow:
+    inset 0 0 60px rgba(103,255,141,.055),
+    inset 0 0 160px rgba(53,221,255,.045);
+}
+#out {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding-right: 8px;
+}
+#out::-webkit-scrollbar { width: 6px; }
+#out::-webkit-scrollbar-track { background: transparent; }
+#out::-webkit-scrollbar-thumb { background: rgba(103,255,141,.42); border-radius: 3px; }
+
+.line {
+  display: block; white-space: pre-wrap; word-break: break-word; min-height: 1em;
+  color: var(--g);
+  text-shadow: 0 0 5px rgba(103,255,141,.20);
+}
+.line + .line { margin-top: 1px; }
+.dim  { color: #3abf5d; opacity: .9; }
+.med  { color: var(--g2); }
+.cyan { color: var(--c);  text-shadow: 0 0 10px rgba(53,221,255,.45); }
+.c2   { color: #55cce1; }
+.red  { color: var(--r);  text-shadow: 0 0 8px rgba(255,75,75,.4); }
+.o    { color: var(--o);  text-shadow: 0 0 7px rgba(255,176,46,.35); }
+.w    { color: var(--w); }
+.ok   { color: #8bffa6;  font-weight: bold; text-shadow: 0 0 10px rgba(103,255,141,.4); }
+.err  { color: var(--r); }
+
+.logo {
+  color: var(--c);
+  text-shadow: 0 0 18px rgba(0,212,255,.6), 0 0 40px rgba(0,212,255,.2);
+  animation: logoGlitch 10s infinite;
+  display: inline-block;
+}
+@keyframes logoGlitch {
+  0%,88%,100% { filter: none; transform: none; }
+  89%  { filter: drop-shadow(-3px 0 #ff0055) drop-shadow(3px 0 #00ccff); transform: translateX(2px); }
+  90%  { filter: drop-shadow(2px 0 #ff0055) drop-shadow(-2px 0 #00ccff); transform: translateX(-1px); }
+  91%  { filter: none; transform: none; }
+  94%  { filter: drop-shadow(-2px 0 #ff0055) drop-shadow(1px 0 #00ccff); transform: translateX(1px); }
+  95%  { filter: none; transform: none; }
+}
+
+#inp-row {
+  display: none; align-items: baseline; flex-shrink: 0;
+  margin-top: 8px; padding-top: 8px;
+  position: relative; cursor: text;
+  border-top: 1px solid rgba(103,255,141,.14);
+  filter: drop-shadow(0 0 8px rgba(103,255,141,.14));
+}
+#prompt {
+  color: var(--c); white-space: nowrap; flex-shrink: 0;
+  text-shadow: 0 0 10px rgba(53,221,255,.48);
+}
+#typed  { color: #a4ffb7; white-space: pre; text-shadow: 0 0 8px rgba(103,255,141,.34); padding-left: 6px; }
+#cur {
+  display: inline-block; color: #d9ffe2; font-weight: bold;
+  animation: cblink .9s steps(2,start) infinite;
+  margin-left: -2px;
+  text-shadow: 0 0 10px rgba(103,255,141,.75);
+}
+@keyframes cblink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+#cmd {
+  position: absolute; inset: 0;
+  background: transparent; border: none; outline: none;
+  color: transparent; caret-color: transparent;
+  font-family: inherit; font-size: inherit;
+  padding: 0; margin: 0;
+}
+#cmd::selection { background: rgba(0,255,65,.3); }
+</style>
+</head>
+<body>
+<div class="scan-move"></div>
+<div id="screen">
+  <div id="out"></div>
+  <div id="inp-row">
+    <span id="prompt"></span><span id="typed"></span><span id="cur">▮</span>
+    <input id="cmd" type="text" autocomplete="off" spellcheck="false">
+  </div>
+</div>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════
+// LAMBDA_TARGET - command and file responses now live in AWS Lambda.
+// Keep this browser payload thin so participants cannot inspect the hacked system data.
+const API_URL = 'https://bzfclyzne3.execute-api.us-east-2.amazonaws.com/default/hackingEP';
+const SERVER_ID = 'core01';
+const RESPONSES = { FS: Object.freeze({}), FILES: Object.freeze({}), CMDS: Object.freeze({}) };
+// ═══════════════════════════════════════════════════════════════════
+
+const out       = document.getElementById('out');
+const inpRow    = document.getElementById('inp-row');
+const promptEl  = document.getElementById('prompt');
+const cmdEl     = document.getElementById('cmd');
+const typedEl   = document.getElementById('typed');
+const curEl     = document.getElementById('cur');
+const afterEl   = document.createElement('span');
+afterEl.id = 'after';
+afterEl.style.cssText = 'color:var(--g);white-space:pre';
+curEl.after(afterEl);
+
+const HOME = '/home/observer';
+const S = { cwd: HOME, prevCwd: HOME, sshWait: false, hist: [], histIdx: -1 };
+let lastSubmitAt = 0;
+let commandInFlight = false;
+
+// Mirror input value to visible typed span (input itself is invisible)
+function syncTyped() {
+  const pos = cmdEl.selectionStart ?? cmdEl.value.length;
+  typedEl.textContent = cmdEl.value.slice(0, pos);
+  afterEl.textContent = cmdEl.value.slice(pos);
+}
+
+function setCmd(v) {
+  cmdEl.value = v;
+  cmdEl.setSelectionRange(v.length, v.length);
+  syncTyped();
+}
+function insertAtCursor(text) {
+  const start = cmdEl.selectionStart ?? cmdEl.value.length;
+  const end = cmdEl.selectionEnd ?? start;
+  cmdEl.value = cmdEl.value.slice(0, start) + text + cmdEl.value.slice(end);
+  const pos = start + text.length;
+  cmdEl.setSelectionRange(pos, pos);
+  syncTyped();
+}
+function deleteAtCursor(forward = false) {
+  const start = cmdEl.selectionStart ?? cmdEl.value.length;
+  const end = cmdEl.selectionEnd ?? start;
+  if (start !== end) {
+    cmdEl.value = cmdEl.value.slice(0, start) + cmdEl.value.slice(end);
+    cmdEl.setSelectionRange(start, start);
+  } else if (forward && start < cmdEl.value.length) {
+    cmdEl.value = cmdEl.value.slice(0, start) + cmdEl.value.slice(start + 1);
+    cmdEl.setSelectionRange(start, start);
+  } else if (!forward && start > 0) {
+    cmdEl.value = cmdEl.value.slice(0, start - 1) + cmdEl.value.slice(start);
+    cmdEl.setSelectionRange(start - 1, start - 1);
+  }
+  syncTyped();
+}
+function visibleCommandValue() {
+  return cmdEl.value || (typedEl.textContent + afterEl.textContent);
+}
+function recentlySubmitted() {
+  return performance.now() - lastSubmitAt < 800;
+}
+cmdEl.addEventListener('input', syncTyped);
+cmdEl.addEventListener('keyup', syncTyped);
+cmdEl.addEventListener('click', syncTyped);
+cmdEl.addEventListener('select', syncTyped);
+
+document.addEventListener('mousedown', () => {
+  if (inpRow.style.display === 'none') return;
+  if (window.getSelection && window.getSelection().toString()) return;
+  setTimeout(() => cmdEl.focus(), 0);
+});
+document.addEventListener('keydown', async (e) => {
+  if (document.activeElement === cmdEl) return;
+  if (inpRow.style.display === 'none') return;
+  if (window.getSelection && window.getSelection().toString()) return;
+  cmdEl.focus();
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    insertAtCursor(e.key);
+    return;
+  }
+  if (e.key === 'Backspace' || e.key === 'Delete') {
+    e.preventDefault();
+    deleteAtCursor(e.key === 'Delete');
+    return;
+  }
+  if (['Enter','Tab','ArrowUp','ArrowDown'].includes(e.key) || e.ctrlKey) {
+    e.preventDefault();
+    await onShellKeydown(e);
+  }
+});
+document.addEventListener('keyup', async (e) => {
+  if (e.key !== 'Enter') return;
+  if (inpRow.style.display === 'none') return;
+  if (recentlySubmitted()) return;
+  e.preventDefault();
+  await submitCommand();
+});
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function scrollBottom() {
+  out.scrollTop = out.scrollHeight;
+  requestAnimationFrame(() => {
+    out.scrollTop = out.scrollHeight;
+    requestAnimationFrame(() => { out.scrollTop = out.scrollHeight; });
+  });
+}
+const GLITCH_CHARS = ['-','-','-','-','¦','¦','+','+','+','+','-','-','?','?'];
+function maybeCorrupt(text) {
+  if (SERVER_ID !== 'node083' || Math.random() > 0.07) return text;
+  const pos = Math.floor(Math.random() * text.length);
+  const gc = GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+  return text.slice(0, pos) + gc + text.slice(pos);
+}
+function addLine(text = '', cls = '', corrupt = false) {
+  const d = document.createElement('div');
+  d.className = 'line' + (cls ? ' ' + cls : '');
+  d.textContent = corrupt ? maybeCorrupt(text) : text;
+  out.appendChild(d);
+  scrollBottom();
+  return d;
+}
+function addHTML(html, cls = '') {
+  const d = document.createElement('div');
+  d.className = 'line' + (cls ? ' ' + cls : '');
+  d.innerHTML = html;
+  out.appendChild(d);
+  scrollBottom();
+  return d;
+}
+async function type(text, cls = '', speed = 22) {
+  const d = addLine('', cls);
+  for (const ch of text) {
+    d.textContent += ch;
+    scrollBottom();
+    await sleep(speed + Math.random() * speed * 0.4);
+  }
+  return d;
+}
+async function printLines(lines, delay = 40) {
+  for (const l of lines) {
+    if (typeof l === 'string') addLine(l, '', true);
+    else addLine(l.t, l.c, l.corrupt !== false);
+    if (delay) await sleep(delay);
+  }
+  scrollBottom();
+}
+async function progressBar(label, duration, w = 20, errAt = -1) {
+  const d = addLine('', 'med');
+  const step = duration / w;
+  for (let i = 0; i <= w; i++) {
+    const filled = '█'.repeat(i);
+    const empty = ' '.repeat(w - i);
+    if (i === errAt) {
+      d.innerHTML = `<span class="r2">${label} [${filled}░░░░░░░░${' '.repeat(Math.max(0,w-i-8))}] ERROR</span>`;
+      d.className = 'line';
+      await sleep(500);
+      return false;
+    }
+    if (i === w) {
+      d.innerHTML = `<span class="med">${label} [</span><span class="ok">${filled}</span><span class="med">]</span> <span class="ok">OK</span>`;
+      d.className = 'line';
+    } else {
+      d.textContent = `${label} [${filled}${empty}] ${Math.round(i / w * 100)}%`;
+    }
+    scrollBottom();
+    await sleep(step * (.7 + Math.random() * .6));
+  }
+  return true;
+}
+
+function updatePrompt() {
+  if (SERVER_ID === 'node083' && S.sqliteMode) {
+    promptEl.textContent = 'sqlite> ';
+    promptEl.className = 'sql-mode';
+    return;
+  }
+  promptEl.className = '';
+  if (SERVER_ID === 'node083') {
+    const d = S.cwd.replace('/root', '~');
+    promptEl.textContent = `r00t@NODE-083:${d}# `;
+  } else {
+    const d = S.cwd.replace('/home/observer', '~');
+    promptEl.textContent = `observer@cd-0s-core01:${d}$ `;
+  }
+}
+function showShell() {
+  inpRow.style.display = 'flex';
+  updatePrompt();
+  cmdEl.focus();
+  if (SERVER_ID === 'node083') startPromptGlitch();
+  scrollBottom();
+}
+function clearScreen() { out.innerHTML = ''; }
+
+function remoteState() {
+  if (SERVER_ID === 'node083') {
+    return { cwd: S.cwd, prevCwd: S.prevCwd, decrypted: S.decrypted, sqliteMode: S.sqliteMode, sqliteFile: S.sqliteFile };
+  }
+  return { cwd: S.cwd, prevCwd: S.prevCwd, sshWait: S.sshWait };
+}
+function applyRemoteState(state) {
+  if (!state || typeof state !== 'object') return;
+  if (typeof state.cwd === 'string') S.cwd = state.cwd;
+  if (typeof state.prevCwd === 'string') S.prevCwd = state.prevCwd;
+  if (typeof state.sshWait === 'boolean') S.sshWait = state.sshWait;
+  if (typeof state.decrypted === 'boolean') S.decrypted = state.decrypted;
+  if (typeof state.sqliteMode === 'boolean') S.sqliteMode = state.sqliteMode;
+  if (typeof state.sqliteFile === 'string' || state.sqliteFile === null) S.sqliteFile = state.sqliteFile;
+}
+async function remoteCommand(raw) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ server: SERVER_ID, raw, state: remoteState() })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    if (!payload || payload.ok === false) {
+      return { output: payload?.message || 'remote shell rejected request', state: remoteState() };
+    }
+    return payload;
+  } catch (err) {
+    return { ok: false, output: `shell transport offline: ${err.message}`, state: remoteState() };
+  }
+}
+
+async function submitCommand() {
+  if (commandInFlight) return;
+  commandInFlight = true;
+  lastSubmitAt = performance.now();
+  try {
+    const raw = visibleCommandValue();
+    setCmd('');
+    S.histIdx = -1;
+
+    if (SERVER_ID === 'core01' && S.sshWait) {
+      addLine(promptEl.textContent + raw, 'dim');
+      if (raw.trim().toLowerCase() === 'y') {
+        inpRow.style.display = 'none';
+        await sshGo();
+      } else {
+        addLine('Aborted.', 'dim');
+        addLine('');
+        S.sshWait = false;
+        showShell();
+      }
+      return;
+    }
+
+    addLine(promptEl.textContent + raw, 'dim');
+    if (!raw.trim()) { showShell(); return; }
+    if (S.hist[S.hist.length - 1] !== raw.trim()) S.hist.push(raw.trim());
+    inpRow.style.display = 'none';
+
+    const result = await remoteCommand(raw);
+    applyRemoteState(result.state);
+    if (result.action === 'clear') { clearScreen(); showShell(); return; }
+    if (result.action === 'ssh') { await sshAnim(); return; }
+    if (result.action === 'decrypt') { await decryptSequence(result.output); return; }
+    if (result.output) addLine(result.output);
+    showShell();
+  } finally {
+    commandInFlight = false;
+  }
+}
+
+async function handleCommand(raw) { return remoteCommand(raw); }
+function handleSQLite(raw) { return remoteCommand(raw); }
+
+async function decryptSequence(finalLine = 'Output written.') {
+  inpRow.style.display = 'none';
+  addLine('');
+  await printLines([{ t: 'Reading recovery key', c: 'med', corrupt: false }], 0);
+  await sleep(400);
+  await progressBar('Decrypting target payload  ', 2200);
+  await sleep(300);
+  addLine('');
+  addLine(finalLine, 'ok');
+  addLine('');
+  S.decrypted = true;
+  showShell();
+}
+
+let promptGlitchTimer = null;
+function startPromptGlitch() {
+  if (SERVER_ID !== 'node083' || promptGlitchTimer) return;
+  promptGlitchTimer = setInterval(() => {
+    if (inpRow.style.display === 'none' || S.sqliteMode) return;
+    if (Math.random() < 0.08) {
+      const stable = promptEl.textContent;
+      promptEl.textContent = stable.split('').map(c => Math.random() < .10 ? String.fromCharCode(33 + Math.floor(Math.random() * 58)) : c).join('');
+      setTimeout(() => { if (!S.sqliteMode) updatePrompt(); }, 70);
+    }
+  }, 3200);
+}
+
+const ALL_COMMANDS = SERVER_ID === 'node083'
+  ? ['ls','tree','cd','cat','pwd','whoami','hostname','uname','id','date','uptime','ps','netstat','ifconfig','df','env','iptables','find','openssl','decrypt','sqlite3','tail','head','grep','wc','sort','uniq','echo','which','clear','reset','help','nmap','ssh','stat','ss','lsof','last','lastb','kill','base64','iostat','systemctl']
+  : ['ls','tree','cd','cat','pwd','whoami','hostname','uname','id','date','uptime','w','ps','netstat','ifconfig','ip','df','env','history','top','ping','ssh','grep','tail','head','find','wc','sort','uniq','echo','which','clear','reset','help','nmap','stat','last','lastb','systemctl'];
+const SQLITE_DOTS = ['.tables','.schema','.help','.exit','.quit'];
+function commandCompletions(word) {
+  if (SERVER_ID === 'node083' && S.sqliteMode) {
+    if (word.startsWith('.')) return SQLITE_DOTS.filter(c => c.startsWith(word));
+    return ['SELECT','FROM','WHERE'].filter(c => c.toLowerCase().startsWith(word.toLowerCase()));
+  }
+  return ALL_COMMANDS.filter(c => c.startsWith(word));
+}
+function splitCompletion(value) {
+  const pos = cmdEl.selectionStart ?? value.length;
+  const before = value.slice(0, pos);
+  const after = value.slice(pos);
+  const m = before.match(/(^|\s)(\S*)$/);
+  const word = m ? m[2] : '';
+  const start = pos - word.length;
+  const prefix = value.slice(0, start);
+  return { before, after, word, prefix, isCommand: !prefix.trim() };
+}
+function parentPath(word) {
+  const slash = word.lastIndexOf('/');
+  if (slash < 0) return { dir: '.', base: word, shownPrefix: '' };
+  const shownPrefix = word.slice(0, slash + 1);
+  const dir = shownPrefix || '/';
+  return { dir, base: word.slice(slash + 1), shownPrefix };
+}
+async function pathCompletions(word) {
+  const ctx = parentPath(word);
+  const res = await remoteCommand('ls -a ' + ctx.dir);
+  let names = String(res.output || '').split(/\s+/).filter(Boolean).filter(n => n !== '.' && n !== '..');
+  if (!ctx.base.startsWith('.')) names = names.filter(n => !n.startsWith('.'));
+  const matches = names.filter(n => n.startsWith(ctx.base));
+  const out = [];
+  for (const name of matches) {
+    const shown = ctx.shownPrefix + name;
+    let suffix = '';
+    try {
+      const stat = await remoteCommand('stat ' + shown);
+      if (/\bdirectory\b/.test(String(stat.output || ''))) suffix = '/';
+    } catch {}
+    out.push(shown + suffix);
+  }
+  return out;
+}
+async function getCompletionsFor(value) {
+  const ctx = splitCompletion(value);
+  if (ctx.isCommand) return { ...ctx, cands: commandCompletions(ctx.word) };
+  return { ...ctx, cands: await pathCompletions(ctx.word) };
+}
+function commonPrefix(strs) {
+  if (!strs.length) return '';
+  let p = strs[0];
+  for (const s of strs) while (!s.startsWith(p) && p.length > 0) p = p.slice(0, -1);
+  return p;
+}
+
+async function onShellKeydown(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const v = cmdEl.value;
+    const { prefix, after, word, cands } = await getCompletionsFor(v);
+    if (cands.length === 1) {
+      const done = cands[0] + (!after && !cands[0].endsWith('/') ? ' ' : '');
+      setCmd(prefix + done);
+    }
+    else if (cands.length > 1) {
+      const cp = commonPrefix(cands);
+      if (cp.length > word.length) setCmd(prefix + cp);
+      else { addLine(promptEl.textContent + v, 'dim'); addLine(cands.join('  '), SERVER_ID === 'node083' ? 'c' : 'cyan'); }
+    }
+    if (after && cmdEl.value.endsWith(after) === false) cmdEl.value += after;
+    syncTyped();
+    return;
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (S.histIdx < S.hist.length - 1) { S.histIdx++; setCmd(S.hist[S.hist.length - 1 - S.histIdx]); }
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (S.histIdx > 0) { S.histIdx--; setCmd(S.hist[S.hist.length - 1 - S.histIdx]); }
+    else { S.histIdx = -1; setCmd(''); }
+    return;
+  }
+  if (e.ctrlKey && e.key === 'l') { e.preventDefault(); clearScreen(); return; }
+  if (e.ctrlKey && e.key === 'c') {
+    e.preventDefault();
+    addLine(promptEl.textContent + cmdEl.value + '^C', 'dim');
+    if (SERVER_ID === 'node083' && S.sqliteMode) { S.sqliteMode = false; S.sqliteFile = null; }
+    setCmd('');
+    showShell();
+    return;
+  }
+  if (e.ctrlKey && e.key === 'u') {
+    e.preventDefault();
+    const pos = cmdEl.selectionStart ?? cmdEl.value.length;
+    cmdEl.value = cmdEl.value.slice(pos);
+    cmdEl.setSelectionRange(0, 0);
+    syncTyped();
+    return;
+  }
+  if (e.ctrlKey && e.key === 'k') {
+    e.preventDefault();
+    const pos = cmdEl.selectionStart ?? cmdEl.value.length;
+    cmdEl.value = cmdEl.value.slice(0, pos);
+    cmdEl.setSelectionRange(pos, pos);
+    syncTyped();
+    return;
+  }
+  if (e.ctrlKey && e.key === 'd') {
+    e.preventDefault();
+    if (cmdEl.value) return;
+    addLine('logout', 'dim');
+    inpRow.style.display = 'none';
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    await submitCommand();
+  }
+}
+cmdEl.addEventListener('keydown', onShellKeydown);
+
+// ── SSH sequence ─────────────────────────────────────────────────
+async function sshAnim() {
+  addLine('');
+  await printLines([
+    { t: 'ssh: connecting to 172.16.47.83 port 22...', c: 'c2' },
+    { t: "Warning: Permanently added '172.16.47.83' (ECDSA) to the list of known hosts.", c: 'dim' },
+  ], 600);
+
+  await progressBar('Authenticating keypair         ', 1000);
+  await progressBar('Establishing encrypted tunnel  ', 700);
+  await sleep(300);
+
+  addLine('');
+  await printLines([
+    { t: '⚠   ALERT: Remote host certificate anomaly detected!',    c: 'o' },
+    { t: '⚠   WARNING: System integrity check FAILED on remote host.', c: 'o' },
+    { t: '⚠   WARNING: Last known login from EXTERNAL IP 91.213.8.44', c: 'err' },
+  ], 350);
+  addLine('');
+
+  S.sshWait = true;
+  inpRow.style.display = 'flex';
+  promptEl.className = 'o';
+  promptEl.textContent = 'Continue connecting? [y/N] ';
+  cmdEl.focus();
+  scrollBottom();
+}
+
+async function sshGo() {
+  addLine('');
+  addLine('Connecting...', 'c2');
+  await sleep(250);
+
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999';
+  document.body.appendChild(flash);
+  for (const [col, dur] of [['rgba(255,0,0,0.25)',80],['rgba(0,255,65,0.15)',60],['rgba(255,0,0,0.4)',80]]) {
+    flash.style.background = col;
+    await sleep(dur);
+  }
+  document.body.removeChild(flash);
+  await sleep(200);
+
+  window.location.href = 'server2.html';
+}
+
+// ── Boot sequence ────────────────────────────────────────────────
+async function boot() {
+  await sleep(400);
+
+  await printLines([
+    { t: 'CD-0S CORP. SYSTEMS // BIOS Rev. 4.7.2', c: 'dim' },
+    { t: 'Copyright (C) 2019-2025 CD-0S Corporation. All rights reserved.', c: 'dim' },
+    { t: '' },
+    { t: 'CPU: Intel(R) Xeon(R) Gold 6154 @ 3.00GHz  [OK]', c: 'dim' },
+    { t: 'NIC: Intel I350 Gigabit (eth0, eth1)        [OK]', c: 'dim' },
+    { t: 'STO: 2x SATA SSD 50GB + NAS 2TB            [OK]', c: 'dim' },
+    { t: '' },
+  ], 80);
+
+  // Memory POST counter
+  const memLine = addLine('', 'dim');
+  for (let k = 0; k <= 16384; k += 256) {
+    memLine.textContent = `Memory Test: ${String(k).padStart(6)} K`;
+    await sleep(6);
+  }
+  memLine.textContent = 'Memory Test:  16384 K OK';
+  await sleep(400);
+  addLine('');
+
+  // Logo
+  addHTML(`<div class="logo">  ██████╣██████╗       ██████╗ ███████╣
+ ██╔════╝██╔══██╗     ██╔═══██╗██╔════╝
+ ██║     ██║  ██║     ██║   ██║███████╣
+ ██║     ██║  ██║     ██║   ██║╚════██║
+ ╚██████╣██████╔╝     ╚██████╔╝███████║
+  ╚═════╝╚═════╝       ╚═════╝ ╚══════╝</div>`);
+
+  addLine('');
+  addLine('  ─────────────────────────────────────────────────────────', 'dim');
+  addLine('         C O R P O R A T I O N   S Y S T E M S', 'cyan');
+  addLine('        SECURE TERMINAL GATEWAY  ·  v3.9.1', 'dim');
+  addLine('  ─────────────────────────────────────────────────────────', 'dim');
+  addLine('');
+  await sleep(400);
+
+  await progressBar('Loading kernel modules        ', 900);
+  await progressBar('Starting netwatch daemon      ', 700);
+  await progressBar('Starting sshd                 ', 500);
+  await progressBar('Starting crond                ', 400);
+  await progressBar('Starting firewall [nftables]  ', 800);
+  await progressBar('Starting IDS subsystem        ', 1100);
+  addLine('');
+  addLine('[ OK ] All systems nominal.', 'ok');
+  addLine('');
+  await sleep(500);
+
+  await printLines([
+    { t: 'Establishing encrypted channel to TERMINAL GATEWAY...', c: 'dim' },
+    { t: 'RSA key fingerprint: SHA256:3eP1xGv+tBXz4dqYkW9Nm2hL8cOJf5sRa7', c: 'dim' },
+    { t: 'Channel secured. AES-256-GCM active.', c: 'dim' },
+    { t: '' },
+  ], 180);
+
+  // Auto login
+  const loginEl = addHTML('<span class="dim">cd-0s login: </span><span class="c2" id="la"></span>');
+  const la = document.getElementById('la');
+  await sleep(900);
+  for (const ch of 'observer') { la.textContent += ch; await sleep(90 + Math.random()*40); }
+  await sleep(300);
+
+  const pwEl = addHTML('<span class="dim">Password: </span><span class="dim" id="pa"></span>');
+  const pa = document.getElementById('pa');
+  await sleep(500);
+  for (const ch of '••••••••') { pa.textContent += ch; await sleep(110 + Math.random()*50); }
+  await sleep(700);
+
+  addLine('');
+  addLine('Welcome to Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)', 'dim');
+  addLine('', 'dim');
+  addLine('  System information as of Sat May 17 04:22:18 UTC 2025', 'dim');
+  addLine('', 'dim');
+  addLine('  System load:   0.42, 0.38, 0.31       Users logged in:        1', 'dim');
+  addLine('  Usage of /:    65.0% of 49.95GB       IPv4 address for eth0:  10.0.0.14', 'dim');
+  addLine('  Memory usage:  41%                    Processes:              6', 'dim');
+  addLine('  Swap usage:    0%', 'dim');
+  addLine('', 'dim');
+  addLine('  14 services in failed state since 04:19 UTC. Run \'systemctl --failed\'.', 'o');
+  addLine('');
+  addLine('Last login: Sat May 17 01:03:44 2025 from 10.0.0.2', 'dim');
+  addLine('');
+
+  showShell();
+}
+
+boot();
+</script>
+</body>
+</html>
