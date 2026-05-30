@@ -871,6 +871,265 @@ body:not(.pillar-view-active) .tab-row-columns {
   color: black;
 }
 
+/* ==================== INSPIRATION VIEW ==================== */
+
+.inspiration-subtitle {
+  display: none;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 56px;
+  font-weight: 500;
+  letter-spacing: 8px;
+  text-transform: lowercase;
+  color: #2a2a2a;
+  margin: 40px auto 70px;
+  text-shadow:
+    0 2px 10px rgba(255,255,255,0.75),
+    0 0 26px rgba(255,228,176,0.55),
+    0 0 1px rgba(0,0,0,0.15);
+  position: relative;
+  z-index: 6;
+}
+.inspiration-mode .inspiration-subtitle {
+  display: block;
+  animation: subtitle-glow 6s ease-in-out infinite;
+}
+@keyframes subtitle-glow {
+  0%, 100% { text-shadow: 0 2px 10px rgba(255,255,255,0.75), 0 0 22px rgba(255,228,176,0.40), 0 0 1px rgba(0,0,0,0.15); }
+  50%      { text-shadow: 0 2px 12px rgba(255,255,255,0.85), 0 0 40px rgba(255,224,160,0.75), 0 0 1px rgba(0,0,0,0.15); }
+}
+.inspiration-mode .tab-buttons,
+.inspiration-mode .tab-row { display: none !important; }
+/* Golden-hour sky: cool zenith fading to a warm, hazy horizon. */
+.inspiration-mode {
+  background:
+    radial-gradient(120% 80% at 50% 110%, rgba(255,236,196,0.85) 0%, rgba(255,236,196,0) 55%),
+    linear-gradient(180deg, #9cc1de 0%, #c4dcef 38%, #ecdfc6 78%, #f6e9cf 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;                /* wide clouds/flares must not cause sideways scroll */
+}
+/* Cinematic vignette — frames the whole scene like a film still. */
+.inspiration-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(125% 95% at 50% 42%,
+    transparent 55%, rgba(40,55,80,0.10) 78%, rgba(28,40,66,0.28) 100%);
+}
+
+/* BG: 1 static sky + 3 horizontally-drifting cloud bands; element is injected
+   only while inspiration view is active. */
+.inspiration-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cloud-layer {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  will-change: background-position, transform;
+}
+.cloud-layer-1 {
+  background-image: url("img/clouds/cloud_bg.png");
+  background: url("img/clouds/cloud_bg.png") center bottom / cover no-repeat;
+  opacity: 0.45;
+}
+/* Layers 2-4 tile only horizontally; the mask hides each band's flat top/bottom
+   so the assets don't cut a hard horizontal line across the sky. */
+.cloud-layer-2 {
+  background-image: url("img/clouds/cloud_bg2.png");
+  background-size: 1000px auto;
+  background-repeat: repeat-x;
+  opacity: 0.45;
+  animation: drift-2 160s linear infinite;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 28%, transparent 40%);
+          mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 28%, transparent 40%);
+}
+.cloud-layer-3 {
+  background-image: url("img/clouds/cloud_bg3.png");
+  background-size: 800px auto;
+  background-repeat: repeat-x;
+  opacity: 0.65;
+  animation: drift-3 110s linear infinite;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 35%, black 45%, black 60%, transparent 72%);
+          mask-image: linear-gradient(to bottom, transparent 35%, black 45%, black 60%, transparent 72%);
+}
+.cloud-layer-4 {
+  background-image: url("img/clouds/cloud_bg4.png");
+  background-size: 600px auto;
+  background-repeat: repeat-x;
+  opacity: 0.85;
+  animation: drift-4 70s linear infinite;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 62%, black 72%, black 88%, transparent 98%);
+          mask-image: linear-gradient(to bottom, transparent 62%, black 72%, black 88%, transparent 98%);
+}
+@keyframes drift-2 { from { background-position:    0  20%; } to { background-position: -1000px 20%; } }
+@keyframes drift-3 { from { background-position:    0  50%; } to { background-position:   800px 50%; } }
+@keyframes drift-4 { from { background-position:    0  78%; } to { background-position:  -600px 78%; } }
+
+.bottom-mist {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 35vh;
+  background: linear-gradient(to top,
+    rgba(245,250,255,0.88) 0%, rgba(245,250,255,0.55) 35%,
+    rgba(245,250,255,0.20) 65%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Layout: tiles are absolutely positioned by JS within a relative grid. */
+.inspiration-grid {
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+.inspiration-tile {
+  position: absolute;
+  width: var(--tile-w, 280px);
+  margin-left: calc(var(--tile-w, 280px) / -2);          /* center on the `left` coord */
+  animation: tile-enter 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  animation-delay: var(--enter-delay, 0s);
+}
+@keyframes tile-enter {
+  from { opacity: 0; transform: translateY(46px) scale(0.92); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0);   }
+}
+/* perspective here drives the magnetic-system 3D tilt on .game-card-wrapper. */
+.inspiration-tile-card {
+  position: relative;
+  perspective: 1000px;
+  animation: cloud-drift var(--float-dur, 7s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+  filter: drop-shadow(0 16px 24px rgba(60,80,120,0.22));
+}
+.inspiration-tile-card::after {                           /* the cloud under each tile */
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -120px;
+  transform: translateX(-60%);
+  width: 253%;
+  height: 242px;
+  background: var(--cloud-img) center / contain no-repeat;
+  z-index: 3;
+  pointer-events: none;
+}
+@keyframes cloud-drift {
+  0%,100% { transform: translate(0,    0)    rotate(-0.4deg); }
+  25%     { transform: translate(8px, -10px) rotate(0.2deg);  }
+  50%     { transform: translate(-6px,-18px) rotate(0.4deg);  }
+  75%     { transform: translate(10px,-6px)  rotate(-0.2deg); }
+}
+
+.inspiration-tile:hover { z-index: 100; }
+.inspiration-tile .game-card-wrapper {
+  transition: transform 0.22s ease-out;
+  transform-origin: center center;
+  will-change: transform;
+}
+/* Fallback only — the JS magnetic system overrides this with scale + tilt. */
+.inspiration-tile:hover .game-card-wrapper { transform: scale(1.11); }
+
+/* ==================== FOCUSED-CARD LIGHTING ====================
+   All four layers are driven by .magnetic-active + --light-strength (0-1). */
+
+.light-beam {
+  position: absolute;
+  inset: -60%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background:
+    radial-gradient(closest-side at var(--beam-x, 32%) var(--beam-y, 28%),
+      rgba(255,244,212,0.85) 0%, rgba(255,244,212,0.40) 35%,
+      rgba(255,244,212,0.12) 65%, transparent 100%),
+    linear-gradient(var(--beam-angle, 155deg),
+      transparent 30%, rgba(255,248,222,0.28) 44%,
+      rgba(255,248,222,0.55) 50%, rgba(255,248,222,0.28) 56%,
+      transparent 70%);
+  filter: blur(8px);
+}
+.inspiration-tile.magnetic-active .light-beam { opacity: var(--light-strength, 1); }
+
+.light-dust {
+  position: absolute;
+  inset: -32%;                                             /* reach past the 1.22x-scaled card */
+  z-index: 5;                                              /* float in front, like motes in the beam */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  background-image:
+    radial-gradient(circle 1.5px at 22% 18%, rgba(255,250,220,0.95), transparent),
+    radial-gradient(circle 1px   at 47% 32%, rgba(255,250,220,0.85), transparent),
+    radial-gradient(circle 2px   at 68% 24%, rgba(255,250,220,0.90), transparent),
+    radial-gradient(circle 1px   at 35% 48%, rgba(255,250,220,0.75), transparent),
+    radial-gradient(circle 1.5px at 82% 55%, rgba(255,250,220,0.95), transparent),
+    radial-gradient(circle 1px   at 18% 65%, rgba(255,250,220,0.70), transparent),
+    radial-gradient(circle 2px   at 55% 72%, rgba(255,250,220,0.85), transparent),
+    radial-gradient(circle 1px   at 75% 84%, rgba(255,250,220,0.65), transparent),
+    radial-gradient(circle 1.5px at 38% 92%, rgba(255,250,220,0.80), transparent);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  animation: dust-rise 9s linear infinite;
+  filter: blur(0.6px);
+}
+.inspiration-tile.magnetic-active .light-dust { opacity: calc(var(--light-strength, 1) * 0.9); }
+@keyframes dust-rise {
+  from { background-position: 0 0;     }
+  to   { background-position: 0 -180px; }
+}
+
+.light-flare {
+  position: absolute;
+  left: var(--flare-x, 50%);
+  top:  var(--flare-y, 40%);
+  width: 320px;
+  height: 320px;
+  margin: -160px 0 0 -160px;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease, left 0.14s ease-out, top 0.14s ease-out;
+  background:
+    /* horizontal lens streak */
+    linear-gradient(90deg,
+      transparent 0%, rgba(255,250,235,0) 18%,
+      rgba(255,250,235,0.70) 47%, rgba(255,255,255,1) 50%, rgba(255,250,235,0.70) 53%,
+      rgba(255,250,235,0) 82%, transparent 100%) center / 100% 5px no-repeat,
+    /* vertical lens streak */
+    linear-gradient(0deg,
+      transparent 0%, rgba(255,250,235,0) 30%,
+      rgba(255,250,235,0.45) 48%, rgba(255,255,255,0.85) 50%, rgba(255,250,235,0.45) 52%,
+      rgba(255,250,235,0) 70%, transparent 100%) center / 5px 100% no-repeat,
+    /* hot core */
+    radial-gradient(circle,
+      rgba(255,255,255,1) 0%, rgba(255,251,232,0.95) 6%,
+      rgba(255,246,214,0.60) 16%, rgba(255,236,196,0.26) 34%,
+      rgba(255,226,180,0.10) 58%, transparent 82%);
+  filter: blur(1.5px) brightness(1.15);
+}
+.inspiration-tile.magnetic-active .light-flare { opacity: var(--light-strength, 1); }
+
+/* ---- Depth of field: the focused card pops, the rest fall back ---- */
+.inspiration-grid .inspiration-tile {
+  transition: opacity 0.45s ease, filter 0.45s ease;
+}
+.inspiration-grid.has-active .inspiration-tile:not(.magnetic-active) {
+  opacity: 0.55;
+  filter: blur(2.5px) saturate(0.82) brightness(0.96);
+}
+/* Warm cinematic grade + glow on the in-focus card. */
+.inspiration-tile.magnetic-active .game-card-wrapper {
+  filter: saturate(1.12) brightness(1.06) contrast(1.03)
+          drop-shadow(0 8px 26px rgba(255,214,150,0.45));
+}
+
 /* PILLAR VIEW SPATIAL RULES */
 #main-list.pillar-view
 {
@@ -1111,6 +1370,73 @@ body:not(.pillar-view-active) .tab-row-columns {
   font-weight: bold;
   line-height: 40px;   /* Center text vertically */
   color: black;
+}
+
+/* ---- Phone: flipped histogram (values down the left, stacks to the right) ---- */
+.pillar-view.pillar-phone .pillar-ruler {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  width: 44px;
+  height: 100%;
+  border-top: none;
+  border-right: 3px solid black;
+}
+.pillar-view.pillar-phone .pillar-ruler span {
+  font-size: 13px;
+  line-height: 1.1;
+}
+.pillar-view.pillar-phone .pillar-mini-card {
+  transition: left 0.8s cubic-bezier(0.2, 0.9, 0.2, 1),
+              top  0.8s cubic-bezier(0.2, 0.9, 0.2, 1),
+              opacity 0.5s ease,
+              filter 0.2s !important;
+}
+.pillar-view.pillar-phone .pillar-mini-card:hover {
+  transform: scale(1.6) !important;   /* no translateX(-50%) in flipped layout */
+  z-index: 999999 !important;
+}
+
+/* ---- Phone: hover-preview HUD ----
+   The desktop HUD is a fixed 676px (338+338) two-column grid with a 507px tall
+   image — far wider than a phone screen, so it overflowed and was unreadable.
+   On narrow viewports collapse it into a single centred column that fits. */
+@media (max-width: 759px) {
+  #pillar-inspect-panel {
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translate(-50%, -50%);
+    width: min(90vw, 360px);
+    max-height: 94vh;
+  }
+  #pillar-inspect-panel .game-card-wrapper {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: max-content auto max-content max-content !important;
+    width: 100% !important;
+    max-height: 94vh;
+  }
+  /* Stack every cell into the one column, in reading order, regardless of
+     which side the panel was docked. */
+  #pillar-inspect-panel .game-title-overlay,
+  #pillar-inspect-panel.dock-right .game-title-overlay {
+    grid-column: 1 !important; grid-row: 1 !important;
+  }
+  #pillar-inspect-panel .game-card,
+  #pillar-inspect-panel.dock-right .game-card {
+    grid-column: 1 !important; grid-row: 2 !important; height: 40vh !important;
+  }
+  #pillar-inspect-panel .game-exp-overlay,
+  #pillar-inspect-panel.dock-right .game-exp-overlay {
+    grid-column: 1 !important; grid-row: 3 !important; height: auto !important;
+    border-left: none !important; border-right: none !important;
+    border-top: 2px solid #333 !important;
+  }
+  #pillar-inspect-panel .game-details-overlay,
+  #pillar-inspect-panel.dock-right .game-details-overlay {
+    grid-column: 1 !important; grid-row: 4 !important;
+  }
+  #pillar-inspect-panel .game-comment { font-size: 15px; }
 }
 
 /* --- PILLAR MOTION ENGINE --- */

@@ -210,6 +210,10 @@ function createGameCard(game)
   //   same as if the wrapper wasn't hovered at all.
   expOverlay.addEventListener('mousemove', (e) =>
   {
+    // In inspiration view the overlay must stay open so the score/details are
+    // readable; the tierlist "collapse on top region" behaviour causes the
+    // magnetic focus to flicker as the overlay vanishes under the cursor.
+    if (document.body.classList.contains('inspiration-mode')) return;
     const rect = expOverlay.getBoundingClientRect();
     const relY = (e.clientY - rect.top) / rect.height; // 0 = top, 1 = bottom
     const overComment = e.target.closest('.game-comment') !== null;
@@ -418,6 +422,7 @@ function renderGamesAnimated(games)
   // Immediately nuke ANY ghost cards from the document.
   // This cleans up clones from a previous render that might still be animating.
   document.querySelectorAll('.game-card-wrapper.is-leaving').forEach(el => el.remove());
+  container.querySelector('.inspiration-grid')?.remove();   // drop floating cloud tiles when leaving inspiration
 
   // Lock height to prevent scroll jumping
   container.style.minHeight = `${container.offsetHeight}px`;
@@ -549,7 +554,9 @@ function renderGamesAnimated(games)
 function setupOverlaySides()
 {
   const wrappers = document.querySelectorAll('.game-card-wrapper');
-  const maxOverlayWidth = window.innerWidth * 0.32; // 32vw = your max-width
+  // Inspiration mode scales the wrapper on hover, needs extra headroom.
+  const isInspiration = document.body.classList.contains('inspiration-mode');
+  const maxOverlayWidth = window.innerWidth * (isInspiration ? 0.38 : 0.32);
 
   wrappers.forEach(wrapper => {
     const rect = wrapper.getBoundingClientRect();
@@ -563,6 +570,384 @@ function setupOverlaySides()
     }
   });
 }
+
+// ===== INSPIRATION VIEW =====
+
+const TILE_CLOUDS = [
+  'img/clouds/cloud (1).png',
+  'img/clouds/cloud (4).png',
+  'img/clouds/cloud (5).png',
+  'img/clouds/cloud (6).png',
+];
+
+// BG (sky + cloud layers + mist) is injected only while inspiration view is
+// active and fully removed otherwise — avoids any chance of bleeding into
+// other views.
+function ensureInspirationBg(show)
+{
+  let bg = document.getElementById('inspiration-bg');
+  if (!show) { if (bg) bg.remove(); return; }
+  if (bg) return;
+  bg = document.createElement('div');
+  bg.id = 'inspiration-bg';
+  bg.className = 'inspiration-bg';
+  bg.setAttribute('aria-hidden', 'true');
+  bg.innerHTML =
+    '<div class="cloud-layer cloud-layer-1"></div>' +
+    '<div class="cloud-layer cloud-layer-2"></div>' +
+    '<div class="cloud-layer cloud-layer-3"></div>' +
+    '<div class="cloud-layer cloud-layer-4"></div>' +
+    '<div class="bottom-mist"></div>';
+  document.body.appendChild(bg);
+}
+
+// Soft-cluster games by theme; matched on name fragment so apostrophe
+// variants don't matter.
+function inspirationGroupOf(name)
+{
+  if (/Haste|Mirror|Prototype/.test(name))               return 0; // locomotion
+  if (/Brotherhood|Uncharted|Last of Us/.test(name))     return 1; // AAA spectacle
+  if (/DmC|Noire|Max Payne|Darkness/.test(name))         return 2; // noir / moody
+  return 3;                                                         // lone (Bulletstorm, etc.)
+}
+
+function renderInspirationView(games)
+{
+  gameContainer.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'inspiration-grid';
+
+  // Responsive layout — tile width/spacing shrink on narrow (phone) viewports so
+  // cards never have to overlap. Poster aspect is ~1.5, so height = width * 1.5.
+  const viewportW = window.innerWidth;
+  const narrow = viewportW < 760;
+  const tileW = narrow ? Math.max(150, Math.min(210, Math.round(viewportW * 0.62))) : 280;
+  const tileH = Math.round(tileW * 1.5);
+  grid.style.setProperty('--tile-w', tileW + 'px');
+
+  // Collision is based on the ACTUAL rendered card footprint (the visible poster
+  // is a fixed 169x253 left-aligned inside the larger --tile-w container), NOT
+  // the tile box. Using the tile box made minSep far too big, so cluster
+  // placement failed and fell back to the "allow overlap" last resort.
+  const CARD_W = 169, CARD_H = 253;
+  const minSepX = CARD_W + 20, minSepY = CARD_H + 26;  // AABB collision (card + buffer)
+  const inGroupR = narrow ? 130 : 200;                // intra-cluster radius
+  const padTop = 0, padBot = narrow ? 120 : 200;
+  const padSide = narrow ? Math.round(tileW / 2) + 8 : 170;
+
+  const cols  = Math.max(1, Math.floor((viewportW - 2 * padSide) / minSepX));
+  // Reserve enough rows for every card (+1 spare row) so the relaxation pass
+  // always has room to separate everyone without overlap.
+  const rows  = Math.ceil(games.length / cols) + 1;
+  const areaH = Math.max(narrow ? 800 : 1000, rows * minSepY + CARD_H + 80);
+  grid.style.minHeight = (padTop + areaH + padBot) + 'px';
+
+  const minX = padSide, maxX = viewportW - padSide;
+  // Cards are top-aligned at y and are CARD_H tall, so only reserve the card
+  // height at the bottom (not the much taller tile box).
+  const minY = padTop,  maxY = padTop + areaH - CARD_H;
+
+  const collides = (x, y, others) =>
+    others.some(p => Math.abs(p.x - x) < minSepX && Math.abs(p.y - y) < minSepY);
+  const randXY = () => ({
+    x: minX + Math.random() * (maxX - minX),
+    y: minY + Math.random() * (maxY - minY),
+  });
+
+  // 1. Pick a separated center for each cluster.
+  const groupIds   = [...new Set(games.map(g => inspirationGroupOf(g.name)))];
+  const groupCenter = {};
+  const groupSepX = minSepX * 1.25, groupSepY = minSepY;
+  groupIds.forEach(gid =>
+  {
+    let c = null;
+    for (let i = 0; i < 300 && !c; i++)
+    {
+      const p = randXY();
+      const ok = Object.values(groupCenter).every(o =>
+        Math.abs(o.x - p.x) >= groupSepX || Math.abs(o.y - p.y) >= groupSepY);
+      if (ok) c = p;
+    }
+    groupCenter[gid] = c || randXY();
+  });
+
+  // 2. Place each card near its cluster center, expanding the radius if it
+  //    can't fit; brute-force anywhere as a fallback; allow overlap last.
+  const positions = [];
+  games.forEach(g =>
+  {
+    const center = groupCenter[inspirationGroupOf(g.name)];
+    let chosen = null;
+
+    outer:
+    for (const radius of [inGroupR, inGroupR * 1.7, inGroupR * 2.6, inGroupR * 4])
+    {
+      for (let i = 0; i < 200; i++)
+      {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random() * radius;
+        const x = Math.max(minX, Math.min(maxX, center.x + Math.cos(a) * r));
+        const y = Math.max(minY, Math.min(maxY, center.y + Math.sin(a) * r));
+        if (!collides(x, y, positions)) { chosen = { x, y }; break outer; }
+      }
+    }
+    if (!chosen) for (let i = 0; i < 500 && !chosen; i++)
+    {
+      const p = randXY();
+      if (!collides(p.x, p.y, positions)) chosen = p;
+    }
+    positions.push(chosen || randXY());
+  });
+
+  // 3. Relaxation pass — guarantees no two cards visually overlap regardless of
+  //    viewport width. Any colliding pair is shoved apart along its axis of
+  //    least penetration; positions stay clamped to bounds. With only a handful
+  //    of cards this converges in a few iterations and preserves the clusters.
+  for (let iter = 0; iter < 120; iter++)
+  {
+    let moved = false;
+    for (let i = 0; i < positions.length; i++)
+    {
+      for (let j = i + 1; j < positions.length; j++)
+      {
+        const a = positions[i], b = positions[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const penX = minSepX - Math.abs(dx);
+        const penY = minSepY - Math.abs(dy);
+        if (penX <= 0 || penY <= 0) continue;          // not overlapping
+        if (penX < penY)                                // separate horizontally
+        {
+          const push = (penX / 2 + 0.5) * (dx < 0 ? -1 : 1);
+          a.x = Math.max(minX, Math.min(maxX, a.x - push));
+          b.x = Math.max(minX, Math.min(maxX, b.x + push));
+        }
+        else                                            // separate vertically
+        {
+          const push = (penY / 2 + 0.5) * (dy < 0 ? -1 : 1);
+          a.y = Math.max(minY, Math.min(maxY, a.y - push));
+          b.y = Math.max(minY, Math.min(maxY, b.y + push));
+        }
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+
+  games.forEach((game, i) =>
+  {
+    const { x, y } = positions[i];
+
+    const tile = document.createElement('div');
+    tile.className = 'inspiration-tile';
+    tile.style.left = x + 'px';
+    tile.style.top  = y + 'px';
+
+    // Staggered cinematic entrance — cards rise and resolve into focus in waves.
+    tile.style.setProperty('--enter-delay', (i * 0.06).toFixed(2) + 's');
+
+    const inner = document.createElement('div');
+    inner.className = 'inspiration-tile-card';
+    const cloud = TILE_CLOUDS[Math.floor(Math.random() * TILE_CLOUDS.length)];
+    inner.style.setProperty('--cloud-img',   `url("${cloud}")`);
+    inner.style.setProperty('--float-delay', (Math.random() * 6).toFixed(2) + 's');
+    inner.style.setProperty('--float-dur',   (6 + Math.random() * 5).toFixed(2) + 's');
+
+    // Light stack (back→front): beam → card → dust → flare. Hover/tilt is
+    // driven globally by the magnetic system below.
+    inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-beam' }));
+    inner.appendChild(createGameCard(game));
+    inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-dust' }));
+    inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-flare' }));
+
+    tile.appendChild(inner);
+    grid.appendChild(tile);
+  });
+
+  gameContainer.appendChild(grid);
+  requestAnimationFrame(setupOverlaySides);
+}
+
+// ===== MAGNETIC HOVER =====
+// Single card gets the focused treatment based on cursor proximity. Hysteresis
+// (DEACTIVATE_PAD > ACTIVATE_PAD) prevents flicker between adjacent cards.
+const MAGNETIC = {
+  ACTIVATE_PAD:   180,
+  DEACTIVATE_PAD: 260,
+  SWITCH_MARGIN:  90,   // a rival card must be this much closer to steal focus
+  SCALE_MIN:      1.11,
+  SCALE_MAX:      1.22,
+  TILT_MAX:       12,
+};
+const LIGHT_VARS = ['--beam-x','--beam-y','--beam-angle','--flare-x','--flare-y','--light-strength'];
+let _magneticActiveTile = null;
+let _magneticRaf = null;
+let _lastMouseEvt = null;
+let _loseGrace = 0;
+const LOSE_GRACE_FRAMES = 6;   // hold focus briefly so a 1-frame hit-test gap doesn't flicker
+
+// Bounding box of the card unioned with its open detail overlay, so the focus
+// stays put while the cursor travels out to read the score/details.
+function _activeKeepRect(tile)
+{
+  const wrap = tile.querySelector('.game-card-wrapper');
+  if (!wrap) return null;
+  const r = wrap.getBoundingClientRect();
+  let l = r.left, t = r.top, rr = r.right, b = r.bottom;
+  const exp = tile.querySelector('.game-exp-overlay');
+  if (exp)
+  {
+    const er = exp.getBoundingClientRect();
+    if (er.width > 2 && er.height > 2 && getComputedStyle(exp).visibility !== 'hidden')
+    {
+      l = Math.min(l, er.left); t = Math.min(t, er.top);
+      rr = Math.max(rr, er.right); b = Math.max(b, er.bottom);
+    }
+  }
+  return { l, t, r: rr, b };
+}
+
+function _resetTileLight(tile)
+{
+  if (!tile) return;
+  const wrapper = tile.querySelector('.game-card-wrapper');
+  const inner   = tile.querySelector('.inspiration-tile-card');
+  if (wrapper) wrapper.style.transform = '';
+  if (inner) LIGHT_VARS.forEach(v => inner.style.removeProperty(v));
+  tile.classList.remove('magnetic-active');
+}
+
+function _applyMagnetic(tile, edgeDist)
+{
+  const wrapper = tile.querySelector('.game-card-wrapper');
+  const inner   = tile.querySelector('.inspiration-tile-card');
+  if (!wrapper || !inner) return;
+
+  const r  = wrapper.getBoundingClientRect();
+  const e  = _lastMouseEvt;
+  const dx = Math.max(-1.5, Math.min(1.5, (e.clientX - r.left - r.width  / 2) / (r.width  / 2)));
+  const dy = Math.max(-1.5, Math.min(1.5, (e.clientY - r.top  - r.height / 2) / (r.height / 2)));
+
+  const t = Math.max(0, Math.min(1, 1 - edgeDist / MAGNETIC.ACTIVATE_PAD));
+  const k = t * t * (3 - 2 * t);                                       // smoothstep
+
+  const scale = MAGNETIC.SCALE_MIN + (MAGNETIC.SCALE_MAX - MAGNETIC.SCALE_MIN) * k;
+  const tilt  = MAGNETIC.TILT_MAX * k;
+  const ry =  Math.max(-1, Math.min(1, dx)) * tilt;
+  const rx = -Math.max(-1, Math.min(1, dy)) * tilt;
+
+  wrapper.style.transform = `scale(${scale.toFixed(3)}) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+  inner.style.setProperty('--beam-x',         `${(35 - dx * 18).toFixed(1)}%`);
+  inner.style.setProperty('--beam-y',         `${(30 - dy * 18).toFixed(1)}%`);
+  inner.style.setProperty('--beam-angle',     `${(155 + dx * 12).toFixed(1)}deg`);
+  inner.style.setProperty('--flare-x',        `${(50 + dx * 28).toFixed(1)}%`);
+  inner.style.setProperty('--flare-y',        `${(40 + dy * 28).toFixed(1)}%`);
+  inner.style.setProperty('--light-strength', k.toFixed(3));
+  tile.classList.add('magnetic-active');
+}
+
+function _updateMagnetic()
+{
+  _magneticRaf = null;
+  const e = _lastMouseEvt;
+  if (!e || !document.body.classList.contains('inspiration-mode')) return;
+
+  const grid = document.querySelector('.inspiration-grid');
+
+  // Keep the active tile sticky while the cursor is over the card OR its open
+  // detail/score overlay (which extends well outside the card bbox). Geometric
+  // union is more reliable than hit-testing a layer that may animate/collapse.
+  if (_magneticActiveTile)
+  {
+    const kr = _activeKeepRect(_magneticActiveTile);
+    const pad = 40;
+    if (kr && e.clientX >= kr.l - pad && e.clientX <= kr.r + pad &&
+              e.clientY >= kr.t - pad && e.clientY <= kr.b + pad)
+    {
+      _loseGrace = 0;
+      _applyMagnetic(_magneticActiveTile, 0);
+      return;
+    }
+  }
+
+  let closest = null, closestDist = Infinity, activeDist = Infinity;
+  document.querySelectorAll('.inspiration-tile').forEach(tile =>
+  {
+    const wrapper = tile.querySelector('.game-card-wrapper');
+    if (!wrapper) return;
+    const r  = wrapper.getBoundingClientRect();
+    const ex = Math.max(0, Math.abs(e.clientX - r.left - r.width  / 2) - r.width  / 2);
+    const ey = Math.max(0, Math.abs(e.clientY - r.top  - r.height / 2) - r.height / 2);
+    const d  = Math.hypot(ex, ey);
+    if (d < closestDist) { closestDist = d; closest = tile; }
+    if (tile === _magneticActiveTile) activeDist = d;
+  });
+
+  // Stay on the current card while still in range, unless a rival is clearly
+  // closer (SWITCH_MARGIN) — stops focus ping-ponging between clustered cards.
+  if (_magneticActiveTile && activeDist <= MAGNETIC.DEACTIVATE_PAD &&
+      closestDist > activeDist - MAGNETIC.SWITCH_MARGIN)
+  {
+    _loseGrace = 0;
+    _applyMagnetic(_magneticActiveTile, activeDist);
+    return;
+  }
+
+  if (closest && closestDist <= MAGNETIC.ACTIVATE_PAD)
+  {
+    if (_magneticActiveTile && _magneticActiveTile !== closest) _resetTileLight(_magneticActiveTile);
+    _magneticActiveTile = closest;
+    _loseGrace = 0;
+    if (grid) grid.classList.add('has-active');             // pull non-focused cards into soft background
+    _applyMagnetic(closest, closestDist);
+    return;
+  }
+
+  // Out of range — hold the last focused state for a few frames so a momentary
+  // gap (overlay collapsing under the cursor, hit-test miss) doesn't flicker.
+  if (_magneticActiveTile)
+  {
+    if (_loseGrace++ < LOSE_GRACE_FRAMES) { _applyMagnetic(_magneticActiveTile, 0); return; }
+    _resetTileLight(_magneticActiveTile);
+    _magneticActiveTile = null;
+    _loseGrace = 0;
+    if (grid) grid.classList.remove('has-active');
+  }
+}
+
+window.addEventListener('mousemove', (e) =>
+{
+  if (!document.body.classList.contains('inspiration-mode')) return;
+  _lastMouseEvt = e;
+  if (!_magneticRaf) _magneticRaf = requestAnimationFrame(_updateMagnetic);
+}, { passive: true });
+
+document.addEventListener('mouseleave', () =>
+{
+  if (_magneticActiveTile) _resetTileLight(_magneticActiveTile);
+  _magneticActiveTile = null;
+  const grid = document.querySelector('.inspiration-grid');
+  if (grid) grid.classList.remove('has-active');
+});
+
+// Re-layout the inspiration view on resize — tile positions are baked from
+// viewport width at render time.
+// Re-layout on resize for the views whose layout depends on viewport width:
+//  - inspiration: tile scatter positions are baked from window.innerWidth
+//  - pillar: flips to the phone (vertical-scroll) histogram below 760px, so it
+//    must re-render when the window crosses that threshold (e.g. narrowing the
+//    desktop browser to test the phone layout).
+let _inspirationResizeTimer = null;
+window.addEventListener('resize', () =>
+{
+  const needsRelayout = document.body.classList.contains('inspiration-mode')
+    || (typeof viewMode !== 'undefined' && viewMode === 'pillar');
+  if (!needsRelayout) return;
+  clearTimeout(_inspirationResizeTimer);
+  _inspirationResizeTimer = setTimeout(() =>
+  {
+    if (typeof applyFilters === 'function') applyFilters();
+  }, 200);
+});
 
 // ==========  SORT STATE ==========
 // Default to first yearSortKey (e.g. 'watched' for shows, 'played' for games)
@@ -664,7 +1049,14 @@ function applyFilters()
   }
 
   // Sort and Render based on ViewMode
-  if (viewMode === 'pillar')
+  if (viewMode === 'inspiration')
+  {
+    // Inspiration is its own view — ignores filters, only games marked inspiration
+    games = allGames.filter(g => g.inspiration === true);
+    games = sortGames(games);
+    renderInspirationView(games);
+  }
+  else if (viewMode === 'pillar')
   {
     // Allow config to pre-filter for certain axes (e.g. drop items without metacritic)
     if (LIST_CONFIG.pillarAxisFilter)
@@ -846,7 +1238,7 @@ function setupTabs()
         //Sync state to body for CSS visibility logic
         if (viewMode === 'pillar')
         {
-            document.body.classList.add('pillar-view-active'); // For CSS
+            document.body.classList.add('pillar-view-active');
             gameContainer.classList.add('pillar-view');
         }
         else
@@ -855,6 +1247,9 @@ function setupTabs()
             gameContainer.classList.remove('pillar-view');
             gameContainer.style.height = '';
         }
+
+        document.body.classList.toggle('inspiration-mode', viewMode === 'inspiration');
+        ensureInspirationBg(viewMode === 'inspiration');
 
         applyFilters();
     });
@@ -943,6 +1338,7 @@ function renderPillarView(games)
   // ============================================================
   // 1. CLEANUP PHASE
   // ============================================================
+  container.querySelector('.inspiration-grid')?.remove();   // drop floating cloud tiles when leaving inspiration
   const tierArtifacts = container.querySelectorAll('.tier-section, .art-divider');
   if (tierArtifacts.length > 0) {
     const allNestedCards = container.querySelectorAll('.game-card-wrapper');
@@ -1003,9 +1399,29 @@ function renderPillarView(games)
   // Dimensions
   const cardWidth = 30;
   const yOffset = 45;
-  const maxStack = Math.max(...presentValues.map(v => games.filter(g => getVal(g) === v).length));
-  const actualChartHeight = (maxStack * yOffset) + 150;
-  container.style.height = `${actualChartHeight}px`;
+  const valCounts = {};
+  presentValues.forEach(v => { valCounts[v] = games.filter(g => getVal(g) === v).length; });
+  const maxStack = Math.max(...presentValues.map(v => valCounts[v]));
+
+  // On phones the axes flip: values run top→bottom (vertical scroll) and each
+  // stack grows left→right, so the dense value-axis labels never overlap.
+  const phone = window.innerWidth < 760;
+  const P_LABEL = 44, P_GAP = 16, P_CARDW = 34, P_TOP = 14;
+  const P_CARDH = Math.round(P_CARDW * 1.5);
+  const P_ROWH  = P_CARDH + P_GAP;
+  const P_AVAIL = window.innerWidth - P_LABEL - 12;  // usable width for a row of cards
+  // Per-row horizontal step: cards sit border-to-border (step == card width) and
+  // ONLY a row that would overflow the screen gets compressed to fit. This stops
+  // the densest row from forcing every other row to overlap needlessly.
+  const phoneStep = (count) => Math.min(P_CARDW, P_AVAIL / Math.max(1, count));
+
+  if (phone) {
+    container.classList.add('pillar-phone');
+    container.style.height = (P_TOP + colCount * P_ROWH + 40) + 'px';
+  } else {
+    container.classList.remove('pillar-phone');
+    container.style.height = `${(maxStack * yOffset) + 150}px`;
+  }
 
   // Animation Timers
   const colStartTimes = new Map();
@@ -1064,12 +1480,22 @@ function renderPillarView(games)
       }
     }
 
-    card.style.left = `${xPos}%`;
-    card.style.bottom = `${yPos + 40}px`;
     card.style.position = 'absolute';
-    card.style.width = `${cardWidth}px`;
-    card.style.zIndex = depth;
-    card.style.transform = 'translateX(-50%) translateZ(0)';
+    if (phone) {
+      card.style.left = `${P_LABEL + stacks[val] * phoneStep(valCounts[val])}px`;
+      card.style.top = `${P_TOP + valIndex * P_ROWH}px`;
+      card.style.bottom = 'auto';
+      card.style.width = `${P_CARDW}px`;
+      card.style.zIndex = 1000 + (valIndex * 100) + stacks[val];
+      card.style.transform = 'translateZ(0)';
+    } else {
+      card.style.left = `${xPos}%`;
+      card.style.bottom = `${yPos + 40}px`;
+      card.style.top = 'auto';
+      card.style.width = `${cardWidth}px`;
+      card.style.zIndex = depth;
+      card.style.transform = 'translateX(-50%) translateZ(0)';
+    }
 
     if (isNew || isRevived) {
       card.classList.remove('pillar-animate-in');
@@ -1122,6 +1548,16 @@ function renderPillarView(games)
     marker.textContent = tick;
     marker.style.position = 'absolute';
 
+    if (phone) {
+      // Vertical ruler down the left: one label per value row, centred on it.
+      marker.style.left = '4px';
+      marker.style.top = `${P_TOP + (i * P_ROWH) + (P_CARDH / 2)}px`;
+      marker.style.transform = 'translateY(-50%)';
+      marker.style.textAlign = 'left';
+      ruler.appendChild(marker);
+      return;
+    }
+
     // Use the same dynamic position as the cards
     const xPos = startX + (i * spacing);
     marker.style.left = `${xPos}%`;
@@ -1148,7 +1584,7 @@ function renderPillarView(games)
   // ============================================================
   // 6. AUTO-SCROLL
   // ============================================================
-  setTimeout(() => {
+  if (!phone) setTimeout(() => {
     const scrollTarget = container.offsetTop + container.offsetHeight;
     if (thisRenderId !== currentRenderId) return;
     if ((window.innerHeight + window.scrollY) < scrollTarget - 100) {

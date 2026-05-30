@@ -33,43 +33,52 @@
       "tier": "S",
       "category": "Indie",
       "platform": "PC",
-      "played_year": 2021,
-      "score": 88,
+      "played_year": 2026,
+      "score": 89,
       "comment": `One of my
       favorite Roguelikes.
       ADDICTIVE gameplay`,
-      "igdb_id": 40477,
-      "rawg_id": "slay-the-spire",
+      "igdb_id": 296831,
+      "rawg_id": "slay-the-spire-2",
       "vibe": "Brainy, Flow",
       "ttb": "Infinite"
+    },
+    {
+      "name": "Carto",
+      "tier": "B",
+      "category": "Indie",
+      "platform": "PC",
+      "played_year": 2026,
+      "score": 73,
+      "comment": `real cozy`,
+      "igdb_id": 101448,
+      "rawg_id": "carto",
+      "vibe": "Cozy",
+      "ttb": "Medium"
     },
     {
       "name": "Yuppie Psycho",
       "tier": "B",
       "category": "Indie",
       "platform": "PC",
-      "played_year": 2021,
-      "score": 88,
-      "comment": `One of my
-      favorite Roguelikes.
-      ADDICTIVE gameplay`,
-      "igdb_id": 40477,
-      "rawg_id": "slay-the-spire",
-      "vibe": "Brainy, Flow",
-      "ttb": "Infinite"
+      "played_year": 2026,
+      "score": 72,
+      "comment": `indie horror game with a great atmosphere and story, but clunky gameplay and some frustrating sections`,
+      "igdb_id": 26565,
+      "rawg_id": "yuppie-psycho",
+      "vibe": "Cozy",
+      "ttb": "Short"
     },
     {
       "name": "The King's Bird",
-      "tier": "C",
+      "tier": "B",
       "category": "Indie",
       "platform": "PC",
-      "played_year": 2021,
-      "score": 88,
-      "comment": `One of my
-      favorite Roguelikes.
-      ADDICTIVE gameplay`,
-      "igdb_id": 40477,
-      "rawg_id": "slay-the-spire",
+      "played_year": 2026,
+      "score": 71,
+      "comment": `TBD`,
+      "igdb_id": 11840,
+      "rawg_id": "the-kings-bird",
       "vibe": "Brainy, Flow",
       "ttb": "Infinite"
     },
@@ -225,7 +234,8 @@
       "igdb_id": 204350,
       "rawg_id": "the-last-of-us",
       "vibe": "Cinematic, Epic",
-      "ttb": "Medium"
+      "ttb": "Medium",
+      "inspiration": true
     },
     {
       "name": "Ghost of Yotei",
@@ -466,7 +476,8 @@
       "igdb_id": 228918,
       "rawg_id": 719612,
       "vibe": "Flow",
-      "ttb": "Short"
+      "ttb": "Short",
+      "inspiration": true
     },
     {
       "name": "King is Watching",
@@ -1838,7 +1849,8 @@
       "igdb_id": 7331,
       "rawg_id": "uncharted-4-a-thiefs-end",
       "vibe": "Cinematic, Epic",
-      "ttb": "Medium"
+      "ttb": "Medium",
+      "inspiration": true
     },
     {
       "name": "Heavy Rain",
@@ -2549,7 +2561,8 @@
       "igdb_id": 1254,
       "rawg_id": "dmc",
       "vibe": "Flow",
-      "ttb": "Short"
+      "ttb": "Short",
+      "inspiration": true
     },
     {
       "name": "Max Payne 3",
@@ -2558,6 +2571,7 @@
       "platform": "PC",
       "played_year": 2012,
       "score": 95,
+      "inspiration": true,
       "comment": "Neo-noir story + documentary style cinematography \nset in Brazil. \nOne of the best-feeling controls in shooter game. \nEnormous inspiration for me gameplay-wise.\nNo loading screens across gameplay and cutscenes  \nTook me a few days to download it on release!",
       "igdb_id": 960,
       "rawg_id": "max-payne-3",
@@ -2591,7 +2605,8 @@
       "igdb_id": 544,
       "rawg_id": "the-darkness-ii",
       "vibe": "Cinematic",
-      "ttb": "Short"
+      "ttb": "Short",
+      "inspiration": true
     },
     {
       "name": "Sleeping Dogs",
@@ -2877,7 +2892,8 @@
       "igdb_id": 109,
       "rawg_id": "la-noire",
       "vibe": "Cinematic, Brainy",
-      "ttb": "Long"
+      "ttb": "Long",
+      "inspiration": true
     },
     {
       "name": "Crossfire",
@@ -3003,7 +3019,8 @@
       "igdb_id": 494,
       "rawg_id": "bulletstorm",
       "vibe": "Cinematic, Epic",
-      "ttb": "Short"
+      "ttb": "Short",
+      "inspiration": true
     },
     {
       "name": "Mortal Kombat: Unchained",
@@ -3283,7 +3300,8 @@
       "igdb_id": 570,
       "rawg_id": "prototype",
       "vibe": "Flow, Epic",
-      "ttb": "Medium"
+      "ttb": "Medium",
+      "inspiration": true
     },
     {
       "name": "Wormix",
@@ -3374,7 +3392,8 @@
       "igdb_id": 113,
       "rawg_id": "assassins-creed-brotherhood-2",
       "vibe": "Cinematic, Epic",
-      "ttb": "Long"
+      "ttb": "Long",
+      "inspiration": true
     },
     {
       "name": "Minecraft",
@@ -4007,7 +4026,8 @@
       "igdb_id": 1051,
       "rawg_id": "mirrors-edge",
       "vibe": "Cinematic",
-      "ttb": "Short"
+      "ttb": "Short",
+      "inspiration": true
     },
     {
       "name": "Grand Theft Auto IV",
