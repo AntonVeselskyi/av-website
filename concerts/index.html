@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Concerts — A Sketchbook</title>
+  <meta name="description" content="A hand-inked sketchbook of every concert attended — setlists, support acts, photos and ticket-stub memories on one scrolling timeline." />
+  <meta name="theme-color" content="#f4ede0" />
+  <meta property="og:title" content="Concerts — A Sketchbook" />
+  <meta property="og:description" content="A hand-inked sketchbook of every concert attended — setlists, support acts and photos on one scrolling timeline." />
+  <meta property="og:type" content="website" />
+  <!-- Favicon: the timeline's ink-ring stop marker with its traveling dot -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%23f4ede0'/%3E%3Ccircle cx='32' cy='29' r='15.5' fill='none' stroke='%2315110d' stroke-width='3.4'/%3E%3Ccircle cx='32' cy='29' r='5' fill='%2315110d'/%3E%3Cpath d='M9 52 Q 20 45 32 52 T 55 52' fill='none' stroke='%235a4a3a' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,7 +37,17 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      /* Thin ink scrollbar so the browser chrome reads as part of the page
+         (standard properties — Chrome 121+/Firefox; Safari keeps its default). */
+      scrollbar-width: thin;
+      scrollbar-color: var(--ink-ghost) transparent;
+    }
+    /* Text selection inverts to ink-on-paper's negative — feels printed. */
+    ::selection { background: var(--ink); color: var(--paper); }
+    /* Touch: no grey tap-flash, no double-tap-zoom delay on controls. */
+    a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
     body {
       background: var(--paper);
@@ -102,10 +119,24 @@
       letter-spacing: 0;
       color: var(--ink);
       text-decoration: none;
-      transition: color .25s, transform .35s cubic-bezier(.16,1,.3,1);
+      -webkit-text-stroke: 0 var(--ink);
+      /* Signature hover (matches the mark on antonveselskyi.com): the colour
+         swap is quick so feedback is immediate, the flip glides slowly. */
+      transition: color .3s ease, -webkit-text-stroke .3s ease,
+                  transform 1.3s ease-in-out;
     }
     #hero-av span { grid-area: 1 / 1; text-align: center; } /* overlap → they intersect */
-    #hero-av:hover { color: var(--accent, var(--ink)); transform: scale(1.08) rotate(-3deg); }
+    #hero-av:hover {
+      /* 180° flip + the −3° resting tilt; ink inverts to paper with an ink
+         outline — the stroke is what keeps it readable on the cream page. */
+      transform: scale(1.08) rotate(-183deg);
+      color: var(--paper);
+      -webkit-text-stroke: 1.5px var(--ink);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #hero-av { transition: color .3s ease, -webkit-text-stroke .3s ease; }
+      #hero-av:hover { transform: none; }
+    }
 
     #hero-title {
       font-family: var(--ff-disp);
@@ -379,6 +410,7 @@
     .tab-btn:nth-child(2) { transform: rotate(.9deg);   }
     .tab-btn:nth-child(3) { transform: rotate(-.6deg);  }
     .tab-btn:hover { box-shadow: 3px 3px 0 var(--ink); }
+    .tab-btn:active { box-shadow: 1px 1px 0 var(--ink-soft); } /* pressed-down feel */
     .tab-btn.active {
       background: var(--ink);
       color: var(--paper);
@@ -610,6 +642,16 @@
       border-radius: 2px;
       transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
     }
+    .media-thumb:active { transform: scale(.93); }
+    /* Lazy images develop like a print instead of popping in. The .img-ld
+       class is added by a capture-phase load/error listener; a late timer
+       force-adds it so nothing can stay invisible. */
+    .photo-slot img, .media-thumb img, .media-stage img.media-el {
+      opacity: 0; transition: opacity .45s ease;
+    }
+    .photo-slot img.img-ld, .media-thumb img.img-ld, .media-stage img.media-el.img-ld {
+      opacity: 1;
+    }
     .media-thumb img {
       width: 100%; height: 100%; object-fit: cover; display: block;
       filter: sepia(.18) contrast(1.05); mix-blend-mode: multiply;
@@ -636,6 +678,7 @@
         repeating-linear-gradient(45deg, transparent 0 8px, rgba(0,0,0,.04) 8px 9px),
         rgba(18,14,10,.92);
       opacity: 0;
+      overscroll-behavior: contain; /* wheel at the edges must not scroll the page behind */
     }
     #media-theatre.open { display: flex; }
     .theatre-close {
@@ -649,6 +692,7 @@
       transition: transform .15s ease, border-color .15s ease, color .15s ease;
     }
     .theatre-close:hover { transform: rotate(90deg); border-color: var(--paper); }
+    .theatre-close:active { transform: rotate(90deg) scale(.88); }
     .theatre-stage {
       position: relative;
       width: min(94vw, 1200px);
@@ -787,6 +831,7 @@
       transition: transform .15s, box-shadow .15s, background .15s;
     }
     .yt-play-btn:hover { transform: rotate(-.5deg) translateY(-1px); box-shadow: 3px 3px 0 var(--ink-soft); }
+    .yt-play-btn:active { transform: rotate(-.5deg) translateY(1px); box-shadow: none; } /* press */
     .yt-play-btn svg { width: 15px; height: 15px; display: block; }
     .yt-play-btn .yt-count {
       font-size: .72rem; opacity: .78;
@@ -868,10 +913,37 @@
     .spotify-embed-wrap {
       display: flex; flex-direction: column; width: 100%;
       flex: 1 1 auto; min-height: 352px; margin-top: 1rem;
+      position: relative;
+    }
+    /* Loading skeleton: a faint pulsing "vinyl" sits under the embed so the
+       box is never dead-blank while Spotify's controller mounts. The real
+       iframe (z-index above) covers it the moment it renders. */
+    .spotify-embed-wrap::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 0;
+      border-radius: 6px;
+      background:
+        radial-gradient(circle at 50% 50%,
+          rgba(21,17,13,.16) 0 7px,            /* label */
+          transparent 8px 15px,
+          rgba(21,17,13,.10) 16px 17px,        /* grooves */
+          transparent 18px 23px,
+          rgba(21,17,13,.08) 24px 25px,
+          transparent 26px 31px,
+          rgba(21,17,13,.06) 32px 33px,
+          transparent 34px),
+        var(--paper-deep);
+      opacity: .5;
+      animation: spotify-skeleton 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes spotify-skeleton { from { opacity: .3; } to { opacity: .65; } }
+    @media (prefers-reduced-motion: reduce) {
+      .spotify-embed-wrap::before { animation: none; }
     }
     .spotify-embed-wrap iframe {
       width: 100% !important; height: 100% !important; flex: 1 1 auto;
       min-height: 352px; border: 0; border-radius: 6px;
+      position: relative; z-index: 1;
     }
 
     /* ── Sports scoreboard (e.g. Raptors vs Lakers) ──────────────── */
@@ -1096,6 +1168,38 @@
         "supports": []
       },
       {
+        "id": "evanescence-toronto-2026-06-29",
+        "artist": "Evanescence",
+        "tourName": "2026 World Tour",
+        "date": "Mon · Jun 29, 2026",
+        "isoDate": "2026-06-29",
+        "venue": "RBC Amphitheatre",
+        "city": "Toronto, ON",
+        "setlist": [],
+        "photos": [],
+        "logo": "",
+        "spotifyEmbed": "https://open.spotify.com/embed/artist/5nGIFgo0shDenQYSE0Sn7c?utm_source=generator",
+        "notes": "Upcoming — haven't been yet. w. Spiritbox, Nova Twins. Setlist & photos to come!",
+        "supports": [
+          {
+            "artist": "Spiritbox",
+            "role": "opener",
+            "setlist": [],
+            "logo": "",
+            "spotifyEmbed": "https://open.spotify.com/embed/artist/4MzJMcHQBl9SIYSjwWn8QW?utm_source=generator",
+            "notes": "Special guest"
+          },
+          {
+            "artist": "Nova Twins",
+            "role": "opener",
+            "setlist": [],
+            "logo": "",
+            "spotifyEmbed": "https://open.spotify.com/embed/artist/7I95CM75shzCjHuTzrepjM?utm_source=generator",
+            "notes": "Opening act"
+          }
+        ]
+      },
+      {
         "id": "jinjer-toronto-2026-06-07",
         "artist": "JINJER",
         "tourName": "Duel North America 2026",
@@ -1103,22 +1207,80 @@
         "isoDate": "2026-06-07",
         "venue": "The Danforth Music Hall",
         "city": "Toronto, ON",
-        "setlist": [],
+        "setlist": [
+          "Duél",
+          "Green Serpent",
+          "Fast Draw",
+          "Vortex",
+          "Disclosure!",
+          "Tantrum",
+          "Teacher, Teacher!",
+          "Kafka",
+          "Judgement (& Punishment)",
+          "Hedonist",
+          "I Speak Astronomy",
+          "Perennial",
+          "Someone's Daughter",
+          "Rogue",
+          "Pisces",
+          "Sit Stay Roll Over"
+        ],
         "photos": [],
         "logo": "https://static.tildacdn.net/tild3939-3966-4438-b163-323162313861/jinjer-logo-lines-wh.png",
         "logoInvert": true,
         "spotifyEmbed": "https://open.spotify.com/embed/artist/7o6cOczXTB8ioTAAJTbESf?utm_source=generator",
-        "notes": "Upcoming — haven't been yet. w. Entheos. Setlist & photos to come!",
+        "notes": "w. Entheos. Photos to come!",
         "supports": [
           {
             "artist": "Entheos",
             "role": "opener",
-            "setlist": [],
+            "setlist": [
+              "All for Nothing",
+              "Empty on the Inside",
+              "Absolute Zero",
+              "Hell is a Part of Me",
+              "I Am the Void",
+              "Life in Slow Motion",
+              "A Thousand Days",
+              "Golden Crown",
+              "An End to Everything",
+              "Return to Me",
+              "The Sinking Sun"
+            ],
             "logo": "",
             "spotifyEmbed": "https://open.spotify.com/embed/artist/4ZBgVz7Pg5ZAX7pZjURSOI?utm_source=generator",
-            "notes": "Opening act"
+            "notes": "Opening act",
+            "setlistYTMusic": {
+              "All for Nothing": "D62suysgV4g",
+              "Empty on the Inside": "xGGtd0AyC7M",
+              "Absolute Zero": "slfnyUx5QPw",
+              "I Am the Void": "zISnaDV5uEc",
+              "Life in Slow Motion": "Ud-_om9IeBo",
+              "A Thousand Days": "7qBuDoCkwtY",
+              "An End to Everything": "2L70E1C6lS0",
+              "Return to Me": "uvI0lAZrYik",
+              "The Sinking Sun": "18DDkwRk7zw"
+            }
           }
-        ]
+        ],
+        "setlistYTMusic": {
+          "Duél": "da-ZGY16xQo",
+          "Green Serpent": "QFGSo1xHyYE",
+          "Fast Draw": "GikWQjVGowQ",
+          "Vortex": "7NyFdSbBVOc",
+          "Disclosure!": "k7tZ8gcrJ3I",
+          "Tantrum": "zcS8nu0S0KA",
+          "Teacher, Teacher!": "n2TmAzVO3As",
+          "Kafka": "l_0kXB7pbD0",
+          "Judgement (& Punishment)": "F-GBjyJFBVI",
+          "Hedonist": "vYdNhgGQxSg",
+          "I Speak Astronomy": "pTKqWmpNPiI",
+          "Perennial": "hjh6Wn2qXeY",
+          "Someone's Daughter": "e9UHfq4Fi8c",
+          "Rogue": "mWp1hFPlliY",
+          "Pisces": "sq7DG1NFXAw",
+          "Sit Stay Roll Over": "dR7Qv-S_Okk"
+        }
       },
       {
         "id": "suicideboys-toronto-2025-09-27",
@@ -2029,27 +2191,27 @@
           "Vidchuvayu": "eV7_IKkIqk4",
           "911": "dbq3tILUPmg",
           "Kvitka": "UKmbZb2Yxcc",
-          "Misto Marii": "VnC2tG9KMDM",
-          "Koly Navkolo Ni Dushi": "iPuiwb3pgrI",
+          "Misto Marii": "Y6lgEX1DbXE",
+          "Koly Navkolo Ni Dushi": "fJCLaZeCuRw",
           "Mukachevo": "GEvmbqd-R9M",
           "Running Away": "S_CSFmrdu74",
           "Might Have Been a Dream": "Yq1Q1an-RG8",
           "Nowhere": "3jTUc1wio3g",
           "Striljay": "R_mi9O6JuTk",
           "Na linii vognyu": "o--9PziTIZU",
-          "Bez boyu": "q6WdXUOR5ew",
-          "Vishe neba": "5axhOkYhep4",
+          "Bez boyu": "sx5oqwa-Dps",
+          "Vishe neba": "AVqTQ6SQb5k",
           "Fialki": "UPm1f3g-yLQ",
           "Ne Pytai": "xcEgCjWbb3A",
-          "Yak Nikoly": "eAGw9nwI978",
+          "Yak Nikoly": "MNkl76IBWhA",
           "Lighthouse": "GDRgLZwlZnc",
           "Voices Are Rising": "0KwDUdkihKo",
           "Ne Idy": "OAhMtMh2N6w",
           "Stina": "lkqZpS_t2z0",
           "Toi den'": "Gpk9u1rNBBU",
-          "Na Nebi": "qGdYQZvGQOU",
+          "Na Nebi": "ruBsGe2HLmQ",
           "Hochy do tebe": "kKbuv7NAMTc",
-          "Obijmy": "nCa4f8LFIlk"
+          "Obijmy": "8wWrzr3_46Y"
         }
       },
       {
@@ -3784,6 +3946,21 @@
     const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const SMALL_SCREEN  = window.matchMedia('(max-width: 600px)').matches;
 
+    /* Photos & media thumbs fade in once decoded (see .img-ld CSS) — without
+       this, lazy-loaded images pop in mid-scroll. Capture phase so it catches
+       imgs inserted later; 'error' too so a dead URL never stays a blank hole.
+       The late sweep is a belt-and-braces guarantee against any missed event. */
+    const _markImgLoaded = e => {
+      if (e.target instanceof HTMLImageElement) e.target.classList.add('img-ld');
+    };
+    document.addEventListener('load',  _markImgLoaded, true);
+    document.addEventListener('error', _markImgLoaded, true);
+    window.addEventListener('load', () => setTimeout(() => {
+      document.querySelectorAll('img:not(.img-ld)').forEach(i => {
+        if (i.complete) i.classList.add('img-ld');
+      });
+    }, 1500));
+
     /* Graceful logo fallback — a dead/blocked logo URL (e.g. a hotlink-blocked
        image) would otherwise show the browser's broken-image icon. We catch
        image load failures in the capture phase (error events don't bubble) and
@@ -4587,6 +4764,15 @@
 
     window.addEventListener('load', buildTimeline);
 
+    // Re-flow the snake + marker triggers when the viewport changes (debounced):
+    // without this the ink path drifts off the markers after a resize or a
+    // phone orientation flip, and stays broken until reload.
+    let _rzTO = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(_rzTO);
+      _rzTO = setTimeout(() => rebuildTimelineSettled(60), 150);
+    });
+
 
     /* ═══════════════════════════════════════════════════════════════
        STOP CLICK → expand / collapse panel
@@ -5078,7 +5264,11 @@
               y: toRect.top  - fromRect.top,
               scale: f.scale ?? 1,
               duration: .4, ease: 'power2.inOut',
-              onComplete: () => { gsap.to(f.dst, { opacity: 1, duration: .15 }); clone.remove(); },
+              // Reveal the real card element in the SAME frame the clone is
+              // removed (instant gsap.set, mirroring the open path). A fading
+              // gsap.to here left a 1-frame gap where neither the clone nor the
+              // card logo was visible — read as the logo "popping in too small".
+              onComplete: () => { gsap.set(f.dst, { opacity: 1 }); clone.remove(); },
             });
           });
           if (supportLogos) gsap.to(supportLogos, { opacity: 1, duration: .2 });
@@ -5179,13 +5369,16 @@
         // clones all finish together as one motion instead of the camera
         // outlasting the FLIP and rebuilding the timeline mid-scroll.
         if (!willOpenTheatre) {
+          // behavior:'instant' is load-bearing: html has scroll-behavior:smooth,
+          // and the default-behavior scrollTo would get browser-animated on top
+          // of (and lagging behind) the GSAP tween — mushy, rubber-banding camera.
           if (REDUCE_MOTION || Math.abs(camTarget - window.scrollY) < 2) {
-            window.scrollTo(0, camTarget);
+            window.scrollTo({ top: camTarget, behavior: 'instant' });
           } else {
             cam = { y: window.scrollY };
             gsap.to(cam, {
               y: camTarget, duration: DUR, ease: 'power3.inOut', overwrite: 'auto',
-              onUpdate: () => window.scrollTo(0, cam.y),
+              onUpdate: () => window.scrollTo({ top: cam.y, behavior: 'instant' }),
               onComplete: () => rebuildTimelineSettled(),
             });
           }
@@ -5263,6 +5456,8 @@
 
       stage.innerHTML = mediaStageInner(m);
       meta.innerHTML  = mediaMeta(m, idx, thumbs.length);
+      // Soft crossfade into the new media — a hard swap reads as a flicker
+      if (!REDUCE_MOTION) gsap.fromTo(stage, { opacity: 0 }, { opacity: 1, duration: .28, ease: 'power1.out' });
 
       // The user clicked a clip → start it (click is a valid user gesture)
       const vid = stage.querySelector('video');
@@ -5325,6 +5520,7 @@
       if (prevVid) prevVid.pause();
       stage.innerHTML = mediaStageInner(m);
       meta.innerHTML  = mediaMeta(m, idx, _theatreItems.length);
+      if (!REDUCE_MOTION) gsap.fromTo(stage, { opacity: 0 }, { opacity: 1, duration: .28, ease: 'power1.out' });
       el.querySelectorAll('.theatre-strip .media-thumb')
         .forEach((t, i) => t.classList.toggle('active', i === idx));
       const vid = stage.querySelector('video');
@@ -5367,8 +5563,18 @@
       openTheatre(_itemsFromPlayer(player), active, player.dataset.band || '');
     });
 
-    // ESC closes the theatre overlay
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTheatre(); });
+    // Theatre keys: ESC closes, ←/→ step through the media (wrapping)
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeTheatre(); return; }
+      if (!_theatreEl || !_theatreEl.classList.contains('open') || _theatreItems.length < 2) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        _theatreShow((_theatreIdx + 1) % _theatreItems.length);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        _theatreShow((_theatreIdx - 1 + _theatreItems.length) % _theatreItems.length);
+      }
+    });
 
     /* ── Tab filtering ─────────────────────────────────────────── */
     function concertCategory(c) {
@@ -5380,14 +5586,29 @@
       return 'music';
     }
 
+    let _tabSwapping = false;
     document.querySelectorAll('.tab-btn').forEach(tabBtn => {
       tabBtn.addEventListener('click', () => {
+        if (tabBtn.classList.contains('active') || _tabSwapping) return;
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
         tabBtn.classList.add('active');
         const tab = tabBtn.dataset.tab;
-        applyTabFilter(tab);
-        // Rebuild snake path for the now-visible set of stops
-        requestAnimationFrame(buildTimeline);
+        const tl  = document.getElementById('timeline');
+        if (REDUCE_MOTION) {
+          applyTabFilter(tab);
+          requestAnimationFrame(buildTimeline);
+          return;
+        }
+        // Crossfade the whole timeline (stops + snake SVGs) through the swap —
+        // a hard pop reads as a glitch, a short ink-fade reads as a page turn.
+        // Opacity only: transforms would offset buildTimeline's measurements.
+        _tabSwapping = true;
+        gsap.to(tl, { opacity: 0, duration: .16, ease: 'power2.in', onComplete: () => {
+          applyTabFilter(tab);
+          buildTimeline();
+          gsap.to(tl, { opacity: 1, duration: .3, ease: 'power2.out',
+            onComplete: () => { _tabSwapping = false; } });
+        }});
       });
     });
 

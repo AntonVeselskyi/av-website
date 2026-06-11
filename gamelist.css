@@ -1478,3 +1478,159 @@ body:not(.pillar-view-active) .tab-row-columns {
   animation-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   animation-fill-mode: both;
 }
+
+/* =========================================================
+   AV MONOGRAM — the personal mark (A over V, same cell).
+   Pinned top-centre over the title, on the cream page bg so
+   it's inked black; links home. Hidden until content loads.
+   Shared by game/show/manga lists.
+   ========================================================= */
+.av-monogram {
+  position: absolute;             /* sits at the page top, does NOT follow scroll */
+  top: 6px;
+  left: 50%;                      /* dead-centre horizontally, over the title */
+  transform: translateX(-50%);
+  z-index: 100002;                /* above title banner (100001) + hovered cards */
+  display: inline-grid;
+  place-items: center;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 5.2rem;              /* the mark scales entirely from font-size */
+  line-height: 1;
+  letter-spacing: 0;
+  color: #000000;                 /* black — reads on the cream page background */
+  text-decoration: none;
+  /* thin white outline so the glyph stays legible where it crosses onto the
+     black title banner (it spans both backgrounds at this size) */
+  -webkit-text-stroke: 1.5px #ffffff;
+  /* hidden until content has loaded — see body.content-ready below */
+  opacity: 0;
+  visibility: hidden;
+  /* slow, smooth spin; quicker colour swap; gentle fade-in */
+  transition: color .3s ease, -webkit-text-stroke .3s ease,
+              transform 1.3s ease-in-out,
+              opacity .6s ease, visibility .6s ease;
+}
+/* Both letters share one grid cell → they intersect into the hourglass glyph. */
+.av-monogram span { grid-area: 1 / 1; text-align: center; }
+.av-monogram:hover {
+  /* 180° flip + the slight tilt — slow & smooth. Inverts to white with a black
+     outline as the hover indication (readable on the cream background). */
+  transform: translateX(-50%) scale(1.08) rotate(-183deg);
+  color: #ffffff;
+  -webkit-text-stroke: 1.5px #000000;
+}
+/* Reveal the mark only once the content is ready (set in init()). */
+body.content-ready .av-monogram {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* =========================================================
+   APP-FEEL POLISH — fluency layer shared by all lists.
+   Snappy button feedback, view crossfade, results counter,
+   scroll-to-top. Stays strictly within the B&W language.
+   ========================================================= */
+
+html { scroll-behavior: smooth; }
+
+/* Buttons: quicker hover, tactile press. The old blanket 0.4s transition made
+   every interaction feel laggy; hover swap now reads as immediate. */
+.tab-buttons .secret-btn,
+.view-btn {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .18s ease, color .18s ease,
+              border-color .18s ease, box-shadow .18s ease,
+              transform .1s ease;
+}
+.tab-buttons .secret-btn:active,
+.view-btn:active {
+  transform: scale(0.95);
+}
+
+/* Search field: animated focus underline */
+.search-input {
+  transition: box-shadow .25s ease, border-color .25s ease;
+}
+.search-input:focus {
+  box-shadow: 0 2px 0 0 black;
+}
+
+/* View switching: brief crossfade of the whole list container.
+   Opacity only — a transform here would re-anchor position:fixed
+   descendants (pillar inspect panel). */
+@keyframes view-switch-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.games-list.view-switching {
+  animation: view-switch-in .4s ease;
+}
+
+/* Results counter: lives next to the search field, ticks on change */
+#result-count {
+  font-family: 'Major Mono Display', monospace;
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: black;
+  opacity: 0.5;
+  margin-left: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  pointer-events: none;
+}
+@keyframes count-tick {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); opacity: 0.9; }
+  100% { transform: scale(1); }
+}
+#result-count.tick { animation: count-tick .3s ease; }
+/* Inspiration ignores filters — counter would lie, so hide it there */
+body.inspiration-mode #result-count { opacity: 0; }
+
+/* Scroll-to-top: monochrome, bottom-right, slides in after scrolling */
+.scroll-top-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100002;
+  width: 52px;
+  height: 52px;
+  border: 3px solid black;
+  background: #f6f3ef;
+  color: black;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity .3s ease, transform .3s ease, visibility .3s ease,
+              background-color .18s ease, color .18s ease;
+}
+.scroll-top-btn.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.scroll-top-btn:hover {
+  background: black;
+  color: white;
+}
+.scroll-top-btn:active { transform: translateY(0) scale(0.93); }
+/* on the dark inspiration sky, invert so it stays visible */
+body.inspiration-mode .scroll-top-btn {
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  border-color: white;
+}
+
+/* Accessibility: honour reduced-motion — keep the app usable, drop the show */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .games-list.view-switching,
+  #result-count.tick,
+  .av-monogram,
+  .scroll-top-btn { animation: none !important; transition: none !important; }
+}

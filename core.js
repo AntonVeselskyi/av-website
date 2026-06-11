@@ -137,6 +137,8 @@ function createGameCard(game)
   const img = document.createElement('img');
   img.src = game.image || 'img/placeholder.png';
   img.alt = game.name;
+  img.loading = 'lazy';     // only fetch covers as they approach the viewport
+  img.decoding = 'async';   // don't block paint on image decode
   card.appendChild(img);
 
   const commentHtml = (game.comment || '').replace(/\n/g, '<br>');
@@ -1064,13 +1066,28 @@ function applyFilters()
       games = LIST_CONFIG.pillarAxisFilter(games, activePillarAxis);
     }
     // We don't need sorting for pillars as position is X-axis based
+    updateResultCount(games.length, allGames.length);
     renderPillarView(games);
   }
   else
   {
     games = sortGames(games);
+    updateResultCount(games.length, allGames.length);
     renderGamesAnimated(games);
   }
+}
+
+// Live "shown/total" readout next to the search field; ticks on change.
+function updateResultCount(shown, total)
+{
+  const el = document.getElementById('result-count');
+  if (!el) return;
+  const text = `${shown}/${total}`;
+  if (el.textContent === text) return;
+  el.textContent = text;
+  el.classList.remove('tick');
+  void el.offsetWidth;            // restart the pop animation
+  el.classList.add('tick');
 }
 
 function setActiveInGroup(buttons, activeBtn)
@@ -1212,14 +1229,20 @@ function setupTabs()
   const defaultSortBtn = sortButtons.find(b => b.dataset.value === sortKey);
   if (defaultSortBtn) defaultSortBtn.classList.add('active');
 
-  // Search input
+  // Search input — debounced so fast typing doesn't re-render the whole list
+  // on every keystroke (300+ cards per render).
   const searchInput = document.getElementById('search-input');
   if (searchInput)
   {
+    let searchDebounce = null;
     searchInput.addEventListener('input', e =>
     {
-      filterSearch = e.target.value.trim();
-      applyFilters();
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() =>
+      {
+        filterSearch = e.target.value.trim();
+        applyFilters();
+      }, 180);
     });
   }
 
@@ -1250,6 +1273,13 @@ function setupTabs()
 
         document.body.classList.toggle('inspiration-mode', viewMode === 'inspiration');
         ensureInspirationBg(viewMode === 'inspiration');
+
+        // Crossfade the list container so view changes feel deliberate
+        // (opacity only — transforms would break position:fixed descendants
+        // like the pillar inspect panel).
+        gameContainer.classList.remove('view-switching');
+        void gameContainer.offsetWidth;
+        gameContainer.classList.add('view-switching');
 
         applyFilters();
     });
@@ -1596,9 +1626,66 @@ function renderPillarView(games)
   }, 100);
 }
 
+// ========== APP-FEEL POLISH ==========
+// Injected UI + shortcuts shared by all lists: results counter, scroll-to-top,
+// and keyboard navigation. No HTML edits needed — everything is created here.
+function setupAppPolish()
+{
+  // --- results counter (sits right after the search field) ---
+  const searchInput = document.getElementById('search-input');
+  if (searchInput && !document.getElementById('result-count'))
+  {
+    const counter = document.createElement('span');
+    counter.id = 'result-count';
+    counter.setAttribute('aria-live', 'polite');
+    searchInput.insertAdjacentElement('afterend', counter);
+  }
+
+  // --- scroll-to-top button (appears after scrolling down) ---
+  const topBtn = document.createElement('button');
+  topBtn.className = 'scroll-top-btn';
+  topBtn.type = 'button';
+  topBtn.setAttribute('aria-label', 'Scroll to top');
+  topBtn.textContent = '▲';
+  topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  document.body.appendChild(topBtn);
+  window.addEventListener('scroll', () =>
+  {
+    topBtn.classList.toggle('visible', window.scrollY > 600);
+  }, { passive: true });
+
+  // --- keyboard shortcuts ---
+  //   /        focus search
+  //   Escape   clear search and blur
+  //   1/2/3    switch view (tierlist / histogram / inspiration)
+  document.addEventListener('keydown', (e) =>
+  {
+    const typing = e.target.matches('input, textarea');
+
+    if (e.key === '/' && !typing)
+    {
+      e.preventDefault();
+      searchInput?.focus();
+    }
+    else if (e.key === 'Escape' && typing && e.target === searchInput)
+    {
+      searchInput.value = '';
+      filterSearch = '';
+      applyFilters();
+      searchInput.blur();
+    }
+    else if (!typing && ['1', '2', '3'].includes(e.key))
+    {
+      const btns = document.querySelectorAll('.view-btn');
+      btns[Number(e.key) - 1]?.click();
+    }
+  });
+}
+
 // ========== INIT ==========
 async function init()
 {
+    setupAppPolish();
     console.log(LIST_CONFIG.data);
     try
     {
@@ -1612,6 +1699,12 @@ async function init()
     catch (e)
     {
       console.error('Failed to load games.json', e);
+    }
+    finally
+    {
+      // Reveal the AV monogram once content is ready (always runs, even if
+      // enrichment failed, so the mark never stays stuck hidden).
+      document.body.classList.add('content-ready');
     }
 
     window.addEventListener('resize', () =>

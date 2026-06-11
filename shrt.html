@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Major+Mono+Display&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
   :root {
@@ -325,6 +325,31 @@
   }
   footer a.name:hover { color: var(--accent); }
 
+  /* ────────── AV MONOGRAM (flanks the name) ────────── */
+  .av-name
+  {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7em;
+    vertical-align: middle;
+  }
+  .av-mark
+  {
+    display: inline-grid;
+    place-items: center;
+    font-family: 'Major Mono Display', monospace;
+    font-size: 2.3em;
+    line-height: 1;
+    letter-spacing: 0;
+    color: var(--accent);
+    /* slow, smooth flip on hover; quicker colour swap */
+    transition: transform 1.2s ease-in-out, color .3s ease;
+  }
+  .av-mark span { grid-area: 1 / 1; text-align: center; }
+  /* 180° flip + the resting tilt — slow & smooth, mirrored on each side */
+  .av-name:hover .av-mark.left  { transform: scale(1.12) rotate(-183deg); }
+  .av-name:hover .av-mark.right { transform: scale(1.12) rotate(183deg); }
+
   /* ────────── BRAND BANNER (between hero and content) ────────── */
   .brand
   {
@@ -484,7 +509,7 @@
   <div class="hero-sub">syntax sugar for c++</div>
 </header>
 
-<div class="brand"><a href="https://antonveselskyi.com">Anton Veselskyi</a></div>
+<div class="brand"><span class="av-name"><span class="av-mark left" aria-hidden="true"><span>A</span><span>V</span></span><a href="https://antonveselskyi.com">Anton Veselskyi</a><span class="av-mark right" aria-hidden="true"><span>A</span><span>V</span></span></span></div>
 
 <div class="try-it">
   <a href="https://antonveselskyi.com/shrt-play.html">Try it live &rarr;</a>
@@ -1364,7 +1389,7 @@ shop<span class="op">?.</span><span class="fn">buy</span>(<span class="str">"pot
      FOOTER
      ════════════════════════════════════════════════════════════ -->
 <footer>
-  <div>© 2026 &nbsp;·&nbsp; <a class="name" href="https://antonveselskyi.com">Anton Veselskyi</a></div>
+  <div>© 2026 &nbsp;·&nbsp; <span class="av-name"><span class="av-mark left" aria-hidden="true"><span>A</span><span>V</span></span><a class="name" href="https://antonveselskyi.com">Anton Veselskyi</a><span class="av-mark right" aria-hidden="true"><span>A</span><span>V</span></span></span></div>
 </footer>
 
 <script>

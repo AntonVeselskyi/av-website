@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Poiret+One&display=swap" rel="stylesheet">
 <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
-<meta charset="UTF-8">
 <title>Secret Access Portal</title>
 <style>
     :root
@@ -600,6 +601,7 @@ canvas
       case "newtab_rand":
         const randomUrl = Math.random() < 0.5 ? data.url : data.url2;
         openInNewTab(randomUrl);
+        break;
       case "text":
         startChargeAnimation();
         setTimeout(() =>
@@ -658,7 +660,7 @@ canvas
 
   hiddenInput.addEventListener('input', () =>
   {
-    value = hiddenInput.value.trim().toUpperCase();
+    let value = hiddenInput.value.trim().toUpperCase();
     updateDisplay(value);
     value = value.replace(/[ _-]+/g, "'");
 
@@ -693,14 +695,6 @@ canvas
     document.body.style.animation = "shake 0.3s";
     setTimeout(() => document.body.style.animation = "", 300);
     resetAfterCharge()
-  }
-
-  function redirectAfterDelay(URL, delay)
-  {
-    setTimeout(() =>
-    {
-      window.location.href = REDIRECT_URL;
-    }, 1500);
   }
 
   // Charging animation for correct code

@@ -95,14 +95,17 @@ window.LIST_CONFIG = {
   },
 
   filterFns: {
-    category: (games, value) => {
-      if (value === 'indie')
-        return games.filter(g => (g.category || '').toLowerCase() === 'indie');
-      if (value === 'ubisoft')
-        return games.filter(g => (g.developer || '').toLowerCase().includes('ubisoft'));
-      if (value === 'meta80')
-        return games.filter(g => Number(g.metacritic) >= 80);
-      return games;
+    // core passes an ARRAY of selected values ([] = all); OR-combine matches.
+    category: (games, values) => {
+      const vals = Array.isArray(values) ? values : [values];
+      const matchers = {
+        indie:   g => (g.category || '').toLowerCase() === 'indie',
+        ubisoft: g => (g.developer || '').toLowerCase().includes('ubisoft'),
+        meta80:  g => Number(g.metacritic) >= 80,
+      };
+      const active = vals.map(v => matchers[v]).filter(Boolean);
+      if (active.length === 0) return games;
+      return games.filter(g => active.some(fn => fn(g)));
     },
     platform: (games, value) => {
       if (value === 'all-other')

@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AV Game Tier List</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Major+Mono+Display&family=Poiret+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="gamelist.css" />
+  <!-- bump ?v= on deploy to bust browser caches (GitHub Pages caches for 10 min) -->
+  <link rel="stylesheet" href="gamelist.css?v=4" />
   <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
 </head>
 <body>
+  <!-- AV monogram — signature mark, links home -->
+  <a class="av-monogram" href="https://antonveselskyi.com" target="_blank" rel="noopener" aria-label="Anton Veselskyi">
+    <span>A</span><span>V</span>
+  </a>
   <!-- Page Title -->
   <h1 class="title">GAME LIST</h1>
   <!-- Views -->
@@ -105,7 +110,6 @@
     <a href="#" class="secret-btn" data-group="pillarAxis" data-value="metacritic">METACRITIC</a>
     <a href="#" class="secret-btn" data-group="pillarAxis" data-value="platform">PLATFORM</a>
   </div>
-</div>
 
 <!-- COUNTDOWN LOADER -->
 <div id="loader-overlay" class="loader-overlay loader-hidden">
@@ -129,8 +133,8 @@
   <!-- Tier sections will be injected here by JS -->
 </div>
 
-  <script src="games.js"></script>
-  <script src="gamelist-config.js"></script>
-  <script src="core.js"></script>
+  <script src="games.js?v=4"></script>
+  <script src="gamelist-config.js?v=4"></script>
+  <script src="core.js?v=4"></script>
 </body>
 </html>

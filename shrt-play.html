@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Major+Mono+Display&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
   :root
@@ -1311,6 +1311,8 @@
     grid-auto-rows: minmax(58px, auto);
     min-height: max-content;
     min-width: 0;
+    position: relative;
+    isolation: isolate;
   }
 
   .rcell-col
@@ -1418,6 +1420,41 @@
     gap: 0.4rem;
     flex-shrink: 0;
     min-width: 0;
+  }
+
+  .rchip-line
+  {
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: 8;
+    place-self: center;
+    transform: none;
+  }
+
+  .rchip-split-horizontal,
+  .rchip-split-vertical,
+  .rchip-corner,
+  .rchip-street,
+  .rchip-sixline          { transform: none; }
+
+  .roulette-spin-cover
+  {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 215, 119, 0.12), transparent 36%),
+      linear-gradient(180deg, rgba(4, 4, 4, 0.12), rgba(4, 4, 4, 0.28));
+    color: #ffd779;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-shadow: 0 0 14px rgba(255, 190, 95, 0.55);
   }
 
   .rcell-outside
@@ -1566,6 +1603,16 @@
       0 6px 14px rgba(0, 0, 0, 0.4);
     position: relative;
     transition: transform 900ms cubic-bezier(.17,.9,.28,1);
+  }
+
+  .wheel-disc.spinning
+  {
+    animation: roulette-wheel-spin 0.62s linear infinite;
+  }
+
+  @keyframes roulette-wheel-spin
+  {
+    to { transform: rotate(360deg); }
   }
 
   .wheel-disc::after
@@ -1755,6 +1802,10 @@
     overflow-y: auto;
   }
 
+  .game-event-log-line { display: block; }
+  .game-event-log-line.error { color: #ff8f78; }
+  .game-event-log-line.bet { color: #ffd779; }
+
   /* ── GAME INFO (right rail) ── */
   .game-info
   {
@@ -1911,6 +1962,33 @@
 
   footer a:hover { color: var(--accent); border-color: var(--accent); }
 
+  /* ────────── AV MONOGRAM (flanks the name) ────────── */
+  .av-name
+  {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7em;
+    vertical-align: middle;
+  }
+  .av-mark
+  {
+    display: inline-grid;
+    place-items: center;
+    font-family: 'Major Mono Display', monospace;
+    font-size: 2.3em;
+    line-height: 1;
+    letter-spacing: 0;
+    color: var(--accent);
+    border-bottom: none;
+    padding-bottom: 0;
+    /* slow, smooth flip on hover; quicker colour swap */
+    transition: transform 1.2s ease-in-out, color .3s ease;
+  }
+  .av-mark span { grid-area: 1 / 1; text-align: center; border-bottom: none; }
+  /* 180° flip + the resting tilt — slow & smooth, mirrored on each side */
+  .av-name:hover .av-mark.left  { transform: scale(1.12) rotate(-183deg); }
+  .av-name:hover .av-mark.right { transform: scale(1.12) rotate(183deg); }
+
   /* ────────── RESPONSIVE ────────── */
   @media (max-width: 1400px)
   {
@@ -1985,7 +2063,7 @@
 
 <header class="topbar">
   <a href="https://antonveselskyi.com/shrt.html" class="logo">SHRT<span class="sub">playground</span></a>
-  <div class="brand-mini"><a href="https://antonveselskyi.com">Anton Veselskyi</a></div>
+  <div class="brand-mini"><span class="av-name"><span class="av-mark left" aria-hidden="true"><span>A</span><span>V</span></span><a href="https://antonveselskyi.com">Anton Veselskyi</a><span class="av-mark right" aria-hidden="true"><span>A</span><span>V</span></span></span></div>
 </header>
 
 <main class="playground">
@@ -2069,7 +2147,7 @@
 </main>
 
 <footer>
-  <div class="row">© 2026 · <a class="name" href="https://antonveselskyi.com">Anton Veselskyi</a> · <a href="https://antonveselskyi.com/shrt.html">spec</a></div>
+  <div class="row">© 2026 · <span class="av-name"><span class="av-mark left" aria-hidden="true"><span>A</span><span>V</span></span><a class="name" href="https://antonveselskyi.com">Anton Veselskyi</a><span class="av-mark right" aria-hidden="true"><span>A</span><span>V</span></span></span> · <a href="https://antonveselskyi.com/shrt.html">spec</a></div>
   <div class="row credit">Compilation by <a href="https://godbolt.org" target="_blank" rel="noopener">Compiler Explorer</a></div>
 </footer>
 
@@ -2419,7 +2497,8 @@ const GRAND_TOUR_SHRT = [
 '    el           { p "opponent prepared: nothing"; }',
 '',
 '    // ?? expression-form fallback — find_kind returns Spell*, fallback Spell*',
-'    Spell* heal = find_kind(book, SpellKind::Heal) ?? &book[0];',
+'    Spell* first = &book[0];',
+'    Spell* heal = find_kind(book, SpellKind::Heal) ?? first;',
 '    p $"heal spell: {heal->name} ({heal->cost} mana)";',
 '',
 '    // standalone => lambda — captures by & by default, no params',
@@ -2660,7 +2739,55 @@ const ARENA_GAME_HIDDEN_SHRT = [
 '',
 'void ArenaState_log(k $string& msg) { $cout << msg << $endl; }',
 '',
-'// real implementations live in the JS sandbox; this is here only so',
+'// ── stub engine so the compile-and-run path links cleanly ──',
+'//    (the real interactive engine lives in the JS sandbox) ──',
+'Action ArenaState::attack(int idx) { r Action{ActionKind::Attack, idx, 1}; }',
+'Action ArenaState::heavy(int idx)  { r Action{ActionKind::Heavy,  idx, 2}; }',
+'Action ArenaState::defend()        { r Action{ActionKind::Defend, -1, 1}; }',
+'Action ArenaState::stun(int idx)   { r Action{ActionKind::Stun,   idx, 2}; }',
+'Action ArenaState::heal()          { r Action{ActionKind::Heal,   -1, 2}; }',
+'Action ArenaState::sweep()         { r Action{ActionKind::Sweep,  -1, 3}; }',
+'bool ArenaState::on_cooldown(ActionKind kind) k',
+'{',
+'    f (ActionKind ck : cooldowns)',
+'    {',
+'        if ck == kind { r true; }',
+'    }',
+'    r false;',
+'}',
+'int ArenaState::enemy_count() k { r (int)enemies.size(); }',
+'bool ArenaState::enemy_alive(int idx) k',
+'{',
+'    r idx >= 0 && idx < (int)enemies.size() && enemies[idx].hp > 0;',
+'}',
+'int ArenaState::first_alive() k',
+'{',
+'    f (int idx = 0; idx < (int)enemies.size(); idx += 1)',
+'    {',
+'        if enemies[idx].hp > 0 { r idx; }',
+'    }',
+'    r -1;',
+'}',
+'int ArenaState::weakest_enemy() k',
+'{',
+'    int best = -1;',
+'    f (int idx = 0; idx < (int)enemies.size(); idx += 1)',
+'    {',
+'        if enemies[idx].hp <= 0 { cont; }',
+'        if best < 0 || enemies[idx].hp < enemies[best].hp { best = idx; }',
+'    }',
+'    r best;',
+'}',
+'int ArenaState::most_dangerous() k',
+'{',
+'    f (int idx = 0; idx < (int)enemies.size(); idx += 1)',
+'    {',
+'        if enemies[idx].hp > 0 && enemies[idx].charging { r idx; }',
+'    }',
+'    r first_alive();',
+'}',
+'',
+'// real interactive play happens in the JS sandbox; this is here only so',
 '// the compile-and-run path produces a complete C++ program.',
 'int main()',
 '{',
@@ -2776,6 +2903,24 @@ const ROULETTE_GAME_SHRT = [
 const ROULETTE_GAME_HIDDEN_SHRT = [
 '',
 'void roulette_log(k $string& msg) { $cout << msg << $endl; }',
+'',
+'// ── stub engine so the compile-and-run path links cleanly ──',
+'//    (the real interactive engine lives in the JS sandbox) ──',
+'Bet RouletteState::bet_red(int amount)   { r Bet{BetKind::Red,   -1, amount}; }',
+'Bet RouletteState::bet_black(int amount) { r Bet{BetKind::Black, -1, amount}; }',
+'Bet RouletteState::bet_even(int amount)  { r Bet{BetKind::Even,  -1, amount}; }',
+'Bet RouletteState::bet_odd(int amount)   { r Bet{BetKind::Odd,   -1, amount}; }',
+'Bet RouletteState::bet_low(int amount)   { r Bet{BetKind::Low,   -1, amount}; }',
+'Bet RouletteState::bet_high(int amount)  { r Bet{BetKind::High,  -1, amount}; }',
+'Bet RouletteState::bet_dozen(int dozen, int amount)  { r Bet{BetKind::Dozen,  dozen, amount}; }',
+'Bet RouletteState::bet_column(int col, int amount)   { r Bet{BetKind::Column, col, amount}; }',
+'Bet RouletteState::bet_row(int row_start, int amount){ r Bet{BetKind::Row, row_start, amount}; }',
+'Bet RouletteState::bet_double_row(int row_start, int amount) { r Bet{BetKind::DoubleRow, row_start, amount}; }',
+'Bet RouletteState::bet_pair(int low, int high, int amount)   { r Bet{BetKind::Pair, low, amount}; }',
+'Bet RouletteState::bet_square(int top_left, int amount)      { r Bet{BetKind::Square, top_left, amount}; }',
+'Bet RouletteState::bet_number(int value, int amount) { r Bet{BetKind::Number, value, amount}; }',
+'int RouletteState::reds_in_a_row() k   { r last_red ? 1 : 0; }',
+'int RouletteState::blacks_in_a_row() k { r last_red ? 0 : 1; }',
 '',
 'int main()',
 '{',
@@ -3461,14 +3606,15 @@ function saveUnlockedAchievements(gameId)
     setCookie(GAME_COOKIE_PREFIX + gameId, JSON.stringify([...unlockedAchievements[gameId]]), 365);
 }
 
-function addRuntimeLog(runtime, message)
+function addRuntimeLog(runtime, message, kind = 'info')
 {
-    runtime.logs.push(String(message));
+    runtime.logs.push({ message: String(message), kind });
     if (runtime.logs.length > 12) runtime.logs = runtime.logs.slice(runtime.logs.length - 12);
 }
 
 function formatMoney(amount) { return '$' + amount; }
 function formatSignedMoney(amount) { return (amount >= 0 ? '+' : '-') + '$' + Math.abs(amount); }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 /* ──────────────── ARENA RUNTIME ──────────────── */
 
@@ -3846,6 +3992,9 @@ function createRouletteRuntime()
         lastColor: 'green',
         recentNumbers: [],
         lastBets: [],            // bets from previous spin with .result/.win
+        pendingBets: [],
+        invalidBets: [],
+        spinning: false,
         lastNet: 0,
         lastPayout: 0,
         wheelRotation: 0,
@@ -3987,6 +4136,33 @@ function betKey(bet)
 function pairNumbers(encoded) { return [Math.floor(encoded / 100), encoded % 100]; }
 function squareNumbers(tl)    { return [tl, tl + 1, tl + 3, tl + 4]; }
 
+function rouletteCellPosition(number)
+{
+    if (number === 0) return { col: 1, row: 2 };
+    const tableRow = number % 3 === 0 ? 1 : (number % 3 === 2 ? 2 : 3);
+    return { col: Math.ceil(number / 3) + 1, row: tableRow };
+}
+
+function isValidRowStart(value, maxStart)
+{
+    return value >= 1 && value <= maxStart && (value - 1) % 3 === 0;
+}
+
+function isValidPairValue(value)
+{
+    const [a, b] = pairNumbers(value);
+    if (a < 0 || b < 0 || a > 36 || b > 36 || a === b) return false;
+    if (a === 0 || b === 0) return [1, 2, 3].includes(a + b);
+    const pa = rouletteCellPosition(a);
+    const pb = rouletteCellPosition(b);
+    return Math.abs(pa.col - pb.col) + Math.abs(pa.row - pb.row) === 1;
+}
+
+function isValidSquareValue(value)
+{
+    return value >= 1 && value <= 32 && (value - 1) % 3 !== 2;
+}
+
 function betLabel(bet)
 {
     if (bet.kind === 'number')     return 'straight ' + bet.value;
@@ -4048,8 +4224,13 @@ function resolveBet(bet, number, color)
     return -bet.amount;
 }
 
-function stepRouletteRuntime(runtime, planFn)
+async function stepRouletteRuntime(runtime, planFn, renderDuringSpin = () => {})
 {
+    if (runtime.spinning)
+    {
+        addRuntimeLog(runtime, 'wheel already spinning');
+        return;
+    }
     if (runtime.outcome !== 'ongoing')
     {
         addRuntimeLog(runtime, 'Run ended. Reset to play again.');
@@ -4077,46 +4258,68 @@ function stepRouletteRuntime(runtime, planFn)
     // ── classify bet kinds for per-bet minimums ──
     const OUTSIDE_KINDS = new Set(['red','black','even','odd','low','high']);
     const THIRD_KINDS   = new Set(['column','dozen']);
+    const invalid = message =>
+    {
+        runtime.invalidBets.push(message);
+        addRuntimeLog(runtime, message, 'error');
+    };
 
     // validate
     const seenKeys = new Set();
     const validated = [];
+    runtime.invalidBets = [];
     let totalWager = 0;
     for (const b of rawBets)
     {
         if (validated.length >= 3) break;
-        if (!b || typeof b !== 'object') continue;
+        if (!b || typeof b !== 'object') { invalid('invalid bet: expected Bet object'); continue; }
         const amount = Math.max(0, Math.floor(Number(b.amount) || 0));
-        if (amount <= 0) continue;
+        if (amount <= 0) { invalid('invalid ' + (b.kind || 'bet') + ': amount must be positive'); continue; }
 
         // per-bet minimums by kind
         if (OUTSIDE_KINDS.has(b.kind) && amount < ROULETTE_MIN_OUTSIDE)
         {
-            addRuntimeLog(runtime, b.kind + ' below 50/50 min ($' + ROULETTE_MIN_OUTSIDE + ')');
+            invalid(b.kind + ' below 50/50 min ($' + ROULETTE_MIN_OUTSIDE + ')');
             continue;
         }
         if (THIRD_KINDS.has(b.kind) && amount < ROULETTE_MIN_THIRD)
         {
-            addRuntimeLog(runtime, b.kind + ' below 1/3 min ($' + ROULETTE_MIN_THIRD + ')');
+            invalid(b.kind + ' below 1/3 min ($' + ROULETTE_MIN_THIRD + ')');
             continue;
         }
 
-        if (amount > runtime.maxBet) { addRuntimeLog(runtime, b.kind + ' over max bet ($' + runtime.maxBet + ')'); continue; }
+        if (b.kind === 'pair' && !isValidPairValue(b.value)) { invalid('pair must be adjacent on the table: ' + betLabel({ ...b, amount })); continue; }
+        if (b.kind === 'square' && !isValidSquareValue(b.value)) { invalid('square must be a 2x2 corner: ' + betLabel({ ...b, amount })); continue; }
+        if (b.kind === 'row' && !isValidRowStart(b.value, 34)) { invalid('row must start at 1,4,7,...,34'); continue; }
+        if (b.kind === 'double_row' && !isValidRowStart(b.value, 31)) { invalid('double row must start at 1,4,7,...,31'); continue; }
+
+        if (amount > runtime.maxBet) { invalid(b.kind + ' over max bet ($' + runtime.maxBet + ')'); continue; }
         const key = betKey({ ...b, amount });
-        if (seenKeys.has(key)) { addRuntimeLog(runtime, key + ' already in plan'); continue; }
-        if (totalWager + amount > runtime.balance) { addRuntimeLog(runtime, b.kind + ' insufficient balance'); continue; }
+        if (seenKeys.has(key)) { invalid(key + ' already in plan'); continue; }
+        if (totalWager + amount > runtime.balance) { invalid(b.kind + ' insufficient balance'); continue; }
         seenKeys.add(key);
         totalWager += amount;
         validated.push({ kind: b.kind, value: b.value, amount });
+        addRuntimeLog(runtime, 'bet ' + betLabel({ kind: b.kind, value: b.value, amount }) + ' ' + formatMoney(amount), 'bet');
     }
 
     // total-spin minimum — 0 is allowed (skip the spin) but anything >0 must clear the floor
     if (totalWager > 0 && totalWager < ROULETTE_MIN_TOTAL)
     {
-        addRuntimeLog(runtime, 'spin total $' + totalWager + ' below table min ($' + ROULETTE_MIN_TOTAL + ') — bets refused');
+        invalid('spin total $' + totalWager + ' below table min ($' + ROULETTE_MIN_TOTAL + ') - bets refused');
         validated.length = 0;
         totalWager = 0;
     }
+
+    runtime.pendingBets = validated.map(b => ({ ...b }));
+    runtime.lastBets = runtime.pendingBets.map(b => ({ ...b, pending: true, delta: 0, win: false }));
+    runtime.lastPayout = 0;
+    runtime.lastNet = 0;
+    runtime.spinning = true;
+    runtime.outcome = 'spinning';
+    addRuntimeLog(runtime, 'wheel spinning... 3 seconds');
+    renderDuringSpin();
+    await sleep(3000);
 
     runtime.balance -= totalWager;
     runtime.stats.totalWagered += totalWager;
@@ -4165,6 +4368,9 @@ function stepRouletteRuntime(runtime, planFn)
     runtime.lastPayout = payout;
     runtime.lastNet = runtime.balance - balanceBefore;
     runtime.lastBets = resolved;
+    runtime.pendingBets = [];
+    runtime.spinning = false;
+    runtime.outcome = 'ongoing';
     if (runtime.spin === 1 && runtime.lastNet > 0) runtime.stats.wonFirstSpin = true;
     runtime.stats.lowestBalance = Math.min(runtime.stats.lowestBalance, runtime.balance);
     if (runtime.stats.lowestBalance <= 10)
@@ -4331,10 +4537,64 @@ function buildRouletteChipMap(bets)
     return m;
 }
 
+function rouletteChip(amount, cls, style)
+{
+    return '<span class="rchip rchip-line ' + cls + '" style="' + style + '">' + amount + '</span>';
+}
+
+function renderRouletteLineBets(bets)
+{
+    const chips = [];
+    for (const bet of bets)
+    {
+        if (bet.kind === 'pair' && isValidPairValue(bet.value))
+        {
+            const [a, b] = pairNumbers(bet.value);
+            if (a === 0 || b === 0)
+            {
+                const n = a === 0 ? b : a;
+                const p = rouletteCellPosition(n);
+                chips.push(rouletteChip(bet.amount, 'rchip-split-horizontal', 'grid-column: 1 / span 2; grid-row: ' + p.row + ';'));
+                continue;
+            }
+            const pa = rouletteCellPosition(a);
+            const pb = rouletteCellPosition(b);
+            if (pa.row === pb.row)
+            {
+                const col = Math.min(pa.col, pb.col);
+                chips.push(rouletteChip(bet.amount, 'rchip-split-horizontal', 'grid-column: ' + col + ' / span 2; grid-row: ' + pa.row + ';'));
+            }
+            else
+            {
+                const row = Math.min(pa.row, pb.row);
+                chips.push(rouletteChip(bet.amount, 'rchip-split-vertical', 'grid-column: ' + pa.col + '; grid-row: ' + row + ' / span 2;'));
+            }
+        }
+        else if (bet.kind === 'square' && isValidSquareValue(bet.value))
+        {
+            const p = rouletteCellPosition(bet.value);
+            chips.push(rouletteChip(bet.amount, 'rchip-corner', 'grid-column: ' + p.col + ' / span 2; grid-row: ' + Math.min(p.row, p.row - 1) + ' / span 2;'));
+        }
+        else if (bet.kind === 'row' && isValidRowStart(bet.value, 34))
+        {
+            const p = rouletteCellPosition(bet.value);
+            chips.push(rouletteChip(bet.amount, 'rchip-street', 'grid-column: ' + p.col + '; grid-row: 1 / span 3;'));
+        }
+        else if (bet.kind === 'double_row' && isValidRowStart(bet.value, 31))
+        {
+            const p = rouletteCellPosition(bet.value);
+            chips.push(rouletteChip(bet.amount, 'rchip-sixline', 'grid-column: ' + p.col + ' / span 2; grid-row: 1 / span 3;'));
+        }
+    }
+    return chips.join('');
+}
+
 function renderRouletteTable(runtime)
 {
-    const chipMap = buildRouletteChipMap(runtime.lastBets);
-    const lastNumber = runtime.lastNumber;
+    const visibleBets = runtime.spinning ? runtime.pendingBets : runtime.lastBets;
+    const chipMap = buildRouletteChipMap(visibleBets.filter(b => !['pair', 'square', 'row', 'double_row'].includes(b.kind)));
+    const lineChips = renderRouletteLineBets(visibleBets);
+    const lastNumber = runtime.spinning ? -1 : runtime.lastNumber;
     const lastCol = columnOfNumber(lastNumber);
 
     // grid layout: [0 spanning 3 rows] [12 number cells] [col bet]  × 3 rows
@@ -4397,7 +4657,7 @@ function renderRouletteTable(runtime)
 
     return [
         '<div class="roulette-table">',
-        '  <div class="roulette-table-grid">' + cells + '</div>',
+        '  <div class="roulette-table-grid">' + cells + lineChips + (runtime.spinning ? '<div class="roulette-spin-cover">spinning</div>' : '') + '</div>',
         '  <div class="roulette-outside">' + outsideHtml + '</div>',
         '  <div class="roulette-outside" style="grid-template-columns: repeat(3, 1fr);">' + dozenChips + '</div>',
         '</div>'
@@ -4416,8 +4676,8 @@ function renderRouletteSide(runtime)
     const betSlip = runtime.lastBets.length
         ? runtime.lastBets.map(b =>
             {
-                const result = b.win ? 'win +' + formatMoney(b.delta) : 'loss -' + formatMoney(b.amount);
-                const cls = b.win ? 'win' : 'loss';
+                const result = b.pending ? 'waiting' : (b.win ? 'win +' + formatMoney(b.delta) : 'loss -' + formatMoney(b.amount));
+                const cls = b.pending ? '' : (b.win ? 'win' : 'loss');
                 return '<div class="bet-slip-row"><span class="bet-kind">' + escapeHtml(betLabel(b)) + '</span><span class="bet-amount">' + formatMoney(b.amount) + '</span><span class="bet-result ' + cls + '">' + result + '</span></div>';
             }).join('')
         : '<div class="bet-slip-empty">no bets last spin</div>';
@@ -4441,11 +4701,11 @@ function renderRouletteSide(runtime)
         '    </div>',
         '  </div>',
         '  <div class="wheel-mini">',
-        '    <div class="wheel-disc" style="transform: rotate(' + runtime.wheelRotation.toFixed(1) + 'deg)"></div>',
+        '    <div class="wheel-disc' + (runtime.spinning ? ' spinning' : '') + '" style="transform: rotate(' + runtime.wheelRotation.toFixed(1) + 'deg)"></div>',
         '    <div class="wheel-readout">',
-        '      <div class="wheel-last-label">last spin</div>',
-        '      <div class="wheel-last-number">' + runtime.lastNumber + '</div>',
-        '      <div class="wheel-last-color ' + runtime.lastColor + '">' + runtime.lastColor + '</div>',
+        '      <div class="wheel-last-label">' + (runtime.spinning ? 'spinning' : 'last spin') + '</div>',
+        '      <div class="wheel-last-number">' + (runtime.spinning ? '?' : runtime.lastNumber) + '</div>',
+        '      <div class="wheel-last-color ' + runtime.lastColor + '">' + (runtime.spinning ? 'rolling...' : runtime.lastColor) + '</div>',
         '    </div>',
         '  </div>',
         '  <div class="bet-slip-card">',
@@ -4703,7 +4963,13 @@ function renderGame()
         viewport.innerHTML = renderRoulette(runtime);
     }
 
-    eventLog.textContent = runtime.logs.length ? runtime.logs.slice(-8).join('\n') : 'ready.';
+    eventLog.innerHTML = runtime.logs.length
+        ? runtime.logs.slice(-8).map(entry =>
+        {
+            const item = typeof entry === 'string' ? { message: entry, kind: 'info' } : entry;
+            return '<span class="game-event-log-line ' + escapeHtml(item.kind || 'info') + '">' + escapeHtml(item.message) + '</span>';
+        }).join('\n')
+        : 'ready.';
     runStatus.textContent = runtime.outcome === 'ongoing'
         ? 'waiting for next turn'
         : runtime.outcome;
@@ -4762,7 +5028,7 @@ function resetCurrentGameRun()
     $status.textContent = 'run reset';
 }
 
-function runGameTurn()
+async function runGameTurn()
 {
     if (!currentGameId || !shrtEditor) return;
 
@@ -4795,10 +5061,14 @@ function runGameTurn()
     try
     {
         if (currentGameId === 'arena') stepArenaRuntime(runtime, tickFn);
-        else stepRouletteRuntime(runtime, tickFn);
+        else await stepRouletteRuntime(runtime, tickFn, () =>
+        {
+            renderGame();
+            $status.textContent = 'wheel spinning...';
+        });
         unlockAchievementsFor(currentGameId, runtime);
         renderGame();
-        $status.textContent = 'turn advanced';
+        $status.textContent = currentGameId === 'roulette' ? 'spin resolved' : 'turn advanced';
     }
     catch (err)
     {
