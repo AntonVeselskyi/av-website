@@ -249,11 +249,21 @@ li { margin: 9px 0; }
   font-size: 11px; letter-spacing: 2px;
   opacity: .9;
 }
-.cmd-line { display: block; white-space: pre-wrap; }
+.cmd-line { display: block; white-space: pre-wrap; position: relative; padding-left: 1.5em; }
 .cmd-line .pmt { font-weight: bold; }
 .cmd-line .cmd { padding-left: 6px; }
 .cmd-line .note { opacity: .55; padding-left: 10px; font-style: italic; }
-.cmd-line.reply { padding-left: 20px; opacity: .82; font-style: italic; }
+.cmd-line.reply { padding-left: calc(1.5em + 16px); opacity: .82; font-style: italic; }
+/* optional command — color/flavor, not on the shortest path. The * sits in
+   the left gutter, before the prompt. Unmarked lines are the spine. */
+.cmd-line.opt::before {
+  content: '*';
+  position: absolute; left: 0; top: 0;
+  font-weight: bold; opacity: .9;
+  color: var(--accent);
+}
+.cmd-legend { font-size: 11px; letter-spacing: 1px; opacity: .7; margin: 2px 0 14px; }
+.cmd-legend b { color: var(--accent); }
 
 /* ═════════ FRAME 1 — CD-0S core01 ═════════ */
 .console-frame.s1 {
@@ -528,6 +538,9 @@ li { margin: 9px 0; }
   <p class="dim">
     The path is split across three machines. Each window below is rendered in its own server's voice — read it like you're already inside that box.
   </p>
+  <p class="dim" style="margin-top:6px">
+    Lines marked <b style="color:var(--g)">*</b> in the left gutter are <b style="color:var(--g)">optional</b> — forensic colour, not the shortest path. The unmarked lines are the spine: the minimum a participant must type to keep moving and reach the reveal. A fast player can ignore every <b style="color:var(--g)">*</b>; a thorough one is rewarded for chasing them.
+  </p>
 
   <div class="stages">
 
@@ -554,15 +567,17 @@ li { margin: 9px 0; }
           <p>Teach the interface and establish the corporation as a real working environment. Plant the idea that Q2 is politically sensitive before the participant knows what Q2 is.</p>
         </div>
 
+        <div class="cmd-legend">spine = unmarked &nbsp;·&nbsp; <b>*</b> = optional (forensic colour)</div>
         <div class="cmd-stream" data-label="// PARTICIPANT PATH">
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">help</span><span class="note">// scout the shell</span></div>
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat notes.txt</span><span class="note">// observer's own scratchpad — first mention of "Q2"</span></div>
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/syslog</span><span class="note">// engineer panic + Halloran trying to bury it</span></div>
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/auth.log</span><span class="note">// brute force from 172.16.47.83 — successful at 02:18:47</span></div>
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">last ; lastb ; systemctl --failed</span><span class="note">// confirm intrusion, see what's broken</span></div>
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/security-review/SEC-REV-2024-122.log</span><span class="note">// r.takeda's December memo + Halloran's OVERRIDE</span></div>
-          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">ssh admin@172.16.47.83</span><span class="note">// cert anomaly. last login from 91.213.8.44.</span></div>
-          <div class="cmd-line reply">Continue connecting? [y/N] <span class="c">y</span></div>
+          <div class="cmd-line opt"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">help</span><span class="note">// scout the shell</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat notes.txt</span><span class="note">// the spine — observer's scratchpad: "Q2", the verdict, and ssh admin@172.16.47.83</span></div>
+          <div class="cmd-line opt"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/syslog</span><span class="note">// engineer panic + Halloran trying to bury it</span></div>
+          <div class="cmd-line opt"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/auth.log</span><span class="note">// brute force from 172.16.47.83 — successful at 02:18:47</span></div>
+          <div class="cmd-line opt"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">last ; lastb ; systemctl --failed</span><span class="note">// confirm intrusion, see what's broken</span></div>
+          <div class="cmd-line opt"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">cat /var/log/security-review/SEC-REV-2024-122.log</span><span class="note">// r.takeda's December memo + Halloran's OVERRIDE</span></div>
+          <div class="cmd-line opt"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">sudo -l ; dmesg</span><span class="note">// reflex moves — answered in-character (not in sudoers; SYN flood in the ring buffer)</span></div>
+          <div class="cmd-line"><span class="pmt">observer@cd-0s-core01:~$</span><span class="cmd">ssh admin@172.16.47.83</span><span class="note">// authentic OpenSSH "HOST IDENTIFICATION HAS CHANGED" — last login was 91.213.8.44</span></div>
+          <div class="cmd-line reply">Continue connecting? [y/N] <span class="c">y</span><span class="note">// → server2.html</span></div>
         </div>
       </div>
     </article>
@@ -583,26 +598,30 @@ li { margin: 9px 0; }
         </div>
         <div class="tag-block">
           <span class="tag">▣ VISUAL STYLE</span>
-          <p>Red dominates, with ambient green carried over from the corporate side. Glitch bars and an occasionally scrambled prompt. Live alert lines fire every 90 s — <code>netwatch</code> reporting the beacon is still alive, <span class="w">r.takeda</span> asking "<i>who is logged into 083 right now</i>". Destructive commands (<code>rm</code>, <code>shutdown</code>, <code>kill 4291</code>) are all refused by the audit lock.</p>
+          <p>Red dominates, with ambient green carried over from the corporate side. Glitch bars and an occasionally scrambled prompt. Ambient alert lines drift in (<code>netwatch</code> reporting the beacon is still alive); on top of those, the box <span class="w">reacts to what you do</span> — kill the beacon and a watchdog respawns it under a new PID seconds later; read <code>breach.log</code> and <span class="w">r.takeda</span> demands to know who is on the box; decrypt 017 and <span class="w">GoodGirl17</span> notes it was left for you to find. Filesystem-destroying commands (<code>rm</code>, <code>shutdown</code>) are still refused by the audit lock.</p>
         </div>
         <div class="tag-block">
           <span class="tag">▣ STORY PURPOSE</span>
           <p>Show LivSeg's tradecraft as forensic evidence in real log entries, not as narration. Decrypt the surviving database and read the receipt. The intrusion is presented as ongoing — the attackers still have an active foothold while the participant is inside.</p>
         </div>
 
+        <div class="cmd-legend">spine = unmarked &nbsp;·&nbsp; <b>*</b> = optional (forensic colour). <code>breach.log</code> alone carries the key path, db_017, and the route — the rest is corroboration.</div>
         <div class="cmd-stream" data-label="// PARTICIPANT PATH">
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /var/log/breach.log</span><span class="note">// LivSeg ops channel — Jenkins → kerberoast → cobalt beacon</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">systemctl --failed</span><span class="note">// 27 dead services. ids killed at 03:48:33.</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ss -tnp ; lsof -i</span><span class="note">// PID 4291 still talking to 91.213.8.44:4444 RIGHT NOW</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">kill -9 4291</span><span class="note">// refused — exe unlinked. they planned for this.</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /etc/cron.d/livseg-keepalive | base64 -d</span><span class="note">// persistence: curl | bash. classic.</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /root/.ssh/authorized_keys</span><span class="note">// Halloran's key sits next to LivSeg's planted ed25519</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ls -lh /root/databases</span><span class="note">// 22 corrupted ~ 2-3 GB ea.  ·  db_017.enc ⇒ 4.2 KB ⚠</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">stat /tmp/.hidden/key.pem</span><span class="note">// mtime 03:41:55 — matches breach.log exactly</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">decrypt /tmp/.hidden/key.pem /root/databases/db_017.enc</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /var/log/breach.log</span><span class="note">// the spine — Jenkins → kerberoast → beacon, the key at /tmp/.hidden/key.pem, db_017 preserved</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">systemctl --failed</span><span class="note">// 27 dead services. ids killed at 03:48:33.</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ss -tnp ; lsof -i</span><span class="note">// PID 4291 still talking to 91.213.8.44:4444 RIGHT NOW</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ls -l /proc/4291/exe</span><span class="note">// → /usr/bin/python3.10 (deleted) — proves the running binary was unlinked from disk</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">kill -9 4291</span><span class="note">// it dies — then the cron watchdog respawns it under a new PID. kill the cron, not the process.</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /etc/cron.d/livseg-keepalive | base64 -d</span><span class="note">// the watchdog: curl | bash. this is what keeps bringing it back.</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /root/.ssh/authorized_keys</span><span class="note">// Halloran's key sits next to LivSeg's planted ed25519</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ls -lh /root/databases</span><span class="note">// 22 corrupted ~ 2-3 GB ea.  ·  db_017.enc ⇒ 4.2 KB ⚠</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">stat /tmp/.hidden/key.pem</span><span class="note">// mtime 03:41:55 — matches breach.log exactly</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">sha256sum /root/databases/db_017.enc</span><span class="note">// real hash — the runbook's "verify integrity" step actually works</span></div>
+          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">openssl enc -d -aes-256-cbc -in /root/databases/db_017.enc -out /tmp/db_017.sql -kfile /tmp/.hidden/key.pem</span><span class="note">// the real decrypt</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">decrypt /tmp/.hidden/key.pem /root/databases/db_017.enc</span><span class="note">// shorthand alias for the openssl line above — either works</span></div>
           <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">sqlite3 /tmp/db_017.sql</span></div>
-          <div class="cmd-line"><span class="pmt">sqlite&gt;</span><span class="cmd">SELECT * FROM offshore_transfers;</span><span class="note">// the dirty ledger</span></div>
-          <div class="cmd-line"><span class="pmt">sqlite&gt;</span><span class="cmd">SELECT * FROM entries;</span><span class="note">// the calling-card row, signed by LivSeg, with the date</span></div>
+          <div class="cmd-line opt"><span class="pmt">sqlite&gt;</span><span class="cmd">SELECT * FROM offshore_transfers;</span><span class="note">// the dirty ledger — Cayman, Dubai, Halloran's alias</span></div>
+          <div class="cmd-line"><span class="pmt">sqlite&gt;</span><span class="cmd">SELECT * FROM entries;</span><span class="note">// the calling card, signed by LivSeg, WITH the date — the reveal</span></div>
         </div>
       </div>
     </article>
@@ -635,15 +654,15 @@ li { margin: 9px 0; }
           <p>The hidden third act. Reaching it implies the participant, not the corporation, was always the second target. A single confirmation at the prompt ends with the date and the resistance message.</p>
         </div>
 
-        <div class="cmd-stream" data-label="// PARTICIPANT PATH">
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /root/.ssh/config</span><span class="note">// hidden alias: Host cdn-edge-47 → 91.213.8.44:4444</span></div>
-          <div class="cmd-line"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ssh -F /root/.ssh/config cdn-edge-47</span></div>
-          <div class="cmd-line reply">REMOTE HOST IDENTIFICATION HAS CHANGED. continue? [y/N] <span class="r">y</span></div>
+        <div class="cmd-legend">the entire route here is <b>*</b> optional — the date already dropped in Stage 2's <code>entries</code>. This is the bonus act for players who keep pulling threads.</div>
+        <div class="cmd-stream" data-label="// PARTICIPANT PATH (optional branch)">
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">cat /root/.ssh/config</span><span class="note">// hidden alias: Host cdn-edge-47 → 91.213.8.44:4444</span></div>
+          <div class="cmd-line opt"><span class="pmt">r00t@NODE-083:~#</span><span class="cmd">ssh -F /root/.ssh/config cdn-edge-47</span><span class="note">// connect to LivSeg's own drop server</span></div>
+          <div class="cmd-line reply">REMOTE HOST IDENTIFICATION HAS CHANGED. continue? [y/N] <span class="r">y</span><span class="note">// → server3.html</span></div>
           <div class="cmd-line"><span class="pmt">connecting</span><span class="cmd">▒▒▒▒█████████████ resolving... skull stabilising...</span></div>
+          <div class="cmd-line reply">join resistance? [y/N] <span class="r">n</span><span class="note">// refusing isn't a dead end — LivSeg answers, the prompt re-asks, the line gets colder</span></div>
           <div class="cmd-line reply">join resistance? [y/N] <span class="r">y</span></div>
-          
-          
-          <div class="cmd-line"><span class="pmt">livseg ▮</span><span class="cmd">17:07  ·  07.07.2077</span><span class="note">// see you there.</span></div>
+          <div class="cmd-line"><span class="pmt">livseg ▮</span><span class="cmd">17:07  ·  07.07.2077</span><span class="note">// the clock is set ▸ tell no one ▸ we were never here</span></div>
         </div>
       </div>
     </article>
@@ -666,13 +685,16 @@ li { margin: 9px 0; }
   <ul>
     <li><span class="w">All participant pages talk to the same backend endpoint.</span> Story content (files, command outputs, SSH routes, fake filesystem, SQLite responses, final reveal) is served from the backend, not the HTML.</li>
     <li><span class="w">Easy edit block:</span> <code>STORY_CONFIG</code> at the top of the backend handler controls character and organisation names and reveal copy.</li>
-    <li><span class="w">Bash behaviour:</span> path state, Tab completion, globs, pipes, chained commands, history, <code>find</code>, <code>wc</code>, <code>grep</code>, <code>head</code>, <code>tail</code>, <code>which</code>, and realistic denials for destructive commands — all server-driven.</li>
+    <li><span class="w">Bash behaviour:</span> path state, Tab completion, globs, pipes, chained commands, history, <code>find</code>, <code>wc</code>, <code>grep</code>, <code>head</code>, <code>tail</code>, <code>which</code>, plus reflex commands a real analyst reaches for (<code>sudo -l</code>, <code>sha256sum</code> with real hashes, <code>dmesg</code>, <code>journalctl</code>, <code>free</code>, <code>w</code>) and realistic denials for filesystem-destroying commands — all server-driven.</li>
+    <li><span class="w">The box reacts.</span> The backend tracks per-session state and returns delayed <code>reactions</code> the client fires as alert lines: killing the beacon respawns it under a new PID (and every <code>ss</code>/<code>ps</code>/<code>lsof</code> stays consistent with the live PID afterward); reading <code>breach.log</code> or decrypting 017 draws a response from the other people on the wire.</li>
+    <li><span class="w">Decrypt accepts the real thing:</span> the authentic <code>openssl enc -d -aes-256-cbc … -kfile …</code> works; <code>decrypt &lt;key&gt; &lt;file&gt;</code> is a shorthand alias.</li>
   </ul>
 
   <h2>// Notes</h2>
   <ul>
     <li>Give participants only <code>server1.html</code> at the start.</li>
-    <li>Do not mention Server 3 unless they finish the main path or explicitly hunt for secrets.</li>
+    <li>Do not mention Server 3 unless they finish the main path or explicitly hunt for secrets. The reveal date is already reachable in Stage 2 (<code>entries</code>); Server 3 is the optional bonus act.</li>
+    <li><span class="w">Shortest path vs. completionist:</span> the spine (unmarked lines) is roughly <code>cat notes.txt</code> → <code>ssh</code> → <code>cat breach.log</code> → decrypt → <code>sqlite3</code> → <code>SELECT * FROM entries;</code>. Everything marked <b>*</b> is corroboration a thorough player will chase but a fast one can skip.</li>
     <li>Hint in-world: "check the logs", "what did SSH remember?", "look at file sizes", "try Tab".</li>
     <li>For story revisions, edit the backend handler first. HTML should mostly be visual and interaction polish.</li>
     <li>For real access control, do not rely on GitHub Pages obscurity. Use S3/CloudFront signed URLs, Cloudflare Access, or a token gate.</li>
