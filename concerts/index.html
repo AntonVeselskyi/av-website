@@ -1781,11 +1781,32 @@
           {
             "artist": "Polyphia",
             "role": "opener",
-            "setlist": [],
+            "setlist": [
+              "Loud",
+              "Chimera",
+              "Goose",
+              "40oz",
+              "The Worst",
+              "Champagne",
+              "Euphoria",
+              "Playing God",
+              "G.O.A.T."
+            ],
             "logo": "pics/logos/polyphia.png",
             "logoInvert": true,
             "spotifyEmbed": "https://open.spotify.com/embed/artist/4vGrte8FDu062Ntj0RsPiZ?utm_source=generator",
-            "notes": ""
+            "notes": "",
+            "setlistYTMusic": {
+              "Loud": "7Zv4TxPnjOA",
+              "Chimera": "G_GVw47hSOs",
+              "Goose": "ICt_21S5TPw",
+              "40oz": "mxc9RQPKAC4",
+              "The Worst": "Pn_dZS2Oxjs",
+              "Champagne": "e3b5dKoTqDo",
+              "Euphoria": "_KMmYOXN2iw",
+              "Playing God": "Do7Ubnhb-fU",
+              "G.O.A.T.": "D2scfkvGlKw"
+            }
           }
         ],
         "setlistSpotify": {
@@ -4398,11 +4419,13 @@
     let peakProgress = 0; // lifted out — preserved across rebuilds
     let _prevPathD   = null; // previous snake `d` — morph target so rebuilds don't blink
     let _dotTween    = null; // idle pulse tween on the traveling dot
+    let _skipMorphOnce = false; // skip the heavy snake morph on panel toggles (snappier)
     const _shownStops = new WeakSet(); // guards against re-animating visible stops
 
     function buildTimeline() {
       _timelineSTs.forEach(st => st.kill());
       _timelineSTs = [];
+      const skipMorph = _skipMorphOnce; _skipMorphOnce = false;
       // NOTE: peakProgress is PRESERVED across rebuilds. Resetting it to 0 made the
       // already-drawn ink line flash away and re-draw on every panel open/close.
       if (_dotTween) { _dotTween.kill(); _dotTween = null; }
@@ -4540,64 +4563,24 @@
       inkPath.setAttribute('clip-path', 'url(#tlc-back)');
       svgBack.appendChild(inkPath);
 
-      // ── Spiral wrap-around when a panel is open ───────────────────
-      // Detect which stop (if any) has an open panel
-      let spiralIdx = -1, spiralH = 0;
-      stopEls.forEach((stop, i) => {
+      // ── Detect an open panel → the line "splits in two" around it ──
+      // Capture the panel's framed rect now; the two split strands + twin
+      // dots are built below, once the main path length is known.
+      let splitGeo = null;
+      stopEls.forEach((stop) => {
         const panel = stop.querySelector('.stop-panel');
-        if (panel && panel.getAttribute('aria-hidden') === 'false') {
-          spiralIdx = i;
-          spiralH   = panel.scrollHeight; // full height, even if still animating
+        if (panel && panel.getAttribute('aria-hidden') === 'false' && panel.scrollHeight > 60) {
+          const pr  = panel.getBoundingClientRect();
+          const tlr = timelineEl.getBoundingClientRect();
+          const pad = 8; // gap between panel edge and the drawn strand
+          splitGeo = {
+            x: pr.left   - tlr.left - pad,
+            y: pr.top    + window.scrollY - timeTop - pad,
+            w: pr.right  - pr.left + pad * 2,
+            h: pr.bottom - pr.top  + pad * 2,
+          };
         }
       });
-
-      if (spiralIdx >= 0 && spiralH > 60) {
-        // Draw a dashed rectangular frame around the expanded panel.
-        // Use getBoundingClientRect so it follows the actual rendered panel edges.
-        const openPanel = stopEls[spiralIdx].querySelector('.stop-panel');
-        const pr  = openPanel.getBoundingClientRect();
-        const tl  = timelineEl.getBoundingClientRect();
-        const pad = 8; // gap between panel edge and the drawn frame
-        const fx  = (pr.left  - tl.left  - pad);
-        const fy  = (pr.top   + window.scrollY - timeTop - pad);
-        const fw  = (pr.right - pr.left  + pad * 2);
-        const fh  = (pr.bottom - pr.top  + pad * 2);
-
-        // Rounded-rect as <path> so stroke-dashoffset draws it in clockwise
-        const rx4 = 4;
-        const frameD =
-          `M ${(fx+rx4).toFixed(1)},${fy.toFixed(1)} ` +
-          `L ${(fx+fw-rx4).toFixed(1)},${fy.toFixed(1)} ` +
-          `Q ${(fx+fw).toFixed(1)},${fy.toFixed(1)} ${(fx+fw).toFixed(1)},${(fy+rx4).toFixed(1)} ` +
-          `L ${(fx+fw).toFixed(1)},${(fy+fh-rx4).toFixed(1)} ` +
-          `Q ${(fx+fw).toFixed(1)},${(fy+fh).toFixed(1)} ${(fx+fw-rx4).toFixed(1)},${(fy+fh).toFixed(1)} ` +
-          `L ${(fx+rx4).toFixed(1)},${(fy+fh).toFixed(1)} ` +
-          `Q ${fx.toFixed(1)},${(fy+fh).toFixed(1)} ${fx.toFixed(1)},${(fy+fh-rx4).toFixed(1)} ` +
-          `L ${fx.toFixed(1)},${(fy+rx4).toFixed(1)} ` +
-          `Q ${fx.toFixed(1)},${fy.toFixed(1)} ${(fx+rx4).toFixed(1)},${fy.toFixed(1)} Z`;
-        const perimeter = (fw + fh) * 2;
-
-        const frame = document.createElementNS(NS, 'path');
-        frame.setAttribute('d',                frameD);
-        frame.setAttribute('fill',             'none');
-        frame.setAttribute('stroke',           'var(--ink)');
-        frame.setAttribute('stroke-width',     '1.6');
-        frame.setAttribute('stroke-dasharray', '2 8');
-        frame.setAttribute('stroke-linecap',   'round');
-        frame.setAttribute('opacity',          '0.44');
-        frame.setAttribute('stroke-dashoffset', REDUCE_MOTION ? '0' : String(perimeter));
-        frame.setAttribute('clip-path',        'url(#tlc-front)');
-        svgFront.appendChild(frame);
-        // Animate the frame drawing itself around the panel
-        if (!REDUCE_MOTION) {
-          gsap.to(frame, {
-            attr: { 'stroke-dashoffset': 0 },
-            duration: 0.75,
-            ease: 'power2.out',
-            delay: 0.1
-          });
-        }
-      }
 
       // ── Traveling dot on FRONT SVG ────────────────────────────────
       const p0 = inkPath.getPointAtLength(0);
@@ -4634,20 +4617,143 @@
 
       const L = inkPath.getTotalLength();
 
-      // Seed dot to the prior progress so a rebuild doesn't snap it to the top.
-      if (peakProgress > 0) {
-        const seedPt = inkPath.getPointAtLength(peakProgress * L);
-        dot.setAttribute('cx', seedPt.x.toFixed(1));
-        dot.setAttribute('cy', seedPt.y.toFixed(1));
-        dotBleed.setAttribute('cx', seedPt.x.toFixed(1));
-        dotBleed.setAttribute('cy', seedPt.y.toFixed(1));
+      // ── Centred-dot mapping ──────────────────────────────────────
+      // A Y → length-fraction lookup so the dot can sit level with the viewport
+      // centre. The dot then tracks scrolling at ~1:1 (stays centred on screen)
+      // instead of being pinned low and sliding off the bottom, and only reaches
+      // the path ends when the page itself is at the very top / bottom.
+      const _yLUT = []; const LUTN = 140; let _maxLUTy = -Infinity;
+      for (let i = 0; i <= LUTN; i++) {
+        _maxLUTy = Math.max(_maxLUTy, inkPath.getPointAtLength(L * i / LUTN).y);
+        _yLUT.push(_maxLUTy); // force monotonic so the inverse search is stable
+      }
+      function progAtViewportY(ty) {
+        if (ty <= _yLUT[0])    return 0;
+        if (ty >= _yLUT[LUTN]) return 1;
+        let lo = 0, hi = LUTN;
+        while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (_yLUT[mid] < ty) lo = mid; else hi = mid; }
+        const y0 = _yLUT[lo], y1 = _yLUT[hi];
+        return (lo + (y1 > y0 ? (ty - y0) / (y1 - y0) : 0)) / LUTN;
+      }
+      function currentDotProg() {
+        const H    = window.innerHeight;
+        const sMax = Math.max(1, document.documentElement.scrollHeight - H);
+        const topY = _yLUT[0], botY = _yLUT[LUTN];
+        const s    = window.scrollY;
+        const vcAt = (x) => x + H / 2 - timeTop;  // path-Y level with viewport centre at scroll x
+        const m    = Math.min(H / 2, sMax / 2);   // ramp margin at each page end
+        let ty;
+        if (s < m) {
+          // page top → centred: ramp up to the path top only in the first margin
+          ty = topY + (vcAt(m) - topY) * (s / m);
+        } else if (s > sMax - m) {
+          // centred → page bottom: ramp down to the path end only in the last margin
+          ty = botY + (vcAt(sMax - m) - botY) * ((sMax - s) / m);
+        } else {
+          // the whole middle of the page: dot sits dead-centred in the viewport
+          ty = vcAt(s);
+        }
+        return progAtViewportY(Math.max(topY, Math.min(botY, ty)));
+      }
+
+      // ── Line "splits in two" around an open panel ─────────────────
+      // Two dashed strands (same ink style as the snake) hug the panel's
+      // left & right edges and rejoin at top & bottom; two dots ride them
+      // while the scroll dot passes the panel's vertical band (the single
+      // centre line + dot are hidden behind the panel's opaque background).
+      let split = null;
+      if (splitGeo) {
+        const fx = splitGeo.x, fy = splitGeo.y, fw = splitGeo.w, fh = splitGeo.h;
+        const topY = fy, botY = fy + fh, rX = fx + fw, cr = 12;
+        const strandD = (edgeX) =>
+          `M ${cx.toFixed(1)},${topY.toFixed(1)} ` +
+          `Q ${edgeX.toFixed(1)},${topY.toFixed(1)} ${edgeX.toFixed(1)},${(topY+cr).toFixed(1)} ` +
+          `L ${edgeX.toFixed(1)},${(botY-cr).toFixed(1)} ` +
+          `Q ${edgeX.toFixed(1)},${botY.toFixed(1)} ${cx.toFixed(1)},${botY.toFixed(1)}`;
+        const leftD  = strandD(fx);
+        const rightD = strandD(rX);
+
+        // Cheap "ink flows down both sides" reveal: a clip rect grows downward.
+        // (Replaces the old stroke-dashoffset draw around the whole perimeter,
+        // which re-tessellated the dash pattern every frame — the lag source.)
+        const sClip = document.createElementNS(NS, 'clipPath');
+        sClip.setAttribute('id', 'split-clip');
+        const sRect = document.createElementNS(NS, 'rect');
+        sRect.setAttribute('x', (fx - 6).toFixed(1));
+        sRect.setAttribute('y', topY.toFixed(1));
+        sRect.setAttribute('width',  (fw + 12).toFixed(1));
+        sRect.setAttribute('height', REDUCE_MOTION ? fh.toFixed(1) : '0');
+        sClip.appendChild(sRect);
+        svgFront.appendChild(sClip);
+
+        const mkStrand = (dd) => {
+          const p = document.createElementNS(NS, 'path');
+          p.setAttribute('class', 'ink-path ink-path-flow'); // identical dotted ink style
+          p.setAttribute('d', dd);
+          p.setAttribute('opacity', '0.6');
+          p.setAttribute('clip-path', 'url(#split-clip)');
+          svgFront.appendChild(p);
+          return p;
+        };
+        const leftStrand  = mkStrand(leftD);
+        const rightStrand = mkStrand(rightD);
+        if (!REDUCE_MOTION) {
+          gsap.to(sRect, { attr: { height: fh.toFixed(1) }, duration: 0.5, ease: 'power2.out' });
+        }
+
+        const mkDot = (r, blur) => {
+          const c = document.createElementNS(NS, 'circle');
+          c.setAttribute('r', r);
+          c.setAttribute('fill', 'var(--ink)');
+          c.setAttribute('opacity', '0');
+          if (blur) c.setAttribute('filter', 'url(#ink-blur-front)');
+          svgFront.appendChild(c);
+          return c;
+        };
+        const lBleed = mkDot('11', true), lDot = mkDot('4.8', false);
+        const rBleed = mkDot('11', true), rDot = mkDot('4.8', false);
+
+        // Progress band where the centre dot is vertically inside the panel.
+        split = {
+          enter: progAtViewportY(topY), exit: progAtViewportY(botY),
+          leftStrand, rightStrand,
+          lLen: leftStrand.getTotalLength(), rLen: rightStrand.getTotalLength(),
+          lDot, rDot, lBleed, rBleed,
+        };
+      }
+
+      // Position the centre dot and — when a panel is open — the twin strand
+      // dots for a given scroll progress. The centre dot fades out while the
+      // twins are out (it would otherwise float over the opaque panel).
+      function updateDots(prog) {
+        let mainOn = true;
+        if (split && prog >= split.enter && prog <= split.exit) {
+          mainOn = false;
+          const f  = (prog - split.enter) / Math.max(1e-4, split.exit - split.enter);
+          const lp = split.leftStrand.getPointAtLength(f * split.lLen);
+          const rp = split.rightStrand.getPointAtLength(f * split.rLen);
+          split.lDot.setAttribute('cx', lp.x.toFixed(1));   split.lDot.setAttribute('cy', lp.y.toFixed(1));
+          split.rDot.setAttribute('cx', rp.x.toFixed(1));   split.rDot.setAttribute('cy', rp.y.toFixed(1));
+          split.lBleed.setAttribute('cx', lp.x.toFixed(1)); split.lBleed.setAttribute('cy', lp.y.toFixed(1));
+          split.rBleed.setAttribute('cx', rp.x.toFixed(1)); split.rBleed.setAttribute('cy', rp.y.toFixed(1));
+          split.lDot.setAttribute('opacity', '0.68');  split.rDot.setAttribute('opacity', '0.68');
+          split.lBleed.setAttribute('opacity', '0.07'); split.rBleed.setAttribute('opacity', '0.07');
+        } else if (split) {
+          split.lDot.setAttribute('opacity', '0');  split.rDot.setAttribute('opacity', '0');
+          split.lBleed.setAttribute('opacity', '0'); split.rBleed.setAttribute('opacity', '0');
+        }
+        const pt = inkPath.getPointAtLength(prog * L);
+        dot.setAttribute('cx', pt.x.toFixed(1));      dot.setAttribute('cy', pt.y.toFixed(1));
+        dotBleed.setAttribute('cx', pt.x.toFixed(1)); dotBleed.setAttribute('cy', pt.y.toFixed(1));
+        dot.setAttribute('opacity',      mainOn ? '0.68' : '0');
+        dotBleed.setAttribute('opacity', mainOn ? '0.07' : '0');
       }
 
       // ── Morph the snake from its previous shape instead of hard-cutting ──
       // On a rebuild (panel open/close, tab switch) the new path used to pop in,
       // reading as a blink. Sample both shapes into matching point counts and
       // tween between them so the ink line smoothly re-flows into place.
-      if (_prevPathD && _prevPathD !== d && !REDUCE_MOTION) {
+      if (_prevPathD && _prevPathD !== d && !REDUCE_MOTION && !skipMorph) {
         const SAMPLES = 170;
         const sample = (dd) => {
           const tmp = document.createElementNS(NS, 'path');
@@ -4690,26 +4796,29 @@
       _prevPathD = d;
 
       // ── Main scroll trigger — reveal + dot ───────────────────────
-      _timelineSTs.push(ScrollTrigger.create({
-        trigger: '#timeline',
-        start:   'top 82%',
+      // Span the WHOLE page so onUpdate fires across the entire scroll range
+      // (including the hero above and the footer below the timeline) — the dot
+      // reads raw scroll via currentDotProg(), so it tracks 1:1 and stays centred.
+      const mainST = ScrollTrigger.create({
+        trigger: document.documentElement,
+        start:   'top top',
         end:     'bottom bottom',
-        scrub:   2.2,
-        onUpdate(self) {
-          const prog = self.progress;
-          if (prog > peakProgress) {
-            peakProgress = prog;
+        scrub:   1,
+        onUpdate() {
+          const dp = currentDotProg();
+          // Grow the inked trail down to the dot (monotonic) so the line draws
+          // as the dot leads, while the dot itself stays centred in the viewport.
+          const frac = Math.min(1, inkPath.getPointAtLength(dp * L).y / th);
+          if (frac > peakProgress) {
+            peakProgress = frac;
             const h = String(th * peakProgress);
             clipBack.setAttribute('height',  h);
             clipFront.setAttribute('height', h);
           }
-          const pt = inkPath.getPointAtLength(prog * L);
-          dot.setAttribute('cx',      pt.x.toFixed(1));
-          dot.setAttribute('cy',      pt.y.toFixed(1));
-          dotBleed.setAttribute('cx', pt.x.toFixed(1));
-          dotBleed.setAttribute('cy', pt.y.toFixed(1));
+          updateDots(dp);
         }
-      }));
+      });
+      _timelineSTs.push(mainST);
 
       // ── Per-stop entrance: fade + slide in from its side ─────────
       // Reveal a stop once. Guarded by _shownStops so it never re-animates
@@ -4760,6 +4869,9 @@
 
       // Re-seed peakProgress from the current scroll position
       ScrollTrigger.refresh();
+      // Paint the dots once for the current scroll position so an already-
+      // scrolled-past open panel shows its twin dots immediately.
+      updateDots(currentDotProg());
     }
 
     window.addEventListener('load', buildTimeline);
@@ -4785,6 +4897,28 @@
     let openStop = null;
 
     /* ── FLIP helpers ──────────────────────────────────────────────── */
+    /* Visible drawn-art rect of an object-fit:contain image inside its element
+       box. Wide logos (e.g. Okean Elzy) get letterboxed: the element box is
+       260×110 but the art only fills 260×~55. Flying/scaling the BOX between
+       card and banner makes the visible art overshoot the frame mid-flight and
+       pop at handoff — flying the ART rect keeps both endpoints pixel-true.
+       Non-images and images without intrinsic size fall back to the box. */
+    function _artRect(el, r) {
+      if (!(el instanceof HTMLImageElement) || !el.naturalWidth || !el.naturalHeight) return r;
+      const s = Math.min(r.width / el.naturalWidth, r.height / el.naturalHeight);
+      const w = el.naturalWidth * s, h = el.naturalHeight * s;
+      // computed object-position is "<x>% <y>%" for keyword/percentage values
+      const pos = getComputedStyle(el).objectPosition.split(' ');
+      const px  = pos[0].endsWith('%') ? parseFloat(pos[0]) / 100 : .5;
+      const py  = (pos[1] || '50%').endsWith('%') ? parseFloat(pos[1]) / 100 : .5;
+      return {
+        left:   r.left + (r.width  - w) * px,
+        top:    r.top  + (r.height - h) * py,
+        width:  w,
+        height: h,
+      };
+    }
+
     function _makeClone(srcImg, rect) {
       const c  = srcImg.cloneNode(true);
       const cs = getComputedStyle(srcImg);
@@ -5238,11 +5372,13 @@
         const visible = el => el && parseFloat(gsap.getProperty(el, 'opacity') ?? 1) > 0.05;
 
         // Build the set of reverse FLIPs (banner → card) that should fly.
+        // Logo flights use the visible ART rects (see _artRect) — element
+        // boxes letterbox wide logos and made the art pop out of the frame.
         const flights = [];
         if (headLogo && cardLogo && visible(headLogo)) {
-          const hr = headLogo.getBoundingClientRect();
-          const cr = cardLogo.getBoundingClientRect();
-          flights.push({ src: headLogo, dst: cardLogo, scale: hr.width ? cr.width / hr.width : 1 });
+          const hr = _artRect(headLogo, headLogo.getBoundingClientRect());
+          const cr = _artRect(cardLogo, cardLogo.getBoundingClientRect());
+          flights.push({ src: headLogo, dst: cardLogo, art: true, scale: hr.width ? cr.width / hr.width : 1 });
         }
         if (headWhen && cardDate && visible(headWhen)) {
           flights.push({ src: headWhen, dst: cardDate, scale: 1 });
@@ -5255,8 +5391,8 @@
 
         if (flights.length) {
           flights.forEach(f => {
-            const fromRect = f.src.getBoundingClientRect();
-            const toRect   = f.dst.getBoundingClientRect();
+            const fromRect = f.art ? _artRect(f.src, f.src.getBoundingClientRect()) : f.src.getBoundingClientRect();
+            const toRect   = f.art ? _artRect(f.dst, f.dst.getBoundingClientRect()) : f.dst.getBoundingClientRect();
             const clone    = _makeClone(f.src, fromRect);
             gsap.set(f.src, { opacity: 0 });
             gsap.to(clone, {
@@ -5329,9 +5465,11 @@
         const willOpenTheatre = !!(_headPlayer && !_theatreDismissed.has(_headPlayer.dataset.band || ''));
         const flights = [];
         if (headLogo && cardLogo) {
-          const hr = headLogo.getBoundingClientRect();
-          const cr = cardLogo.getBoundingClientRect();
-          flights.push({ src: cardLogo, dst: headLogo, toRect: hr, scale: cr.width ? hr.width / cr.width : 1 });
+          // ART rects, not element boxes — wide letterboxed logos otherwise
+          // overshoot the banner frame mid-flight and pop at landing.
+          const hr = _artRect(headLogo, headLogo.getBoundingClientRect());
+          const cr = _artRect(cardLogo, cardLogo.getBoundingClientRect());
+          flights.push({ src: cardLogo, dst: headLogo, toRect: hr, art: true, scale: cr.width ? hr.width / cr.width : 1 });
         }
         if (headWhen && cardDate) flights.push({ src: cardDate, dst: headWhen, toRect: headWhen.getBoundingClientRect(), scale: 1 });
         if (nameFlips) {
@@ -5391,7 +5529,7 @@
         if (flights.length) {
           let remaining = flights.length;
           flights.forEach(f => {
-            const fromRect = f.src.getBoundingClientRect();
+            const fromRect = f.art ? _artRect(f.src, f.src.getBoundingClientRect()) : f.src.getBoundingClientRect();
             const clone    = _makeClone(f.src, fromRect);
             gsap.set(f.src, { opacity: 0 });
             const dx = f.toRect.left - fromRect.left;
