@@ -341,9 +341,12 @@ canvas
 <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 <script>
   const hiddenInput = document.getElementById('hiddenInput');
-  const slots = document.querySelectorAll('.slot');
+  let slots = document.querySelectorAll('.slot');
   const titleEl = document.getElementById('title');
   const codeBox = document.getElementById('codeBox');
+
+  const BASE_LEN = slots.length;   // original number of cells (8)
+  let TARGET_LEN = BASE_LEN;        // auto-send once the code reaches this length
 
   const fullTitle = "Access coDe ReqUieReD to pRoceeD";
   let titleIndex = 0;
@@ -428,7 +431,7 @@ canvas
       }
 
       // highlight current active slot
-      if (i === chars.length && chars.length < 8)
+      if (i === chars.length && chars.length < TARGET_LEN)
       {
         slot.classList.add('active');
       }
@@ -579,6 +582,24 @@ canvas
     }
   }
 
+  // Reveal n extra empty cells after the current ones (extended command).
+  function extendSlots(n)
+  {
+    if (n <= 0) return;
+    for (let k = 0; k < n; k++)
+    {
+      const slot = document.createElement('div');
+      slot.className = 'slot empty';
+      slot.textContent = diamond_char;
+      codeBox.appendChild(slot);
+    }
+    slots = document.querySelectorAll('.slot');
+    TARGET_LEN = slots.length;
+    hiddenInput.maxLength = TARGET_LEN;
+    updateDisplay(hiddenInput.value.trim().toUpperCase());
+    hiddenInput.focus();
+  }
+
   function handleCodeAction(data)
   {
     if (data.message)
@@ -588,6 +609,12 @@ canvas
 
     switch (data.action)
     {
+      case "extendedtext":
+        // Backend says "keep going": reveal N more empty cells (one per char of
+        // data.extra) and let the user keep typing. The whole phrase is sent
+        // again automatically once every cell is filled.
+        extendSlots((data.extra || "").length);
+        return;   // no charge animation — the user is still entering the rest
       case "redirect":
         startChargeAnimation();
         setTimeout(() =>
@@ -664,7 +691,7 @@ canvas
     updateDisplay(value);
     value = value.replace(/[ _-]+/g, "'");
 
-    if (value.length === 8)
+    if (value.length === TARGET_LEN)
     {
       sendCodeToBackend(value);
     }
@@ -731,6 +758,12 @@ canvas
   {
     // pick a random diamond symbol
     diamond_char = diamondChars[Math.floor(Math.random() * diamondChars.length)];
+
+    // collapse any extended cells back to the original set
+    while (codeBox.children.length > BASE_LEN)
+      codeBox.removeChild(codeBox.lastElementChild);
+    slots = document.querySelectorAll('.slot');
+    TARGET_LEN = BASE_LEN;
 
     // clear animations and revert visuals after charging finishes
     slots.forEach((slot) =>

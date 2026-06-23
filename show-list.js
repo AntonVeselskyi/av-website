@@ -1,6 +1,6 @@
 const showMasterList = [
   { name: "Breaking Bad",                     tier: "SS",  category: "live-action",  watched_year: 2019, score: 99, comment: `Perfect beginning,\n      perfect ending.\n      The chemistry teacher\n      arc is real.`,   tmdb_id: 1396   },
-  { name: "Succession",                       tier: "S",   category: "live-action",  watched_year: 2023, score: 97, comment: `The writing is\n      on another level.\n      Every scene is\n      a knife fight.`,   tmdb_id: 76331  },
+  { name: "Succession",                       tier: "S",   category: "live-action",  watched_year: 2026, score: 97, comment: `The writing is\n      on another level.\n      Every scene is\n      a knife fight.`,   tmdb_id: 76331  },
   { name: "Arcane",                           tier: "SS",  category: "cartoon",      watched_year: 2021, score: 94, comment: `The animation\n      is insane.\n      Did not expect\n      to cry.`,                tmdb_id: 94605  },
   { name: "Severance",                        tier: "SS",  category: "live-action",  watched_year: 2022, score: 93, comment: `Peak premise\n      execution.\n      The waffle party\n      scene is iconic.`,       tmdb_id: 95396  },
   { name: "What We Do in the Shadows",        tier: "A",   category: "sitcom",       watched_year: 2022, score: 86, comment: `Criminally funny.\n      Nandor is\n      genuinely one of\n      the best characters.`, tmdb_id: 83631  },
@@ -141,5 +141,5 @@ const showMasterList = [
   { name: "Disenchantment",                  tier: "B",   category: "cartoon",      watched_year: 2018, score: 0,  comment: ``,                                                                                     tmdb_id: 73021  },
   { name: "Loki",                            tier: "A",   category: "live-action",  watched_year: 2023, score: 0,  comment: ``,                                                                                     tmdb_id: 84958  },
   { name: "X-Men: Evolution",               tier: "S",   category: "cartoon",      watched_year: 2008, score: 0,  comment: ``,                                                                                     tmdb_id: 668    },
-  { name: "Rooster",                        tier: "D",   category: "sitcom",       watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 254953 },
+  { name: "Rooster",                        tier: "C",   category: "sitcom",       watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 254953 },
 ];

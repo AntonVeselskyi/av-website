@@ -99,12 +99,12 @@
       .proj-tab[data-theme="shrt"]:is(:hover, .is-tapped) { border-color: #c9a96e; }
       .proj-tab[data-theme="shrt"]:is(:hover, .is-tapped) .proj-tab__label {
         font-family: 'Cinzel Decorative', serif; font-weight: 900;
-        font-size: 26px; letter-spacing: 1px; text-transform: uppercase;
+        font-size: 34px; letter-spacing: 1px; text-transform: uppercase;
       }
       .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) { border-color: #15110d; }
       .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) .proj-tab__label {
         font-family: 'UnifrakturCook', serif; font-weight: 700;
-        font-size: 32px; letter-spacing: 1px;
+        font-size: 42px; letter-spacing: 1px;
       }
 
       /* ---- LIST TABS (game + show) ---- keep the soft list-site paper as the
@@ -138,9 +138,28 @@
 
       .tab-particle { position: absolute; pointer-events: none; z-index: 4; will-change: transform, opacity; }
 
-      /* Small zoom on the circular social icons when hovered. */
-      .column img { transition: transform .25s cubic-bezier(.22, 1, .3, 1); }
-      .column a:hover img { transform: scale(1.08); }
+      /* Social icons: original 250x270 size. The hover zoom is contained inside
+         each cell's padding, so it never grows the document — that kills both
+         the page-shake AND the scrollbar that used to pop in on hover, without
+         forcing a permanent scrollbar. */
+      .column { padding: 18px !important; }
+      .column img {
+        width: 250px !important;
+        height: 270px !important;
+        object-fit: contain;
+        display: block;
+        transform: scale(var(--icon-scale, 1));
+        transition: transform .25s cubic-bezier(.22, 1, .3, 1);
+      }
+      .column a:hover img { transform: scale(calc(var(--icon-scale, 1) * 1.08)); }
+      /* Per-icon normalisation (measured fill: TG/IG/BTC 100%, LinkedIn 92%,
+         GitHub 86%). Ease the full-bleed marks down so every glyph reads the
+         same visible size as the octocat. Scaling DOWN keeps them inside the
+         padding buffer, so no scrollbar/shake regression. */
+      .column a[href*="telegram"]  img { --icon-scale: 0.86; }
+      .column a[href*="linkedin"]  img { --icon-scale: 0.94; }
+      .column a[href*="instagram"] img { --icon-scale: 0.86; }
+      #myBTC img                       { --icon-scale: 0.86; }
 
       @media (prefers-reduced-motion: reduce) {
         .proj-tab, .proj-tab::before, .proj-tab::after, .proj-tab__label { transition: none; }
