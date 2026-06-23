@@ -1770,6 +1770,31 @@ function setupAppPolish()
       btns[Number(e.key) - 1]?.click();
     }
   });
+
+  // --- mobile: tap a card to reveal its overlays, tap again to open the link ---
+  // PC keeps its hover behaviour untouched (this only binds on no-hover devices).
+  if (window.matchMedia('(hover: none)').matches)
+  {
+    document.addEventListener('click', (e) =>
+    {
+      const wrapper = e.target.closest('.game-card-wrapper');
+      if (!wrapper)
+      {
+        document.querySelectorAll('.game-card-wrapper.tap-reveal')
+          .forEach(w => w.classList.remove('tap-reveal'));
+        return;
+      }
+      if (!wrapper.classList.contains('tap-reveal'))
+      {
+        // first tap: reveal this card's overlays, block the link this once
+        e.preventDefault();
+        document.querySelectorAll('.game-card-wrapper.tap-reveal')
+          .forEach(w => w.classList.remove('tap-reveal'));
+        wrapper.classList.add('tap-reveal');
+      }
+      // else second tap: let the inner <a> link through (open the title)
+    }, true);   // capture so we can stop the link before it fires
+  }
 }
 
 // ========== INIT ==========

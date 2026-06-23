@@ -354,22 +354,24 @@ h1
     transform: translateY(0);
   }
 }
-.game-card-wrapper:hover {
+/* :is(:hover, .tap-reveal) so touch devices can reveal a card with one tap
+   (the .tap-reveal class is toggled in core.js on (hover:none) devices). */
+.game-card-wrapper:is(:hover, .tap-reveal) {
   z-index: 200000 !important;            /* bring whole card + overlays above neighbors */
 }
 
-.game-card-wrapper:hover .game-details-overlay
+.game-card-wrapper:is(:hover, .tap-reveal) .game-details-overlay
 {
   opacity: 1;
   transform: scaleY(1);
 }
 
-.game-card-wrapper:hover .game-exp-overlay {
+.game-card-wrapper:is(:hover, .tap-reveal) .game-exp-overlay {
   opacity: 1;
   transform: scaleX(1);
 }
 
-.game-card-wrapper:hover .game-title-overlay {
+.game-card-wrapper:is(:hover, .tap-reveal) .game-title-overlay {
   opacity: 1;
   transform: translateY(0%) scaleY(1);
 }

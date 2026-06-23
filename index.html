@@ -4,10 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Anton Veselskyi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Poiret+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Poiret+One&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="title.css">
     <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
+
+    <!-- ===== SIDE-PROJECT TABS ===== -->
+    <style>
+      /* The page is designed light (black ink on white). Lock it so dark-mode
+         visitors don't get a black canvas that hides the black text/icons. */
+      html { color-scheme: light; background: #ffffff; }
+
+      /* The EN/UK tagline swap adds .glitch -> a translateX shake. Clip the
+         horizontal axis so that shake can't spawn a flickering horizontal
+         scrollbar that makes the whole page (and browser chrome) jitter. */
+      html, body { overflow-x: hidden; }
+
+      /* The tabs hang off the dark title frame, so kill the banner's bottom gap. */
+      #titleContainer.title { margin-bottom: 0; }
+
+      .proj-tabs {
+        position: relative;
+        display: flex;
+        align-items: flex-start;     /* tabs grow downward from a shared top line */
+        justify-content: center;
+        flex-wrap: wrap;             /* stack onto rows on narrow screens instead of shrinking */
+        gap: 16px;
+        min-height: 110px;           /* reserve the expanded height so hovering doesn't shove the page down */
+        margin: -3px auto 22px;      /* tuck up against the banner's bottom edge */
+        padding: 0 12px;
+      }
+      .proj-tab {
+        position: relative;
+        box-sizing: border-box;
+        flex: 0 0 auto;              /* keep the set width; wrap rather than shrink */
+        display: flex;
+        align-items: flex-end;       /* label rides the bottom edge of the frame */
+        justify-content: center;
+        width: 228px;                /* +~24% wider */
+        height: 46px;                /* resting height */
+        padding-bottom: 11px;
+        border: 3px solid #000;
+        border-top: none;            /* the dark title banner IS the top of the frame */
+        background: transparent;
+        text-decoration: none;
+        overflow: hidden;
+        --vfx: 1.15s;                /* slow, deliberate */
+        --stripe: #0d0d0d;           /* per-theme below */
+        transition: height var(--vfx) cubic-bezier(.16, 1, .3, 1),
+                    border-color var(--vfx) ease;
+      }
+      /* Two halves of the themed stripe grow in from BOTH sides and meet in the
+         middle — like the title banner forming around the name. */
+      .proj-tab::before, .proj-tab::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 50%;
+        background: var(--stripe);
+        transform: scaleX(0);
+        transition: transform var(--vfx) cubic-bezier(.16, 1, .3, 1);
+        z-index: 0;
+      }
+      .proj-tab::before { left: 0;  transform-origin: left center; }
+      .proj-tab::after  { right: 0; transform-origin: right center; }
+      .proj-tab:is(:hover, :focus-visible, .is-tapped)::before,
+      .proj-tab:is(:hover, :focus-visible, .is-tapped)::after { transform: scaleX(1); }
+
+      .proj-tab__label {
+        position: relative;
+        z-index: 1;
+        /* White text + difference blend = black on the white page, white once the
+           stripe slides under it — the letters flip exactly as the stripe passes. */
+        color: #fff;
+        mix-blend-mode: difference;
+        font-family: 'Major Mono Display', monospace;   /* same as the ANTON VESELSKYI title */
+        font-size: 17px;
+        letter-spacing: 6px;
+        white-space: nowrap;
+        transition: font-size var(--vfx) ease, letter-spacing var(--vfx) ease;
+      }
+      /* On hover (or first tap on touch) the side rails stretch down. */
+      .proj-tab:is(:hover, :focus-visible, .is-tapped) { height: 110px; outline: none; }
+
+      /* per-theme stripe colour + particle colour */
+      .proj-tab[data-theme="game"]     { --stripe:#0d0d0d; --tab-particle:#8a857c; }
+      .proj-tab[data-theme="show"]     { --stripe:#141414; --tab-particle:#8a857c; }
+      .proj-tab[data-theme="shrt"]     { --stripe:#0a0a0a; --tab-particle:#c9a96e; }
+      .proj-tab[data-theme="concerts"] { --stripe:#f4ede0; --tab-particle:rgba(235,215,155,.6); }
+
+      /* destination identity: themed frame + font (bumped — the decorative
+         faces read smaller than Major Mono at the same px). */
+      .proj-tab[data-theme="shrt"]:is(:hover, .is-tapped) { border-color: #c9a96e; }
+      .proj-tab[data-theme="shrt"]:is(:hover, .is-tapped) .proj-tab__label {
+        font-family: 'Cinzel Decorative', serif; font-weight: 900;
+        font-size: 26px; letter-spacing: 1px; text-transform: uppercase;
+      }
+      .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) { border-color: #15110d; }
+      .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) .proj-tab__label {
+        font-family: 'UnifrakturCook', serif; font-weight: 700;
+        font-size: 32px; letter-spacing: 1px;
+      }
+
+      /* ---- LIST TABS (game + show) ---- keep the soft list-site paper as the
+         background (it just fades in, no slide), and instead of a full-tab
+         stripe, form a slim black title-band that grows in from BOTH sides and
+         meets in the middle. The label flips to white as the band reaches it. */
+      .proj-tab[data-theme="game"],
+      .proj-tab[data-theme="show"] {
+        transition: height var(--vfx) cubic-bezier(.16, 1, .3, 1),
+                    border-color var(--vfx) ease,
+                    background-color .2s ease;   /* quick fade, not a loading slide */
+      }
+      .proj-tab[data-theme="game"]:is(:hover, .is-tapped),
+      .proj-tab[data-theme="show"]:is(:hover, .is-tapped) {
+        background-color: #F6F3EF;               /* same soft paper as the list site */
+        background-image:
+          radial-gradient(circle at 30% 20%, rgba(255,0,80,.02), transparent 55%),
+          radial-gradient(circle at 70% 80%, rgba(0,120,255,.02), transparent 60%),
+          repeating-linear-gradient(90deg, rgba(0,0,0,.02) 0 1px, transparent 1px 20px),
+          repeating-linear-gradient(0deg,  rgba(0,0,0,.02) 0 2px, transparent 2px 26px),
+          repeating-linear-gradient(45deg, rgba(0,0,0,.025) 0 3px, transparent 3px 10px);
+        background-size: 100% 100%, 100% 100%, 140px 100%, 100% 140px, 18px 18px;
+      }
+      /* The lists reuse the converging halves, just shrunk to a slim bottom band. */
+      .proj-tab[data-theme="game"]::before, .proj-tab[data-theme="show"]::before,
+      .proj-tab[data-theme="game"]::after,  .proj-tab[data-theme="show"]::after {
+        top: auto;
+        bottom: 3px;
+        height: 34px;                /* only a touch taller than the ~21px label */
+      }
+
+      .tab-particle { position: absolute; pointer-events: none; z-index: 4; will-change: transform, opacity; }
+
+      /* Small zoom on the circular social icons when hovered. */
+      .column img { transition: transform .25s cubic-bezier(.22, 1, .3, 1); }
+      .column a:hover img { transform: scale(1.08); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .proj-tab, .proj-tab::before, .proj-tab::after, .proj-tab__label { transition: none; }
+        .proj-tab:is(:hover, .is-tapped) { height: 46px; }   /* skip the stretch; stripe still reveals */
+      }
+    </style>
 </head>
 
 <body>
@@ -29,6 +168,16 @@
         --><span class="hidden" style="--letter-index:7;">y</span><!--
         --><span class="hidden" style="--letter-index:8;">i</span>
     </h1>
+
+    <!-- Side-project tabs: minimalist by default; on hover they slide down,
+         emit themed particles, and take on the destination's colours. -->
+    <nav class="proj-tabs" aria-label="Side projects">
+      <a class="proj-tab" data-theme="game"     href="gamelist.html"><span class="proj-tab__label">game list</span></a>
+      <a class="proj-tab" data-theme="show"     href="showlist.html"><span class="proj-tab__label">show list</span></a>
+      <a class="proj-tab" data-theme="shrt"     href="shrt.html"><span class="proj-tab__label">shrt</span></a>
+      <a class="proj-tab" data-theme="concerts" href="concerts/index.html"><span class="proj-tab__label">concerts</span></a>
+    </nav>
+
     <p class="cursive" id="wavyText">
         Strive for excellence
     </p>
@@ -222,6 +371,94 @@ function checkAnimationState()
             modal.style.display = 'none';
         }
     });
+
+    // ===== Side-project tabs: themed particle drift on hover =====
+    // Particles are emitted into the nav (not the tab) so the tab can clip its
+    // stretching frame cleanly while particles still float free. Each theme:
+    // amber bubbles for concerts, glowing gold embers for shrt, soft dust for
+    // the lists. Deliberately slow to match the unhurried frame stretch.
+    (function ()
+    {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) return;
+
+        const nav = document.querySelector('.proj-tabs');
+        if (!nav) return;
+
+        document.querySelectorAll('.proj-tab').forEach(function (tab)
+        {
+            const theme  = tab.dataset.theme;
+            const bubble = theme === 'concerts';
+            const ember  = theme === 'shrt';
+            let stream = null;
+
+            function emit(n)
+            {
+                const color = getComputedStyle(tab).getPropertyValue('--tab-particle').trim();
+                const left = tab.offsetLeft, top = tab.offsetTop, w = tab.offsetWidth, h = tab.offsetHeight;
+
+                for (let i = 0; i < n; i++)
+                {
+                    const p = document.createElement('span');
+                    p.className = 'tab-particle';
+                    const size = bubble ? 9 + Math.random() * 16 : 3 + Math.random() * 5;
+                    p.style.width = p.style.height = size + 'px';
+                    p.style.background = color;
+                    p.style.borderRadius = (bubble || ember) ? '50%' : '1px';
+                    if (bubble) p.style.boxShadow = 'inset 0 0 0 1px rgba(21,17,13,.35)';
+                    if (ember)  p.style.boxShadow = '0 0 7px ' + color;
+                    p.style.left = (left + Math.random() * w) + 'px';
+                    p.style.top  = (top + h * (0.55 + Math.random() * 0.45)) + 'px';
+                    nav.appendChild(p);
+
+                    let dx, dy, scaleEnd;
+                    if (bubble)     { dx = (Math.random() - .5) * 28; dy = -(40 + Math.random() * 70); scaleEnd = 1.25; }
+                    else if (ember) { dx = (Math.random() - .5) * 40; dy = -(30 + Math.random() * 60); scaleEnd = 0.3;  }
+                    else            { const a = Math.random() * Math.PI * 2, r = 20 + Math.random() * 48;
+                                      dx = Math.cos(a) * r; dy = Math.sin(a) * r - 10; scaleEnd = 0.4; }
+
+                    const anim = p.animate(
+                    [
+                        { transform: 'translate(0,0) scale(1)', opacity: bubble ? .6 : .95 },
+                        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + scaleEnd + ')', opacity: 0 }
+                    ],
+                    { duration: 1500 + Math.random() * 900, easing: 'cubic-bezier(.2,.7,.2,1)' }); // slow drift
+                    anim.onfinish = function () { p.remove(); };
+                }
+            }
+
+            // Hover (PC) drives the particle stream.
+            tab.addEventListener('mouseenter', function ()
+            {
+                if (window.matchMedia('(hover: none)').matches) return;   // touch uses tap below
+                emit(bubble ? 5 : 8);                  // gentle opening puff
+                clearInterval(stream);
+                stream = setInterval(function () { emit(bubble ? 2 : 3); }, 360);  // slow stream
+            });
+            tab.addEventListener('mouseleave', function () { clearInterval(stream); });
+
+            // Touch: first tap reveals (themed stripe + a particle burst),
+            // a second tap on the same tab follows the link.
+            tab.addEventListener('click', function (e)
+            {
+                if (!window.matchMedia('(hover: none)').matches) return;  // PC: link works as normal
+                if (!tab.classList.contains('is-tapped'))
+                {
+                    e.preventDefault();
+                    document.querySelectorAll('.proj-tab.is-tapped').forEach(function (t) { t.classList.remove('is-tapped'); });
+                    tab.classList.add('is-tapped');
+                    emit(bubble ? 6 : 9);
+                }
+            });
+        });
+
+        // Tapping elsewhere dismisses the revealed tab.
+        document.addEventListener('click', function (e)
+        {
+            if (window.matchMedia('(hover: none)').matches && !e.target.closest('.proj-tab'))
+                document.querySelectorAll('.proj-tab.is-tapped').forEach(function (t) { t.classList.remove('is-tapped'); });
+        });
+    })();
 </script>
 </body>
 </html>
