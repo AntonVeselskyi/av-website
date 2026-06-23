@@ -1075,6 +1075,96 @@ function applyFilters()
     updateResultCount(games.length, allGames.length);
     renderGamesAnimated(games);
   }
+
+  syncStateToUrl();   // keep the URL in step with the current filters/view
+}
+
+// ========== URL <-> FILTER STATE SYNC ==========
+// A filtered/sorted view becomes a shareable, bookmarkable link, and
+// refresh / back-button restore it. Uses replaceState so rapid filter changes
+// don't spam the history stack. Shared by all lists via core.js.
+function syncStateToUrl()
+{
+  const defaultSort = (LIST_CONFIG.yearSortKeys ?? ['played'])[0];
+  const p = new URLSearchParams();
+
+  if (filterCategory.length)            p.set('cat', filterCategory[0]);
+  if (filterSearch)                     p.set('q', filterSearch);
+  if (filterDecade)                     p.set('decade', filterDecade);
+  if (filterPlatform)                   p.set('platform', filterPlatform);
+  if (filterVibe.length)                p.set('vibe', filterVibe.join(','));
+  if (filterTTB)                        p.set('ttb', filterTTB);
+  if (sortKey !== defaultSort || sortDir !== 'desc')
+  {
+    p.set('sort', sortKey);
+    if (sortDir !== 'desc') p.set('dir', sortDir);
+  }
+  if (viewMode && viewMode !== 'grid')  p.set('view', viewMode);
+  if (viewMode === 'pillar' && activePillarAxis && activePillarAxis !== 'score')
+    p.set('axis', activePillarAxis);
+
+  const qs = p.toString();
+  history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+}
+
+// Restore filter/sort/view state from the URL on load. Runs after setupTabs()
+// (so buttons + handlers exist) and before the first applyFilters(). Anything
+// that doesn't parse is simply ignored — falls back to defaults.
+function restoreStateFromUrl()
+{
+  const p = new URLSearchParams(location.search);
+  if ([...p.keys()].length === 0) return;
+
+  // Re-apply the .active class to the button(s) matching the given values.
+  const setActive = (group, values) =>
+  {
+    document.querySelectorAll(`[data-group="${group}"]`).forEach(b =>
+      b.classList.toggle('active', values.includes(b.dataset.value)));
+  };
+
+  if (p.has('cat'))
+  {
+    const v = p.get('cat');
+    filterCategory = v ? [v] : [];
+    setActive('category', v ? [v] : ['all']);
+  }
+  if (p.has('q'))
+  {
+    filterSearch = p.get('q');
+    const si = document.getElementById('search-input');
+    if (si) si.value = filterSearch;
+  }
+  if (p.has('decade'))   { filterDecade = p.get('decade');     setActive('decade', [filterDecade]); }
+  if (p.has('platform')) { filterPlatform = p.get('platform'); setActive('platform', [filterPlatform]); }
+  if (p.has('vibe'))     { filterVibe = p.get('vibe').split(',').filter(Boolean); setActive('vibe', filterVibe); }
+  if (p.has('ttb'))      { filterTTB = p.get('ttb');           setActive('ttb', [filterTTB]); }
+  if (p.has('sort'))
+  {
+    sortKey = p.get('sort');
+    sortDir = p.get('dir') === 'asc' ? 'asc' : 'desc';
+    setActive('sort', [sortKey]);
+  }
+  if (p.has('axis'))
+  {
+    activePillarAxis = p.get('axis');
+    setActive('pillarAxis', [activePillarAxis]);
+  }
+  // View last — toggles the body/container classes the renderers key off.
+  if (p.has('view'))
+  {
+    const v = p.get('view');
+    const viewBtn = document.querySelector(`.view-btn[data-view="${v}"]`);
+    if (viewBtn && ['grid', 'pillar', 'inspiration'].includes(v))
+    {
+      viewMode = v;
+      document.querySelectorAll('.view-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.view === v));
+      document.body.classList.toggle('pillar-view-active', v === 'pillar');
+      gameContainer.classList.toggle('pillar-view', v === 'pillar');
+      document.body.classList.toggle('inspiration-mode', v === 'inspiration');
+      ensureInspirationBg(v === 'inspiration');
+    }
+  }
 }
 
 // Live "shown/total" readout next to the search field; ticks on change.
@@ -1694,6 +1784,7 @@ async function init()
       console.log('Enriched items:', allGames);
 
       setupTabs();
+      restoreStateFromUrl(); // hydrate filters/sort/view from the URL (shareable links)
       applyFilters(); // initial render with default sort applied
     }
     catch (e)

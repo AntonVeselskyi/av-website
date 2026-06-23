@@ -84,6 +84,10 @@ h1
 
 .title
 {
+  /* Reserve a clear band above the banner for the AV monogram. Derived from the
+     monogram's own size (top:6px + its height + ~22px gap) so the clearance is
+     constant at every viewport — the mark never droops into the title text. */
+  margin-top: calc(var(--av-mono-size) + 28px);
   margin-bottom: 0;
   font-family: 'Major Mono Display', monospace;
   font-size: 9vw;
@@ -131,6 +135,10 @@ h1
 :root
 {
   --cardW: 169px;
+  /* AV monogram size — scales with the viewport like the 9vw title (≈5.2rem at
+     1366px), with a floor for phones and a cap for very wide screens. Both the
+     mark and the title's top gap derive from this so they never collide. */
+  --av-mono-size: clamp(2.4rem, 6vw, 9rem);
 }
 
 .tier-label
@@ -1494,7 +1502,7 @@ body:not(.pillar-view-active) .tab-row-columns {
   display: inline-grid;
   place-items: center;
   font-family: 'Major Mono Display', monospace;
-  font-size: 5.2rem;              /* the mark scales entirely from font-size */
+  font-size: var(--av-mono-size); /* responsive — scales with the title */
   line-height: 1;
   letter-spacing: 0;
   color: #000000;                 /* black — reads on the cream page background */
@@ -1633,4 +1641,18 @@ body.inspiration-mode .scroll-top-btn {
   #result-count.tick,
   .av-monogram,
   .scroll-top-btn { animation: none !important; transition: none !important; }
+}
+
+/* =========================================================
+   STICKY TIER LABELS — the SSS/SS/S… tag rides along the
+   left edge while you scroll through a tall tier, so you
+   always know which tier you're looking at. Pure CSS; works
+   because every ancestor up to the viewport is overflow:visible.
+   Grid (tierlist) view only — disabled in pillar/inspiration.
+   ========================================================= */
+body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
+  position: sticky;
+  top: 8px;
+  align-self: flex-start;   /* anchor to the top of the row so it has room to travel */
+  z-index: 40;              /* above sibling cards, below hover overlays (100000) */
 }
