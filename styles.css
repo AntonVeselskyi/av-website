@@ -119,14 +119,14 @@ div
 {
     display:block;
     text-align:center;
-    margin: 0px auto 40px;
-    padding: 8px 16px;
-    border: 3px solid black;
+    margin: 0px auto clamp(40px, 3vw, 70px);
+    padding: clamp(8px, .7vw, 15px) clamp(16px, 1.6vw, 38px);
+    border: clamp(3px, .2vw, 5px) solid black;
     color: black;
     text-decoration: none;
     font-family: 'Major Mono Display', monospace;
-    font-size: 14px;
-    letter-spacing: 9px;
+    font-size: clamp(14px, .85vw, 22px);
+    letter-spacing: clamp(9px, .75vw, 18px);
     transition: 0.4s;
   }
 

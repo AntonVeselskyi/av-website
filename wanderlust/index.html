@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Wanderlust — Anton Veselskyi</title>
+  <meta name="description" content="A travel history visualization — pins, arcs and a morphing flat/globe world map." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Megrim&family=Major+Mono+Display&family=Jura:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="wanderlust.css?v=171" />
+  <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico" />
+
+  <!-- mapping libs (CDN, like the existing GSAP usage) -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/versor@0.2.0"></script>
+</head>
+
+<body>
+  <!-- AV monogram — signature mark, links home -->
+  <a class="av-monogram" href="https://antonveselskyi.com" target="_blank" rel="noopener" aria-label="Anton Veselskyi">
+    <span>A</span><span>V</span>
+  </a>
+
+  <h1 class="wl-title">wanderlust</h1>
+
+  <!-- the morphing map (svg built by JS) -->
+  <div id="wl-map"></div>
+
+  <!-- pin overlay (HTML, positioned by JS) -->
+  <div id="wl-pins"></div>
+
+  <!-- hover / tap popup -->
+  <div id="wl-popup" role="dialog" aria-label="Place details"></div>
+
+  <!-- audio attribution -->
+  <button id="wl-info-btn" type="button" aria-label="Audio credits" aria-expanded="false" aria-controls="wl-info-panel">i</button>
+  <section id="wl-info-panel" aria-label="Audio credits" hidden>
+    <button id="wl-info-close" type="button" aria-label="Close audio credits">×</button>
+    <h2>audio credits</h2>
+    <p>recorded greetings are reused from public pronunciation archives and phrasebooks.</p>
+    <div id="wl-audio-credits"></div>
+  </section>
+
+  <!-- country context + travel filters (bottom-left) -->
+  <div id="wl-left-ui">
+    <aside id="wl-country-info" aria-label="Country info" aria-live="polite">
+      <div class="ci-empty">hover a pin or focus a country</div>
+    </aside>
+
+    <aside id="wl-filters" aria-label="Travel filters">
+      <h2 id="wl-filters-title">travels</h2>
+      <div id="wl-legend-years" class="legend-years"></div>
+    </aside>
+  </div>
+
+  <!-- controls (bottom-right) -->
+  <aside id="wl-controls" aria-label="Controls">
+    <div class="legend-controls">
+      <label class="wl-toggle">
+        <span id="wl-arcs-label">show arcs</span>
+        <input type="checkbox" id="wl-arcs-toggle" checked />
+        <span class="wl-switch" aria-hidden="true"></span>
+      </label>
+      <label class="wl-toggle">
+        <span id="wl-pins-label">show pins</span>
+        <input type="checkbox" id="wl-pins-toggle" checked />
+        <span class="wl-switch" aria-hidden="true"></span>
+      </label>
+      <label class="wl-toggle">
+        <span id="wl-city-labels-label">city names</span>
+        <input type="checkbox" id="wl-city-labels-toggle" checked />
+        <span class="wl-switch" aria-hidden="true"></span>
+      </label>
+      <button class="wl-btn ghost" id="wl-lang-btn" type="button">УКР</button>
+      <button class="wl-btn ghost" id="wl-globe-btn" type="button">◉ globe</button>
+      <button class="wl-btn ghost" id="wl-timeline-btn" type="button">⧗ timeline</button>
+      <button class="wl-btn ghost" id="wl-measure-btn" type="button">⟂ measure</button>
+      <button class="wl-btn ghost" id="wl-reset-btn" type="button">⟳ reset view</button>
+      <button class="wl-btn" id="wl-play-btn" type="button">▶ play the journey</button>
+    </div>
+  </aside>
+
+  <!-- manual timeline scrubber (hidden until activated) -->
+  <div id="wl-timeline">
+    <button id="wl-timeline-close" aria-label="Close timeline">×</button>
+    <div class="wl-timeline-actions" aria-label="Timeline playback">
+      <button id="wl-timeline-play" type="button">play</button>
+      <button id="wl-timeline-speed" type="button" aria-label="Playback speed">x1</button>
+    </div>
+    <div id="wl-timeline-label">Lviv — the beginning</div>
+    <input type="range" id="wl-timeline-range" min="0" value="0" step="1" />
+  </div>
+
+  <div id="wl-hint">flat ⇄ globe · play the journey</div>
+
+  <script defer src="wanderlust-data.js?v=171"></script>
+  <script defer src="wanderlust-detail.js?v=171"></script>
+  <script defer src="wanderlust.js?v=171"></script>
+</body>
+</html>

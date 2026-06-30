@@ -1,0 +1,191 @@
+{
+  "uk-UA|Привіт": {
+    "src": "uk-pryvit.ogg",
+    "sourceTitle": "Uk-привіт.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Uk-%D0%BF%D1%80%D0%B8%D0%B2%D1%96%D1%82.ogg",
+    "author": "Галя Раптова, Nicolas Vion",
+    "credit": "The Shtooka Project",
+    "license": "CC BY 3.0 US",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/us/deed.en"
+  },
+  "pl-PL|Cześć": {
+    "src": "pl-czesc.ogg",
+    "sourceTitle": "Pl-cześć.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pl-cze%C5%9B%C4%87.ogg",
+    "author": "Tomasz \"odder\" Kozlowski",
+    "credit": "Own work",
+    "license": "CC BY-SA 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5"
+  },
+  "cs-CZ|Ahoj": {
+    "src": "cs-ahoj.oga",
+    "sourceTitle": "Cs-ahoj.oga",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cs-ahoj.oga",
+    "author": "Ivana K, Nicolas Vion",
+    "credit": "The Shtooka Project",
+    "license": "CC BY 2.0 FR",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/fr/deed.en"
+  },
+  "ar-SA|مرحبا": {
+    "src": "ar-marhaba.wav",
+    "sourceTitle": "LL-Q13955 (ara)-Zinou2go-مرحبا.wav",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:LL-Q13955_(ara)-Zinou2go-%D9%85%D8%B1%D8%AD%D8%A8%D8%A7.wav",
+    "author": "Zinou2go",
+    "credit": "Own work (Lingua Libre)",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "sr-RS|Здраво": {
+    "src": "sr-zdravo.flac",
+    "sourceTitle": "Sr-здраво!.flac",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sr-%D0%B7%D0%B4%D1%80%D0%B0%D0%B2%D0%BE!.flac",
+    "author": "Saša Vićentijević",
+    "credit": "The Shtooka Project",
+    "license": "CC BY 3.0 US",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/us/deed.en"
+  },
+  "bg-BG|Здравей": {
+    "src": "bg-zdravey.wav",
+    "sourceTitle": "LL-Q7918 (bul)-Kiril kovachev-здравей.wav",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:LL-Q7918_(bul)-Kiril_kovachev-%D0%B7%D0%B4%D1%80%D0%B0%D0%B2%D0%B5%D0%B9.wav",
+    "author": "Kiril kovachev",
+    "credit": "Own work (Lingua Libre)",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "en-CA|Hello": {
+    "src": "en-hello.ogg",
+    "sourceTitle": "En-us-hello.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:En-us-hello.ogg",
+    "author": "Dvortygirl",
+    "credit": "Own work",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Commons:Public_domain"
+  },
+  "da-DK|Hej": {
+    "src": "da-hej.ogg",
+    "sourceTitle": "Da-hej.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Da-hej.ogg",
+    "author": "User:Thrane",
+    "credit": "Own work",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "de-AT|Servus": {
+    "src": "de-servus.ogg",
+    "sourceTitle": "De-servus.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:De-servus.ogg",
+    "author": "Wikimedia Commons contributor",
+    "credit": "",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Commons:Public_domain"
+  },
+  "de-DE|Servus": {
+    "src": "de-servus.ogg",
+    "sourceTitle": "De-servus.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:De-servus.ogg",
+    "author": "Wikimedia Commons contributor",
+    "credit": "",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Commons:Public_domain"
+  },
+  "de-CH|Grüezi": {
+    "src": "de-ch-gruezi.ogg",
+    "sourceTitle": "Gsw-züritüütsch-Grüezi.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gsw-z%C3%BCrit%C3%BC%C3%BCtsch-Gr%C3%BCezi.ogg",
+    "author": "Terfili",
+    "credit": "Own work",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "de-CH|Hoi": {
+    "src": "de-hoi.ogg",
+    "sourceTitle": "De-hoi.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:De-hoi.ogg",
+    "author": "Jeuwre",
+    "credit": "Own work",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "es-DO|Hola": {
+    "src": "es-hola.oga",
+    "sourceTitle": "Es-hola.oga",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Es-hola.oga",
+    "author": "Josemoya",
+    "credit": "Own work",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  "fr-FR|Bonjour": {
+    "src": "fr-bonjour.ogg",
+    "sourceTitle": "Fr-bonjour.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fr-bonjour.ogg",
+    "author": "Vion Nicolas",
+    "credit": "The Shtooka Project",
+    "license": "CC BY 2.0 FR",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/fr/deed.en"
+  },
+  "hu-HU|Szia": {
+    "src": "hu-szia.ogg",
+    "sourceTitle": "Hu-szia.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hu-szia.ogg",
+    "author": "Panda10",
+    "credit": "Own work",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "it-IT|Ciao": {
+    "src": "it-ciao.ogg",
+    "sourceTitle": "It-ciao.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:It-ciao.ogg",
+    "author": "Wikimedia Commons contributor",
+    "credit": "",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "it-IT|Salve": {
+    "src": "it-salve.ogg",
+    "sourceTitle": "LL-Q652 (ita)-XANA000-salve.wav",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:LL-Q652_(ita)-XANA000-salve.wav",
+    "author": "XANA000",
+    "credit": "Own work (Lingua Libre), OGG transcode",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "pt-PT|Olá": {
+    "src": "pt-ola.wav",
+    "sourceTitle": "LL-Q5146 (por)-Santamarcanda-olá.wav",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:LL-Q5146_(por)-Santamarcanda-ol%C3%A1.wav",
+    "author": "Santamarcanda",
+    "credit": "Own work (Lingua Libre)",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "sv-SE|Hej": {
+    "src": "sv-hej.ogg",
+    "sourceTitle": "Sv-hej.ogg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sv-hej.ogg",
+    "author": "M. Kihlstedt, N. Vion",
+    "credit": "The Shtooka Project",
+    "license": "CC BY 2.0 FR",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/fr/deed.en"
+  },
+  "tr-TR|Merhaba": {
+    "src": "tr-merhaba.ogg",
+    "sourceTitle": "LL-Q256 (tur)-ToprakM-merhaba.wav",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:LL-Q256_(tur)-ToprakM-merhaba.wav",
+    "author": "ToprakM",
+    "credit": "Own work (Lingua Libre), OGG transcode",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0"
+  },
+  "ka-GE|გამარჯობა": {
+    "src": "https://omniglot.com/soundfiles/georgian/hello_ka.mp3",
+    "sourceTitle": "Useful Georgian phrases: hello_ka.mp3",
+    "sourceUrl": "https://omniglot.com/language/phrases/georgian.php",
+    "author": "George Keretchashvili, Giga Paitchadze, Lasse / EasyGeorgian",
+    "credit": "Georgian audio and translations credited on Omniglot",
+    "license": "Omniglot phrasebook audio",
+    "licenseUrl": "https://omniglot.com/language/phrases/georgian.php"
+  }
+}

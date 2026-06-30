@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Anton Veselskyi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Poiret+One&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Megrim&family=Poiret+One&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="title.css">
     <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
@@ -29,7 +29,7 @@
         align-items: flex-start;     /* tabs grow downward from a shared top line */
         justify-content: center;
         flex-wrap: wrap;             /* stack onto rows on narrow screens instead of shrinking */
-        gap: 16px;
+        gap: 12px;
         min-height: 110px;           /* reserve the expanded height so hovering doesn't shove the page down */
         margin: -3px auto 22px;      /* tuck up against the banner's bottom edge */
         padding: 0 12px;
@@ -93,6 +93,12 @@
       .proj-tab[data-theme="show"]     { --stripe:#141414; --tab-particle:#8a857c; }
       .proj-tab[data-theme="shrt"]     { --stripe:#0a0a0a; --tab-particle:#c9a96e; }
       .proj-tab[data-theme="concerts"] { --stripe:#f4ede0; --tab-particle:rgba(235,215,155,.6); }
+      .proj-tab[data-theme="wander"] {
+        width: 252px;
+        --stripe:#001219;
+        --tab-particle:#94d2bd;
+        --wander-map: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 276 110'%3E%3Cdefs%3E%3Cpattern id='dots' width='8' height='8' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='2' cy='2' r='1' fill='%2394d2bd' opacity='.75'/%3E%3Ccircle cx='6' cy='6' r='.55' fill='%23e9d8a6' opacity='.35'/%3E%3C/pattern%3E%3Cpattern id='chev' width='12' height='8' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 6 3 2 6 6 9 2 12 6' fill='none' stroke='%23ee9b00' stroke-width='1.2' opacity='.78'/%3E%3C/pattern%3E%3Cpattern id='tri' width='11' height='10' patternUnits='userSpaceOnUse'%3E%3Cpath d='M5.5 1 10 9 1 9Z' fill='%230a9396' opacity='.62'/%3E%3C/pattern%3E%3C/defs%3E%3Cg opacity='.5' stroke='%2394d2bd' stroke-width='.45'%3E%3Cpath d='M0 31H276M0 55H276M0 79H276M46 0V110M92 0V110M138 0V110M184 0V110M230 0V110'/%3E%3C/g%3E%3Cg fill='%23062e38' stroke='%2394d2bd' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M22 32 38 21 62 24 77 35 66 48 43 46 30 58 15 50Z'/%3E%3Cpath d='M70 57 83 67 79 91 68 103 59 82Z'/%3E%3Cpath d='M126 35 149 27 178 31 201 42 228 43 246 55 229 70 196 64 173 72 144 62 116 65 101 51Z'/%3E%3Cpath d='M144 63 163 70 171 91 156 103 140 88Z'/%3E%3Cpath d='M225 78 249 75 263 88 247 99 226 92Z'/%3E%3C/g%3E%3Cg opacity='.9'%3E%3Cpath d='M22 32 38 21 62 24 77 35 66 48 43 46 30 58 15 50Z' fill='url(%23dots)'/%3E%3Cpath d='M70 57 83 67 79 91 68 103 59 82Z' fill='url(%23chev)'/%3E%3Cpath d='M126 35 149 27 178 31 201 42 228 43 246 55 229 70 196 64 173 72 144 62 116 65 101 51Z' fill='url(%23tri)'/%3E%3Cpath d='M144 63 163 70 171 91 156 103 140 88Z' fill='url(%23dots)'/%3E%3Cpath d='M225 78 249 75 263 88 247 99 226 92Z' fill='url(%23chev)'/%3E%3C/g%3E%3C/svg%3E");
+      }
 
       /* destination identity: themed frame + font (bumped — the decorative
          faces read smaller than Major Mono at the same px). */
@@ -105,6 +111,42 @@
       .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) .proj-tab__label {
         font-family: 'UnifrakturCook', serif; font-weight: 700;
         font-size: 42px; letter-spacing: 1px;
+      }
+      .proj-tab[data-theme="wander"]:is(:hover, :focus-visible, .is-tapped) {
+        border-color: #ee9b00;
+        box-shadow:
+          0 12px 26px rgba(0,18,25,.28),
+          inset 0 -1px 0 rgba(238,155,0,.72);
+      }
+      .proj-tab[data-theme="wander"]:is(:hover, :focus-visible, .is-tapped) .proj-tab__label {
+        font-family: 'Megrim', system-ui; font-weight: 400;
+        font-size: 35px; letter-spacing: 1.5px; text-transform: lowercase;
+        color: #ee9b00;
+        mix-blend-mode: normal;
+        transform: translateY(7px);
+        -webkit-text-stroke: .25px #ee9b00;
+        text-shadow:
+          0 0 2px #001219,
+          .6px 0 0 #ee9b00,
+          -.6px 0 0 #ee9b00,
+          0 0 8px rgba(0,18,25,.95),
+          0 0 14px rgba(238,155,0,.64),
+          0 0 18px rgba(148,210,189,.26);
+      }
+      .proj-tab[data-theme="wander"]::before,
+      .proj-tab[data-theme="wander"]::after {
+        background-color: #001219;
+        background-image:
+          linear-gradient(180deg, rgba(0,18,25,.12), rgba(0,18,25,.54)),
+          var(--wander-map);
+        background-repeat: no-repeat;
+        background-size: 200% 100%, 200% 100%;
+      }
+      .proj-tab[data-theme="wander"]::before {
+        background-position: left center, left -20px;
+      }
+      .proj-tab[data-theme="wander"]::after {
+        background-position: right center, right -20px;
       }
 
       /* ---- LIST TABS (game + show) ---- keep the soft list-site paper as the
@@ -161,6 +203,16 @@
       .column a[href*="instagram"] img { --icon-scale: 0.86; }
       #myBTC img                       { --icon-scale: 0.86; }
 
+      /* Let the secret portal breathe on very wide screens while preserving
+         the original small, letterspaced band on ordinary desktop widths. */
+      .secret-btn {
+        margin-bottom: clamp(40px, 3vw, 70px);
+        padding: clamp(8px, .7vw, 15px) clamp(16px, 1.6vw, 38px);
+        border-width: clamp(3px, .2vw, 5px);
+        font-size: clamp(14px, .85vw, 22px);
+        letter-spacing: clamp(9px, .75vw, 18px);
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .proj-tab, .proj-tab::before, .proj-tab::after, .proj-tab__label { transition: none; }
         .proj-tab:is(:hover, .is-tapped) { height: 46px; }   /* skip the stretch; stripe still reveals */
@@ -191,6 +243,7 @@
     <!-- Side-project tabs: minimalist by default; on hover they slide down,
          emit themed particles, and take on the destination's colours. -->
     <nav class="proj-tabs" aria-label="Side projects">
+      <a class="proj-tab" data-theme="wander"   href="wanderlust/index.html"><span class="proj-tab__label">wanderlust</span></a>
       <a class="proj-tab" data-theme="game"     href="gamelist.html"><span class="proj-tab__label">game list</span></a>
       <a class="proj-tab" data-theme="show"     href="showlist.html"><span class="proj-tab__label">show list</span></a>
       <a class="proj-tab" data-theme="shrt"     href="shrt.html"><span class="proj-tab__label">shrt</span></a>
