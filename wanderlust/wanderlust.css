@@ -172,7 +172,7 @@ body::after {
   inset: 0;
   z-index: 1;
 }
-#wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; }
+#wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 #wl-map svg.dragging { cursor: grabbing; }
 
 .wl-sphere   { fill: rgba(2,40,49,.55); stroke: rgba(148,210,189,.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
@@ -1335,7 +1335,6 @@ button.wl-year-row {
     transform: translateY(6px);
     pointer-events: none;
   }
-  body.wl-panels-collapsed #wl-country-info.active { display: none; }
   .legend-years { grid-template-columns: 1fr; gap: 5px; }
   .ci-grid, .ci-salary { grid-template-columns: 1fr; }
   #wl-stats-panel {

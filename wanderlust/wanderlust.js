@@ -1575,6 +1575,9 @@
      label — it pans/zooms with the map and, on the globe, hides when that patch
      of ocean rotates to the back. */
   const ATLANTIC = [-43, 30];
+  // on narrow (portrait phone) fits the same anchor lands under Europe instead
+  // of open water, so give it a South-Atlantic anchor clear of every pin.
+  const ATLANTIC_NARROW = [-24, -8];
   const GLOBE_TITLE_TEXT = 'wanderlust';
   const GLOBE_TITLE_POINTS = GLOBE_TITLE_TEXT.split('').map((letter, i, arr) => {
     const t = i - (arr.length - 1) / 2;
@@ -1590,7 +1593,7 @@
       positionGlobeTitle();
       return;
     }
-    const xy = projection(ATLANTIC);
+    const xy = projection(width <= 640 ? ATLANTIC_NARROW : ATLANTIC);
     let vis = !!xy;
     wlTitle.classList.toggle('gone', !vis);
     if (vis) {
@@ -2287,6 +2290,17 @@
       .on('end', () => svg.classed('dragging', false));
 
     svg.call(zoom).call(drag);
+
+    // double-tap/double-click → zoom in on the map itself, centred on the
+    // tapped point (touch-action:none on the svg keeps the browser from
+    // doing its own native double-tap page zoom first).
+    svg.on('dblclick.zoomIn', (event) => {
+      if (morphing) return;
+      event.preventDefault();
+      const target = Math.min(MAX_ZOOM, zoomT.k * 2);
+      svg.transition().duration(400).ease(d3.easeCubicInOut)
+        .call(zoom.scaleTo, target, d3.pointer(event, svg.node()));
+    });
   }
 
   function resetZoom() {
