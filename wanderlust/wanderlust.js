@@ -377,9 +377,12 @@
     closeStats: { en: 'close stats', uk: 'закрити статистику' },
     countryList: { en: 'countries', uk: 'країни' },
     closeCountryList: { en: 'close countries visited', uk: 'закрити відвідані країни' },
+    cityList: { en: 'cities', uk: 'міста' },
+    closeCityList: { en: 'close cities visited', uk: 'закрити відвідані міста' },
     europeChecklist: { en: 'Europe checklist', uk: 'Європа чекліст' },
     closeEuropeChecklist: { en: 'close Europe checklist', uk: 'закрити чекліст Європи' },
     countriesVisited: { en: 'countries visited', uk: 'відвідані країни' },
+    citiesVisited: { en: 'cities visited', uk: 'відвідані міста' },
     clickForList: { en: 'click for list', uk: 'натисни для списку' },
     europeVisited: { en: 'European countries', uk: 'країни Європи' },
     clickForChecklist: { en: 'click for checklist', uk: 'натисни для чекліста' },
@@ -594,6 +597,38 @@
     return [...byPlace.values()];
   }
 
+  function countryPopulation(country) {
+    const n = Number(countryInfoFor(country).population);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function visitedCityGroups() {
+    const groups = new Map();
+    allVisitedPlaces().forEach((place) => {
+      if (!isVisitedCountry(place.country)) return;
+      if (!groups.has(place.country)) groups.set(place.country, []);
+      groups.get(place.country).push({
+        ...place,
+        population: populationFor(place.city, place.country),
+      });
+    });
+    return [...groups.entries()]
+      .sort((a, b) => (
+        (isRussia(a[0]) ? 1 : 0) - (isRussia(b[0]) ? 1 : 0)
+        || countryPopulation(b[0]) - countryPopulation(a[0])
+        || dispCountry(a[0]).localeCompare(dispCountry(b[0]))
+      ))
+      .map(([country, places]) => ({
+        country,
+        population: countryPopulation(country),
+        places: places.sort((a, b) => {
+          const ap = Number.isFinite(Number(a.population)) ? Number(a.population) : -1;
+          const bp = Number.isFinite(Number(b.population)) ? Number(b.population) : -1;
+          return bp - ap || dispCity(a.city).localeCompare(dispCity(b.city));
+        }),
+      }));
+  }
+
   function farthestPlaceFromLviv() {
     const home = DATA.places.Lviv && DATA.places.Lviv.coords;
     if (!home) return null;
@@ -609,6 +644,7 @@
   function travelStats() {
     const visitedCountries = new Set(DATA.visitedCountries || []);
     const europeVisited = EUROPE_COUNTRIES.filter((country) => visitedCountries.has(country));
+    const cityGroups = visitedCityGroups();
     const totalKm = DATA.trips.reduce((sum, trip) => sum + routeDistanceKm(tripRoutePoints(trip)), 0);
     const yearCounts = {};
     DATA.trips.forEach((trip) => {
@@ -625,6 +661,7 @@
     }));
     return {
       countriesVisited: visitedCountries.size,
+      citiesVisited: cityGroups.reduce((sum, group) => sum + group.places.length, 0),
       europeVisited,
       europeTotal: EUROPE_COUNTRIES.length,
       totalKm,
@@ -661,11 +698,18 @@
         </div>` : '';
     wrap.innerHTML = `
       <div class="wl-stats-grid">
-        <button class="wl-stat-card" id="wl-countries-open" type="button">
-          <div class="wl-stat-label">${esc(t('countriesVisited'))}</div>
-          <div class="wl-stat-value">${stats.countriesVisited.toLocaleString(lang === 'uk' ? 'uk-UA' : 'en-US')}</div>
-          <div class="wl-stat-sub">${esc(t('clickForList'))}</div>
-        </button>
+        <div class="wl-stat-split">
+          <button class="wl-stat-card wl-stat-mini" id="wl-countries-open" type="button">
+            <div class="wl-stat-label">${esc(t('countriesVisited'))}</div>
+            <div class="wl-stat-value">${stats.countriesVisited.toLocaleString(lang === 'uk' ? 'uk-UA' : 'en-US')}</div>
+            <div class="wl-stat-sub">${esc(t('clickForList'))}</div>
+          </button>
+          <button class="wl-stat-card wl-stat-mini" id="wl-cities-open" type="button">
+            <div class="wl-stat-label">${esc(t('citiesVisited'))}</div>
+            <div class="wl-stat-value">${stats.citiesVisited.toLocaleString(lang === 'uk' ? 'uk-UA' : 'en-US')}</div>
+            <div class="wl-stat-sub">${esc(t('clickForList'))}</div>
+          </button>
+        </div>
         <button class="wl-stat-card" id="wl-europe-open" type="button">
           <div class="wl-stat-label">${esc(t('europeVisited'))}</div>
           <div class="wl-stat-value">${stats.europeVisited.length} / ${stats.europeTotal}</div>
@@ -692,6 +736,11 @@
     if (countriesOpen) countriesOpen.addEventListener('click', (e) => {
       e.stopPropagation();
       setCountriesPanel(true);
+    });
+    const citiesOpen = $('#wl-cities-open');
+    if (citiesOpen) citiesOpen.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setCitiesPanel(true);
     });
     const distanceCycle = $('#wl-distance-cycle');
     if (distanceCycle) distanceCycle.addEventListener('click', (e) => {
@@ -741,6 +790,31 @@
           <div class="wl-europe-row visited plain">
             <span class="wl-europe-name${countryNameClass(country)}">${esc(dispCountry(country))}</span>
           </div>`).join('')}
+      </div>`;
+  }
+
+  function renderVisitedCitiesList() {
+    const wrap = $('#wl-cities-list');
+    if (!wrap) return;
+    const groups = visitedCityGroups();
+    const total = groups.reduce((sum, group) => sum + group.places.length, 0);
+    wrap.innerHTML = `
+      <div class="wl-europe-summary">${total} ${esc(t('visited'))}</div>
+      <div class="wl-europe-grid wl-city-grid">
+        ${groups.map((group) => `
+          <section class="wl-city-country">
+            <div class="wl-city-country-head">
+              <span class="wl-city-country-name${countryNameClass(group.country)}">${esc(dispCountry(group.country))}</span>
+              <span class="wl-city-country-meta">${group.places.length} · ${esc(formatPopulation(group.population) || t('noData'))}</span>
+            </div>
+            <div class="wl-city-list">
+              ${group.places.map((place) => `
+                <div class="wl-city-row">
+                  <span class="wl-city-name">${esc(dispCity(place.city))}</span>
+                  <span class="wl-city-pop">${esc(formatPopulation(place.population) || t('noData'))}</span>
+                </div>`).join('')}
+            </div>
+          </section>`).join('')}
       </div>`;
   }
 
@@ -2159,10 +2233,10 @@
     if (hint) hint.textContent = isGlobe ? t('hintGlobe') : t('hintFlat');
   }
 
-  /* Interactions:
-       • scroll / pinch  → zoom (both modes, geometric via gZoom transform)
+    /* Interactions:
+       • scroll / pinch  → zoom (flat always; globe keeps wheel/pinch zoom)
        • drag in FLAT    → pan  (handled by d3.zoom)
-       • drag on GLOBE   → spin (handled by versor d3.drag)
+       • drag on GLOBE   → spin (handled by versor d3.drag, including one-finger touch)
      The two behaviours coexist via mode-aware filters. */
   function unzoom(pt) { return [(pt[0] - zoomT.x) / zoomT.k, (pt[1] - zoomT.y) / zoomT.k]; }
 
@@ -2173,7 +2247,11 @@
         // d3-zoom v3 fires POINTER events for drag (pointerType tells mouse vs touch)
         if (event.type === 'wheel') return !event.button;     // scroll → zoom (both modes)
         if (event.type === 'dblclick') return false;
-        if (event.pointerType === 'touch') return true;       // touch → pan/pinch (both modes)
+        const touch = event.pointerType === 'touch' || String(event.type || '').startsWith('touch');
+        if (touch) {
+          if (!isGlobe) return true;                          // touch → pan/pinch (flat)
+          return !!(event.touches && event.touches.length > 1); // two-finger touch → zoom (globe)
+        }
         return !isGlobe && !morphing && !event.button;        // mouse drag → pan (flat only)
       })
       .on('start', (event) => { if (event.sourceEvent) { svg.interrupt('globe-rotate'); hidePopup(); forceTitleTracking(); } svg.classed('dragging', true); })
@@ -2187,7 +2265,11 @@
 
     let v0, q0, r0;
     const drag = d3.drag()
-      .filter((event) => isGlobe && !morphing && event.pointerType !== 'touch' && !event.button)
+      .filter((event) => {
+        if (!isGlobe || morphing || event.button) return false;
+        const touch = event.pointerType === 'touch' || String(event.type || '').startsWith('touch');
+        return !touch || !(event.touches && event.touches.length > 1);
+      })
       .on('start', (event) => {
         svg.classed('dragging', true);
         svg.interrupt('globe-rotate');
@@ -2847,6 +2929,7 @@
     } else {
       setEuropePanel(false);
       setCountriesPanel(false);
+      setCitiesPanel(false);
     }
     panel.hidden = !open;
     btn.classList.toggle('active', open);
@@ -2858,7 +2941,19 @@
     if (!panel) return;
     if (open) {
       setEuropePanel(false);
+      setCitiesPanel(false);
       renderVisitedCountriesList();
+    }
+    panel.hidden = !open;
+  }
+
+  function setCitiesPanel(open) {
+    const panel = $('#wl-cities-panel');
+    if (!panel) return;
+    if (open) {
+      setCountriesPanel(false);
+      setEuropePanel(false);
+      renderVisitedCitiesList();
     }
     panel.hidden = !open;
   }
@@ -2868,6 +2963,7 @@
     if (!panel) return;
     if (open) {
       setCountriesPanel(false);
+      setCitiesPanel(false);
       renderEuropeChecklist();
     }
     panel.hidden = !open;
@@ -2877,6 +2973,7 @@
     return !!(target && target.closest && target.closest([
       '#wl-stats-panel',
       '#wl-countries-panel',
+      '#wl-cities-panel',
       '#wl-europe-panel',
       '#wl-info-panel',
       '#wl-stats-btn',
@@ -2904,18 +3001,21 @@
     set('#wl-stats-btn', t('stats'));
     set('#wl-stats-panel h2', t('stats'));
     set('#wl-countries-panel h2', t('countryList'));
+    set('#wl-cities-panel h2', t('cityList'));
     set('#wl-europe-panel h2', t('europeChecklist'));
     set('#wl-info-panel h2', t('audioCredits'));
     set('#wl-info-panel p', t('audioCreditsText'));
     const close = $('#wl-info-close'); if (close) close.setAttribute('aria-label', t('closeCredits'));
     const statsClose = $('#wl-stats-close'); if (statsClose) statsClose.setAttribute('aria-label', t('closeStats'));
     const countriesClose = $('#wl-countries-close'); if (countriesClose) countriesClose.setAttribute('aria-label', t('closeCountryList'));
+    const citiesClose = $('#wl-cities-close'); if (citiesClose) citiesClose.setAttribute('aria-label', t('closeCityList'));
     const europeClose = $('#wl-europe-close'); if (europeClose) europeClose.setAttribute('aria-label', t('closeEuropeChecklist'));
     updateGlobeBtn();                                   // globe/flat label + hint
     buildLegend(); setIsolate(isolatedKey);            // re-translate filter labels, keep state
     buildAudioCredits();
     if (!$('#wl-stats-panel')?.hidden) renderStatsPanel();
     if (!$('#wl-countries-panel')?.hidden) renderVisitedCountriesList();
+    if (!$('#wl-cities-panel')?.hidden) renderVisitedCitiesList();
     if (!$('#wl-europe-panel')?.hidden) renderEuropeChecklist();
     seaEls.forEach((s) => { s.el.textContent = dispSea(s.name); });
     pins.forEach((p) => { const l = p.el.querySelector('.pin-label'); if (l) l.textContent = dispCity(p.city); });
@@ -2950,6 +3050,7 @@
     const statsBtn = $('#wl-stats-btn');
     const statsPanel = $('#wl-stats-panel');
     const countriesPanel = $('#wl-countries-panel');
+    const citiesPanel = $('#wl-cities-panel');
     const europePanel = $('#wl-europe-panel');
     if (statsBtn && statsPanel) {
       statsBtn.addEventListener('click', (e) => {
@@ -2969,6 +3070,14 @@
       if (countriesClose) countriesClose.addEventListener('click', (e) => {
         e.stopPropagation();
         setCountriesPanel(false);
+      });
+    }
+    if (citiesPanel) {
+      citiesPanel.addEventListener('click', (e) => e.stopPropagation());
+      const citiesClose = $('#wl-cities-close');
+      if (citiesClose) citiesClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setCitiesPanel(false);
       });
     }
     if (europePanel) {

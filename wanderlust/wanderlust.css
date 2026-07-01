@@ -686,6 +686,7 @@ body::after {
 /* ---------- travel stats ---------- */
 #wl-stats-panel,
 #wl-countries-panel,
+#wl-cities-panel,
 #wl-europe-panel {
   position: fixed;
   z-index: 46;
@@ -701,6 +702,7 @@ body::after {
 }
 #wl-stats-panel[hidden],
 #wl-countries-panel[hidden],
+#wl-cities-panel[hidden],
 #wl-europe-panel[hidden] { display: none; }
 
 #wl-stats-panel {
@@ -757,6 +759,7 @@ body::after {
 }
 
 #wl-countries-panel,
+#wl-cities-panel,
 #wl-europe-panel {
   left: 50%;
   top: clamp(48px, 6vh, 68px);
@@ -765,10 +768,22 @@ body::after {
   z-index: 68;
   width: 780px;
   max-width: calc(100vw - 660px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#wl-countries-list,
+#wl-cities-list,
+#wl-europe-checklist {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 3px;
 }
 
 #wl-stats-panel h2,
 #wl-countries-panel h2,
+#wl-cities-panel h2,
 #wl-europe-panel h2 {
   margin: 0 50px 12px 0;
   font-family: var(--font-display);
@@ -783,6 +798,7 @@ body::after {
 #wl-info-close,
 #wl-stats-close,
 #wl-countries-close,
+#wl-cities-close,
 #wl-europe-close {
   position: absolute;
   top: 9px;
@@ -808,6 +824,7 @@ body::after {
 #wl-info-close:hover,
 #wl-stats-close:hover,
 #wl-countries-close:hover,
+#wl-cities-close:hover,
 #wl-europe-close:hover {
   color: var(--golden-orange);
   background: transparent;
@@ -816,6 +833,7 @@ body::after {
 #wl-info-close:hover,
 #wl-stats-close:hover,
 #wl-countries-close:hover,
+#wl-cities-close:hover,
 #wl-europe-close:hover {
   transform: rotate(7deg) scale(1.08);
 }
@@ -824,6 +842,27 @@ body::after {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+.wl-stat-split {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+.wl-stat-split .wl-stat-card {
+  height: 100%;
+}
+.wl-stat-mini .wl-stat-label {
+  font-size: 8.6px;
+  letter-spacing: .9px;
+}
+.wl-stat-mini .wl-stat-value {
+  font-size: clamp(23px, 3.4vw, 31px);
+  letter-spacing: 1.4px;
+}
+.wl-stat-mini .wl-stat-sub {
+  font-size: 10px;
+  letter-spacing: .35px;
 }
 .wl-stat-card {
   min-width: 0;
@@ -988,6 +1027,67 @@ button.wl-year-row {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-city-country {
+  break-inside: avoid;
+  margin-bottom: 9px;
+  padding: 9px;
+  border: 1px solid rgba(204,244,232,.14);
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), rgba(0,18,25,.18) 64%, rgba(0,95,115,.10)),
+    rgba(0,18,25,.16);
+}
+.wl-city-country-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+  color: var(--vanilla-custard);
+}
+.wl-city-country-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 2px;
+}
+.wl-city-country-meta {
+  flex: 0 0 auto;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: .8px;
+  color: rgba(148,210,189,.70);
+}
+.wl-city-list {
+  display: grid;
+  gap: 5px;
+}
+.wl-city-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: rgba(0,18,25,.22);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: .65px;
+  color: rgba(233,216,166,.88);
+}
+.wl-city-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-city-pop {
+  color: rgba(148,210,189,.70);
   white-space: nowrap;
 }
 
@@ -1217,12 +1317,16 @@ button.wl-year-row {
   }
   #wl-stats-panel .wl-stat-value { font-size: clamp(20px, 7vw, 27px); }
   #wl-stats-panel .wl-stat-sub { font-size: 10.5px; }
+  #wl-stats-panel .wl-stat-mini .wl-stat-label { font-size: 7px; letter-spacing: .45px; }
+  #wl-stats-panel .wl-stat-mini .wl-stat-value { font-size: clamp(18px, 5.8vw, 22px); }
+  #wl-stats-panel .wl-stat-mini .wl-stat-sub { font-size: 9px; letter-spacing: .1px; }
   #wl-stats-panel .wl-year-row {
     grid-template-columns: 64px minmax(0, 1fr) 30px;
     gap: 7px;
     font-size: 12px;
   }
   #wl-countries-panel,
+  #wl-cities-panel,
   #wl-europe-panel {
     top: 54px;
     bottom: 104px;
@@ -1243,6 +1347,7 @@ button.wl-year-row {
     max-width: none;
   }
   #wl-countries-panel,
+  #wl-cities-panel,
   #wl-europe-panel {
     width: min(720px, calc(100vw - 36px));
     max-width: none;
