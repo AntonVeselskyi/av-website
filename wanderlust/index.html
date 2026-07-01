@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Megrim&family=Major+Mono+Display&family=Jura:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="wanderlust.css?v=171" />
+  <link rel="stylesheet" href="wanderlust.css?v=193" />
   <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico" />
 
   <!-- mapping libs (CDN, like the existing GSAP usage) -->
@@ -45,6 +45,26 @@
     <div id="wl-audio-credits"></div>
   </section>
 
+  <!-- travel stats -->
+  <section id="wl-stats-panel" aria-label="Travel stats" hidden>
+    <button id="wl-stats-close" type="button" aria-label="Close stats">×</button>
+    <div class="wl-stats-wordmark">wanderlust</div>
+    <h2>stats</h2>
+    <div id="wl-stats-content"></div>
+  </section>
+
+  <section id="wl-countries-panel" aria-label="Countries visited" hidden>
+    <button id="wl-countries-close" type="button" aria-label="Close countries visited">×</button>
+    <h2>countries</h2>
+    <div id="wl-countries-list"></div>
+  </section>
+
+  <section id="wl-europe-panel" aria-label="Europe checklist" hidden>
+    <button id="wl-europe-close" type="button" aria-label="Close Europe checklist">×</button>
+    <h2>Europe</h2>
+    <div id="wl-europe-checklist"></div>
+  </section>
+
   <!-- country context + travel filters (bottom-left) -->
   <div id="wl-left-ui">
     <aside id="wl-country-info" aria-label="Country info" aria-live="polite">
@@ -75,11 +95,12 @@
         <input type="checkbox" id="wl-city-labels-toggle" checked />
         <span class="wl-switch" aria-hidden="true"></span>
       </label>
-      <button class="wl-btn ghost" id="wl-lang-btn" type="button">УКР</button>
-      <button class="wl-btn ghost" id="wl-globe-btn" type="button">◉ globe</button>
+      <button class="wl-btn ghost" id="wl-stats-btn" type="button" aria-expanded="false" aria-controls="wl-stats-panel">stats</button>
       <button class="wl-btn ghost" id="wl-timeline-btn" type="button">⧗ timeline</button>
-      <button class="wl-btn ghost" id="wl-measure-btn" type="button">⟂ measure</button>
+      <button class="wl-btn ghost" id="wl-globe-btn" type="button">◉ globe</button>
       <button class="wl-btn ghost" id="wl-reset-btn" type="button">⟳ reset view</button>
+      <button class="wl-btn ghost" id="wl-measure-btn" type="button">⟂ measure</button>
+      <button class="wl-btn ghost" id="wl-lang-btn" type="button">УКР</button>
       <button class="wl-btn" id="wl-play-btn" type="button">▶ play the journey</button>
     </div>
   </aside>
@@ -97,8 +118,8 @@
 
   <div id="wl-hint">flat ⇄ globe · play the journey</div>
 
-  <script defer src="wanderlust-data.js?v=171"></script>
-  <script defer src="wanderlust-detail.js?v=171"></script>
-  <script defer src="wanderlust.js?v=171"></script>
+  <script defer src="wanderlust-data.js?v=193"></script>
+  <script defer src="wanderlust-detail.js?v=193"></script>
+  <script defer src="wanderlust.js?v=193"></script>
 </body>
 </html>

@@ -27,6 +27,7 @@
   /* ---- state ---- */
   let svg, gZoom, gCountries, gGraticule, gArcs, gSphere, gMeasure, gGlobeTitle, defs, pinLayer, popup;
   let measureMode = false, measurePts = [], measureLabel = null, measureOverlay = null;
+  let measurePointer = null, measureLastRelease = null;
   let width = 0, height = 0;
   let projection, path;
   let zoom, zoomT;              // d3.zoom behaviour + current transform
@@ -50,6 +51,19 @@
   let showCityNames = true;
   let countryInfoState = null;
   const HOME_COUNTRIES = new Set(DATA.homeCountries || []);
+  const EUROPE_COUNTRIES = [
+    'Albania', 'Andorra', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina',
+    'Bulgaria', 'Croatia', 'Cyprus', 'Czechia', 'Denmark', 'Estonia', 'Finland',
+    'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 'Italy',
+    'Kosovo', 'Latvia', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Malta',
+    'Moldova', 'Monaco', 'Montenegro', 'Netherlands', 'North Macedonia', 'Norway',
+    'Poland', 'Portugal', 'Romania', 'Russia', 'San Marino', 'Serbia', 'Slovakia',
+    'Slovenia', 'Spain', 'Sweden', 'Switzerland', 'Turkey', 'Ukraine',
+    'United Kingdom', 'Vatican'
+  ];
+  const STATS_DISTANCE_MODES = ['km', 'miles', 'cans', 'steps'];
+  let statsDistanceModeIndex = 0;
+  let statsIncludeHomeTrips = true;
   const GLOBE_FRONT_MARGIN = 0.025;
   const TITLE_MOUNT_MS = 760;
 
@@ -359,6 +373,26 @@
       uk: 'записи привітань використано з публічних архівів вимови та розмовників.',
     },
     closeCredits: { en: 'close audio credits', uk: 'закрити аудіо джерела' },
+    stats: { en: 'stats', uk: 'статистика' },
+    closeStats: { en: 'close stats', uk: 'закрити статистику' },
+    countryList: { en: 'countries', uk: 'країни' },
+    closeCountryList: { en: 'close countries visited', uk: 'закрити відвідані країни' },
+    europeChecklist: { en: 'Europe checklist', uk: 'Європа чекліст' },
+    closeEuropeChecklist: { en: 'close Europe checklist', uk: 'закрити чекліст Європи' },
+    countriesVisited: { en: 'countries visited', uk: 'відвідані країни' },
+    clickForList: { en: 'click for list', uk: 'натисни для списку' },
+    europeVisited: { en: 'European countries', uk: 'країни Європи' },
+    clickForChecklist: { en: 'click for checklist', uk: 'натисни для чекліста' },
+    totalKilometers: { en: 'total distance traveled', uk: 'усього відстані в подорожах' },
+    distanceCycle: { en: 'click to cycle units', uk: 'натисни, щоб змінити одиниці' },
+    milesLong: { en: 'miles', uk: 'милі' },
+    cansLong: { en: 'Coca-Cola cans long', uk: 'банок Coca-Cola завдовжки' },
+    stepsLong: { en: 'walking steps', uk: 'кроків пішки' },
+    farthestFromLviv: { en: 'farthest from Lviv', uk: 'найдалі від Львова' },
+    travelsPerYear: { en: 'travels per year', uk: 'подорожі за рік' },
+    includingHomeTrips: { en: 'including home-country trips', uk: 'включно з поїздками в домашніх країнах' },
+    excludingHomeTrips: { en: 'excluding domestic trips inside home countries', uk: 'без внутрішніх поїздок у домашніх країнах' },
+    visited: { en: 'visited', uk: 'відвідано' },
   };
   const t = (k) => (T[k] ? T[k][lang] : k);
 
@@ -484,6 +518,250 @@
     if (km == null || !Number.isFinite(km)) return t('noData');
     if (km < 10) return `${km} km`;
     return `${Math.round(km / 10) * 10} km`;
+  }
+
+  function formatTotalKm(km) {
+    if (km == null || !Number.isFinite(km)) return t('noData');
+    return `${Math.round(km / 100) * 100} km`;
+  }
+
+  function formatCompactNumber(value) {
+    const n = Math.round(value);
+    const locale = lang === 'uk' ? 'uk-UA' : 'en-US';
+    try {
+      return new Intl.NumberFormat(locale, {
+        notation: n >= 100000 ? 'compact' : 'standard',
+        maximumFractionDigits: n >= 1000000 ? 1 : 0,
+      }).format(n);
+    } catch {
+      return n.toLocaleString(locale);
+    }
+  }
+
+  function statsDistanceDisplay(km) {
+    const mode = STATS_DISTANCE_MODES[statsDistanceModeIndex] || 'km';
+    if (mode === 'miles') {
+      const miles = km * 0.621371;
+      return { value: `${Math.round(miles / 100) * 100} mi`, sub: `${t('milesLong')} · ${t('distanceCycle')}` };
+    }
+    if (mode === 'cans') {
+      const cans = (km * 1000) / 0.122; // 12 oz Coca-Cola can height, about 12.2 cm
+      return { value: `${formatCompactNumber(cans)} cans`, sub: `${t('cansLong')} · ${t('distanceCycle')}` };
+    }
+    if (mode === 'steps') {
+      const steps = (km * 1000) / 0.762; // average adult walking step, about 2.5 ft
+      return { value: `${formatCompactNumber(steps)} steps`, sub: `${t('stepsLong')} · ${t('distanceCycle')}` };
+    }
+    return { value: formatTotalKm(km), sub: t('distanceCycle') };
+  }
+
+  function tripRoutePoints(trip) {
+    const points = [];
+    const start = getCoords(trip.from);
+    if (start) points.push(start);
+    if (trip.via) trip.via.forEach((v) => points.push(v));
+    if (trip.coords) points.push(trip.coords);
+    return points;
+  }
+
+  function routeDistanceKm(points) {
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      total += d3.geoDistance(points[i - 1], points[i]) * 6371;
+    }
+    return total;
+  }
+
+  function isDomesticHomeTrip(trip) {
+    const from = tripFromCountry(trip);
+    return !!from && from === trip.country && HOME_COUNTRIES.has(trip.country);
+  }
+
+  function allVisitedPlaces() {
+    const byPlace = new Map();
+    const add = (place) => {
+      if (!place || !place.city || !place.country || !place.coords) return;
+      const key = `${place.city}|${place.country}`;
+      if (!byPlace.has(key)) byPlace.set(key, {
+        city: place.city,
+        country: place.country,
+        coords: place.coords,
+      });
+    };
+    Object.values(DATA.places || {}).forEach(add);
+    DATA.trips.forEach(add);
+    (DATA.markers || []).forEach(add);
+    return [...byPlace.values()];
+  }
+
+  function farthestPlaceFromLviv() {
+    const home = DATA.places.Lviv && DATA.places.Lviv.coords;
+    if (!home) return null;
+    let farthest = null;
+    allVisitedPlaces().forEach((place) => {
+      if (place.city === 'Lviv' && place.country === 'Ukraine') return;
+      const km = d3.geoDistance(home, place.coords) * 6371;
+      if (!farthest || km > farthest.km) farthest = { ...place, km };
+    });
+    return farthest;
+  }
+
+  function travelStats() {
+    const visitedCountries = new Set(DATA.visitedCountries || []);
+    const europeVisited = EUROPE_COUNTRIES.filter((country) => visitedCountries.has(country));
+    const totalKm = DATA.trips.reduce((sum, trip) => sum + routeDistanceKm(tripRoutePoints(trip)), 0);
+    const yearCounts = {};
+    DATA.trips.forEach((trip) => {
+      if (!statsIncludeHomeTrips && isDomesticHomeTrip(trip)) return;
+      const key = itemKey(trip);
+      yearCounts[key] = (yearCounts[key] || 0) + 1;
+    });
+    const keys = Object.keys(DATA.eras || {}).concat(Object.keys(DATA.yearColors || {}));
+    const tripsByYear = keys.map((key) => ({
+      key,
+      label: keyLabel(key),
+      count: yearCounts[key] || 0,
+      color: keyColor(key),
+    }));
+    return {
+      countriesVisited: visitedCountries.size,
+      europeVisited,
+      europeTotal: EUROPE_COUNTRIES.length,
+      totalKm,
+      farthestPlace: farthestPlaceFromLviv(),
+      tripsByYear,
+    };
+  }
+
+  function renderStatsPanel() {
+    const wrap = $('#wl-stats-content');
+    if (!wrap) return;
+    const stats = travelStats();
+    const distance = statsDistanceDisplay(stats.totalKm);
+    const maxYear = Math.max(1, ...stats.tripsByYear.map((row) => row.count));
+    const yearRows = stats.tripsByYear.map((row) => {
+      const pct = Math.round((row.count / maxYear) * 100);
+      const active = isolatedKey != null && String(isolatedKey) === String(row.key);
+      return `
+        <button class="wl-year-row${active ? ' active' : ''}" type="button" data-stats-key="${esc(row.key)}">
+          <span>${esc(row.label)}</span>
+          <span class="wl-year-track"><span class="wl-year-fill" style="--p:${pct}%;--c:${esc(row.color)}"></span></span>
+          <span class="wl-year-count">${row.count}</span>
+        </button>`;
+    }).join('');
+    const farthest = stats.farthestPlace;
+    const farthestHtml = farthest ? `
+        <div class="wl-stat-card">
+          <div class="wl-stat-label">${esc(t('farthestFromLviv'))}</div>
+          <div class="wl-stat-value">${esc(dispCity(farthest.city))}</div>
+          <div class="wl-stat-sub">
+            <span class="${countryNameClass(farthest.country).trim()}">${esc(dispCountry(farthest.country))}</span>
+            · ${esc(formatDistanceKm(Math.round(farthest.km)))}
+          </div>
+        </div>` : '';
+    wrap.innerHTML = `
+      <div class="wl-stats-grid">
+        <button class="wl-stat-card" id="wl-countries-open" type="button">
+          <div class="wl-stat-label">${esc(t('countriesVisited'))}</div>
+          <div class="wl-stat-value">${stats.countriesVisited.toLocaleString(lang === 'uk' ? 'uk-UA' : 'en-US')}</div>
+          <div class="wl-stat-sub">${esc(t('clickForList'))}</div>
+        </button>
+        <button class="wl-stat-card" id="wl-europe-open" type="button">
+          <div class="wl-stat-label">${esc(t('europeVisited'))}</div>
+          <div class="wl-stat-value">${stats.europeVisited.length} / ${stats.europeTotal}</div>
+          <div class="wl-stat-sub">${esc(t('clickForChecklist'))}</div>
+        </button>
+        <button class="wl-stat-card" id="wl-distance-cycle" type="button">
+          <div class="wl-stat-label">${esc(t('totalKilometers'))}</div>
+          <div class="wl-stat-value">${esc(distance.value)}</div>
+          <div class="wl-stat-sub">${esc(distance.sub)}</div>
+        </button>
+        ${farthestHtml}
+        <div class="wl-stat-card wide wl-year-toggle-card${statsIncludeHomeTrips ? ' active-toggle' : ''}" id="wl-year-toggle-card" role="button" tabindex="0">
+          <div class="wl-stat-label">${esc(t('travelsPerYear'))}</div>
+          <div class="wl-stat-sub">${esc(t(statsIncludeHomeTrips ? 'includingHomeTrips' : 'excludingHomeTrips'))}</div>
+          <div class="wl-year-list">${yearRows}</div>
+        </div>
+      </div>`;
+    const europeOpen = $('#wl-europe-open');
+    if (europeOpen) europeOpen.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setEuropePanel(true);
+    });
+    const countriesOpen = $('#wl-countries-open');
+    if (countriesOpen) countriesOpen.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setCountriesPanel(true);
+    });
+    const distanceCycle = $('#wl-distance-cycle');
+    if (distanceCycle) distanceCycle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      statsDistanceModeIndex = (statsDistanceModeIndex + 1) % STATS_DISTANCE_MODES.length;
+      renderStatsPanel();
+    });
+    const yearToggle = $('#wl-year-toggle-card');
+    const toggleYearHomeTrips = (e) => {
+      e.stopPropagation();
+      statsIncludeHomeTrips = !statsIncludeHomeTrips;
+      renderStatsPanel();
+    };
+    if (yearToggle) {
+      yearToggle.addEventListener('click', toggleYearHomeTrips);
+      yearToggle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleYearHomeTrips(e);
+        }
+      });
+    }
+    wrap.querySelectorAll('.wl-year-row[data-stats-key]').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const raw = row.dataset.statsKey;
+        const key = ERAS[raw] ? raw : +raw;
+        cancelTimelineForUserFilter();
+        lockedKey = String(lockedKey) === String(key) ? null : key;
+        setIsolate(lockedKey);
+        frameKey(lockedKey);
+        renderStatsPanel();
+      });
+    });
+  }
+
+  function renderVisitedCountriesList() {
+    const wrap = $('#wl-countries-list');
+    if (!wrap) return;
+    const countries = (DATA.visitedCountries || [])
+      .slice()
+      .sort((a, b) => dispCountry(a).localeCompare(dispCountry(b)));
+    wrap.innerHTML = `
+      <div class="wl-europe-summary">${countries.length} ${esc(t('visited'))}</div>
+      <div class="wl-europe-grid">
+        ${countries.map((country) => `
+          <div class="wl-europe-row visited plain">
+            <span class="wl-europe-name${countryNameClass(country)}">${esc(dispCountry(country))}</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function renderEuropeChecklist() {
+    const wrap = $('#wl-europe-checklist');
+    if (!wrap) return;
+    const visitedCountries = new Set(DATA.visitedCountries || []);
+    const sorted = EUROPE_COUNTRIES.slice().sort((a, b) => dispCountry(a).localeCompare(dispCountry(b)));
+    const visitedCount = sorted.filter((country) => visitedCountries.has(country)).length;
+    wrap.innerHTML = `
+      <div class="wl-europe-summary">${visitedCount} / ${EUROPE_COUNTRIES.length} ${esc(t('visited'))}</div>
+      <div class="wl-europe-grid">
+        ${sorted.map((country) => {
+          const visited = visitedCountries.has(country);
+          return `
+            <div class="wl-europe-row${visited ? ' visited' : ''}">
+              <span class="wl-europe-check">${visited ? '&#10003;' : ''}</span>
+              <span class="wl-europe-name${countryNameClass(country)}">${esc(dispCountry(country))}</span>
+            </div>`;
+        }).join('')}
+      </div>`;
   }
 
   function countryEntryFor(country) {
@@ -1387,14 +1665,67 @@
       measureOverlay = document.createElement('div');
       measureOverlay.id = 'wl-measure-overlay';
       document.body.appendChild(measureOverlay);
-      measureOverlay.addEventListener('click', onMeasureClick);
+      document.addEventListener('pointerdown', onMeasurePointerDown, true);
+      document.addEventListener('pointermove', onMeasurePointerMove, true);
+      document.addEventListener('pointerup', onMeasurePointerUp, true);
+      document.addEventListener('pointercancel', onMeasurePointerCancel, true);
+      document.addEventListener('click', onMeasureClick, true);
     }
+    document.body.classList.toggle('measure-mode', measureMode);
     measureOverlay.classList.toggle('active', measureMode);
-    if (!measureMode) clearMeasure();
+    if (!measureMode) { measurePointer = null; clearMeasure(); }
   }
+
+  function measureIgnoresTarget(target) {
+    return !!(target && target.closest && target.closest([
+      '#wl-controls',
+      '#wl-left-ui',
+      '#wl-info-btn',
+      '#wl-info-panel',
+      '#wl-stats-panel',
+      '#wl-countries-panel',
+      '#wl-europe-panel',
+      '#wl-timeline',
+      '#wl-popup',
+      '.av-monogram',
+    ].join(',')));
+  }
+
+  function onMeasurePointerDown(e) {
+    if (!measureMode || e.button !== 0 || measureIgnoresTarget(e.target)) { measurePointer = null; return; }
+    measurePointer = { id: e.pointerId, x: e.clientX, y: e.clientY, dragged: false };
+  }
+
+  function onMeasurePointerMove(e) {
+    if (!measureMode || !measurePointer || e.pointerId !== measurePointer.id) return;
+    const dx = e.clientX - measurePointer.x;
+    const dy = e.clientY - measurePointer.y;
+    if (Math.hypot(dx, dy) > 5) measurePointer.dragged = true;
+  }
+
+  function onMeasurePointerUp(e) {
+    if (!measureMode || !measurePointer || e.pointerId !== measurePointer.id) return;
+    measureLastRelease = { x: e.clientX, y: e.clientY, dragged: measurePointer.dragged, time: performance.now() };
+    measurePointer = null;
+  }
+
+  function onMeasurePointerCancel() {
+    measurePointer = null;
+    measureLastRelease = { dragged: true, time: performance.now() };
+  }
+
   function onMeasureClick(e) {
+    if (!measureMode || measureIgnoresTarget(e.target)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const release = measureLastRelease;
+    if (release && release.dragged && performance.now() - release.time < 700) return;
+    addMeasurePoint(e.clientX, e.clientY);
+  }
+
+  function addMeasurePoint(x, y) {
     if (measurePts.length >= 2) clearMeasure();
-    const ll = projection.invert(unzoom([e.clientX, e.clientY]));
+    const ll = projection.invert(unzoom([x, y]));
     if (ll) { measurePts.push(ll); refreshMeasure(); }
   }
   function clearMeasure() {
@@ -1891,9 +2222,41 @@
 
   function normalizeGlobeTransform(dur = 0) {
     if (!zoom || !isGlobe) return;
-    const t = d3.zoomIdentity;
-    if (dur > 0) svg.transition().duration(dur).ease(d3.easeCubicInOut).call(zoom.transform, t);
+    setGlobeZoom(1, dur);
+  }
+
+  function globeZoomTransform(k) {
+    return d3.zoomIdentity
+      .translate(width / 2 - k * width / 2, height / 2 - k * height / 2)
+      .scale(k);
+  }
+
+  function setGlobeZoom(k, dur = 0) {
+    if (!zoom) return;
+    const t = globeZoomTransform(Math.max(1, Math.min(k || 1, 1.9)));
+    if (dur > 0) svg.transition('globe-zoom').duration(dur).ease(d3.easeCubicInOut).call(zoom.transform, t);
     else svg.call(zoom.transform, t);
+  }
+
+  function geoMaxDistance(coordsList) {
+    let max = 0;
+    for (let i = 0; i < coordsList.length; i++) {
+      for (let j = i + 1; j < coordsList.length; j++) {
+        if (!coordsList[i] || !coordsList[j]) continue;
+        max = Math.max(max, d3.geoDistance(coordsList[i], coordsList[j]));
+      }
+    }
+    return max;
+  }
+
+  function globeZoomForCoords(coordsList, opts = {}) {
+    if (opts.globeK != null) return opts.globeK;
+    if (opts.globeCloseZoom === false) return 1;
+    const span = geoMaxDistance(coordsList);
+    if (span < 0.025) return 1.85; // local/day trips
+    if (span < 0.075) return 1.55; // nearby countries
+    if (span < 0.16) return 1.25;
+    return 1;
   }
 
   function geoMean(coordsList) {
@@ -1914,11 +2277,11 @@
     return [Math.atan2(y, x) * 180 / Math.PI, Math.atan2(z, hyp) * 180 / Math.PI];
   }
 
-  function rotateGlobeToCoords(coordsList, dur = 650) {
+  function rotateGlobeToCoords(coordsList, dur = 650, opts = {}) {
     if (!coordsList.length) return;
     const target = geoMean(coordsList);
     if (!target) return;
-    normalizeGlobeTransform(Math.min(dur, 420));
+    setGlobeZoom(globeZoomForCoords(coordsList, opts), Math.min(dur, 420));
     const start = projection.rotate().slice();
     const end = [-target[0], -target[1], start[2] || 0];
     if (REDUCE || dur <= 1) {
@@ -1946,7 +2309,7 @@
   function flyToCoords(coordsList, frac, dur, opts = {}) {
     if (!zoom || !coordsList.length) return;
     if (isGlobe) {
-      rotateGlobeToCoords(coordsList, dur);
+      rotateGlobeToCoords(coordsList, dur, opts);
       return;
     }
     const xs = coordsList.map((c) => projection(c)).filter(Boolean);
@@ -2025,7 +2388,8 @@
 
         // camera follows the covered area; expands (zooms out) when a far point lands
         covered.push(a.fromCoords, a.trip.coords);
-        flyToCoords(covered, 0.7, Math.min(step, 900));
+        const cameraCoords = isGlobe ? arcWaypoints(a).filter(Boolean) : covered;
+        flyToCoords(cameraCoords, 0.7, Math.min(step, 900), { globeCloseZoom: isGlobe });
 
         // when the arc lands: country pattern fades in (recoloured to THIS year)
         // + pin jumps onto the city
@@ -2463,9 +2827,67 @@
     const btn = $('#wl-info-btn');
     const panel = $('#wl-info-panel');
     if (!btn || !panel) return;
+    if (open) {
+      setStatsPanel(false);
+      setEuropePanel(false);
+    }
     panel.hidden = !open;
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.classList.toggle('active', open);
+  }
+
+  function setStatsPanel(open) {
+    const btn = $('#wl-stats-btn');
+    const panel = $('#wl-stats-panel');
+    if (!btn || !panel) return;
+    if (open) {
+      setInfoPanel(false);
+      if (timelineActive) exitTimeline();
+      renderStatsPanel();
+    } else {
+      setEuropePanel(false);
+      setCountriesPanel(false);
+    }
+    panel.hidden = !open;
+    btn.classList.toggle('active', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function setCountriesPanel(open) {
+    const panel = $('#wl-countries-panel');
+    if (!panel) return;
+    if (open) {
+      setEuropePanel(false);
+      renderVisitedCountriesList();
+    }
+    panel.hidden = !open;
+  }
+
+  function setEuropePanel(open) {
+    const panel = $('#wl-europe-panel');
+    if (!panel) return;
+    if (open) {
+      setCountriesPanel(false);
+      renderEuropeChecklist();
+    }
+    panel.hidden = !open;
+  }
+
+  function floatingPanelTarget(target) {
+    return !!(target && target.closest && target.closest([
+      '#wl-stats-panel',
+      '#wl-countries-panel',
+      '#wl-europe-panel',
+      '#wl-info-panel',
+      '#wl-stats-btn',
+      '#wl-info-btn',
+    ].join(',')));
+  }
+
+  function closeFloatingPanelsFromOutside(e) {
+    if (floatingPanelTarget(e.target)) return;
+    setInfoPanel(false);
+    setStatsPanel(false);
   }
 
   function applyLang() {
@@ -2479,12 +2901,22 @@
     set('#wl-measure-btn', t('measure'));
     set('#wl-play-btn', t('play'));
     set('#wl-lang-btn', lang === 'en' ? 'УКР' : 'ENG');
+    set('#wl-stats-btn', t('stats'));
+    set('#wl-stats-panel h2', t('stats'));
+    set('#wl-countries-panel h2', t('countryList'));
+    set('#wl-europe-panel h2', t('europeChecklist'));
     set('#wl-info-panel h2', t('audioCredits'));
     set('#wl-info-panel p', t('audioCreditsText'));
     const close = $('#wl-info-close'); if (close) close.setAttribute('aria-label', t('closeCredits'));
+    const statsClose = $('#wl-stats-close'); if (statsClose) statsClose.setAttribute('aria-label', t('closeStats'));
+    const countriesClose = $('#wl-countries-close'); if (countriesClose) countriesClose.setAttribute('aria-label', t('closeCountryList'));
+    const europeClose = $('#wl-europe-close'); if (europeClose) europeClose.setAttribute('aria-label', t('closeEuropeChecklist'));
     updateGlobeBtn();                                   // globe/flat label + hint
     buildLegend(); setIsolate(isolatedKey);            // re-translate filter labels, keep state
     buildAudioCredits();
+    if (!$('#wl-stats-panel')?.hidden) renderStatsPanel();
+    if (!$('#wl-countries-panel')?.hidden) renderVisitedCountriesList();
+    if (!$('#wl-europe-panel')?.hidden) renderEuropeChecklist();
     seaEls.forEach((s) => { s.el.textContent = dispSea(s.name); });
     pins.forEach((p) => { const l = p.el.querySelector('.pin-label'); if (l) l.textContent = dispCity(p.city); });
     if (popup.classList.contains('show') && popup.__owner) showPopup(popup.__owner);
@@ -2515,6 +2947,38 @@
     if (tr) tr.addEventListener('input', (e) => { stopTimelinePlayback(); setTimeline(+e.target.value); });
     const tc = $('#wl-timeline-close'); if (tc) tc.addEventListener('click', exitTimeline);
     const lb = $('#wl-lang-btn'); if (lb) lb.addEventListener('click', () => setLang(lang === 'en' ? 'uk' : 'en'));
+    const statsBtn = $('#wl-stats-btn');
+    const statsPanel = $('#wl-stats-panel');
+    const countriesPanel = $('#wl-countries-panel');
+    const europePanel = $('#wl-europe-panel');
+    if (statsBtn && statsPanel) {
+      statsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setStatsPanel(statsPanel.hidden);
+      });
+      statsPanel.addEventListener('click', (e) => e.stopPropagation());
+      const statsClose = $('#wl-stats-close');
+      if (statsClose) statsClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setStatsPanel(false);
+      });
+    }
+    if (countriesPanel) {
+      countriesPanel.addEventListener('click', (e) => e.stopPropagation());
+      const countriesClose = $('#wl-countries-close');
+      if (countriesClose) countriesClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setCountriesPanel(false);
+      });
+    }
+    if (europePanel) {
+      europePanel.addEventListener('click', (e) => e.stopPropagation());
+      const europeClose = $('#wl-europe-close');
+      if (europeClose) europeClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setEuropePanel(false);
+      });
+    }
     const infoBtn = $('#wl-info-btn');
     const infoPanel = $('#wl-info-panel');
     const countryPanel = $('#wl-country-info');
@@ -2532,12 +2996,18 @@
         setInfoPanel(false);
       });
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setInfoPanel(false);
+        if (e.key === 'Escape') {
+          setInfoPanel(false);
+          setStatsPanel(false);
+        }
       });
     }
+    document.addEventListener('pointerdown', closeFloatingPanelsFromOutside, true);
+    document.addEventListener('click', closeFloatingPanelsFromOutside, true);
     document.addEventListener('click', () => {
       hidePopup();
       setInfoPanel(false);
+      setStatsPanel(false);
       clearCountrySelection();
     });
     window.addEventListener('resize', onResize);

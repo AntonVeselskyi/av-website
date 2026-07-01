@@ -683,6 +683,314 @@ body::after {
 .wl-credit-meta a { color: inherit; text-decoration: none; }
 .wl-credit-meta a:hover { color: var(--golden-orange); }
 
+/* ---------- travel stats ---------- */
+#wl-stats-panel,
+#wl-countries-panel,
+#wl-europe-panel {
+  position: fixed;
+  z-index: 46;
+  padding: 16px 18px 18px;
+  background: var(--glass-bg);
+  background-blend-mode: screen, soft-light, normal;
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--glass-shadow);
+  overflow-y: auto;
+}
+#wl-stats-panel[hidden],
+#wl-countries-panel[hidden],
+#wl-europe-panel[hidden] { display: none; }
+
+#wl-stats-panel {
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  width: 600px;
+  max-width: calc(100vw - 660px);
+  height: auto;
+  max-height: calc(100vh - 80px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px 14px 14px;
+}
+#wl-stats-panel .wl-stats-grid { flex: 0 0 auto; }
+#wl-stats-panel .wl-stats-grid { gap: 5px; }
+#wl-stats-panel .wl-stat-card { padding: 6px 9px; }
+#wl-stats-panel .wl-stat-value { font-size: clamp(25px, 4vw, 36px); }
+#wl-stats-panel .wl-stat-sub { font-size: 11px; }
+#wl-stats-panel .wl-year-row {
+  grid-template-columns: 74px minmax(0, 1fr) 42px;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+#wl-stats-panel .wl-year-track { height: 6px; }
+.wl-stats-wordmark {
+  width: calc(100% - 58px);
+  margin: 0 46px 4px 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(52px, 7.1vw, 72px);
+  line-height: 1;
+  letter-spacing: clamp(6px, 1vw, 13px);
+  text-transform: lowercase;
+  color: var(--vanilla-custard);
+  text-shadow:
+    0 1px 18px rgba(0,0,0,.68),
+    0 0 14px rgba(238,155,0,.22);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  transform: none;
+  transform-origin: left center;
+}
+.wl-stats-wordmark::after {
+  content: '';
+  display: block;
+  width: 76%;
+  height: 1px;
+  margin: 5px 0 0;
+  background: linear-gradient(90deg, var(--golden-orange), transparent);
+  opacity: .74;
+}
+
+#wl-countries-panel,
+#wl-europe-panel {
+  left: 50%;
+  top: clamp(48px, 6vh, 68px);
+  bottom: clamp(96px, 13vh, 132px);
+  transform: translateX(-50%);
+  z-index: 68;
+  width: 780px;
+  max-width: calc(100vw - 660px);
+}
+
+#wl-stats-panel h2,
+#wl-countries-panel h2,
+#wl-europe-panel h2 {
+  margin: 0 50px 12px 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 23px;
+  letter-spacing: 3px;
+  color: var(--pearl-aqua);
+  text-transform: lowercase;
+}
+#wl-stats-panel h2 { margin-bottom: 5px; }
+
+#wl-info-close,
+#wl-stats-close,
+#wl-countries-close,
+#wl-europe-close {
+  position: absolute;
+  top: 9px;
+  right: 13px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0 0 3px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--pearl-aqua);
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 400;
+  line-height: .8;
+  text-shadow: 0 0 12px rgba(148,210,189,.28);
+  box-shadow: none;
+  cursor: pointer;
+  transition: color .16s ease, text-shadow .16s ease, transform .12s ease;
+}
+#wl-info-close:hover,
+#wl-stats-close:hover,
+#wl-countries-close:hover,
+#wl-europe-close:hover {
+  color: var(--golden-orange);
+  background: transparent;
+  text-shadow: 0 0 14px rgba(238,155,0,.38);
+}
+#wl-info-close:hover,
+#wl-stats-close:hover,
+#wl-countries-close:hover,
+#wl-europe-close:hover {
+  transform: rotate(7deg) scale(1.08);
+}
+
+.wl-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.wl-stat-card {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(204,244,232,.18);
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.08), rgba(0,18,25,.18) 62%, rgba(0,95,115,.13)),
+    rgba(0,95,115,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+}
+button.wl-stat-card,
+button.wl-year-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+button.wl-stat-card:hover {
+  border-color: rgba(238,155,0,.48);
+  background:
+    linear-gradient(145deg, rgba(238,155,0,.13), rgba(148,210,189,.08) 48%, rgba(0,18,25,.22)),
+    rgba(0,95,115,.16);
+}
+.wl-year-toggle-card {
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.wl-year-toggle-card.active-toggle {
+  border-color: rgba(238,155,0,.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 0 0 1px rgba(238,155,0,.10);
+}
+.wl-year-toggle-card:hover {
+  border-color: rgba(238,155,0,.48);
+}
+.wl-stat-card.wide { grid-column: 1 / -1; }
+.wl-stat-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: rgba(148,210,189,.72);
+  text-transform: uppercase;
+}
+.wl-stat-value {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5vw, 42px);
+  line-height: 1;
+  letter-spacing: 2px;
+  color: var(--vanilla-custard);
+  text-shadow: 0 0 14px rgba(238,155,0,.20);
+}
+.wl-stat-sub {
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  line-height: 1.35;
+  letter-spacing: .6px;
+  color: rgba(233,216,166,.72);
+}
+.wl-year-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.wl-year-row {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: .8px;
+  color: var(--vanilla-custard);
+}
+button.wl-year-row {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.wl-year-row:hover .wl-year-track,
+.wl-year-row.active .wl-year-track {
+  background: rgba(238,155,0,.16);
+  box-shadow: inset 0 0 0 1px rgba(238,155,0,.22), 0 0 14px rgba(238,155,0,.10);
+}
+.wl-year-row.active .wl-year-count { color: var(--golden-orange); }
+.wl-year-track {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148,210,189,.14);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(204,244,232,.08);
+}
+.wl-year-fill {
+  display: block;
+  width: var(--p, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--c, var(--golden-orange));
+  box-shadow: 0 0 9px var(--c, var(--golden-orange));
+}
+.wl-year-count { text-align: right; color: var(--pearl-aqua); }
+
+.wl-europe-summary {
+  margin: -3px 0 12px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(233,216,166,.76);
+}
+.wl-europe-grid {
+  display: block;
+  column-count: 3;
+  column-gap: 7px;
+}
+.wl-europe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  break-inside: avoid;
+  margin-bottom: 7px;
+  padding: 7px 9px;
+  border: 1px solid rgba(204,244,232,.13);
+  border-radius: 9px;
+  background: rgba(0,18,25,.20);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: .65px;
+  color: rgba(233,216,166,.46);
+}
+.wl-europe-row.visited {
+  border-color: rgba(238,155,0,.38);
+  color: var(--vanilla-custard);
+  background: rgba(238,155,0,.08);
+}
+.wl-europe-row.plain {
+  padding-left: 11px;
+}
+.wl-europe-check {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(148,210,189,.36);
+  color: transparent;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+.wl-europe-row.visited .wl-europe-check {
+  border-color: rgba(238,155,0,.78);
+  background: var(--golden-orange);
+  color: var(--ink-black);
+}
+.wl-europe-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* toggle switch */
 .wl-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px;
              color: var(--vanilla-custard); letter-spacing: 1px; cursor: pointer; user-select: none; }
@@ -891,8 +1199,54 @@ body::after {
   #wl-filters { max-height: 38vh; }
   .legend-years { grid-template-columns: 1fr; gap: 5px; }
   .ci-grid, .ci-salary { grid-template-columns: 1fr; }
+  #wl-stats-panel {
+    top: 8px;
+    bottom: 8px;
+    width: calc(100vw - 20px);
+    max-width: none;
+    min-height: 0;
+    height: auto;
+    padding: 12px;
+  }
+  #wl-stats-panel .wl-stats-wordmark {
+    width: calc(100% - 44px);
+    margin: 0 38px 2px 0;
+    font-size: clamp(42px, 12vw, 54px);
+    letter-spacing: clamp(3px, 1.35vw, 6px);
+    transform: none;
+  }
+  #wl-stats-panel .wl-stat-value { font-size: clamp(20px, 7vw, 27px); }
+  #wl-stats-panel .wl-stat-sub { font-size: 10.5px; }
+  #wl-stats-panel .wl-year-row {
+    grid-template-columns: 64px minmax(0, 1fr) 30px;
+    gap: 7px;
+    font-size: 12px;
+  }
+  #wl-countries-panel,
+  #wl-europe-panel {
+    top: 54px;
+    bottom: 104px;
+    width: calc(100vw - 20px);
+    max-width: none;
+    padding: 12px;
+  }
+  .wl-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .wl-year-row { grid-template-columns: 52px minmax(0, 1fr) 28px; gap: 7px; }
+  .wl-europe-grid { column-count: 1; }
   #wl-hint { display: none; }
   .wl-title { top: clamp(64px, 17vw, 120px); }
+}
+
+@media (min-width: 641px) and (max-width: 1180px) {
+  #wl-stats-panel {
+    width: min(620px, calc(100vw - 36px));
+    max-width: none;
+  }
+  #wl-countries-panel,
+  #wl-europe-panel {
+    width: min(720px, calc(100vw - 36px));
+    max-width: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -901,8 +1255,15 @@ body::after {
 }
 
 /* ---------- distance measure tool ---------- */
-#wl-measure-overlay { position: fixed; inset: 0; z-index: 18; display: none; cursor: crosshair; }
+#wl-measure-overlay { position: fixed; inset: 0; z-index: 18; display: none; cursor: crosshair; pointer-events: none; }
 #wl-measure-overlay.active { display: block; }
+body.measure-mode #wl-map,
+body.measure-mode #wl-map *,
+body.measure-mode #wl-pins,
+body.measure-mode #wl-pins *,
+body.measure-mode #wl-popup { cursor: crosshair !important; }
+body.measure-mode #wl-pins *,
+body.measure-mode #wl-popup { pointer-events: none !important; }
 .wl-btn.ghost.active { background: var(--dark-cyan); color: var(--ink-black); border-color: var(--dark-cyan); }
 .measure-line {
   fill: none; stroke: #ffffff; stroke-width: 2; stroke-dasharray: 6 5;
