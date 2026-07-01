@@ -3032,6 +3032,14 @@
     if (pt) pt.addEventListener('change', (e) => setPins(e.target.checked));
     const ct = $('#wl-city-labels-toggle');
     if (ct) ct.addEventListener('change', (e) => setCityNames(e.target.checked));
+    const collapseBtn = $('#wl-collapse-toggle');
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', () => {
+        const collapsed = document.body.classList.toggle('wl-panels-collapsed');
+        collapseBtn.textContent = collapsed ? '⌃' : '⌄';
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+      });
+    }
     renderCountryInfoEmpty();
     $('#wl-globe-btn').addEventListener('click', toggleGlobe);
     $('#wl-play-btn').addEventListener('click', playTimelapse);
