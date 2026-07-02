@@ -9,6 +9,10 @@
 
   const DATA = window.WANDERLUST;
   const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // touch taps replay synthetic mouseenter/leave, so hover-driven styling
+  // (country glow, hover popups, legend previews) flashes on every tap —
+  // attach those handlers only where a real hover pointer exists
+  const HAS_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
   const MAX_ZOOM = 240;         // allow zooming right down to tiny places (Comino, Vaduz, Vatican)
   const USD_TO_EUR = 0.86;      // approximate display conversion for country salary context
@@ -1135,8 +1139,8 @@
     // hover ANY country → show its name (visited ones also light their border);
     // click a country → zoom to it (so big targets like Egypt are selectable)
     gCountries.selectAll('path')
-      .on('mouseenter', (event, d) => { hoveredCountry = d.properties.name; styleCountries(); showCountryLabel(d); })
-      .on('mouseleave', () => { hoveredCountry = null; styleCountries(); hideCountryLabel(); })
+      .on('mouseenter', HAS_HOVER ? (event, d) => { hoveredCountry = d.properties.name; styleCountries(); showCountryLabel(d); } : null)
+      .on('mouseleave', HAS_HOVER ? () => { hoveredCountry = null; styleCountries(); hideCountryLabel(); } : null)
       .on('click', (event, d) => {
         event.stopPropagation();
         if (isolatedKey != null) { lockedKey = null; setIsolate(null); }
@@ -1727,6 +1731,19 @@
       return { x0: s.sx - rx, y0: top, x1: s.sx + rx, y1: bottom, pr: prio(s.p), p: s.p };
     };
     const pinHeads = shown.map(headRect);
+    // phones: cull pins whose heads pile onto a higher-priority pin — the
+    // desktop-size map has room for every pin, a 390px one does not. Zooming
+    // in spreads the heads apart, so culled pins come back on their own.
+    if (width <= 640) {
+      const kept = [];
+      pinHeads.slice().sort((a, b) => b.pr - a.pr).forEach((h) => {
+        const clash = kept.some((k2) => rectsOverlap(h, k2, -12));
+        h.p.el.classList.toggle('density-hide', clash);
+        if (!clash) kept.push(h);
+      });
+    } else {
+      pinHeads.forEach((h) => h.p.el.classList.remove('density-hide'));
+    }
     const placed = [];
     shown.filter((s) => showLabels && (!s.p._fan || s.p.kind === 'origin' || s.p.kind === 'home' || s.p.badge))
       .map((s) => {
@@ -1923,16 +1940,18 @@
   }
 
   function attachPopup(entry) {
-    entry.el.addEventListener('mouseenter', () => {
-      cancelHide(); showPopup(entry);
-      // also surface the country name + glow while hovering the pin
-      hoveredCountry = entry.country; styleCountries();
-      const feat = countries.find((f) => f.properties.name === entry.country);
-      if (feat) showCountryLabel(feat);
-    });
-    entry.el.addEventListener('mouseleave', () => {
-      scheduleHide(); hoveredCountry = null; styleCountries(); hideCountryLabel();
-    });
+    if (HAS_HOVER) {
+      entry.el.addEventListener('mouseenter', () => {
+        cancelHide(); showPopup(entry);
+        // also surface the country name + glow while hovering the pin
+        hoveredCountry = entry.country; styleCountries();
+        const feat = countries.find((f) => f.properties.name === entry.country);
+        if (feat) showCountryLabel(feat);
+      });
+      entry.el.addEventListener('mouseleave', () => {
+        scheduleHide(); hoveredCountry = null; styleCountries(); hideCountryLabel();
+      });
+    }
     // click → open popup + zoom so the country fills the view (click again = out).
     // Selecting a pin also clears any active year filter.
     entry.el.addEventListener('click', (e) => {
@@ -2970,13 +2989,15 @@
     wrap.querySelectorAll('.legend-row').forEach((row) => {
       const raw = row.dataset.key;
       if (raw === 'all') {                       // the "all" reset row
-        row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(null); } });
+        if (HAS_HOVER) row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(null); } });
         row.addEventListener('click', () => { cancelTimelineForUserFilter(); lockedKey = null; setIsolate(null); frameKey(null); });
         return;
       }
       const key = ERAS[raw] ? raw : +raw;     // era stays a string, years are numbers
-      row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(key); } });
-      row.addEventListener('mouseleave', () => { if (lockedKey == null) setIsolate(null); });
+      if (HAS_HOVER) {
+        row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(key); } });
+        row.addEventListener('mouseleave', () => { if (lockedKey == null) setIsolate(null); });
+      }
       row.addEventListener('click', () => {
         cancelTimelineForUserFilter();
         lockedKey = (lockedKey === key) ? null : key;

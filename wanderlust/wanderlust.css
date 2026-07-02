@@ -47,6 +47,8 @@ html, body {
   margin: 0;
   height: 100%;
   -webkit-user-select: none; user-select: none;   /* UI, not a document — no text selection */
+  -webkit-tap-highlight-color: transparent;       /* no blue flash on tapped pins/labels */
+  -webkit-touch-callout: none;
   background:
     radial-gradient(ellipse at 50% -10%, #02323d 0%, transparent 60%),
     radial-gradient(ellipse at 80% 120%, #04222b 0%, transparent 55%),
@@ -253,6 +255,7 @@ body::after {
 #wl-pins.pins-hidden .pin svg,
 #wl-pins.pins-hidden .pin .pin-img,
 #wl-pins.pins-hidden .pin .pin-badge { display: none; }
+.pin.density-hide { display: none !important; }   /* phone overlap culling (see positionPins) */
 #wl-pins.pins-hidden .pin.show-label .pin-label { opacity: 1; pointer-events: auto; cursor: pointer; }
 #wl-pins.pins-hidden .pin .pin-label {
   top: var(--pin-root-offset);
@@ -1549,3 +1552,13 @@ body.measure-mode #wl-popup { pointer-events: none !important; }
   opacity: 0; transition: opacity .15s ease;
 }
 #wl-measure-label.show { opacity: 1; }
+
+/* touch devices: taps leave elements in a sticky :hover state — neutralize the
+   hover styles there (real hover pointers keep them) */
+@media (hover: none) {
+  .legend-row:hover { background: none; }
+  .legend-row.active { background: rgba(148,210,189,.16); }
+  .wl-btn:hover { background: var(--golden-orange); color: var(--ink-black); }
+  .wl-btn.ghost:hover { background: transparent; color: var(--pearl-aqua); }
+  .wl-btn.ghost.active { background: var(--dark-cyan); color: var(--ink-black); border-color: var(--dark-cyan); }
+}
