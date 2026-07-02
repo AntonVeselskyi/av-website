@@ -2034,6 +2034,33 @@
       "addedAt": "2026-07-02"
     },
     {
+      "id": "nuit",
+      "fr": "la nuit",
+      "en": ["night"],
+      "uk": ["ніч"],
+      "ipa": "/nɥi/",
+      "cyr": "нюі",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Bonne nuit !",
+          "en": "Good night!",
+          "uk": "Добраніч!",
+          "ipa": "/bɔn nɥi/",
+          "cyr": "бон нюі"
+        },
+        {
+          "fr": "La nuit, je dors bien.",
+          "en": "At night I sleep well.",
+          "uk": "Вночі я добре сплю.",
+          "ipa": "/la nɥi ʒə dɔʁ bjɛ̃/",
+          "cyr": "ля нюі же дор бьєн"
+        }
+      ],
+      "source": "added via /add-word (skill verification)",
+      "addedAt": "2026-07-02"
+    },
+    {
       "id": "matin",
       "fr": "le matin",
       "en": ["morning"],

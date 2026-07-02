@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Backend for the personal French vocabulary app (french-app).
+  One DynamoDB table, one Lambda, one HTTP API. Single-user.
+
+Parameters:
+  ApiKey:
+    Type: String
+    NoEcho: true
+    MinLength: 20
+    Description: >
+      Shared secret the app sends in the x-api-key header. Generate with:
+      openssl rand -hex 24
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 256
+    Runtime: nodejs20.x
+
+Resources:
+  VocabTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: french-vocab
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+  VocabApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowHeaders:
+          - content-type
+          - x-api-key
+        AllowMethods:
+          - GET
+          - PUT
+          - POST
+          - DELETE
+          - OPTIONS
+
+  VocabFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: src/
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref VocabTable
+          API_KEY: !Ref ApiKey
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VocabTable
+      Events:
+        GetWords:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref VocabApi
+            Path: /words
+            Method: GET
+        PutWord:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref VocabApi
+            Path: /words/{id}
+            Method: PUT
+        DeleteWord:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref VocabApi
+            Path: /words/{id}
+            Method: DELETE
+        GetProgress:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref VocabApi
+            Path: /progress
+            Method: GET
+        PutProgress:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref VocabApi
+            Path: /progress/{id}
+            Method: PUT
+        Seed:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref VocabApi
+            Path: /seed
+            Method: POST
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the vocab API (set as VITE_API_URL)
+    Value: !Sub 'https://${VocabApi}.execute-api.${AWS::Region}.amazonaws.com'
