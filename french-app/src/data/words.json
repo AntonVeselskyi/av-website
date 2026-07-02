@@ -1,0 +1,2417 @@
+{
+  "version": 1,
+  "topics": [
+    { "id": "adjectives", "nameEn": "Adjectives", "nameUk": "Прикметники", "emoji": "✨", "color": "#d0a35c" },
+    { "id": "colors", "nameEn": "Colors", "nameUk": "Кольори", "emoji": "🎨", "color": "#e05cd0" },
+    { "id": "family", "nameEn": "Family", "nameUk": "Родина", "emoji": "👪", "color": "#f58a5c" },
+    { "id": "food", "nameEn": "Food & Drink", "nameUk": "Їжа та напої", "emoji": "🥐", "color": "#f5c95c" },
+    { "id": "greetings", "nameEn": "Greetings & Phrases", "nameUk": "Привітання та фрази", "emoji": "🙋", "color": "#8a5cf5" },
+    { "id": "home", "nameEn": "Home & Objects", "nameUk": "Дім та речі", "emoji": "🏠", "color": "#5cc9f5" },
+    { "id": "numbers", "nameEn": "Numbers", "nameUk": "Числа", "emoji": "🔢", "color": "#5c9ef5" },
+    { "id": "questions", "nameEn": "Questions & Pronouns", "nameUk": "Питання та займенники", "emoji": "❓", "color": "#f55c8a" },
+    { "id": "time", "nameEn": "Days & Time", "nameUk": "Дні та час", "emoji": "🕐", "color": "#5cd6a8" },
+    { "id": "verbs", "nameEn": "Common Verbs", "nameUk": "Основні дієслова", "emoji": "🏃", "color": "#7dc86c" }
+  ],
+  "words": [
+    {
+      "id": "beau",
+      "fr": "beau",
+      "en": ["beautiful", "nice"],
+      "uk": ["гарний"],
+      "ipa": "/bo/",
+      "cyr": "бо",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Il fait beau aujourd'hui.",
+          "en": "The weather is nice today.",
+          "uk": "Сьогодні гарна погода.",
+          "ipa": "/il fɛ bo o.ʒuʁ.dɥi/",
+          "cyr": "іль фе бо ожурдюі"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "bon",
+      "fr": "bon",
+      "en": ["good", "tasty"],
+      "uk": ["добрий", "смачний"],
+      "ipa": "/bɔ̃/",
+      "cyr": "бон",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Le café est bon.",
+          "en": "The coffee is good.",
+          "uk": "Кава смачна.",
+          "ipa": "/lə ka.fe ɛ bɔ̃/",
+          "cyr": "ле кафе е бон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "chaud",
+      "fr": "chaud",
+      "en": ["hot", "warm"],
+      "uk": ["гарячий", "теплий"],
+      "ipa": "/ʃo/",
+      "cyr": "шо",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Le thé est chaud.",
+          "en": "The tea is hot.",
+          "uk": "Чай гарячий.",
+          "ipa": "/lə te ɛ ʃo/",
+          "cyr": "ле те е шо"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "difficile",
+      "fr": "difficile",
+      "en": ["difficult", "hard"],
+      "uk": ["складний", "важкий"],
+      "ipa": "/di.fi.sil/",
+      "cyr": "діфісіль",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Ce mot est difficile.",
+          "en": "This word is difficult.",
+          "uk": "Це слово складне.",
+          "ipa": "/sə mo ɛ di.fi.sil/",
+          "cyr": "се мо е діфісіль"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "facile",
+      "fr": "facile",
+      "en": ["easy"],
+      "uk": ["легкий", "простий"],
+      "ipa": "/fa.sil/",
+      "cyr": "фасіль",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Le français est facile.",
+          "en": "French is easy.",
+          "uk": "Французька — легка.",
+          "ipa": "/lə fʁɑ̃.sɛ ɛ fa.sil/",
+          "cyr": "ле франсе е фасіль"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "froid",
+      "fr": "froid",
+      "en": ["cold"],
+      "uk": ["холодний"],
+      "ipa": "/fʁwa/",
+      "cyr": "фруа",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "L'eau est froide.",
+          "en": "The water is cold.",
+          "uk": "Вода холодна.",
+          "ipa": "/lo ɛ fʁwad/",
+          "cyr": "ло е фруад"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "grand",
+      "fr": "grand",
+      "en": ["big", "tall"],
+      "uk": ["великий", "високий"],
+      "ipa": "/ɡʁɑ̃/",
+      "cyr": "ґран",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "C'est un grand livre.",
+          "en": "It is a big book.",
+          "uk": "Це велика книга.",
+          "ipa": "/sɛ.t‿œ̃ ɡʁɑ̃ livʁ/",
+          "cyr": "се тен ґран лівр"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "jeune",
+      "fr": "jeune",
+      "en": ["young"],
+      "uk": ["молодий"],
+      "ipa": "/ʒœn/",
+      "cyr": "жен",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Ma sœur est jeune.",
+          "en": "My sister is young.",
+          "uk": "Моя сестра молода.",
+          "ipa": "/ma sœʁ ɛ ʒœn/",
+          "cyr": "ма сер е жен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "mauvais",
+      "fr": "mauvais",
+      "en": ["bad"],
+      "uk": ["поганий"],
+      "ipa": "/mo.vɛ/",
+      "cyr": "мове",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "Le film est mauvais.",
+          "en": "The movie is bad.",
+          "uk": "Фільм поганий.",
+          "ipa": "/lə film ɛ mo.vɛ/",
+          "cyr": "ле фільм е мове"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "nouveau",
+      "fr": "nouveau",
+      "en": ["new"],
+      "uk": ["новий"],
+      "ipa": "/nu.vo/",
+      "cyr": "нуво",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "J'ai un nouveau téléphone.",
+          "en": "I have a new phone.",
+          "uk": "У мене новий телефон.",
+          "ipa": "/ʒe œ̃ nu.vo te.le.fɔn/",
+          "cyr": "же ен нуво телефон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "petit",
+      "fr": "petit",
+      "en": ["small", "little"],
+      "uk": ["маленький"],
+      "ipa": "/pə.ti/",
+      "cyr": "петі",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "J'ai un petit chat.",
+          "en": "I have a small cat.",
+          "uk": "У мене є маленький кіт.",
+          "ipa": "/ʒe œ̃ pə.ti ʃa/",
+          "cyr": "же ен петі ша"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vieux",
+      "fr": "vieux",
+      "en": ["old"],
+      "uk": ["старий"],
+      "ipa": "/vjø/",
+      "cyr": "вьє",
+      "topic": "adjectives",
+      "examples": [
+        {
+          "fr": "C'est un vieux livre.",
+          "en": "It is an old book.",
+          "uk": "Це стара книга.",
+          "ipa": "/sɛ.t‿œ̃ vjø livʁ/",
+          "cyr": "се тен вьє лівр"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "blanc",
+      "fr": "blanc",
+      "en": ["white"],
+      "uk": ["білий"],
+      "ipa": "/blɑ̃/",
+      "cyr": "блан",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "Le lait est blanc.",
+          "en": "Milk is white.",
+          "uk": "Молоко біле.",
+          "ipa": "/lə lɛ ɛ blɑ̃/",
+          "cyr": "ле ле е блан"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "bleu",
+      "fr": "bleu",
+      "en": ["blue"],
+      "uk": ["синій", "блакитний"],
+      "ipa": "/blø/",
+      "cyr": "бльо",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "Le ciel est bleu.",
+          "en": "The sky is blue.",
+          "uk": "Небо блакитне.",
+          "ipa": "/lə sjɛl ɛ blø/",
+          "cyr": "ле сьєль е бльо"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "gris",
+      "fr": "gris",
+      "en": ["gray"],
+      "uk": ["сірий"],
+      "ipa": "/ɡʁi/",
+      "cyr": "ґрі",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "Le ciel est gris.",
+          "en": "The sky is gray.",
+          "uk": "Небо сіре.",
+          "ipa": "/lə sjɛl ɛ ɡʁi/",
+          "cyr": "ле сьєль е ґрі"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "jaune",
+      "fr": "jaune",
+      "en": ["yellow"],
+      "uk": ["жовтий"],
+      "ipa": "/ʒon/",
+      "cyr": "жон",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "Le citron est jaune.",
+          "en": "The lemon is yellow.",
+          "uk": "Лимон жовтий.",
+          "ipa": "/lə si.tʁɔ̃ ɛ ʒon/",
+          "cyr": "ле сітрон е жон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "couleur",
+      "fr": "la couleur",
+      "en": ["color"],
+      "uk": ["колір"],
+      "ipa": "/ku.lœʁ/",
+      "cyr": "кулер",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "Quelle est ta couleur préférée ?",
+          "en": "What is your favorite color?",
+          "uk": "Який твій улюблений колір?",
+          "ipa": "/kɛl ɛ ta ku.lœʁ pʁe.fe.ʁe/",
+          "cyr": "кель е та кулер префере"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "marron",
+      "fr": "marron",
+      "en": ["brown"],
+      "uk": ["коричневий"],
+      "ipa": "/ma.ʁɔ̃/",
+      "cyr": "марон",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "La table est marron.",
+          "en": "The table is brown.",
+          "uk": "Стіл коричневий.",
+          "ipa": "/la tabl ɛ ma.ʁɔ̃/",
+          "cyr": "ля табль е марон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "noir",
+      "fr": "noir",
+      "en": ["black"],
+      "uk": ["чорний"],
+      "ipa": "/nwaʁ/",
+      "cyr": "нуар",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "J'ai un chat noir.",
+          "en": "I have a black cat.",
+          "uk": "У мене є чорний кіт.",
+          "ipa": "/ʒe œ̃ ʃa nwaʁ/",
+          "cyr": "же ен ша нуар"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "orange",
+      "fr": "orange",
+      "en": ["orange"],
+      "uk": ["помаранчевий"],
+      "ipa": "/ɔ.ʁɑ̃ʒ/",
+      "cyr": "оранж",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "Le fruit est orange.",
+          "en": "The fruit is orange.",
+          "uk": "Фрукт помаранчевий.",
+          "ipa": "/lə fʁɥi ɛ.t‿ɔ.ʁɑ̃ʒ/",
+          "cyr": "ле фрюі етноранж"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "rose",
+      "fr": "rose",
+      "en": ["pink"],
+      "uk": ["рожевий"],
+      "ipa": "/ʁoz/",
+      "cyr": "роз",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "J'aime la couleur rose.",
+          "en": "I like the color pink.",
+          "uk": "Мені подобається рожевий колір.",
+          "ipa": "/ʒɛm la ku.lœʁ ʁoz/",
+          "cyr": "жем ля кулер роз"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "rouge",
+      "fr": "rouge",
+      "en": ["red"],
+      "uk": ["червоний"],
+      "ipa": "/ʁuʒ/",
+      "cyr": "руж",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "La pomme est rouge.",
+          "en": "The apple is red.",
+          "uk": "Яблуко червоне.",
+          "ipa": "/la pɔm ɛ ʁuʒ/",
+          "cyr": "ля пом е руж"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vert",
+      "fr": "vert",
+      "en": ["green"],
+      "uk": ["зелений"],
+      "ipa": "/vɛʁ/",
+      "cyr": "вер",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "J'aime le thé vert.",
+          "en": "I like green tea.",
+          "uk": "Я люблю зелений чай.",
+          "ipa": "/ʒɛm lə te vɛʁ/",
+          "cyr": "жем ле те вер"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "violet",
+      "fr": "violet",
+      "en": ["purple"],
+      "uk": ["фіолетовий"],
+      "ipa": "/vjɔ.lɛ/",
+      "cyr": "вйоле",
+      "topic": "colors",
+      "examples": [
+        {
+          "fr": "La fleur est violette.",
+          "en": "The flower is purple.",
+          "uk": "Квітка фіолетова.",
+          "ipa": "/la flœʁ ɛ vjɔ.lɛt/",
+          "cyr": "ля флер е вйолет"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "famille",
+      "fr": "la famille",
+      "en": ["family"],
+      "uk": ["родина", "сім'я"],
+      "ipa": "/fa.mij/",
+      "cyr": "фамій",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Ma famille est grande.",
+          "en": "My family is big.",
+          "uk": "Моя родина велика.",
+          "ipa": "/ma fa.mij ɛ ɡʁɑ̃d/",
+          "cyr": "ма фамій е ґранд"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "femme",
+      "fr": "la femme",
+      "en": ["wife", "woman"],
+      "uk": ["дружина", "жінка"],
+      "ipa": "/fam/",
+      "cyr": "фам",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Sa femme parle ukrainien.",
+          "en": "His wife speaks Ukrainian.",
+          "uk": "Його дружина розмовляє українською.",
+          "ipa": "/sa fam paʁl y.kʁɛ.njɛ̃/",
+          "cyr": "са фам парль юкреньєн"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "fille",
+      "fr": "la fille",
+      "en": ["daughter", "girl"],
+      "uk": ["дочка", "дівчина"],
+      "ipa": "/fij/",
+      "cyr": "фій",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Leur fille est jeune.",
+          "en": "Their daughter is young.",
+          "uk": "Їхня дочка молода.",
+          "ipa": "/lœʁ fij ɛ ʒœn/",
+          "cyr": "лер фій е жен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "grand-mere",
+      "fr": "la grand-mère",
+      "en": ["grandmother"],
+      "uk": ["бабуся"],
+      "ipa": "/ɡʁɑ̃.mɛʁ/",
+      "cyr": "ґран-мер",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Ma grand-mère fait un gâteau.",
+          "en": "My grandmother is making a cake.",
+          "uk": "Моя бабуся пече торт.",
+          "ipa": "/ma ɡʁɑ̃.mɛʁ fɛ œ̃ ɡɑ.to/",
+          "cyr": "ма ґран-мер фе ен ґато"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "mere",
+      "fr": "la mère",
+      "en": ["mother"],
+      "uk": ["мати", "мама"],
+      "ipa": "/mɛʁ/",
+      "cyr": "мер",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Ma mère s'appelle Olena.",
+          "en": "My mother's name is Olena.",
+          "uk": "Мою маму звати Олена.",
+          "ipa": "/ma mɛʁ sa.pɛl ɔ.le.na/",
+          "cyr": "ма мер сапель олена"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "soeur",
+      "fr": "la sœur",
+      "en": ["sister"],
+      "uk": ["сестра"],
+      "ipa": "/sœʁ/",
+      "cyr": "сер",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Ma sœur habite à Kyiv.",
+          "en": "My sister lives in Kyiv.",
+          "uk": "Моя сестра живе в Києві.",
+          "ipa": "/ma sœʁ a.bit a ki.if/",
+          "cyr": "ма сер абіт а кіїв"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "fils",
+      "fr": "le fils",
+      "en": ["son"],
+      "uk": ["син"],
+      "ipa": "/fis/",
+      "cyr": "фіс",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Leur fils a cinq ans.",
+          "en": "Their son is five years old.",
+          "uk": "Їхньому сину п'ять років.",
+          "ipa": "/lœʁ fis a sɛ̃k ɑ̃/",
+          "cyr": "лер фіс а сенк ан"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "frere",
+      "fr": "le frère",
+      "en": ["brother"],
+      "uk": ["брат"],
+      "ipa": "/fʁɛʁ/",
+      "cyr": "фрер",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "J'ai un frère.",
+          "en": "I have a brother.",
+          "uk": "У мене є брат.",
+          "ipa": "/ʒe œ̃ fʁɛʁ/",
+          "cyr": "же ен фрер"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "grand-pere",
+      "fr": "le grand-père",
+      "en": ["grandfather"],
+      "uk": ["дідусь"],
+      "ipa": "/ɡʁɑ̃.pɛʁ/",
+      "cyr": "ґран-пер",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Mon grand-père est vieux.",
+          "en": "My grandfather is old.",
+          "uk": "Мій дідусь старий.",
+          "ipa": "/mɔ̃ ɡʁɑ̃.pɛʁ ɛ vjø/",
+          "cyr": "мон ґран-пер е вьє"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "mari",
+      "fr": "le mari",
+      "en": ["husband"],
+      "uk": ["чоловік"],
+      "ipa": "/ma.ʁi/",
+      "cyr": "марі",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Son mari est français.",
+          "en": "Her husband is French.",
+          "uk": "Її чоловік — француз.",
+          "ipa": "/sɔ̃ ma.ʁi ɛ fʁɑ̃.sɛ/",
+          "cyr": "сон марі е франсе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "pere",
+      "fr": "le père",
+      "en": ["father"],
+      "uk": ["батько", "тато"],
+      "ipa": "/pɛʁ/",
+      "cyr": "пер",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Mon père travaille beaucoup.",
+          "en": "My father works a lot.",
+          "uk": "Мій тато багато працює.",
+          "ipa": "/mɔ̃ pɛʁ tʁa.vaj bo.ku/",
+          "cyr": "мон пер травай боку"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "parents",
+      "fr": "les parents",
+      "en": ["parents"],
+      "uk": ["батьки"],
+      "ipa": "/pa.ʁɑ̃/",
+      "cyr": "паран",
+      "topic": "family",
+      "examples": [
+        {
+          "fr": "Mes parents sont gentils.",
+          "en": "My parents are kind.",
+          "uk": "Мої батьки добрі.",
+          "ipa": "/me pa.ʁɑ̃ sɔ̃ ʒɑ̃.ti/",
+          "cyr": "ме паран сон жанті"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "eau",
+      "fr": "l'eau",
+      "en": ["water"],
+      "uk": ["вода"],
+      "ipa": "/o/",
+      "cyr": "о",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Je bois de l'eau.",
+          "en": "I drink water.",
+          "uk": "Я п'ю воду.",
+          "ipa": "/ʒə bwa də lo/",
+          "cyr": "же буа де ло"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "pomme",
+      "fr": "la pomme",
+      "en": ["apple"],
+      "uk": ["яблуко"],
+      "ipa": "/pɔm/",
+      "cyr": "пом",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Je mange une pomme.",
+          "en": "I am eating an apple.",
+          "uk": "Я їм яблуко.",
+          "ipa": "/ʒə mɑ̃ʒ yn pɔm/",
+          "cyr": "же манж юн пом"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "viande",
+      "fr": "la viande",
+      "en": ["meat"],
+      "uk": ["м'ясо"],
+      "ipa": "/vjɑ̃d/",
+      "cyr": "вьянд",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Je ne mange pas de viande.",
+          "en": "I don't eat meat.",
+          "uk": "Я не їм м'яса.",
+          "ipa": "/ʒə nə mɑ̃ʒ pa də vjɑ̃d/",
+          "cyr": "же не манж па де вьянд"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "cafe",
+      "fr": "le café",
+      "en": ["coffee"],
+      "uk": ["кава"],
+      "ipa": "/ka.fe/",
+      "cyr": "кафе",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Je bois un café le matin.",
+          "en": "I drink a coffee in the morning.",
+          "uk": "Я п'ю каву вранці.",
+          "ipa": "/ʒə bwa œ̃ ka.fe lə ma.tɛ̃/",
+          "cyr": "же буа ен кафе ле матен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "fromage",
+      "fr": "le fromage",
+      "en": ["cheese"],
+      "uk": ["сир"],
+      "ipa": "/fʁɔ.maʒ/",
+      "cyr": "фромаж",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "J'aime le fromage français.",
+          "en": "I like French cheese.",
+          "uk": "Я люблю французький сир.",
+          "ipa": "/ʒɛm lə fʁɔ.maʒ fʁɑ̃.sɛ/",
+          "cyr": "жем ле фромаж франсе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "lait",
+      "fr": "le lait",
+      "en": ["milk"],
+      "uk": ["молоко"],
+      "ipa": "/lɛ/",
+      "cyr": "ле",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Le lait est froid.",
+          "en": "The milk is cold.",
+          "uk": "Молоко холодне.",
+          "ipa": "/lə lɛ ɛ fʁwa/",
+          "cyr": "ле ле е фруа"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "pain",
+      "fr": "le pain",
+      "en": ["bread"],
+      "uk": ["хліб"],
+      "ipa": "/pɛ̃/",
+      "cyr": "пен",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "J'achète du pain.",
+          "en": "I am buying bread.",
+          "uk": "Я купую хліб.",
+          "ipa": "/ʒa.ʃɛt dy pɛ̃/",
+          "cyr": "жашет дю пен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "petit-dejeuner",
+      "fr": "le petit déjeuner",
+      "en": ["breakfast"],
+      "uk": ["сніданок"],
+      "ipa": "/pə.ti de.ʒø.ne/",
+      "cyr": "петі дежене",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Le petit déjeuner est prêt.",
+          "en": "Breakfast is ready.",
+          "uk": "Сніданок готовий.",
+          "ipa": "/lə pə.ti de.ʒø.ne ɛ pʁɛ/",
+          "cyr": "ле петі дежене е пре"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "poisson",
+      "fr": "le poisson",
+      "en": ["fish"],
+      "uk": ["риба"],
+      "ipa": "/pwa.sɔ̃/",
+      "cyr": "пуасон",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Le poisson est frais.",
+          "en": "The fish is fresh.",
+          "uk": "Риба свіжа.",
+          "ipa": "/lə pwa.sɔ̃ ɛ fʁɛ/",
+          "cyr": "ле пуасон е фре"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "sucre",
+      "fr": "le sucre",
+      "en": ["sugar"],
+      "uk": ["цукор"],
+      "ipa": "/sykʁ/",
+      "cyr": "сюкр",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Sans sucre, merci.",
+          "en": "Without sugar, thank you.",
+          "uk": "Без цукру, дякую.",
+          "ipa": "/sɑ̃ sykʁ mɛʁ.si/",
+          "cyr": "сан сюкр мерсі"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "the",
+      "fr": "le thé",
+      "en": ["tea"],
+      "uk": ["чай"],
+      "ipa": "/te/",
+      "cyr": "те",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Tu veux du thé ?",
+          "en": "Do you want some tea?",
+          "uk": "Хочеш чаю?",
+          "ipa": "/ty vø dy te/",
+          "cyr": "тю вьо дю те"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vin",
+      "fr": "le vin",
+      "en": ["wine"],
+      "uk": ["вино"],
+      "ipa": "/vɛ̃/",
+      "cyr": "вен",
+      "topic": "food",
+      "examples": [
+        {
+          "fr": "Un verre de vin rouge.",
+          "en": "A glass of red wine.",
+          "uk": "Келих червоного вина.",
+          "ipa": "/œ̃ vɛʁ də vɛ̃ ʁuʒ/",
+          "cyr": "ен вер де вен руж"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "au-revoir",
+      "fr": "au revoir",
+      "en": ["goodbye"],
+      "uk": ["до побачення"],
+      "ipa": "/o ʁə.vwaʁ/",
+      "cyr": "о ревуар",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Au revoir, à demain !",
+          "en": "Goodbye, see you tomorrow!",
+          "uk": "До побачення, до завтра!",
+          "ipa": "/o ʁə.vwaʁ a də.mɛ̃/",
+          "cyr": "о ревуар, а демен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "bonjour",
+      "fr": "bonjour",
+      "en": ["hello", "good day"],
+      "uk": ["добрий день", "доброго дня"],
+      "ipa": "/bɔ̃.ʒuʁ/",
+      "cyr": "бонжур",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Bonjour, comment ça va ?",
+          "en": "Hello, how are you?",
+          "uk": "Добрий день, як справи?",
+          "ipa": "/bɔ̃.ʒuʁ kɔ.mɑ̃ sa va/",
+          "cyr": "бонжур, коман са ва"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "bonsoir",
+      "fr": "bonsoir",
+      "en": ["good evening"],
+      "uk": ["добрий вечір"],
+      "ipa": "/bɔ̃.swaʁ/",
+      "cyr": "бонсуар",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Bonsoir madame !",
+          "en": "Good evening, madam!",
+          "uk": "Добрий вечір, пані!",
+          "ipa": "/bɔ̃.swaʁ ma.dam/",
+          "cyr": "бонсуар мадам"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "comment-ca-va",
+      "fr": "comment ça va",
+      "en": ["how are you"],
+      "uk": ["як справи"],
+      "ipa": "/kɔ.mɑ̃ sa va/",
+      "cyr": "коман са ва",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Comment ça va ? — Très bien !",
+          "en": "How are you? — Very well!",
+          "uk": "Як справи? — Дуже добре!",
+          "ipa": "/kɔ.mɑ̃ sa va — tʁɛ bjɛ̃/",
+          "cyr": "коман са ва? — тре бьєн!"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "enchante",
+      "fr": "enchanté",
+      "en": ["nice to meet you"],
+      "uk": ["приємно познайомитися"],
+      "ipa": "/ɑ̃.ʃɑ̃.te/",
+      "cyr": "аншанте",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Enchanté, je suis Anton.",
+          "en": "Nice to meet you, I am Anton.",
+          "uk": "Приємно познайомитися, я Антон.",
+          "ipa": "/ɑ̃.ʃɑ̃.te ʒə sɥi ɑ̃.tɔn/",
+          "cyr": "аншанте, же сюі антон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "je-mappelle",
+      "fr": "je m'appelle",
+      "en": ["my name is"],
+      "uk": ["мене звати"],
+      "ipa": "/ʒə ma.pɛl/",
+      "cyr": "же мапель",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Je m'appelle Anton.",
+          "en": "My name is Anton.",
+          "uk": "Мене звати Антон.",
+          "ipa": "/ʒə ma.pɛl ɑ̃.tɔn/",
+          "cyr": "же мапель антон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "merci",
+      "fr": "merci",
+      "en": ["thank you"],
+      "uk": ["дякую"],
+      "ipa": "/mɛʁ.si/",
+      "cyr": "мерсі",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Merci beaucoup !",
+          "en": "Thank you very much!",
+          "uk": "Дуже дякую!",
+          "ipa": "/mɛʁ.si bo.ku/",
+          "cyr": "мерсі боку"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "non",
+      "fr": "non",
+      "en": ["no"],
+      "uk": ["ні"],
+      "ipa": "/nɔ̃/",
+      "cyr": "нон",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Non, merci.",
+          "en": "No, thank you.",
+          "uk": "Ні, дякую.",
+          "ipa": "/nɔ̃ mɛʁ.si/",
+          "cyr": "нон, мерсі"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "oui",
+      "fr": "oui",
+      "en": ["yes"],
+      "uk": ["так"],
+      "ipa": "/wi/",
+      "cyr": "уі",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Oui, bien sûr.",
+          "en": "Yes, of course.",
+          "uk": "Так, звичайно.",
+          "ipa": "/wi bjɛ̃ syʁ/",
+          "cyr": "уі, бьєн сюр"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "pardon",
+      "fr": "pardon",
+      "en": ["sorry", "excuse me"],
+      "uk": ["вибачте", "перепрошую"],
+      "ipa": "/paʁ.dɔ̃/",
+      "cyr": "пардон",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Pardon, où est le métro ?",
+          "en": "Excuse me, where is the metro?",
+          "uk": "Вибачте, де метро?",
+          "ipa": "/paʁ.dɔ̃ u ɛ lə me.tʁo/",
+          "cyr": "пардон, у е ле метро"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "sil-vous-plait",
+      "fr": "s'il vous plaît",
+      "en": ["please"],
+      "uk": ["будь ласка"],
+      "ipa": "/sil vu plɛ/",
+      "cyr": "сіль ву пле",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Un café, s'il vous plaît.",
+          "en": "A coffee, please.",
+          "uk": "Одну каву, будь ласка.",
+          "ipa": "/œ̃ ka.fe sil vu plɛ/",
+          "cyr": "ен кафе, сіль ву пле"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "salut",
+      "fr": "salut",
+      "en": ["hi", "bye"],
+      "uk": ["привіт", "бувай"],
+      "ipa": "/sa.ly/",
+      "cyr": "салю",
+      "topic": "greetings",
+      "examples": [
+        {
+          "fr": "Salut, ça va ?",
+          "en": "Hi, how is it going?",
+          "uk": "Привіт, як справи?",
+          "ipa": "/sa.ly sa va/",
+          "cyr": "салю, са ва"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "chaise",
+      "fr": "la chaise",
+      "en": ["chair"],
+      "uk": ["стілець"],
+      "ipa": "/ʃɛz/",
+      "cyr": "шез",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "La chaise est confortable.",
+          "en": "The chair is comfortable.",
+          "uk": "Стілець зручний.",
+          "ipa": "/la ʃɛz ɛ kɔ̃.fɔʁ.tabl/",
+          "cyr": "ля шез е конфортабль"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "chambre",
+      "fr": "la chambre",
+      "en": ["bedroom", "room"],
+      "uk": ["кімната", "спальня"],
+      "ipa": "/ʃɑ̃bʁ/",
+      "cyr": "шамбр",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Ma chambre est grande.",
+          "en": "My room is big.",
+          "uk": "Моя кімната велика.",
+          "ipa": "/ma ʃɑ̃bʁ ɛ ɡʁɑ̃d/",
+          "cyr": "ма шамбр е ґранд"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "cle",
+      "fr": "la clé",
+      "en": ["key"],
+      "uk": ["ключ"],
+      "ipa": "/kle/",
+      "cyr": "кле",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Où est la clé ?",
+          "en": "Where is the key?",
+          "uk": "Де ключ?",
+          "ipa": "/u ɛ la kle/",
+          "cyr": "у е ля кле"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "cuisine",
+      "fr": "la cuisine",
+      "en": ["kitchen"],
+      "uk": ["кухня"],
+      "ipa": "/kɥi.zin/",
+      "cyr": "кюізін",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Maman est dans la cuisine.",
+          "en": "Mom is in the kitchen.",
+          "uk": "Мама на кухні.",
+          "ipa": "/ma.mɑ̃ ɛ dɑ̃ la kɥi.zin/",
+          "cyr": "маман е дан ля кюізін"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "fenetre",
+      "fr": "la fenêtre",
+      "en": ["window"],
+      "uk": ["вікно"],
+      "ipa": "/fə.nɛtʁ/",
+      "cyr": "фенетр",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Je ferme la fenêtre.",
+          "en": "I close the window.",
+          "uk": "Я зачиняю вікно.",
+          "ipa": "/ʒə fɛʁm la fə.nɛtʁ/",
+          "cyr": "же ферм ля фенетр"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "maison",
+      "fr": "la maison",
+      "en": ["house", "home"],
+      "uk": ["будинок", "дім"],
+      "ipa": "/mɛ.zɔ̃/",
+      "cyr": "мезон",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Ma maison est petite.",
+          "en": "My house is small.",
+          "uk": "Мій будинок маленький.",
+          "ipa": "/ma mɛ.zɔ̃ ɛ pə.tit/",
+          "cyr": "ма мезон е петіт"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "porte",
+      "fr": "la porte",
+      "en": ["door"],
+      "uk": ["двері"],
+      "ipa": "/pɔʁt/",
+      "cyr": "порт",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "La porte est ouverte.",
+          "en": "The door is open.",
+          "uk": "Двері відчинені.",
+          "ipa": "/la pɔʁt ɛ.t‿u.vɛʁt/",
+          "cyr": "ля порт етуверт"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "table",
+      "fr": "la table",
+      "en": ["table"],
+      "uk": ["стіл"],
+      "ipa": "/tabl/",
+      "cyr": "табль",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Le livre est sur la table.",
+          "en": "The book is on the table.",
+          "uk": "Книга на столі.",
+          "ipa": "/lə livʁ ɛ syʁ la tabl/",
+          "cyr": "ле лівр е сюр ля табль"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "voiture",
+      "fr": "la voiture",
+      "en": ["car"],
+      "uk": ["автомобіль", "машина"],
+      "ipa": "/vwa.tyʁ/",
+      "cyr": "вуатюр",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "La voiture est noire.",
+          "en": "The car is black.",
+          "uk": "Машина чорна.",
+          "ipa": "/la vwa.tyʁ ɛ nwaʁ/",
+          "cyr": "ля вуатюр е нуар"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "lit",
+      "fr": "le lit",
+      "en": ["bed"],
+      "uk": ["ліжко"],
+      "ipa": "/li/",
+      "cyr": "лі",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Le chat dort sur le lit.",
+          "en": "The cat sleeps on the bed.",
+          "uk": "Кіт спить на ліжку.",
+          "ipa": "/lə ʃa dɔʁ syʁ lə li/",
+          "cyr": "ле ша дор сюр ле лі"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "livre",
+      "fr": "le livre",
+      "en": ["book"],
+      "uk": ["книга"],
+      "ipa": "/livʁ/",
+      "cyr": "лівр",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Je lis un livre.",
+          "en": "I am reading a book.",
+          "uk": "Я читаю книгу.",
+          "ipa": "/ʒə li œ̃ livʁ/",
+          "cyr": "же лі ен лівр"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "telephone",
+      "fr": "le téléphone",
+      "en": ["phone"],
+      "uk": ["телефон"],
+      "ipa": "/te.le.fɔn/",
+      "cyr": "телефон",
+      "topic": "home",
+      "examples": [
+        {
+          "fr": "Mon téléphone est nouveau.",
+          "en": "My phone is new.",
+          "uk": "Мій телефон новий.",
+          "ipa": "/mɔ̃ te.le.fɔn ɛ nu.vo/",
+          "cyr": "мон телефон е нуво"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "cent",
+      "fr": "cent",
+      "en": ["hundred"],
+      "uk": ["сто"],
+      "ipa": "/sɑ̃/",
+      "cyr": "сан",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Cent grammes de fromage.",
+          "en": "A hundred grams of cheese.",
+          "uk": "Сто грамів сиру.",
+          "ipa": "/sɑ̃ ɡʁam də fʁɔ.maʒ/",
+          "cyr": "сан ґрам де фромаж"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "cinq",
+      "fr": "cinq",
+      "en": ["five"],
+      "uk": ["п'ять"],
+      "ipa": "/sɛ̃k/",
+      "cyr": "сенк",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Elle a cinq ans.",
+          "en": "She is five years old.",
+          "uk": "Їй п'ять років.",
+          "ipa": "/ɛl a sɛ̃k ɑ̃/",
+          "cyr": "ель а сенк ан"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "deux",
+      "fr": "deux",
+      "en": ["two"],
+      "uk": ["два"],
+      "ipa": "/dø/",
+      "cyr": "дьо",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Deux cafés, s'il vous plaît.",
+          "en": "Two coffees, please.",
+          "uk": "Дві кави, будь ласка.",
+          "ipa": "/dø ka.fe sil vu plɛ/",
+          "cyr": "дьо кафе, сіль ву пле"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "dix",
+      "fr": "dix",
+      "en": ["ten"],
+      "uk": ["десять"],
+      "ipa": "/dis/",
+      "cyr": "діс",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "J'ai dix euros.",
+          "en": "I have ten euros.",
+          "uk": "У мене десять євро.",
+          "ipa": "/ʒe di.z‿ø.ʁo/",
+          "cyr": "же дізеро"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "huit",
+      "fr": "huit",
+      "en": ["eight"],
+      "uk": ["вісім"],
+      "ipa": "/ɥit/",
+      "cyr": "юіт",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Le magasin ouvre à huit heures.",
+          "en": "The shop opens at eight o'clock.",
+          "uk": "Магазин відчиняється о восьмій годині.",
+          "ipa": "/lə ma.ɡa.zɛ̃ uvʁ a ɥi.t‿œʁ/",
+          "cyr": "ле маґазен увр а юітер"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "neuf",
+      "fr": "neuf",
+      "en": ["nine"],
+      "uk": ["дев'ять"],
+      "ipa": "/nœf/",
+      "cyr": "неф",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Il est neuf heures.",
+          "en": "It is nine o'clock.",
+          "uk": "Зараз дев'ята година.",
+          "ipa": "/il ɛ nœ.v‿œʁ/",
+          "cyr": "іль е невер"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "quatre",
+      "fr": "quatre",
+      "en": ["four"],
+      "uk": ["чотири"],
+      "ipa": "/katʁ/",
+      "cyr": "катр",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Il y a quatre chaises.",
+          "en": "There are four chairs.",
+          "uk": "Є чотири стільці.",
+          "ipa": "/i.l‿ja katʁ ʃɛz/",
+          "cyr": "ілья катр шез"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "sept",
+      "fr": "sept",
+      "en": ["seven"],
+      "uk": ["сім"],
+      "ipa": "/sɛt/",
+      "cyr": "сет",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Il y a sept jours dans la semaine.",
+          "en": "There are seven days in a week.",
+          "uk": "У тижні сім днів.",
+          "ipa": "/i.l‿ja sɛt ʒuʁ dɑ̃ la sə.mɛn/",
+          "cyr": "ілья сет жур дан ля семен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "six",
+      "fr": "six",
+      "en": ["six"],
+      "uk": ["шість"],
+      "ipa": "/sis/",
+      "cyr": "сіс",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Le train part à six heures.",
+          "en": "The train leaves at six o'clock.",
+          "uk": "Потяг відправляється о шостій годині.",
+          "ipa": "/lə tʁɛ̃ paʁ a si.z‿œʁ/",
+          "cyr": "ле трен пар а сізер"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "trois",
+      "fr": "trois",
+      "en": ["three"],
+      "uk": ["три"],
+      "ipa": "/tʁwa/",
+      "cyr": "труа",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Nous sommes trois.",
+          "en": "There are three of us.",
+          "uk": "Нас троє.",
+          "ipa": "/nu sɔm tʁwa/",
+          "cyr": "ну сом труа"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "un",
+      "fr": "un",
+      "en": ["one"],
+      "uk": ["один"],
+      "ipa": "/œ̃/",
+      "cyr": "ен",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "J'ai un chat.",
+          "en": "I have one cat.",
+          "uk": "У мене є один кіт.",
+          "ipa": "/ʒe œ̃ ʃa/",
+          "cyr": "же ен ша"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vingt",
+      "fr": "vingt",
+      "en": ["twenty"],
+      "uk": ["двадцять"],
+      "ipa": "/vɛ̃/",
+      "cyr": "вен",
+      "topic": "numbers",
+      "examples": [
+        {
+          "fr": "Elle a vingt ans.",
+          "en": "She is twenty years old.",
+          "uk": "Їй двадцять років.",
+          "ipa": "/ɛl a vɛ̃.t‿ɑ̃/",
+          "cyr": "ель а вентан"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "combien",
+      "fr": "combien",
+      "en": ["how much", "how many"],
+      "uk": ["скільки"],
+      "ipa": "/kɔ̃.bjɛ̃/",
+      "cyr": "комбьєн",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Ça coûte combien ?",
+          "en": "How much does it cost?",
+          "uk": "Скільки це коштує?",
+          "ipa": "/sa kut kɔ̃.bjɛ̃/",
+          "cyr": "са кут комбьєн"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "comment",
+      "fr": "comment",
+      "en": ["how"],
+      "uk": ["як"],
+      "ipa": "/kɔ.mɑ̃/",
+      "cyr": "коман",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Comment tu t'appelles ?",
+          "en": "What is your name?",
+          "uk": "Як тебе звати?",
+          "ipa": "/kɔ.mɑ̃ ty ta.pɛl/",
+          "cyr": "коман тю тапель"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "je",
+      "fr": "je",
+      "en": ["I"],
+      "uk": ["я"],
+      "ipa": "/ʒə/",
+      "cyr": "же",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Je parle un peu français.",
+          "en": "I speak a little French.",
+          "uk": "Я трохи розмовляю французькою.",
+          "ipa": "/ʒə paʁl œ̃ pø fʁɑ̃.sɛ/",
+          "cyr": "же парль ен пьо франсе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "nous",
+      "fr": "nous",
+      "en": ["we"],
+      "uk": ["ми"],
+      "ipa": "/nu/",
+      "cyr": "ну",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Nous sommes ukrainiens.",
+          "en": "We are Ukrainian.",
+          "uk": "Ми українці.",
+          "ipa": "/nu sɔm.z‿y.kʁɛ.njɛ̃/",
+          "cyr": "ну сом юкреньєн"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "ou",
+      "fr": "où",
+      "en": ["where"],
+      "uk": ["де"],
+      "ipa": "/u/",
+      "cyr": "у",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Où est la gare ?",
+          "en": "Where is the train station?",
+          "uk": "Де вокзал?",
+          "ipa": "/u ɛ la ɡaʁ/",
+          "cyr": "у е ля ґар"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "pourquoi",
+      "fr": "pourquoi",
+      "en": ["why"],
+      "uk": ["чому"],
+      "ipa": "/puʁ.kwa/",
+      "cyr": "пуркуа",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Pourquoi tu apprends le français ?",
+          "en": "Why are you learning French?",
+          "uk": "Чому ти вчиш французьку?",
+          "ipa": "/puʁ.kwa ty a.pʁɑ̃ lə fʁɑ̃.sɛ/",
+          "cyr": "пуркуа тю апран ле франсе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "quand",
+      "fr": "quand",
+      "en": ["when"],
+      "uk": ["коли"],
+      "ipa": "/kɑ̃/",
+      "cyr": "кан",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Quand est-ce que tu arrives ?",
+          "en": "When do you arrive?",
+          "uk": "Коли ти приїжджаєш?",
+          "ipa": "/kɑ̃.t‿ɛs.kə ty a.ʁiv/",
+          "cyr": "кантеске тю арів"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "quel",
+      "fr": "quel",
+      "en": ["which", "what"],
+      "uk": ["який"],
+      "ipa": "/kɛl/",
+      "cyr": "кель",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Quel âge as-tu ?",
+          "en": "How old are you?",
+          "uk": "Скільки тобі років?",
+          "ipa": "/kɛ.l‿ɑʒ a ty/",
+          "cyr": "кель аж а тю"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "qui",
+      "fr": "qui",
+      "en": ["who"],
+      "uk": ["хто"],
+      "ipa": "/ki/",
+      "cyr": "кі",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Qui est là ?",
+          "en": "Who is there?",
+          "uk": "Хто там?",
+          "ipa": "/ki ɛ la/",
+          "cyr": "кі е ля"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "quoi",
+      "fr": "quoi",
+      "en": ["what"],
+      "uk": ["що"],
+      "ipa": "/kwa/",
+      "cyr": "куа",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Tu fais quoi ?",
+          "en": "What are you doing?",
+          "uk": "Що ти робиш?",
+          "ipa": "/ty fɛ kwa/",
+          "cyr": "тю фе куа"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "tu",
+      "fr": "tu",
+      "en": ["you (informal)"],
+      "uk": ["ти"],
+      "ipa": "/ty/",
+      "cyr": "тю",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Tu habites où ?",
+          "en": "Where do you live?",
+          "uk": "Де ти живеш?",
+          "ipa": "/ty a.bit u/",
+          "cyr": "тю абіт у"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vous",
+      "fr": "vous",
+      "en": ["you (formal, plural)"],
+      "uk": ["ви"],
+      "ipa": "/vu/",
+      "cyr": "ву",
+      "topic": "questions",
+      "examples": [
+        {
+          "fr": "Vous parlez anglais ?",
+          "en": "Do you speak English?",
+          "uk": "Ви розмовляєте англійською?",
+          "ipa": "/vu paʁ.le ɑ̃.ɡlɛ/",
+          "cyr": "ву парле англе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "aujourdhui",
+      "fr": "aujourd'hui",
+      "en": ["today"],
+      "uk": ["сьогодні"],
+      "ipa": "/o.ʒuʁ.dɥi/",
+      "cyr": "ожурдюі",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Aujourd'hui, il fait beau.",
+          "en": "Today the weather is nice.",
+          "uk": "Сьогодні гарна погода.",
+          "ipa": "/o.ʒuʁ.dɥi il fɛ bo/",
+          "cyr": "ожурдюі іль фе бо"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "demain",
+      "fr": "demain",
+      "en": ["tomorrow"],
+      "uk": ["завтра"],
+      "ipa": "/də.mɛ̃/",
+      "cyr": "демен",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "À demain !",
+          "en": "See you tomorrow!",
+          "uk": "До завтра!",
+          "ipa": "/a də.mɛ̃/",
+          "cyr": "а демен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "dimanche",
+      "fr": "dimanche",
+      "en": ["Sunday"],
+      "uk": ["неділя"],
+      "ipa": "/di.mɑ̃ʃ/",
+      "cyr": "діманш",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Dimanche, je me repose.",
+          "en": "On Sunday I rest.",
+          "uk": "У неділю я відпочиваю.",
+          "ipa": "/di.mɑ̃ʃ ʒə mə ʁə.poz/",
+          "cyr": "діманш же ме репоз"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "hier",
+      "fr": "hier",
+      "en": ["yesterday"],
+      "uk": ["вчора"],
+      "ipa": "/jɛʁ/",
+      "cyr": "єр",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Hier, j'étais fatigué.",
+          "en": "Yesterday I was tired.",
+          "uk": "Вчора я був втомлений.",
+          "ipa": "/jɛʁ ʒe.tɛ fa.ti.ɡe/",
+          "cyr": "єр жете фатіґе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "jeudi",
+      "fr": "jeudi",
+      "en": ["Thursday"],
+      "uk": ["четвер"],
+      "ipa": "/ʒø.di/",
+      "cyr": "жьоді",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Jeudi, j'ai un cours de français.",
+          "en": "On Thursday I have a French lesson.",
+          "uk": "У четвер у мене урок французької.",
+          "ipa": "/ʒø.di ʒe œ̃ kuʁ də fʁɑ̃.sɛ/",
+          "cyr": "жьоді же ен кур де франсе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "matin",
+      "fr": "le matin",
+      "en": ["morning"],
+      "uk": ["ранок"],
+      "ipa": "/ma.tɛ̃/",
+      "cyr": "матен",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Je bois du café le matin.",
+          "en": "I drink coffee in the morning.",
+          "uk": "Я п'ю каву вранці.",
+          "ipa": "/ʒə bwa dy ka.fe lə ma.tɛ̃/",
+          "cyr": "же буа дю кафе ле матен"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "soir",
+      "fr": "le soir",
+      "en": ["evening"],
+      "uk": ["вечір"],
+      "ipa": "/swaʁ/",
+      "cyr": "суар",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Le soir, je lis.",
+          "en": "In the evening I read.",
+          "uk": "Увечері я читаю.",
+          "ipa": "/lə swaʁ ʒə li/",
+          "cyr": "ле суар же лі"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "lundi",
+      "fr": "lundi",
+      "en": ["Monday"],
+      "uk": ["понеділок"],
+      "ipa": "/lœ̃.di/",
+      "cyr": "ленді",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Lundi, je travaille.",
+          "en": "On Monday I work.",
+          "uk": "У понеділок я працюю.",
+          "ipa": "/lœ̃.di ʒə tʁa.vaj/",
+          "cyr": "ленді же травай"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "mardi",
+      "fr": "mardi",
+      "en": ["Tuesday"],
+      "uk": ["вівторок"],
+      "ipa": "/maʁ.di/",
+      "cyr": "марді",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Mardi soir, je suis libre.",
+          "en": "On Tuesday evening I am free.",
+          "uk": "У вівторок увечері я вільний.",
+          "ipa": "/maʁ.di swaʁ ʒə sɥi libʁ/",
+          "cyr": "марді суар же сюі лібр"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "mercredi",
+      "fr": "mercredi",
+      "en": ["Wednesday"],
+      "uk": ["середа"],
+      "ipa": "/mɛʁ.kʁə.di/",
+      "cyr": "меркреді",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Mercredi, il pleut.",
+          "en": "On Wednesday it rains.",
+          "uk": "У середу йде дощ.",
+          "ipa": "/mɛʁ.kʁə.di il plø/",
+          "cyr": "меркреді іль пльо"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "samedi",
+      "fr": "samedi",
+      "en": ["Saturday"],
+      "uk": ["субота"],
+      "ipa": "/sam.di/",
+      "cyr": "самді",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Samedi, je fais les courses.",
+          "en": "On Saturday I do the shopping.",
+          "uk": "У суботу я ходжу за покупками.",
+          "ipa": "/sam.di ʒə fɛ le kuʁs/",
+          "cyr": "самді же фе ле курс"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vendredi",
+      "fr": "vendredi",
+      "en": ["Friday"],
+      "uk": ["п'ятниця"],
+      "ipa": "/vɑ̃.dʁə.di/",
+      "cyr": "вандреді",
+      "topic": "time",
+      "examples": [
+        {
+          "fr": "Vendredi, c'est le week-end !",
+          "en": "Friday — it's the weekend!",
+          "uk": "П'ятниця — це вихідні!",
+          "ipa": "/vɑ̃.dʁə.di sɛ lə wi.kɛnd/",
+          "cyr": "вандреді се ле уікенд"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "aimer",
+      "fr": "aimer",
+      "en": ["to like", "to love"],
+      "uk": ["любити", "кохати"],
+      "ipa": "/ɛ.me/",
+      "cyr": "еме",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "J'aime la musique.",
+          "en": "I love music.",
+          "uk": "Я люблю музику.",
+          "ipa": "/ʒɛm la my.zik/",
+          "cyr": "жем ля мюзік"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "aller",
+      "fr": "aller",
+      "en": ["to go"],
+      "uk": ["йти", "їхати"],
+      "ipa": "/a.le/",
+      "cyr": "але",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Je vais au travail.",
+          "en": "I am going to work.",
+          "uk": "Я йду на роботу.",
+          "ipa": "/ʒə vɛ.z‿o tʁa.vaj/",
+          "cyr": "же везо травай"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "avoir",
+      "fr": "avoir",
+      "en": ["to have"],
+      "uk": ["мати"],
+      "ipa": "/a.vwaʁ/",
+      "cyr": "авуар",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "J'ai une question.",
+          "en": "I have a question.",
+          "uk": "У мене є питання.",
+          "ipa": "/ʒe yn kɛs.tjɔ̃/",
+          "cyr": "же юн кестьйон"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "boire",
+      "fr": "boire",
+      "en": ["to drink"],
+      "uk": ["пити"],
+      "ipa": "/bwaʁ/",
+      "cyr": "буар",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Je bois de l'eau.",
+          "en": "I drink water.",
+          "uk": "Я п'ю воду.",
+          "ipa": "/ʒə bwa də lo/",
+          "cyr": "же буа де ло"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "etre",
+      "fr": "être",
+      "en": ["to be"],
+      "uk": ["бути"],
+      "ipa": "/ɛtʁ/",
+      "cyr": "етр",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Je suis ukrainien.",
+          "en": "I am Ukrainian.",
+          "uk": "Я українець.",
+          "ipa": "/ʒə sɥi.z‿y.kʁɛ.njɛ̃/",
+          "cyr": "же сюі юкреньєн"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "faire",
+      "fr": "faire",
+      "en": ["to do", "to make"],
+      "uk": ["робити"],
+      "ipa": "/fɛʁ/",
+      "cyr": "фер",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Qu'est-ce que tu fais ?",
+          "en": "What are you doing?",
+          "uk": "Що ти робиш?",
+          "ipa": "/kɛs.kə ty fɛ/",
+          "cyr": "кеске тю фе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "manger",
+      "fr": "manger",
+      "en": ["to eat"],
+      "uk": ["їсти"],
+      "ipa": "/mɑ̃.ʒe/",
+      "cyr": "манже",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Nous mangeons à midi.",
+          "en": "We eat at noon.",
+          "uk": "Ми їмо опівдні.",
+          "ipa": "/nu mɑ̃.ʒɔ̃ a mi.di/",
+          "cyr": "ну манжон а міді"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "parler",
+      "fr": "parler",
+      "en": ["to speak"],
+      "uk": ["говорити", "розмовляти"],
+      "ipa": "/paʁ.le/",
+      "cyr": "парле",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Je parle trois langues.",
+          "en": "I speak three languages.",
+          "uk": "Я розмовляю трьома мовами.",
+          "ipa": "/ʒə paʁl tʁwa lɑ̃ɡ/",
+          "cyr": "же парль труа ланґ"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "pouvoir",
+      "fr": "pouvoir",
+      "en": ["can", "to be able to"],
+      "uk": ["могти"],
+      "ipa": "/pu.vwaʁ/",
+      "cyr": "пувуар",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Tu peux répéter ?",
+          "en": "Can you repeat?",
+          "uk": "Можеш повторити?",
+          "ipa": "/ty pø ʁe.pe.te/",
+          "cyr": "тю пьо репете"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "venir",
+      "fr": "venir",
+      "en": ["to come"],
+      "uk": ["приходити", "приїжджати"],
+      "ipa": "/və.niʁ/",
+      "cyr": "венір",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Il vient de Kyiv.",
+          "en": "He comes from Kyiv.",
+          "uk": "Він з Києва.",
+          "ipa": "/il vjɛ̃ də ki.if/",
+          "cyr": "іль вьєн де кіїв"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "voir",
+      "fr": "voir",
+      "en": ["to see"],
+      "uk": ["бачити"],
+      "ipa": "/vwaʁ/",
+      "cyr": "вуар",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Je vois la mer.",
+          "en": "I see the sea.",
+          "uk": "Я бачу море.",
+          "ipa": "/ʒə vwa la mɛʁ/",
+          "cyr": "же вуа ля мер"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    },
+    {
+      "id": "vouloir",
+      "fr": "vouloir",
+      "en": ["to want"],
+      "uk": ["хотіти"],
+      "ipa": "/vu.lwaʁ/",
+      "cyr": "вулуар",
+      "topic": "verbs",
+      "examples": [
+        {
+          "fr": "Je veux apprendre le français.",
+          "en": "I want to learn French.",
+          "uk": "Я хочу вивчити французьку.",
+          "ipa": "/ʒə vø a.pʁɑ̃dʁ lə fʁɑ̃.sɛ/",
+          "cyr": "же вьо апрандр ле франсе"
+        }
+      ],
+      "source": "starter set",
+      "addedAt": "2026-07-02"
+    }
+  ]
+}
