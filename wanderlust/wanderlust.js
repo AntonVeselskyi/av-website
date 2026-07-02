@@ -1666,7 +1666,10 @@
     });
   }
 
-  function positionPins() {
+  // `quick` (passed during an active pan/zoom gesture) skips the O(n²) label
+  // de-confliction below — that per-frame cost is what made touch dragging
+  // stutter. Pin positions still update every frame; labels settle on gesture end.
+  function positionPins(quick) {
     const r = projection.rotate();
     const center = [-r[0], -r[1]];
     const showLabels = showCityNames && zoomT.k >= 3.2; // reveal city names when enabled + zoomed in
@@ -1695,6 +1698,15 @@
       shown.push({ p, sx, sy });
     });
     fanClusters(shown);
+    if (quick) {
+      // lightweight frame: keep pins glued to the map, defer label work
+      if (popup.classList.contains('show') && popup.__owner) repositionPopup(popup.__owner);
+      positionSeas();
+      positionTitle();
+      positionCountryLabel();
+      refreshMeasure();
+      return;
+    }
     // labels only for zoomed-in, non-clustered pins; then de-conflict overlaps,
     // keeping the higher-priority pin's label (anchors / badged / bigger cities
     // win — so "Uray" beats "Mezhdurechensky" when their labels collide).
@@ -2243,6 +2255,16 @@
      The two behaviours coexist via mode-aware filters. */
   function unzoom(pt) { return [(pt[0] - zoomT.x) / zoomT.k, (pt[1] - zoomT.y) / zoomT.k]; }
 
+  let zoomRaf = 0, pendingZoomT = null, pendingZoomQuick = false;
+  function applyPendingZoom() {
+    zoomRaf = 0;
+    if (!pendingZoomT) return;
+    zoomT = pendingZoomT;
+    gZoom.attr('transform', zoomT);
+    syncAutoDetailCountry();
+    positionPins(pendingZoomQuick);
+  }
+
   function enableInteractions() {
     zoom = d3.zoom()
       .scaleExtent([1, MAX_ZOOM])
@@ -2259,12 +2281,20 @@
       })
       .on('start', (event) => { if (event.sourceEvent) { svg.interrupt('globe-rotate'); hidePopup(); forceTitleTracking(); } svg.classed('dragging', true); })
       .on('zoom', (event) => {
-        zoomT = event.transform;
-        gZoom.attr('transform', zoomT);
-        syncAutoDetailCountry();
-        positionPins();
+        // Touch/wheel can fire many zoom events per frame; each transform write
+        // re-rasterizes the pattern-filled countries (costly on mobile). Coalesce
+        // to at most one apply per animation frame so dragging stays smooth.
+        pendingZoomT = event.transform;
+        pendingZoomQuick = !!event.sourceEvent;   // gesture → quick pins; programmatic transition → full
+        if (zoomRaf) return;
+        zoomRaf = requestAnimationFrame(applyPendingZoom);
       })
-      .on('end', () => svg.classed('dragging', false));
+      .on('end', () => {
+        if (zoomRaf) { cancelAnimationFrame(zoomRaf); zoomRaf = 0; }
+        if (pendingZoomT) { zoomT = pendingZoomT; gZoom.attr('transform', zoomT); syncAutoDetailCountry(); }
+        svg.classed('dragging', false);
+        positionPins();   // final full pass settles labels
+      });
 
     let v0, q0, r0;
     const drag = d3.drag()
@@ -2290,17 +2320,10 @@
       .on('end', () => svg.classed('dragging', false));
 
     svg.call(zoom).call(drag);
-
-    // double-tap/double-click → zoom in on the map itself, centred on the
-    // tapped point (touch-action:none on the svg keeps the browser from
-    // doing its own native double-tap page zoom first).
-    svg.on('dblclick.zoomIn', (event) => {
-      if (morphing) return;
-      event.preventDefault();
-      const target = Math.min(MAX_ZOOM, zoomT.k * 2);
-      svg.transition().duration(400).ease(d3.easeCubicInOut)
-        .call(zoom.scaleTo, target, d3.pointer(event, svg.node()));
-    });
+    // Double-tap-to-zoom on the map: handled natively by d3-zoom's built-in
+    // touch double-tap (reachable now that `touch-action: none` routes touch
+    // gestures to us instead of the browser). Desktop double-click stays a no-op
+    // by design so it can't zoom into empty ocean and fight click-to-fly.
   }
 
   function resetZoom() {

@@ -1297,6 +1297,28 @@ button.wl-year-row {
     bottom: 8px;
     width: calc(42vw - 14px);
   }
+  /* country info becomes a top-of-screen drop-down so it never obstructs the
+     map or the bottom UI; it slides in only while a country is focused. */
+  #wl-country-info {
+    display: block;            /* stay rendered so the slide can animate */
+    position: fixed;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    transform: translateY(-102%);
+    transition: transform .34s cubic-bezier(.4,0,.2,1);
+    z-index: 30;
+    pointer-events: none;
+  }
+  #wl-country-info.active {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
   #wl-collapse-toggle {
     display: inline-flex;
     align-items: center;
@@ -1323,8 +1345,15 @@ button.wl-year-row {
       padding .4s cubic-bezier(.4,0,.2,1),
       transform .4s cubic-bezier(.4,0,.2,1);
   }
-  #wl-filters  { max-height: 78vh; }
-  #wl-controls { max-height: 38vh; }
+  /* expanded: cap to the viewport but let the box scroll so nothing (e.g. the
+     "play the journey" button) is ever clipped off the bottom of the panel. */
+  #wl-filters  { max-height: 72vh; }
+  #wl-controls { max-height: 72vh; }
+  body:not(.wl-panels-collapsed) #wl-filters,
+  body:not(.wl-panels-collapsed) #wl-controls {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   body.wl-panels-collapsed #wl-filters,
   body.wl-panels-collapsed #wl-controls {
     max-height: 0;
