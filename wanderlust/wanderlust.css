@@ -175,16 +175,10 @@ body::after {
 #wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 #wl-map svg.dragging { cursor: grabbing; }
 
-/* While actively panning/zooming, drop the two costliest things to re-raster
-   on every transform — SVG pattern fills and drop-shadow filters — down to a
-   flat colour with no glow. Full detail returns the moment the gesture ends.
-   This is the main lever for smooth dragging on mobile. */
-#wl-map svg.dragging .country {
-  filter: none !important;
-  shape-rendering: optimizeSpeed;
-  transition: none !important;
-}
-#wl-map svg.dragging .country.visited { fill: var(--country-fill, var(--land)) !important; }
+/* While actively panning/zooming, pause the drop-shadow glows (only the
+   focused country has one — the pause is invisible) so they aren't re-rastered
+   every frame. Patterns stay: they're part of the look. */
+#wl-map svg.dragging .country { filter: none !important; transition: none !important; }
 #wl-map svg.dragging .arc { filter: none !important; }
 
 .wl-sphere   { fill: rgba(2,40,49,.55); stroke: rgba(148,210,189,.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
@@ -613,7 +607,7 @@ body::after {
   position: fixed;
   top: clamp(54px, 7vw, 72px);
   right: clamp(12px, 2.5vw, 28px);
-  z-index: 69;
+  z-index: 74;   /* audio credits opens from the “i”, keep it above the stats panels */
   width: min(380px, calc(100vw - 24px));
   max-height: min(68vh, 620px);
   overflow-y: auto;
@@ -702,7 +696,7 @@ body::after {
 #wl-cities-panel,
 #wl-europe-panel {
   position: fixed;
-  z-index: 46;
+  z-index: 72;   /* above #wl-info-btn (70) so panel close buttons aren't shadowed by the “i” */
   padding: 16px 18px 18px;
   background: var(--glass-bg);
   background-blend-mode: screen, soft-light, normal;
@@ -778,7 +772,6 @@ body::after {
   top: clamp(48px, 6vh, 68px);
   bottom: clamp(96px, 13vh, 132px);
   transform: translateX(-50%);
-  z-index: 68;
   width: 780px;
   max-width: calc(100vw - 660px);
   display: flex;
@@ -1336,19 +1329,25 @@ button.wl-year-row {
     align-items: center;
     justify-content: center;
     justify-self: end;
-    width: 38px;
-    height: 24px;
+    width: 44px;
+    height: 26px;
     font-family: var(--font-display);
-    font-size: 20px;
+    font-size: 19px;
     line-height: 1;
-    background: rgba(255,255,255,.85);
-    border: 1px solid rgba(0,0,0,.25);
-    border-radius: 4px;
-    color: #111;
+    background: var(--glass-bg);
+    background-blend-mode: screen, soft-light, normal;
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: 9px;
+    box-shadow: var(--glass-shadow);
+    color: var(--pearl-aqua);
     cursor: pointer;
-    padding: 0;
+    padding: 0 0 2px;
     z-index: 25;
+    transition: color .18s ease, border-color .18s ease, transform .12s ease;
   }
+  #wl-collapse-toggle:active { transform: scale(.94); color: var(--golden-orange); }
   #wl-filters, #wl-controls {
     overflow: hidden;
     transition:

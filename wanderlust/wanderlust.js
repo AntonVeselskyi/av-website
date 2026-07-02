@@ -1258,7 +1258,6 @@
       }
       const strong = (isolatedKey != null && countryHasKey(name, isolatedKey))
         || detailCountryName() === name || hoveredCountry === name;
-      this.style.setProperty('--country-fill', col);   // flat fallback used while dragging (see .dragging CSS)
       sel.style('fill', `url(#${patId(name)})`)
         .style('stroke', strong ? col : lighten(col, 0.35))
         .style('stroke-width', strong ? 2.6 : 1.5)
@@ -1576,9 +1575,6 @@
      label — it pans/zooms with the map and, on the globe, hides when that patch
      of ocean rotates to the back. */
   const ATLANTIC = [-43, 30];
-  // on narrow (portrait phone) fits the same anchor lands under Europe instead
-  // of open water, so give it a South-Atlantic anchor clear of every pin.
-  const ATLANTIC_NARROW = [-24, -8];
   const GLOBE_TITLE_TEXT = 'wanderlust';
   const GLOBE_TITLE_POINTS = GLOBE_TITLE_TEXT.split('').map((letter, i, arr) => {
     const t = i - (arr.length - 1) / 2;
@@ -1594,7 +1590,7 @@
       positionGlobeTitle();
       return;
     }
-    const xy = projection(width <= 640 ? ATLANTIC_NARROW : ATLANTIC);
+    const xy = projection(ATLANTIC);
     let vis = !!xy;
     wlTitle.classList.toggle('gone', !vis);
     if (vis) {
@@ -1638,6 +1634,10 @@
   function mountTitle() {
     if (!wlTitle) wlTitle = $('.wl-title');
     if (!wlTitle || titleMounted) return;
+    // On phones the title is wider than any ocean gap at world view, so
+    // map-anchoring always collides with land. Keep it as the fixed heading
+    // in the empty space above the map instead of sailing it into the ocean.
+    if (width <= 640) return;
     titleMounted = true;
     wlTitle.classList.add('mounted');                 // CSS animates size + position
     positionTitle();                                   // → glides to the Atlantic anchor
@@ -3149,10 +3149,24 @@
     if (ct) ct.addEventListener('change', (e) => setCityNames(e.target.checked));
     const collapseBtn = $('#wl-collapse-toggle');
     if (collapseBtn) {
+      const panels = () => ['#wl-filters', '#wl-controls'].map((s) => $(s)).filter(Boolean);
+      let settleTimer = 0;
       collapseBtn.addEventListener('click', () => {
-        const collapsed = document.body.classList.toggle('wl-panels-collapsed');
-        collapseBtn.textContent = collapsed ? '⌃' : '⌄';
-        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        clearTimeout(settleTimer);
+        const collapsing = !document.body.classList.contains('wl-panels-collapsed');
+        if (collapsing) {
+          // pin each panel at its actual height so the collapse starts moving
+          // immediately (animating from the generic vh cap wastes the first
+          // stretch of the transition on invisible max-height distance)
+          panels().forEach((el) => { el.style.maxHeight = el.scrollHeight + 'px'; void el.offsetHeight; el.style.maxHeight = ''; });
+          document.body.classList.add('wl-panels-collapsed');
+        } else {
+          document.body.classList.remove('wl-panels-collapsed');
+          panels().forEach((el) => { el.style.maxHeight = Math.min(el.scrollHeight, window.innerHeight * 0.72) + 'px'; });
+          settleTimer = setTimeout(() => panels().forEach((el) => { el.style.maxHeight = ''; }), 450);
+        }
+        collapseBtn.textContent = collapsing ? '⌃' : '⌄';
+        collapseBtn.setAttribute('aria-expanded', String(!collapsing));
       });
     }
     renderCountryInfoEmpty();
