@@ -175,6 +175,18 @@ body::after {
 #wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 #wl-map svg.dragging { cursor: grabbing; }
 
+/* While actively panning/zooming, drop the two costliest things to re-raster
+   on every transform — SVG pattern fills and drop-shadow filters — down to a
+   flat colour with no glow. Full detail returns the moment the gesture ends.
+   This is the main lever for smooth dragging on mobile. */
+#wl-map svg.dragging .country {
+  filter: none !important;
+  shape-rendering: optimizeSpeed;
+  transition: none !important;
+}
+#wl-map svg.dragging .country.visited { fill: var(--country-fill, var(--land)) !important; }
+#wl-map svg.dragging .arc { filter: none !important; }
+
 .wl-sphere   { fill: rgba(2,40,49,.55); stroke: rgba(148,210,189,.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .wl-graticule { fill: none; stroke: rgba(148,210,189,.10); stroke-width: .5; vector-effect: non-scaling-stroke; }
 

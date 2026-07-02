@@ -1258,6 +1258,7 @@
       }
       const strong = (isolatedKey != null && countryHasKey(name, isolatedKey))
         || detailCountryName() === name || hoveredCountry === name;
+      this.style.setProperty('--country-fill', col);   // flat fallback used while dragging (see .dragging CSS)
       sel.style('fill', `url(#${patId(name)})`)
         .style('stroke', strong ? col : lighten(col, 0.35))
         .style('stroke-width', strong ? 2.6 : 1.5)
@@ -2255,7 +2256,7 @@
      The two behaviours coexist via mode-aware filters. */
   function unzoom(pt) { return [(pt[0] - zoomT.x) / zoomT.k, (pt[1] - zoomT.y) / zoomT.k]; }
 
-  let zoomRaf = 0, pendingZoomT = null, pendingZoomQuick = false;
+  let zoomRaf = 0, pendingZoomT = null, pendingZoomQuick = false, oneFingerZooming = false;
   function applyPendingZoom() {
     zoomRaf = 0;
     if (!pendingZoomT) return;
@@ -2285,7 +2286,7 @@
         // re-rasterizes the pattern-filled countries (costly on mobile). Coalesce
         // to at most one apply per animation frame so dragging stays smooth.
         pendingZoomT = event.transform;
-        pendingZoomQuick = !!event.sourceEvent;   // gesture → quick pins; programmatic transition → full
+        pendingZoomQuick = !!event.sourceEvent || oneFingerZooming;   // gesture → quick pins; programmatic transition → full
         if (zoomRaf) return;
         zoomRaf = requestAnimationFrame(applyPendingZoom);
       })
@@ -2320,10 +2321,87 @@
       .on('end', () => svg.classed('dragging', false));
 
     svg.call(zoom).call(drag);
-    // Double-tap-to-zoom on the map: handled natively by d3-zoom's built-in
-    // touch double-tap (reachable now that `touch-action: none` routes touch
-    // gestures to us instead of the browser). Desktop double-click stays a no-op
-    // by design so it can't zoom into empty ocean and fight click-to-fly.
+    wireOneFingerZoom();
+    // Desktop double-click stays a no-op by design so it can't zoom into empty
+    // ocean and fight click-to-fly.
+  }
+
+  /* Google-Maps-style one-hand zoom: tap once, then on the second tap hold and
+     slide up (zoom in) / down (zoom out). A plain double-tap (no slide) steps in
+     2×. Runs as capture-phase touch listeners that hide the gesture from d3-zoom
+     (via stopImmediatePropagation) so it never also pans or double-tap-zooms. */
+  function wireOneFingerZoom() {
+    const node = svg.node();
+    const DOUBLE_TAP_MS = 300;   // max gap between first tap and the zoom touch
+    const TAP_TOL = 26;          // px of movement still counted as a "tap"
+    const ZOOM_SENS = 150;       // px of vertical slide per zoom doubling
+    let lastTap = null;          // { t, x, y } of the previous quick tap
+    let down = null;             // current single-touch press info
+    const ofz = { active: false, startY: 0, startK: 1, center: [0, 0], t0: 0, moved: false };
+
+    const clampK = (k) => Math.max(1, Math.min(MAX_ZOOM, k));
+    const localPoint = (t) => { const r = node.getBoundingClientRect(); return [t.clientX - r.left, t.clientY - r.top]; };
+
+    function endZoom() {
+      ofz.active = false;
+      oneFingerZooming = false;
+      svg.classed('dragging', false);
+      positionPins();   // settle labels after the gesture
+    }
+
+    node.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { ofz.active = false; oneFingerZooming = false; return; } // pinch/multi → d3
+      const t = e.touches[0];
+      const now = performance.now();
+      down = { t: now, x: t.clientX, y: t.clientY };
+      if (lastTap && now - lastTap.t < DOUBLE_TAP_MS &&
+          Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < TAP_TOL) {
+        // second tap arrived quickly → take over as a one-hand zoom
+        ofz.active = true; ofz.moved = false; ofz.t0 = now;
+        ofz.startY = t.clientY; ofz.startK = zoomT.k; ofz.center = localPoint(t);
+        oneFingerZooming = true;
+        svg.interrupt();
+        svg.classed('dragging', true);
+        hidePopup();
+        lastTap = null;
+        e.preventDefault();
+        e.stopImmediatePropagation();   // keep d3-zoom out of this gesture
+      }
+    }, { capture: true, passive: false });
+
+    node.addEventListener('touchmove', (e) => {
+      if (!ofz.active) return;
+      if (e.touches.length !== 1) { endZoom(); return; }
+      const t = e.touches[0];
+      const dy = ofz.startY - t.clientY;          // slide up → positive → zoom in
+      if (Math.abs(dy) > 4) ofz.moved = true;
+      zoom.scaleTo(svg, clampK(ofz.startK * Math.pow(2, dy / ZOOM_SENS)), ofz.center);
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }, { capture: true, passive: false });
+
+    node.addEventListener('touchend', (e) => {
+      const now = performance.now();
+      if (ofz.active) {
+        if (!ofz.moved && now - ofz.t0 < 250) {   // plain double-tap → step-zoom in 2×
+          svg.transition().duration(300).ease(d3.easeCubicInOut)
+            .call(zoom.scaleTo, clampK(ofz.startK * 2), ofz.center);
+        }
+        endZoom();
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+      // otherwise: was this a clean tap? remember it so the next touch can pair.
+      if (e.touches.length === 0 && down &&
+          now - down.t < DOUBLE_TAP_MS && e.changedTouches.length) {
+        const c = e.changedTouches[0];
+        if (Math.hypot(c.clientX - down.x, c.clientY - down.y) < TAP_TOL) {
+          lastTap = { t: now, x: c.clientX, y: c.clientY };
+        }
+      }
+      down = null;
+    }, { capture: true, passive: false });
   }
 
   function resetZoom() {
