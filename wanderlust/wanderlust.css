@@ -1299,7 +1299,7 @@ button.wl-year-row {
     width: calc(58vw - 14px);
     gap: 8px;
   }
-  #wl-filters, #wl-controls, #wl-country-info { padding: 10px 12px; font-size: 12px; }
+  #wl-filters, #wl-controls, #wl-country-info { padding: 8px 10px; font-size: 12px; }
   #wl-controls {
     right: 8px;
     bottom: 8px;
@@ -1346,11 +1346,51 @@ button.wl-year-row {
     box-shadow: var(--glass-shadow);
     color: var(--pearl-aqua);
     cursor: pointer;
-    padding: 0 0 2px;
+    padding: 0;
     z-index: 25;
     transition: color .18s ease, border-color .18s ease, transform .12s ease;
   }
   #wl-collapse-toggle:active { transform: scale(.94); color: var(--golden-orange); }
+  /* mini filter chip: appears bottom-left when a filter is locked with the HUD
+     tucked away — shows the active year + an "all" reset, nothing else */
+  #wl-mini-filter { display: none; }
+  #wl-mini-filter.show {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: start;
+    width: max-content;
+    padding: 6px 9px;
+    background: var(--glass-bg);
+    background-blend-mode: screen, soft-light, normal;
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    box-shadow: var(--glass-shadow);
+    pointer-events: auto;
+  }
+  .mini-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .8px;
+    color: var(--vanilla-custard);
+  }
+  .mini-chip .legend-swatch { width: 12px; height: 12px; }
+  button.mini-chip.mini-all {
+    background: rgba(148,210,189,.13);
+    border: 1px solid rgba(148,210,189,.42);
+    border-radius: 7px;
+    color: var(--pearl-aqua);
+    padding: 3px 9px;
+    cursor: pointer;
+    text-transform: lowercase;
+  }
+  button.mini-chip.mini-all:active { transform: scale(.95); }
   #wl-filters, #wl-controls {
     overflow: hidden;
     transition:
@@ -1359,12 +1399,20 @@ button.wl-year-row {
       padding .4s cubic-bezier(.4,0,.2,1),
       transform .4s cubic-bezier(.4,0,.2,1);
   }
-  /* expanded: cap to the viewport but let the box scroll so nothing (e.g. the
-     "play the journey" button) is ever clipped off the bottom of the panel. */
-  #wl-filters  { max-height: 72vh; }
-  #wl-controls { max-height: 72vh; }
+  /* expanded: equal caps so the two columns read as one HUD; both scroll when
+     content overflows, so nothing (e.g. "play the journey") is ever clipped */
+  #wl-filters  { max-height: 46vh; }
+  #wl-controls { max-height: 46vh; }
+  /* tighter HUD typography/controls for phone */
+  #wl-filters h2 { font-size: 15px; letter-spacing: 2px; margin: 0 0 8px; }
+  .legend-years { gap: 4px; }
+  .legend-row { gap: 8px; padding: 1px 3px; }
+  .legend-swatch { width: 13px; height: 13px; }
+  .legend-controls { gap: 7px; }
+  .wl-btn { font-size: 13px; padding: 6px 10px; letter-spacing: 1.5px; }
   body:not(.wl-panels-collapsed) #wl-filters,
   body:not(.wl-panels-collapsed) #wl-controls {
+    height: 46vh;          /* equal columns — ragged tops read as broken */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -1381,10 +1429,13 @@ button.wl-year-row {
   .legend-years { grid-template-columns: 1fr; gap: 5px; }
   /* compact country card: two tight columns, smaller type — it sits over the
      map at the top of the screen, so every saved pixel is map view */
-  /* the fixed heading yields to whatever occupies the top of the screen */
+  /* the fixed heading and the AV monogram yield to whatever occupies the top */
   .wl-title { transition: opacity .25s ease; }
+  .av-monogram { transition: opacity .25s ease; }
   body.wl-timeline-on .wl-title,
   body:has(#wl-country-info.active) .wl-title { opacity: 0; }
+  body.wl-timeline-on .av-monogram,
+  body:has(#wl-country-info.active) .av-monogram { opacity: 0; pointer-events: none; }
   /* timeline scrubber docks to the top edge (bottom is where the hands are) */
   #wl-timeline {
     top: 8px;

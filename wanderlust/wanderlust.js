@@ -2166,12 +2166,15 @@
   function toggleGlobe() {
     if (morphing) return;
     morphing = true;
-    resetZoom();                        // each mode starts fit & unzoomed
     const from = isGlobe ? 1 : 0;
     const target = isGlobe ? 0 : 1;     // alpha: 0 = flat, 1 = globe
     projection.clipAngle(null);         // no clip during the morph
     isGlobe = target === 1;             // pins follow immediately
-    if (isGlobe) recenterGlobe();       // spin so the journeys face us
+    resetZoom();                        // each mode starts at its own home view
+    if (isGlobe) {
+      recenterGlobe();                  // spin so the journeys face us
+      if (isNarrowViewport()) setPanelsCollapsed(true);   // globe = viewing mode, tuck the HUD
+    }
     else projection.rotate([0, 0]);     // flat map is never angled
     showAllArcs();
 
@@ -2326,8 +2329,39 @@
 
     svg.call(zoom).call(drag);
     wireOneFingerZoom();
+    wireGlobeTwist();
     // Desktop double-click stays a no-op by design so it can't zoom into empty
     // ocean and fight click-to-fly.
+  }
+
+  /* Globe mode, touch only: two fingers turning in a circle spin the globe
+     around the view axis (Google-Maps-style twist). Runs alongside d3-zoom's
+     pinch (capture-phase, no preventDefault), so twist + pinch-zoom combine
+     naturally. A dead zone keeps ordinary pinches from wobbling the globe. */
+  function wireGlobeTwist() {
+    const node = svg.node();
+    let tw = null;   // { a0: start angle, r0: start rotation, engaged }
+    const angleOf = (ts) =>
+      Math.atan2(ts[1].clientY - ts[0].clientY, ts[1].clientX - ts[0].clientX) * 180 / Math.PI;
+    node.addEventListener('touchstart', (e) => {
+      tw = (isGlobe && e.touches.length === 2)
+        ? { a0: angleOf(e.touches), r0: projection.rotate(), engaged: false }
+        : null;
+    }, { capture: true, passive: true });
+    node.addEventListener('touchmove', (e) => {
+      if (!tw || !isGlobe || morphing || e.touches.length !== 2) return;
+      let d = angleOf(e.touches) - tw.a0;
+      if (d > 180) d -= 360; else if (d < -180) d += 360;
+      if (!tw.engaged) {
+        if (Math.abs(d) < 12) return;           // dead zone: plain pinches don't twist
+        tw.engaged = true;
+        svg.interrupt('globe-rotate');
+      }
+      const r = tw.r0;
+      projection.rotate([r[0], r[1], r[2] - d]);   // globe follows the fingers
+      render();
+    }, { capture: true, passive: true });
+    node.addEventListener('touchend', (e) => { if (e.touches.length < 2) tw = null; }, { capture: true, passive: true });
   }
 
   /* Google-Maps-style one-hand zoom: tap once, then on the second tap hold and
@@ -2778,6 +2812,7 @@
   let timelineStepTimers = [];
   function enterTimeline() {
     stopTimelinePlayback();
+    if (isNarrowViewport()) setPanelsCollapsed(true);   // timeline = viewing mode, tuck the HUD
     timelineActive = true; timelapseActive = true;
     normalizeGlobeTransform(1);
     if (isolatedKey != null) { lockedKey = null; setIsolate(null); }
@@ -2947,6 +2982,8 @@
         lockedKey = (lockedKey === key) ? null : key;
         setIsolate(lockedKey);
         frameKey(lockedKey);
+        // on phones a locked filter tucks the HUD away and leaves the mini chip
+        if (lockedKey != null && isNarrowViewport()) setPanelsCollapsed(true);
       });
     });
   }
@@ -2994,6 +3031,7 @@
     renderArcs();
     applyPinColors();
     positionPins();
+    updateMiniFilter();   // every lock/unlock path funnels through here
   }
 
   function cancelTimelineForUserFilter() {
@@ -3167,6 +3205,57 @@
   }
   function setLang(l) { lang = l; applyLang(); }
 
+  const isNarrowViewport = () => window.matchMedia('(max-width: 640px)').matches;
+
+  /* Collapse/expand the two bottom HUD panels (mobile). Shared by the A/V
+     toggle button and the auto-collapse hooks (globe / timeline / filter).
+     The expanded panels are pinned to exactly 46vh by CSS, so animating the
+     46vh max-height cap tracks the real height pixel-for-pixel — no JS
+     measurement needed. */
+  function setPanelsCollapsed(collapsed) {
+    const body = document.body;
+    if (body.classList.contains('wl-panels-collapsed') === collapsed) { updateMiniFilter(); return; }
+    body.classList.toggle('wl-panels-collapsed', collapsed);
+    const btn = $('#wl-collapse-toggle');
+    if (btn) {
+      btn.textContent = collapsed ? 'A' : 'V';   // same letterforms as the AV monogram
+      btn.setAttribute('aria-expanded', String(!collapsed));
+    }
+    updateMiniFilter();
+  }
+
+  /* Mini filter chip (mobile): when a year/era filter is locked while the HUD
+     is collapsed, show a small [•year | all] box in the bottom-left. Pressing
+     "all" clears the filter and the box disappears. */
+  let miniFilterEl = null;
+  function updateMiniFilter() {
+    const show = isNarrowViewport() && lockedKey != null
+      && document.body.classList.contains('wl-panels-collapsed');
+    if (!miniFilterEl) {
+      if (!show) return;
+      miniFilterEl = document.createElement('div');
+      miniFilterEl.id = 'wl-mini-filter';
+      const host = $('#wl-left-ui');
+      if (host) host.appendChild(miniFilterEl); else document.body.appendChild(miniFilterEl);
+    }
+    if (!show) { miniFilterEl.classList.remove('show'); miniFilterEl.dataset.key = ''; return; }
+    if (miniFilterEl.dataset.key !== String(lockedKey)) {
+      miniFilterEl.dataset.key = String(lockedKey);
+      const col = keyColor(lockedKey);
+      miniFilterEl.innerHTML = `
+        <span class="mini-chip current"><span class="legend-swatch" style="background:${col};--sw:${col}"></span>${esc(keyLabel(lockedKey))}</span>
+        <button type="button" class="mini-chip mini-all">${esc(t('allYears'))}</button>`;
+      miniFilterEl.querySelector('.mini-all').addEventListener('click', (e) => {
+        e.stopPropagation();
+        cancelTimelineForUserFilter();
+        lockedKey = null;
+        setIsolate(null);
+        frameKey(null);
+      });
+    }
+    miniFilterEl.classList.add('show');
+  }
+
   function wireControls() {
     $('#wl-arcs-toggle').addEventListener('change', (e) => setArcs(e.target.checked, true));
     const pt = $('#wl-pins-toggle');
@@ -3180,27 +3269,8 @@
     const ct = $('#wl-city-labels-toggle');
     if (ct) ct.addEventListener('change', (e) => setCityNames(e.target.checked));
     const collapseBtn = $('#wl-collapse-toggle');
-    if (collapseBtn) {
-      const panels = () => ['#wl-filters', '#wl-controls'].map((s) => $(s)).filter(Boolean);
-      let settleTimer = 0;
-      collapseBtn.addEventListener('click', () => {
-        clearTimeout(settleTimer);
-        const collapsing = !document.body.classList.contains('wl-panels-collapsed');
-        if (collapsing) {
-          // pin each panel at its actual height so the collapse starts moving
-          // immediately (animating from the generic vh cap wastes the first
-          // stretch of the transition on invisible max-height distance)
-          panels().forEach((el) => { el.style.maxHeight = el.scrollHeight + 'px'; void el.offsetHeight; el.style.maxHeight = ''; });
-          document.body.classList.add('wl-panels-collapsed');
-        } else {
-          document.body.classList.remove('wl-panels-collapsed');
-          panels().forEach((el) => { el.style.maxHeight = Math.min(el.scrollHeight, window.innerHeight * 0.72) + 'px'; });
-          settleTimer = setTimeout(() => panels().forEach((el) => { el.style.maxHeight = ''; }), 450);
-        }
-        collapseBtn.textContent = collapsing ? '⌃' : '⌄';
-        collapseBtn.setAttribute('aria-expanded', String(!collapsing));
-      });
-    }
+    if (collapseBtn) collapseBtn.addEventListener('click', () =>
+      setPanelsCollapsed(!document.body.classList.contains('wl-panels-collapsed')));
     renderCountryInfoEmpty();
     $('#wl-globe-btn').addEventListener('click', toggleGlobe);
     $('#wl-play-btn').addEventListener('click', playTimelapse);
@@ -3316,7 +3386,22 @@
   function onResize() {
     cancelAnimationFrame(resizeRAF);
     resizeRAF = requestAnimationFrame(() => {
+      const prevW = width, prevH = height;
       measure();
+      if (width === prevW && height === prevH) return;
+      // Mobile browser chrome (URL bar) showing/hiding fires resize with only
+      // a small height delta. The full path below resets the zoom (yanking the
+      // view home) and re-sizes every pattern def, which invalidates every
+      // country's raster — the whole map blinks for a frame. Height-only
+      // changes take a light path that keeps the view and the patterns.
+      if (width === prevW && Math.abs(height - prevH) < Math.max(160, prevH * 0.25)) {
+        svg.attr('viewBox', `0 0 ${width} ${height}`);
+        flatFit = globeFit = null;
+        fitKeepCenter();
+        render();
+        applyPanBounds();
+        return;
+      }
       svg.attr('viewBox', `0 0 ${width} ${height}`);
       flatFit = globeFit = null;   // re-measure framing for the new size
       resetZoom();
