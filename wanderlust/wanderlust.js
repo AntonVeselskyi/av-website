@@ -1719,6 +1719,18 @@
     // win — so "Uray" beats "Mezhdurechensky" when their labels collide).
     shown.forEach((s) => s.p.el.classList.remove('show-label'));
     const pinsHidden = !!(pinLayer && pinLayer.classList.contains('pins-hidden'));
+    const placed = [];
+    // timeline: the active point's name is placed first (highest priority) and
+    // exempt from the zoom-in gate, so it always reads even mid-cluster
+    if (timelineCurrentPin) {
+      const cs = shown.find((s) => s.p === timelineCurrentPin);
+      if (cs) {
+        const w = dispCity(cs.p.city).length * 7 + 16;
+        const cy = cs.sy - (pinsHidden ? 17 : 52);
+        placed.push({ rect: { x0: cs.sx - w / 2, y0: cy - 9, x1: cs.sx + w / 2, y1: cy + 9 } });
+        cs.p.el.classList.add('show-label');
+      }
+    }
     const prio = (p) => (p.kind === 'origin' ? 5 : (p.badge || p.kind === 'home') ? 4 : p.kind === 'marker' ? 1 : 2)
                         + Math.min(0.9, (p.population || 0) / 3e6);
     const rectsOverlap = (a, b, pad = 0) => !(a.x1 + pad < b.x0 || a.x0 - pad > b.x1 || a.y1 + pad < b.y0 || a.y0 - pad > b.y1);
@@ -1736,7 +1748,12 @@
     // in spreads the heads apart, so culled pins come back on their own.
     if (width <= 640) {
       const kept = [];
-      pinHeads.slice().sort((a, b) => b.pr - a.pr).forEach((h) => {
+      const heads = pinHeads.slice().sort((a, b) => b.pr - a.pr);
+      // seed with the active timeline point so it can never be culled by a neighbour
+      const curHead = timelineCurrentPin && heads.find((h) => h.p === timelineCurrentPin);
+      if (curHead) { kept.push(curHead); curHead.p.el.classList.remove('density-hide'); }
+      heads.forEach((h) => {
+        if (h === curHead) return;
         const clash = kept.some((k2) => rectsOverlap(h, k2, -12));
         h.p.el.classList.toggle('density-hide', clash);
         if (!clash) kept.push(h);
@@ -1744,8 +1761,7 @@
     } else {
       pinHeads.forEach((h) => h.p.el.classList.remove('density-hide'));
     }
-    const placed = [];
-    shown.filter((s) => showLabels && (!s.p._fan || s.p.kind === 'origin' || s.p.kind === 'home' || s.p.badge))
+    shown.filter((s) => s.p !== timelineCurrentPin && showLabels && (!s.p._fan || s.p.kind === 'origin' || s.p.kind === 'home' || s.p.badge))
       .map((s) => {
         const w = dispCity(s.p.city).length * 7 + 16;
         const cx = s.sx;
@@ -2466,10 +2482,10 @@
      Atlantic corridor instead (users can still pinch out to the whole world). */
   function homeTransform() {
     if (width > 640 || !projection || isGlobe) return d3.zoomIdentity;
-    // scale so the world's full height fills the viewport (no empty bands);
-    // centre on the Atlantic corridor so Europe + the NA east coast frame the view
-    const k = 2.35;
-    const c = projection([-30, 15]);
+    // frame Europe (the heart of the journeys) on open, with the inbound arcs
+    // and the Atlantic title still in view — not an empty mid-ocean crop
+    const k = 2.9;
+    const c = projection([-10, 45]);
     if (!c) return d3.zoomIdentity;
     return d3.zoomIdentity.translate(width / 2 - k * c[0], height / 2 - k * c[1]).scale(k);
   }
@@ -2829,6 +2845,7 @@
   let timelineActive = false, timelineOrder = [], timelineLastIndex = 0;
   let timelinePlaying = false, timelinePlaybackTimer = null, timelineSpeedIndex = 0;
   let timelineStepTimers = [];
+  let timelineCurrentPin = null;   // the just-revealed point — always drawn + labelled
   function enterTimeline() {
     stopTimelinePlayback();
     if (isNarrowViewport()) setPanelsCollapsed(true);   // timeline = viewing mode, tuck the HUD
@@ -2863,6 +2880,7 @@
   function exitTimeline() {
     stopTimelinePlayback();
     timelineActive = false; timelapseActive = false;
+    timelineCurrentPin = null;
     playbackDetailCountryName = null;
     $('#wl-timeline').classList.remove('show');
     document.body.classList.remove('wl-timeline-on');
@@ -2885,6 +2903,12 @@
     const speed = opts.speed || 1;
     const rangeEl = $('#wl-timeline-range');
     if (rangeEl && +rangeEl.value !== +i) rangeEl.value = i;
+    // the point this step reveals is exempt from pin de-confliction / phone
+    // density culling below, so it always shows its dot + name even in a cluster
+    const curEv = i > 0 ? ord[i - 1] : null;
+    timelineCurrentPin = !curEv ? null
+      : curEv.kind === 'marker' ? curEv.p
+      : (pins.find((p) => p.kind !== 'marker' && p.city === curEv.a.trip.city) || null);
     playbackDetailCountryName = null;
     revealedCountries.clear();
     Object.keys(revealedYearByCountry).forEach((k) => delete revealedYearByCountry[k]);
