@@ -2286,7 +2286,9 @@
         // re-rasterizes the pattern-filled countries (costly on mobile). Coalesce
         // to at most one apply per animation frame so dragging stays smooth.
         pendingZoomT = event.transform;
-        pendingZoomQuick = !!event.sourceEvent || oneFingerZooming;   // gesture → quick pins; programmatic transition → full
+        // quick (deferred-label) frames are a mobile responsiveness aid only;
+        // desktop always runs the full pass, exactly as before
+        pendingZoomQuick = (width <= 640) && (!!event.sourceEvent || oneFingerZooming);
         if (zoomRaf) return;
         zoomRaf = requestAnimationFrame(applyPendingZoom);
       })
@@ -2775,7 +2777,14 @@
     timelineOrder = arcEvents.concat(markerEvents)
       .sort((x, y) => String(x.date).localeCompare(String(y.date)));
     const range = $('#wl-timeline-range'); range.max = timelineOrder.length; range.value = 0;
-    $('#wl-timeline').classList.add('show');
+    const tl = $('#wl-timeline');
+    tl.classList.add('show');
+    document.body.classList.add('wl-timeline-on');
+    // tell CSS how tall the HUD is so the mobile country card can sit just
+    // below it (offsetHeight ignores the slide-in transform, unlike rects)
+    requestAnimationFrame(() => {
+      document.body.style.setProperty('--wl-timeline-h', (8 + tl.offsetHeight + 6) + 'px');
+    });
     $('#wl-timeline-btn').classList.add('active');
     timelineLastIndex = 0;
     setTimeline(0);
@@ -2786,6 +2795,7 @@
     timelineActive = false; timelapseActive = false;
     playbackDetailCountryName = null;
     $('#wl-timeline').classList.remove('show');
+    document.body.classList.remove('wl-timeline-on');
     $('#wl-timeline-btn').classList.remove('active');
     revealedCountries.clear();
     Object.keys(revealedYearByCountry).forEach((k) => delete revealedYearByCountry[k]);

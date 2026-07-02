@@ -175,11 +175,14 @@ body::after {
 #wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 #wl-map svg.dragging { cursor: grabbing; }
 
-/* While actively panning/zooming, pause the drop-shadow glows (only the
-   focused country has one — the pause is invisible) so they aren't re-rastered
-   every frame. Patterns stay: they're part of the look. */
-#wl-map svg.dragging .country { filter: none !important; transition: none !important; }
-#wl-map svg.dragging .arc { filter: none !important; }
+/* Mobile only: while actively panning/zooming, pause the drop-shadow glows
+   (only the focused country has one — the pause is invisible) so they aren't
+   re-rastered every frame. Patterns stay: they're part of the look.
+   Desktop is untouched — it never struggled. */
+@media (max-width: 640px) {
+  #wl-map svg.dragging .country { filter: none !important; transition: none !important; }
+  #wl-map svg.dragging .arc { filter: none !important; }
+}
 
 .wl-sphere   { fill: rgba(2,40,49,.55); stroke: rgba(148,210,189,.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .wl-graticule { fill: none; stroke: rgba(148,210,189,.10); stroke-width: .5; vector-effect: non-scaling-stroke; }
@@ -1376,7 +1379,36 @@ button.wl-year-row {
     pointer-events: none;
   }
   .legend-years { grid-template-columns: 1fr; gap: 5px; }
-  .ci-grid, .ci-salary { grid-template-columns: 1fr; }
+  /* compact country card: two tight columns, smaller type — it sits over the
+     map at the top of the screen, so every saved pixel is map view */
+  /* the fixed heading yields to whatever occupies the top of the screen */
+  .wl-title { transition: opacity .25s ease; }
+  body.wl-timeline-on .wl-title,
+  body:has(#wl-country-info.active) .wl-title { opacity: 0; }
+  /* timeline scrubber docks to the top edge (bottom is where the hands are) */
+  #wl-timeline {
+    top: 8px;
+    bottom: auto;
+    width: calc(100vw - 16px);
+    padding: 9px 12px 10px;
+    gap: 8px;
+    transform: translateX(-50%) translateY(-16px);
+  }
+  #wl-timeline.show { transform: translateX(-50%) translateY(0); }
+  /* while the timeline HUD is open, the country card yields the top edge */
+  body.wl-timeline-on #wl-country-info { top: var(--wl-timeline-h, 92px); }
+  #wl-country-info { padding: 8px 10px 9px; }
+  #wl-country-info .ci-name { font-size: 17px; letter-spacing: 2px; margin-bottom: 6px; }
+  .ci-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 7px; }
+  .ci-item { padding: 4px 7px 5px; border-radius: 7px; }
+  .ci-label { font-size: 8px; letter-spacing: 1.1px; }
+  .ci-value { margin-top: 1px; font-size: 11.5px; }
+  .ci-salary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .ci-money { font-size: 10px; }
+  .ci-lang { gap: 7px; }
+  .ci-native { font-size: 15px; }
+  .ci-translit { font-size: 10px; }
+  #wl-country-info .pop-play.ci-play { width: 30px; height: 30px; }
   #wl-stats-panel {
     top: 8px;
     bottom: 8px;
