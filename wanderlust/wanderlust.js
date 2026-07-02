@@ -1594,7 +1594,13 @@
     let vis = !!xy;
     wlTitle.classList.toggle('gone', !vis);
     if (vis) {
-      wlTitle.style.setProperty('--wl-title-scale', Math.min(Math.max(zoomT.k, 1), 10));
+      // On phones the map occupies far fewer pixels, so the mounted wordmark is
+      // shrunk relative to it (×0.62 ≈ the desktop title/world width ratio) —
+      // it fits the Atlantic gap at every zoom instead of draping over land.
+      const narrow = width <= 640;
+      const scale = narrow ? Math.min(Math.max(zoomT.k * 0.5, 0.5), 10)
+                           : Math.min(Math.max(zoomT.k, 1), 10);
+      wlTitle.style.setProperty('--wl-title-scale', scale);
       wlTitle.style.left = (zoomT.x + zoomT.k * xy[0]) + 'px';
       wlTitle.style.top  = (zoomT.y + zoomT.k * xy[1]) + 'px';
     }
@@ -1634,10 +1640,6 @@
   function mountTitle() {
     if (!wlTitle) wlTitle = $('.wl-title');
     if (!wlTitle || titleMounted) return;
-    // On phones the title is wider than any ocean gap at world view, so
-    // map-anchoring always collides with land. Keep it as the fixed heading
-    // in the empty space above the map instead of sailing it into the ocean.
-    if (width <= 640) return;
     titleMounted = true;
     wlTitle.classList.add('mounted');                 // CSS animates size + position
     positionTitle();                                   // → glides to the Atlantic anchor
@@ -2019,7 +2021,7 @@
     if (typeof updateCountryHighlight === 'function') updateCountryHighlight();
     renderArcs();
     svg.transition().duration(600).ease(d3.easeCubicInOut)
-      .call(zoom.transform, d3.zoomIdentity);
+      .call(zoom.transform, homeTransform());
   }
 
   // moving the cursor onto the popup keeps it open (so the play button is reachable)
@@ -2406,6 +2408,19 @@
     }, { capture: true, passive: false });
   }
 
+  /* "Home" view: identity on desktop. On phones the width-fit world leaves big
+     empty bands above/below the map, so home is zoomed onto the journeys'
+     Atlantic corridor instead (users can still pinch out to the whole world). */
+  function homeTransform() {
+    if (width > 640 || !projection || isGlobe) return d3.zoomIdentity;
+    // scale so the world's full height fills the viewport (no empty bands);
+    // centre on the Atlantic corridor so Europe + the NA east coast frame the view
+    const k = 2.35;
+    const c = projection([-30, 15]);
+    if (!c) return d3.zoomIdentity;
+    return d3.zoomIdentity.translate(width / 2 - k * c[0], height / 2 - k * c[1]).scale(k);
+  }
+
   function resetZoom() {
     if (!zoom) return;
     focusedPin = null;
@@ -2415,8 +2430,9 @@
     clearCountryInfo();
     if (typeof updateCountryHighlight === 'function') updateCountryHighlight();
     renderArcs();
-    zoomT = d3.zoomIdentity;
-    svg.call(zoom.transform, d3.zoomIdentity);   // syncs behaviour + fires zoom
+    const t = homeTransform();
+    zoomT = t;
+    svg.call(zoom.transform, t);   // syncs behaviour + fires zoom
   }
 
   function normalizeGlobeTransform(dur = 0) {
@@ -3155,6 +3171,12 @@
     $('#wl-arcs-toggle').addEventListener('change', (e) => setArcs(e.target.checked, true));
     const pt = $('#wl-pins-toggle');
     if (pt) pt.addEventListener('change', (e) => setPins(e.target.checked));
+    if (window.matchMedia('(max-width: 640px)').matches) {
+      // phones start with pins hidden — the cluster swallows the map at phone
+      // size; countries stay tappable and the toggle brings pins back
+      if (pt) pt.checked = false;
+      const pl = $('#wl-pins'); if (pl) pl.classList.add('pins-hidden');
+    }
     const ct = $('#wl-city-labels-toggle');
     if (ct) ct.addEventListener('change', (e) => setCityNames(e.target.checked));
     const collapseBtn = $('#wl-collapse-toggle');
@@ -3369,6 +3391,7 @@
     wirePopupHover();
     enableInteractions();
     render();
+    svg.call(zoom.transform, homeTransform());   // phones start on the journeys, not the empty world
 
     introSequence();   // arcs all at once → pins drop → blink → arcs tuck away
 
@@ -3380,6 +3403,7 @@
       fitKeepCenter();
       render();
       applyPanBounds();
+      svg.call(zoom.transform, homeTransform());   // recompute against the settled fit
     });
     // size the patterns once getBBox is reliable (SVG layout fully resolved)
     setTimeout(sizePatterns, 800);
