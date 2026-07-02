@@ -8,10 +8,13 @@ import seed from '../data/words.json'
  * with the app); words and progress are server truth.
  */
 export class ApiRepo implements VocabRepo {
-  constructor(
-    private baseUrl: string,
-    private apiKey: string,
-  ) {}
+  private baseUrl: string
+  private apiKey: string
+
+  constructor(baseUrl: string, apiKey: string) {
+    this.baseUrl = baseUrl
+    this.apiKey = apiKey
+  }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const res = await fetch(`${this.baseUrl}${path}`, {

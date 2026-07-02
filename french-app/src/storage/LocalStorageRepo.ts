@@ -19,10 +19,13 @@ export interface KVStore {
  * automatically after rebuild/HMR without any migration step.
  */
 export class LocalStorageRepo implements VocabRepo {
-  constructor(
-    private seed: SeedFile,
-    private store: KVStore = localStorage,
-  ) {}
+  private seed: SeedFile
+  private store: KVStore
+
+  constructor(seed: SeedFile, store: KVStore = localStorage) {
+    this.seed = seed
+    this.store = store
+  }
 
   private read<T>(key: string, fallback: T): T {
     const raw = this.store.getItem(key)
