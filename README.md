@@ -38,11 +38,17 @@ npm run validate-words   # check src/data/words.json after hand edits
 Without configuration the app runs fully offline: words come from
 `french-app/src/data/words.json`, your progress lives in localStorage.
 
-### Adding words with Claude
+### Adding words & topics with Claude
 
-Run `/add-word le chien` in Claude Code. The skill generates translations (EN/UK), IPA +
-Cyrillic transcription, A1 example sentences, picks a topic, keeps the JSON sorted and runs
-the validator. See `.claude/skills/add-word/SKILL.md`.
+Run `/add-word le chien` (or a whole list: `/add-word la plage, nager, le soleil`) in Claude
+Code. The skill generates translations (EN/UK), IPA + Cyrillic transcription, A1 example
+sentences, picks a topic, keeps the JSON sorted and runs the validator.
+
+Run `/add-topic animals` to create a new category (cluster) — it picks a distinct color and
+emoji, and the graph, achievements and filters pick it up automatically.
+
+See `.claude/skills/add-word/SKILL.md` and `.claude/skills/add-topic/SKILL.md`; project
+conventions for future Claude sessions live in `CLAUDE.md`.
 
 ### Deploy the AWS backend (optional)
 

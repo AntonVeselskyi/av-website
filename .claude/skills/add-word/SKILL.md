@@ -1,12 +1,17 @@
 ---
 name: add-word
-description: Add a French word or phrase to the personal vocabulary app (french-app). Use when the user gives a French word to add, e.g. "/add-word fromage" or "add the word 'le chien' to my dictionary".
+description: Add one or more French words or phrases to the personal vocabulary app (french-app). Use when the user gives French words to add, e.g. "/add-word fromage", "/add-word le chien, chercher, la plage" or "add these words to my dictionary".
 ---
 
-# Add a French word to the vocabulary
+# Add French words to the vocabulary
 
-You are adding an entry to `french-app/src/data/words.json` — the seed dictionary of a personal
-French-learning app for Anton, a Ukrainian native speaker at A1 level.
+You are adding entries to `french-app/src/data/words.json` — the seed dictionary of a personal
+French-learning app for Anton, a Ukrainian native speaker at A1 level. Project-wide conventions
+live in the root `CLAUDE.md`; if this file and CLAUDE.md ever disagree, CLAUDE.md wins.
+
+**Batch input**: the user may give several words at once (comma-separated, or a pasted list).
+Run each word through steps 2–4 below, then validate once (step 5) and confirm all cards
+together (step 6).
 
 ## Steps
 
@@ -25,9 +30,9 @@ French-learning app for Anton, a Ukrainian native speaker at A1 level.
    - `uk` — 1–2 natural Ukrainian translations. Use proper modern Ukrainian, never russism calques.
    - `ipa` — IPA in slashes, with syllable dots: `"/ʃjɛ̃/"`.
    - `cyr` — Ukrainian-Cyrillic transcription (conventions below).
-   - `topic` — the best-fit **existing** topic id. Only propose a brand-new topic if nothing fits,
-     and confirm with the user first (a new topic needs `id`, `nameEn`, `nameUk`, `emoji`, unique
-     `color` in `#rrggbb`).
+   - `topic` — the best-fit **existing** topic id. If nothing fits, don't invent one inline:
+     propose a new category to the user and, once confirmed, create it with the `add-topic` skill
+     (`.claude/skills/add-topic/SKILL.md`) before adding the word.
    - `examples` — 2 short A1-level example sentences. Each example has all 5 fields:
      `fr`, `en`, `uk`, `ipa` (of the French sentence), `cyr` (of the French sentence).
    - `source` — ask the user how they learned the word if they didn't say; otherwise use their
