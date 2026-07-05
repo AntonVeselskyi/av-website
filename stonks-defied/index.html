@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#061033">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>STONKS DEFIED</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23061033'/%3E%3Cpath d='M16 5 L28 27 L4 27 Z' fill='%23ffd60a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+  <div id="scan"></div>
+
+  <!-- fake old-phone status bar (menus only) -->
+  <div id="statusbar">
+    <span class="sig">&#9602;&#9604;&#9606;&#9608;</span>
+    <span class="carrier">STONKS</span>
+    <span id="sb-clock">--:--</span>
+    <span class="batt">&#9646;&#9646;&#9646;&#9647;</span>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div class="screen active" id="scr-main">
+    <div class="title"><span class="t-arrow">&#9650;</span><br>STONKS<br>DEFIED</div>
+    <div class="subtitle">GRAVITY DEFIED &#215; THE MARKET</div>
+    <div class="list">
+      <button class="mbtn" data-go="levels">RIDE CHARTS</button>
+      <button class="mbtn" data-go="ticker">ENTER TICKER</button>
+      <button class="mbtn" data-go="colors">COLORSCHEME</button>
+      <button class="mbtn" data-go="credits">CREDITS</button>
+    </div>
+    <div class="foot">&#9650; GAS &#9660; BRAKE &#9664;&#9654; LEAN &#183; R RETRY &#183; M SOUND</div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div class="screen" id="scr-levels">
+    <div class="scr-head">SELECT CHART</div>
+    <div class="list" id="level-grid"></div>
+    <div class="list"><button class="mbtn back" data-go="main">&#9664; BACK</button></div>
+    <div class="foot">BEAT EVERY CHART UNDER PAR &#9650; UNLOCK A COLORSCHEME</div>
+  </div>
+
+  <!-- TICKER ENTRY -->
+  <div class="screen" id="scr-ticker">
+    <div class="scr-head">ENTER TICKER</div>
+    <div class="tick-box">
+      <input id="ticker-input" type="text" maxlength="10" placeholder="TSLA" autocomplete="off" spellcheck="false">
+      <button class="mbtn" id="ticker-go">DIAL IN &#9654;</button>
+      <div id="ticker-status"></div>
+      <div class="note">RIDES THE LAST YEAR OF WEEKLY CLOSES.<br>
+      IF THE WIRE IS DOWN, A SIMULATED CHART IS GENERATED.<br>
+      TIP: URL PARAM <b>?ticker=NVDA</b> WORKS TOO.</div>
+    </div>
+    <div class="list"><button class="mbtn back" data-go="main">&#9664; BACK</button></div>
+  </div>
+
+  <!-- COLORSCHEME -->
+  <div class="screen" id="scr-colors">
+    <div class="scr-head">COLORSCHEME</div>
+    <div class="list" id="scheme-list"></div>
+    <div class="list"><button class="mbtn back" data-go="main">&#9664; BACK</button></div>
+  </div>
+
+  <!-- CREDITS -->
+  <div class="screen" id="scr-credits">
+    <div class="scr-head">CREDITS</div>
+    <div class="credits">
+      <div class="monogram">AV</div>
+      <div class="cr-main">GAME BY<br>ANTON VESELSKYI</div>
+      <div class="cr-sub">A GRAVITY DEFIED TRIBUTE<br>WHERE EVERY TRACK IS A STOCK CHART</div>
+      <div class="cr-tiny">MONOPHONIC AUDIO &#183; VECTOR PHYSICS &#183; COOKIES INSIDE<br>&#169; 2026</div>
+    </div>
+    <div class="list"><button class="mbtn back" data-go="main">&#9664; BACK</button></div>
+  </div>
+
+  <!-- IN-GAME HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-cell hud-left">
+      <div id="hud-sym">----</div>
+      <div id="hud-price">$0.00</div>
+    </div>
+    <div class="hud-cell hud-mid">
+      <div id="hud-time">0:00.0</div>
+      <div id="hud-par">PAR 0:00</div>
+    </div>
+    <div class="hud-cell hud-right">
+      <button class="hbtn" id="btn-restart" aria-label="restart">&#10227;</button>
+      <button class="hbtn" id="btn-pause" aria-label="pause">&#9613;&#9613;</button>
+    </div>
+  </div>
+  <div id="banner" class="hidden"></div>
+
+  <!-- MOBILE TOUCH CONTROLS -->
+  <div id="touch" class="hidden">
+    <div class="tpad tleft">
+      <button class="tbtn" id="t-back">&#9664;</button>
+      <button class="tbtn" id="t-fwd">&#9654;</button>
+    </div>
+    <div class="tpad tright">
+      <button class="tbtn small" id="t-brake">BRK</button>
+      <button class="tbtn big" id="t-gas">GAS</button>
+    </div>
+  </div>
+
+  <!-- OVERLAY DIALOG -->
+  <div id="overlay" class="hidden">
+    <div id="ov-box">
+      <div id="ov-title"></div>
+      <div id="ov-sub"></div>
+      <div id="ov-btns"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+</div>
+
+<script src="js/themes.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
