@@ -6,15 +6,15 @@ window.SD = window.SD || {};
   const TAU = Math.PI * 2;
 
   // physics constants
-  const G = 1100;          // gravity (y-down)
-  const WHEEL_R = 11;
+  const G = 1240;          // gravity (y-down)
+  const WHEEL_R = 11.5;
   const WHEELBASE = 46;
-  const ENGINE = 1000;     // tangential accel on rear wheel
-  const VMAX = 430;        // top tangential speed
-  const BRAKE = 7;
-  const LEAN = 9.5;        // rad/s^2 torque from lean keys
-  const WHEELIE = 1.5;     // nose-up bias while on the gas
-  const STEP = 1 / 60, SUB = 4;
+  const ENGINE = 1280;     // tangential accel on rear wheel
+  const VMAX = 520;        // top tangential speed
+  const BRAKE = 8.5;
+  const LEAN = 20;         // rad/s^2 torque from lean keys
+  const WHEELIE = 3.4;     // nose-up bias while on the gas
+  const STEP = 1 / 60, SUB = 6;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
   let ter = null, def = null, bike = null;
@@ -75,16 +75,17 @@ window.SD = window.SD || {};
       w.contact = false;
     }
 
-    // wheelbase spring/damper (suspension)
+    // Wheelbase spring/damper. Soft enough to rebound off chart edges,
+    // stiff enough to keep the old Gravity Defied silhouette.
     for (let it = 0; it < 2; it++) {
       let dxv = bike.front.p.x - bike.rear.p.x, dyv = bike.front.p.y - bike.rear.p.y;
       const dist = Math.hypot(dxv, dyv) || 1;
       const ax = dxv / dist, ay = dyv / dist;
-      const c = (dist - WHEELBASE) * 0.5 * 0.55;
+      const c = (dist - WHEELBASE) * 0.5 * 0.42;
       bike.rear.p.x += ax * c; bike.rear.p.y += ay * c;
       bike.front.p.x -= ax * c; bike.front.p.y -= ay * c;
       const rv = (bike.front.v.x - bike.rear.v.x) * ax + (bike.front.v.y - bike.rear.v.y) * ay;
-      const imp = rv * 0.5 * 0.3;
+      const imp = rv * 0.5 * 0.18;
       bike.front.v.x -= ax * imp; bike.front.v.y -= ay * imp;
       bike.rear.v.x += ax * imp; bike.rear.v.y += ay * imp;
     }
@@ -93,7 +94,7 @@ window.SD = window.SD || {};
     {
       const a = axis(), px = -a.y, py = a.x;
       const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
-      applyRot(-wRel * 0.5 * h * 4);
+      applyRot(-wRel * 0.5 * h * 1.65);
     }
 
     // ground contacts
@@ -102,25 +103,32 @@ window.SD = window.SD || {};
       if (c) {
         w.p.x += c.nx * c.pen; w.p.y += c.ny * c.pen;
         const vn = w.v.x * c.nx + w.v.y * c.ny;
-        if (vn < 0) { w.v.x -= c.nx * vn * 1.05; w.v.y -= c.ny * vn * 1.05; }
+        if (vn < 0) {
+          const rebound = 1.12 + Math.min(0.16, Math.abs(vn) / 1500);
+          w.v.x -= c.nx * vn * rebound; w.v.y -= c.ny * vn * rebound;
+        }
         let tx = -c.ny, ty = c.nx;
         if (tx < 0) { tx = -tx; ty = -ty; }
         const vt = w.v.x * tx + w.v.y * ty;
-        w.v.x -= tx * vt * 0.004; w.v.y -= ty * vt * 0.004; // rolling resistance
+        w.v.x -= tx * vt * 0.0025; w.v.y -= ty * vt * 0.0025; // rolling resistance
         w.contact = true; w.t = { x: tx, y: ty };
       }
     }
 
     // controls
     if (state === 'riding') {
+      const leanInput = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
+      const contactCount = (bike.rear.contact ? 1 : 0) + (bike.front.contact ? 1 : 0);
+
       if (keys.gas && bike.rear.contact) {
         const t = bike.rear.t;
         const vt = ((bike.rear.v.x + bike.front.v.x) / 2) * t.x + ((bike.rear.v.y + bike.front.v.y) / 2) * t.y;
         if (vt < VMAX) {
-          bike.rear.v.x += t.x * ENGINE * h; bike.rear.v.y += t.y * ENGINE * h;
-          bike.front.v.x += t.x * ENGINE * h; bike.front.v.y += t.y * ENGINE * h;
+          const drive = ENGINE * (keys.back ? 1.08 : 1) * (keys.fwd ? 0.94 : 1);
+          bike.rear.v.x += t.x * drive * h; bike.rear.v.y += t.y * drive * h;
+          bike.front.v.x += t.x * drive * h * 0.55; bike.front.v.y += t.y * drive * h * 0.55;
         }
-        applyRot(-WHEELIE * h);
+        applyRot(-WHEELIE * h * (keys.back ? 1.75 : 1));
         if (Math.random() < h * 30) spawnExhaust();
       }
       if (keys.brake) {
@@ -130,8 +138,11 @@ window.SD = window.SD || {};
           w.v.x -= w.t.x * vt * f; w.v.y -= w.t.y * vt * f;
         }
       }
-      const rot = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
-      if (rot) applyRot(rot * LEAN * h);
+      if (leanInput) {
+        applyRot(leanInput * LEAN * h * (contactCount ? 1 : 1.75));
+        if (keys.fwd && bike.front.contact) bike.front.v.y += 120 * h;
+        if (keys.back && bike.rear.contact) bike.rear.v.y += 85 * h;
+      }
     }
 
     // wheel spin (visual)

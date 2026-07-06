@@ -135,7 +135,8 @@ window.SD = window.SD || {};
       btn.innerHTML =
         '<span class="l-row1"><b>' + def.sym + '</b> ' + def.nick +
         (beaten(def) ? ' <span class="medal">&#9650;</span>' : '') + '</span>' +
-        '<span class="l-row2">' + def.era + ' &#183; PAR ' + fmtPar(def.par) +
+        '<span class="l-row2">' + (def.company || def.sym) + ' / ' + (def.level || 'Market Route') + '</span>' +
+        '<span class="l-row2">' + def.era + ' / PAR ' + fmtPar(def.par) +
         (b ? ' &#183; BEST ' + fmtTime(b) : '') + '</span>';
       btn.addEventListener('click', () => { sfx.click(); startLevel(def); });
       grid.appendChild(btn);
@@ -214,7 +215,7 @@ window.SD = window.SD || {};
   U.onLevelStart = function (def) {
     $('hud-sym').textContent = def.sym;
     $('hud-par').textContent = 'PAR ' + fmtPar(def.par);
-    banner('PRESS ▲ GAS TO OPEN POSITION');
+    banner((def.level || def.company || def.sym) + ' / PRESS GAS');
   };
   U.onRideStart = function () { banner(null); sfx.start(); };
 
@@ -245,11 +246,12 @@ window.SD = window.SD || {};
     } else {
       const under = ms <= def.par * 1000;
       const best = bestOf(def.id);
-      let sub = 'TIME ' + fmtTime(ms) + ' / PAR ' + fmtPar(def.par);
+      let sub = (def.company || def.sym) + '<br>' + (def.level || def.nick || 'Market Route') +
+        '<br>TIME ' + fmtTime(ms) + ' / PAR ' + fmtPar(def.par);
       if (best && Math.round(ms) <= best) sub += '<br>NEW BEST!';
       sub += under ? '<br><span class="good">▲ UNDER PAR</span>' : '<br><span class="bad">▼ OVER PAR</span>';
       const btns = [];
-      if (next) btns.push({ label: 'NEXT: ' + next.sym + ' ▶', fn: () => startLevel(next), primary: true });
+      if (next) btns.push({ label: 'NEXT: ' + next.sym + ' / ' + (next.level || next.nick) + ' ▶', fn: () => startLevel(next), primary: true });
       btns.push({ label: 'RETRY ↻', fn: () => E().restart(), primary: !next });
       btns.push({ label: 'EXIT TO MENU', fn: quitToMenu });
       showOverlay(under ? 'TO THE MOON! ▲' : 'POSITION CLOSED', sub, btns);
