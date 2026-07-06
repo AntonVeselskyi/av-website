@@ -10,10 +10,10 @@ window.SD = window.SD || {};
   const WHEEL_R = 11;
   const WHEELBASE = 46;
   const ENGINE = 1000;     // tangential accel on rear wheel
-  const VMAX = 430;        // top tangential speed
+  const VMAX = 500;        // top tangential speed
   const BRAKE = 7;
-  const LEAN = 9.5;        // rad/s^2 torque from lean keys
-  const WHEELIE = 1.5;     // nose-up bias while on the gas
+  const LEAN = 13.5;       // rad/s^2 torque from lean keys
+  const WHEELIE = 2.2;     // nose-up bias while on the gas
   const STEP = 1 / 60, SUB = 4;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
@@ -80,11 +80,11 @@ window.SD = window.SD || {};
       let dxv = bike.front.p.x - bike.rear.p.x, dyv = bike.front.p.y - bike.rear.p.y;
       const dist = Math.hypot(dxv, dyv) || 1;
       const ax = dxv / dist, ay = dyv / dist;
-      const c = (dist - WHEELBASE) * 0.5 * 0.55;
+      const c = (dist - WHEELBASE) * 0.5 * 0.4;
       bike.rear.p.x += ax * c; bike.rear.p.y += ay * c;
       bike.front.p.x -= ax * c; bike.front.p.y -= ay * c;
       const rv = (bike.front.v.x - bike.rear.v.x) * ax + (bike.front.v.y - bike.rear.v.y) * ay;
-      const imp = rv * 0.5 * 0.3;
+      const imp = rv * 0.5 * 0.15;
       bike.front.v.x -= ax * imp; bike.front.v.y -= ay * imp;
       bike.rear.v.x += ax * imp; bike.rear.v.y += ay * imp;
     }
@@ -93,7 +93,7 @@ window.SD = window.SD || {};
     {
       const a = axis(), px = -a.y, py = a.x;
       const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
-      applyRot(-wRel * 0.5 * h * 4);
+      applyRot(-wRel * 0.5 * h * 2);
     }
 
     // ground contacts
@@ -102,7 +102,7 @@ window.SD = window.SD || {};
       if (c) {
         w.p.x += c.nx * c.pen; w.p.y += c.ny * c.pen;
         const vn = w.v.x * c.nx + w.v.y * c.ny;
-        if (vn < 0) { w.v.x -= c.nx * vn * 1.05; w.v.y -= c.ny * vn * 1.05; }
+        if (vn < 0) { w.v.x -= c.nx * vn * 1.15; w.v.y -= c.ny * vn * 1.15; }
         let tx = -c.ny, ty = c.nx;
         if (tx < 0) { tx = -tx; ty = -ty; }
         const vt = w.v.x * tx + w.v.y * ty;
@@ -532,10 +532,18 @@ window.SD = window.SD || {};
     // world y=400 is pmin, y=400-amp is pmax (pre-clamp approximation)
     const amp = def.amp || 260;
     for (let y = Math.floor(vy0 / gy) * gy; y < vy1; y += gy) {
-      let price = ter.pmin + ((400 - y) / amp) * (ter.pmax - ter.pmin);
-      if (def.log) {
+      const scale = def.scale || (def.log ? 'log' : 'linear');
+      const f = (400 - y) / amp;
+      let price;
+      if (scale === 'log') {
         const llo = Math.log(ter.pmin), lhi = Math.log(ter.pmax);
-        price = Math.exp(llo + ((400 - y) / amp) * (lhi - llo));
+        price = Math.exp(llo + f * (lhi - llo));
+      } else if (scale === 'sqrt') {
+        const slo = Math.sqrt(ter.pmin), shi = Math.sqrt(ter.pmax);
+        const s = slo + f * (shi - slo);
+        price = s * s;
+      } else {
+        price = ter.pmin + f * (ter.pmax - ter.pmin);
       }
       if (price < ter.pmin * 0.5 || price > ter.pmax * 2) continue;
       const sy = (y - cam.y) * z + H / 2;
