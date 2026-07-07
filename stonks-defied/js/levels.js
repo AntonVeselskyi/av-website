@@ -106,11 +106,32 @@ window.SD = window.SD || {};
     return sum / count;
   }
 
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+  function inferDateScale(def, count) {
+    if (def.dates && def.dates.length) return { explicit: def.dates };
+    const m = String(def.era || '').match(/(\d{4})\s*-\s*(\d{4})/);
+    const startYear = m ? Number(m[1]) : new Date().getFullYear() - 1;
+    const endYear = m ? Number(m[2]) : startYear;
+    const upper = String(def.era || '').toUpperCase();
+    const stepDays = upper.includes('DAILY') ? 1 : upper.includes('MONTHLY') ? 30.4375 : 7;
+    const start = Date.UTC(startYear, 0, 1);
+    const naturalEnd = start + Math.max(0, count - 1) * stepDays * 86400000;
+    const eraEnd = Date.UTC(endYear, 11, 31);
+    return { start, end: Math.max(naturalEnd, eraEnd) };
+  }
+
+  function fmtDate(ms) {
+    const d = new Date(ms);
+    return MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  }
+
   // ---- terrain builder: prices -> rideable heightmap ----
   const PRE = 6, POST = 9; // flat platform columns before/after the chart
   L.buildTerrain = function (def) {
     const n = Math.min(def.points || 150, Math.max(72, def.prices.length));
     const raw = resample(def.prices, n);
+    const dateScale = inferDateScale(def, n);
     const dx = def.dx || 55;
     const amp = def.amp || 260;
 
@@ -138,12 +159,18 @@ window.SD = window.SD || {};
     // world ys (y-down): higher price = higher ground (smaller y)
     const ys = new Array(PRE + n + POST);
     const prices = new Array(PRE + n + POST);
+    const dates = new Array(PRE + n + POST);
     for (let i = 0; i < n; i++) {
       ys[PRE + i] = 400 - ((vals[i] - lo) / range) * amp;
       prices[PRE + i] = raw[i];
+      if (dateScale.explicit) {
+        dates[PRE + i] = dateScale.explicit[Math.min(dateScale.explicit.length - 1, Math.round((i / Math.max(1, n - 1)) * (dateScale.explicit.length - 1)))];
+      } else {
+        dates[PRE + i] = fmtDate(dateScale.start + (dateScale.end - dateScale.start) * (i / Math.max(1, n - 1)));
+      }
     }
-    for (let i = 0; i < PRE; i++) { ys[i] = ys[PRE]; prices[i] = raw[0]; }
-    for (let i = 0; i < POST; i++) { ys[PRE + n + i] = ys[PRE + n - 1]; prices[PRE + n + i] = raw[n - 1]; }
+    for (let i = 0; i < PRE; i++) { ys[i] = ys[PRE]; prices[i] = raw[0]; dates[i] = dates[PRE]; }
+    for (let i = 0; i < POST; i++) { ys[PRE + n + i] = ys[PRE + n - 1]; prices[PRE + n + i] = raw[n - 1]; dates[PRE + n + i] = dates[PRE + n - 1]; }
 
     // slope clamp so any chart stays rideable (forward + backward passes)
     const maxDy = dx * (def.slope || 1.35);
@@ -180,6 +207,11 @@ window.SD = window.SD || {};
     ter.priceAt = function (x) {
       const i = Math.max(0, Math.min(N - 1, Math.round((x - x0) / dx)));
       return prices[i];
+    };
+
+    ter.dateAt = function (x) {
+      const i = Math.max(0, Math.min(N - 1, Math.round((x - x0) / dx)));
+      return dates[i] || '';
     };
 
     // deepest circle-vs-heightmap contact; normal points away from ground (up-ish)

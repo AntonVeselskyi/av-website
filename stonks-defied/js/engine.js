@@ -6,15 +6,15 @@ window.SD = window.SD || {};
   const TAU = Math.PI * 2;
 
   // physics constants
-  const G = 1240;          // gravity (y-down)
-  const WHEEL_R = 11.5;
+  const G = 1320;          // gravity (y-down)
+  const WHEEL_R = 12;
   const WHEELBASE = 46;
-  const ENGINE = 1280;     // tangential accel on rear wheel
-  const VMAX = 520;        // top tangential speed
-  const BRAKE = 8.5;
-  const LEAN = 20;         // rad/s^2 torque from lean keys
-  const WHEELIE = 3.4;     // nose-up bias while on the gas
-  const STEP = 1 / 60, SUB = 6;
+  const ENGINE = 1440;     // tangential accel on rear wheel
+  const VMAX = 560;        // top tangential speed
+  const BRAKE = 9.2;
+  const LEAN = 28;         // rad/s^2 torque from lean keys
+  const WHEELIE = 5.4;     // nose-up bias while on the gas
+  const STEP = 1 / 60, SUB = 7;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
   let ter = null, def = null, bike = null;
@@ -81,11 +81,11 @@ window.SD = window.SD || {};
       let dxv = bike.front.p.x - bike.rear.p.x, dyv = bike.front.p.y - bike.rear.p.y;
       const dist = Math.hypot(dxv, dyv) || 1;
       const ax = dxv / dist, ay = dyv / dist;
-      const c = (dist - WHEELBASE) * 0.5 * 0.42;
+      const c = (dist - WHEELBASE) * 0.5 * 0.34;
       bike.rear.p.x += ax * c; bike.rear.p.y += ay * c;
       bike.front.p.x -= ax * c; bike.front.p.y -= ay * c;
       const rv = (bike.front.v.x - bike.rear.v.x) * ax + (bike.front.v.y - bike.rear.v.y) * ay;
-      const imp = rv * 0.5 * 0.18;
+      const imp = rv * 0.5 * 0.08;
       bike.front.v.x -= ax * imp; bike.front.v.y -= ay * imp;
       bike.rear.v.x += ax * imp; bike.rear.v.y += ay * imp;
     }
@@ -94,7 +94,7 @@ window.SD = window.SD || {};
     {
       const a = axis(), px = -a.y, py = a.x;
       const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
-      applyRot(-wRel * 0.5 * h * 1.65);
+      applyRot(-wRel * 0.5 * h * 0.9);
     }
 
     // ground contacts
@@ -104,13 +104,13 @@ window.SD = window.SD || {};
         w.p.x += c.nx * c.pen; w.p.y += c.ny * c.pen;
         const vn = w.v.x * c.nx + w.v.y * c.ny;
         if (vn < 0) {
-          const rebound = 1.12 + Math.min(0.16, Math.abs(vn) / 1500);
+          const rebound = 1.28 + Math.min(0.26, Math.abs(vn) / 1200);
           w.v.x -= c.nx * vn * rebound; w.v.y -= c.ny * vn * rebound;
         }
         let tx = -c.ny, ty = c.nx;
         if (tx < 0) { tx = -tx; ty = -ty; }
         const vt = w.v.x * tx + w.v.y * ty;
-        w.v.x -= tx * vt * 0.0025; w.v.y -= ty * vt * 0.0025; // rolling resistance
+        w.v.x -= tx * vt * 0.0012; w.v.y -= ty * vt * 0.0012; // rolling resistance
         w.contact = true; w.t = { x: tx, y: ty };
       }
     }
@@ -124,11 +124,11 @@ window.SD = window.SD || {};
         const t = bike.rear.t;
         const vt = ((bike.rear.v.x + bike.front.v.x) / 2) * t.x + ((bike.rear.v.y + bike.front.v.y) / 2) * t.y;
         if (vt < VMAX) {
-          const drive = ENGINE * (keys.back ? 1.08 : 1) * (keys.fwd ? 0.94 : 1);
+          const drive = ENGINE * (keys.back ? 1.16 : 1) * (keys.fwd ? 0.88 : 1);
           bike.rear.v.x += t.x * drive * h; bike.rear.v.y += t.y * drive * h;
-          bike.front.v.x += t.x * drive * h * 0.55; bike.front.v.y += t.y * drive * h * 0.55;
+          bike.front.v.x += t.x * drive * h * 0.42; bike.front.v.y += t.y * drive * h * 0.42;
         }
-        applyRot(-WHEELIE * h * (keys.back ? 1.75 : 1));
+        applyRot(-WHEELIE * h * (keys.back ? 2.25 : keys.fwd ? 0.55 : 1));
         if (Math.random() < h * 30) spawnExhaust();
       }
       if (keys.brake) {
@@ -139,9 +139,15 @@ window.SD = window.SD || {};
         }
       }
       if (leanInput) {
-        applyRot(leanInput * LEAN * h * (contactCount ? 1 : 1.75));
-        if (keys.fwd && bike.front.contact) bike.front.v.y += 120 * h;
-        if (keys.back && bike.rear.contact) bike.rear.v.y += 85 * h;
+        applyRot(leanInput * LEAN * h * (contactCount ? 1.15 : 2.35));
+        if (keys.fwd) {
+          if (bike.front.contact) bike.front.v.y += 240 * h;
+          bike.rear.v.y -= 70 * h;
+        }
+        if (keys.back) {
+          if (bike.rear.contact) bike.rear.v.y += 190 * h;
+          bike.front.v.y -= 130 * h;
+        }
       }
     }
 
@@ -294,7 +300,10 @@ window.SD = window.SD || {};
       }
     }
     render(dt);
-    if (state !== 'idle' && SD.ui) SD.ui.hudTick(rideMs, def, ter ? ter.priceAt(mid().x) : 0, state);
+    if (state !== 'idle' && SD.ui) {
+      const mx = mid().x;
+      SD.ui.hudTick(rideMs, def, ter ? ter.priceAt(mx) : 0, state, ter && ter.dateAt ? ter.dateAt(mx) : '');
+    }
   }
 
   // ---- rendering ----

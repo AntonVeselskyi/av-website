@@ -212,6 +212,12 @@ window.SD = window.SD || {};
     E().startLevel(def);
   }
 
+  function restartLevel() {
+    hideOverlay();
+    E().setPaused(false);
+    E().restart();
+  }
+
   U.onLevelStart = function (def) {
     $('hud-sym').textContent = def.sym;
     $('hud-par').textContent = 'PAR ' + fmtPar(def.par);
@@ -240,7 +246,7 @@ window.SD = window.SD || {};
         'DIAMOND HANDS, GLASS HELMET', 'SELL SIGNAL CONFIRMED',
       ];
       showOverlay('LIQUIDATED!', quips[Math.floor(Math.random() * quips.length)], [
-        { label: 'RE-ENTER ↻', fn: () => E().restart(), primary: true },
+        { label: 'RE-ENTER ↻', fn: restartLevel, primary: true },
         { label: 'EXIT TO MENU', fn: quitToMenu },
       ]);
     } else {
@@ -252,7 +258,7 @@ window.SD = window.SD || {};
       sub += under ? '<br><span class="good">▲ UNDER PAR</span>' : '<br><span class="bad">▼ OVER PAR</span>';
       const btns = [];
       if (next) btns.push({ label: 'NEXT: ' + next.sym + ' / ' + (next.level || next.nick) + ' ▶', fn: () => startLevel(next), primary: true });
-      btns.push({ label: 'RETRY ↻', fn: () => E().restart(), primary: !next });
+      btns.push({ label: 'RETRY ↻', fn: restartLevel, primary: !next });
       btns.push({ label: 'EXIT TO MENU', fn: quitToMenu });
       showOverlay(under ? 'TO THE MOON! ▲' : 'POSITION CLOSED', sub, btns);
       if (checkUnlock()) {
@@ -261,10 +267,10 @@ window.SD = window.SD || {};
     }
   };
 
-  U.hudTick = function (ms, def, price, state) {
+  U.hudTick = function (ms, def, price, state, date) {
     $('hud-time').textContent = fmtTime(ms);
     $('hud-time').classList.toggle('over', ms > def.par * 1000);
-    $('hud-price').textContent = '$' + E().fmtPrice(price);
+    $('hud-price').textContent = '$' + E().fmtPrice(price) + (date ? ' / ' + date : '');
   };
 
   function banner(text, danger) {
@@ -319,7 +325,7 @@ window.SD = window.SD || {};
     E().setPaused(true);
     showOverlay('PAUSED', 'MARKET HALTED', [
       { label: 'RESUME ▶', fn: () => { E().setPaused(false); hideOverlay(); }, primary: true },
-      { label: 'RETRY ↻', fn: () => { E().setPaused(false); E().restart(); hideOverlay(); } },
+      { label: 'RETRY ↻', fn: restartLevel },
       { label: 'SOUND: ' + (save.mu ? 'OFF' : 'ON'), fn: () => { toggleMute(); showPause(); } },
       { label: 'EXIT TO MENU', fn: quitToMenu },
     ]);
