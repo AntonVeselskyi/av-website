@@ -17,6 +17,7 @@ window.SD = window.SD || {};
   const SUSP_REST = 42;
   const SUSP_K = 62;
   const SUSP_DAMP = 2.4;
+  const BODY_CLEARANCE = 44;
   const STEP = 1 / 60, SUB = 7;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
@@ -87,7 +88,7 @@ window.SD = window.SD || {};
     wheel.v.x += nx * impulse * 0.9; wheel.v.y += ny * impulse * 0.9;
     body.v.x -= nx * impulse * 0.42; body.v.y -= ny * impulse * 0.42;
 
-    const corr = Math.max(-10, Math.min(10, err)) * 0.045;
+    const corr = Math.max(-10, Math.min(10, err)) * 0.12;
     wheel.p.x += nx * corr * 0.72; wheel.p.y += ny * corr * 0.72;
     body.p.x -= nx * corr * 0.28; body.p.y -= ny * corr * 0.28;
   }
@@ -102,8 +103,20 @@ window.SD = window.SD || {};
     strut(bike.rear, body, SUSP_REST + leanInput * 3, h);
     strut(bike.front, body, SUSP_REST - leanInput * 3, h);
 
-    body.v.x += (targetX - body.p.x) * 4.8 * h;
-    body.v.y += (targetY - body.p.y) * 4.8 * h;
+    body.v.x += (targetX - body.p.x) * 7.2 * h;
+    body.v.y += (targetY - body.p.y) * 7.2 * h;
+    body.v.x *= 1 - 0.9 * h;
+    body.v.y *= 1 - 0.9 * h;
+  }
+
+  function keepBodyClear() {
+    if (!bike.body || !ter) return;
+    const floor = ter.groundY(bike.body.p.x) - BODY_CLEARANCE;
+    if (bike.body.p.y > floor) {
+      bike.body.p.y = floor;
+      if (bike.body.v.y > 0) bike.body.v.y *= -0.32;
+      bike.body.v.x *= 0.92;
+    }
   }
 
   // ---- simulation ----
@@ -160,6 +173,7 @@ window.SD = window.SD || {};
 
     const preLeanInput = state === 'riding' ? (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0) : 0;
     applySuspension(h, preLeanInput);
+    keepBodyClear();
 
     // controls
     if (state === 'riding') {
@@ -211,7 +225,7 @@ window.SD = window.SD || {};
     // crash & finish checks
     if (state === 'riding') {
       const hp = headPos();
-      if (ter.contact(hp.x, hp.y, 7.5)) return doCrash();
+      if (rideMs > 650 && ter.contact(hp.x, hp.y, 7.5)) return doCrash();
       if (mid().y > ter.maxY + 700) return doCrash();
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
     }
