@@ -17,7 +17,7 @@ window.SD = window.SD || {};
   const SUSP_REST = 42;
   const SUSP_K = 62;
   const SUSP_DAMP = 2.4;
-  const BODY_CLEARANCE = 44;
+  const BODY_CLEARANCE = 46;
   const STEP = 1 / 60, SUB = 7;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
@@ -111,11 +111,26 @@ window.SD = window.SD || {};
 
   function keepBodyClear() {
     if (!bike.body || !ter) return;
-    const floor = ter.groundY(bike.body.p.x) - BODY_CLEARANCE;
-    if (bike.body.p.y > floor) {
-      bike.body.p.y = floor;
-      if (bike.body.v.y > 0) bike.body.v.y *= -0.32;
-      bike.body.v.x *= 0.92;
+    const body = bike.body;
+    const c = ter.contact(body.p.x, body.p.y, BODY_CLEARANCE);
+    if (c) {
+      body.p.x += c.nx * c.pen;
+      body.p.y += c.ny * c.pen;
+      const vn = body.v.x * c.nx + body.v.y * c.ny;
+      if (vn < 0) {
+        body.v.x -= c.nx * vn * 1.08;
+        body.v.y -= c.ny * vn * 1.08;
+      }
+      body.v.x *= 0.86;
+      body.v.y *= 0.86;
+      return;
+    }
+
+    const floor = ter.groundY(body.p.x) - BODY_CLEARANCE;
+    if (body.p.y > floor) {
+      body.p.y = floor;
+      if (body.v.y > 0) body.v.y *= -0.2;
+      body.v.x *= 0.9;
     }
   }
 
@@ -129,6 +144,7 @@ window.SD = window.SD || {};
       if ('contact' in p) p.contact = false;
     }
 
+    keepBodyClear();
     applySuspension(h, 0);
 
     // Wheelbase spring/damper. Soft enough to rebound off chart edges,
@@ -212,6 +228,7 @@ window.SD = window.SD || {};
           bike.front.v.y -= 190 * h;
         }
       }
+      keepBodyClear();
     }
 
     // wheel spin (visual)
