@@ -14,6 +14,9 @@ window.SD = window.SD || {};
   const BRAKE = 9.2;
   const LEAN = 28;         // rad/s^2 torque from lean keys
   const WHEELIE = 5.4;     // nose-up bias while on the gas
+  const SUSP_REST = 42;
+  const SUSP_K = 62;
+  const SUSP_DAMP = 2.4;
   const STEP = 1 / 60, SUB = 7;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
@@ -46,8 +49,9 @@ window.SD = window.SD || {};
     };
   }
   function headPos() {
-    const a = axis(), u = { x: a.y, y: -a.x }, m = mid();
-    return { x: m.x + u.x * 32 + a.x * 4, y: m.y + u.y * 32 + a.y * 4 };
+    const a = axis(), u = { x: a.y, y: -a.x };
+    const b = bike.body ? bike.body.p : mid();
+    return { x: b.x + u.x * 26 + a.x * 5, y: b.y + u.y * 26 + a.y * 5 };
   }
 
   function newBike() {
@@ -57,7 +61,13 @@ window.SD = window.SD || {};
       v: { x: 0, y: 0 },
       rot: 0, spinV: 0, contact: false, t: { x: 1, y: 0 },
     });
-    return { rear: mk(x), front: mk(x + WHEELBASE) };
+    const rear = mk(x);
+    const front = mk(x + WHEELBASE);
+    const body = {
+      p: { x: x + WHEELBASE * 0.45, y: (rear.p.y + front.p.y) / 2 - 34 },
+      v: { x: 0, y: 0 },
+    };
+    return { rear, front, body };
   }
 
   function applyRot(dw) { // relative angular velocity change (rad/s)
@@ -66,14 +76,47 @@ window.SD = window.SD || {};
     bike.rear.v.x -= px * s; bike.rear.v.y -= py * s;
   }
 
+  function strut(wheel, body, rest, h) {
+    const dx = body.p.x - wheel.p.x, dy = body.p.y - wheel.p.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const nx = dx / dist, ny = dy / dist;
+    const err = dist - rest;
+    const rv = (body.v.x - wheel.v.x) * nx + (body.v.y - wheel.v.y) * ny;
+    const impulse = (err * SUSP_K + rv * SUSP_DAMP) * h;
+
+    wheel.v.x += nx * impulse * 0.9; wheel.v.y += ny * impulse * 0.9;
+    body.v.x -= nx * impulse * 0.42; body.v.y -= ny * impulse * 0.42;
+
+    const corr = Math.max(-10, Math.min(10, err)) * 0.045;
+    wheel.p.x += nx * corr * 0.72; wheel.p.y += ny * corr * 0.72;
+    body.p.x -= nx * corr * 0.28; body.p.y -= ny * corr * 0.28;
+  }
+
+  function applySuspension(h, leanInput) {
+    const body = bike.body;
+    if (!body) return;
+    const a = axis(), u = { x: a.y, y: -a.x }, m = mid();
+    const targetX = m.x + u.x * 34 + a.x * leanInput * 11;
+    const targetY = m.y + u.y * 34 + a.y * leanInput * 11;
+
+    strut(bike.rear, body, SUSP_REST + leanInput * 3, h);
+    strut(bike.front, body, SUSP_REST - leanInput * 3, h);
+
+    body.v.x += (targetX - body.p.x) * 4.8 * h;
+    body.v.y += (targetY - body.p.y) * 4.8 * h;
+  }
+
   // ---- simulation ----
   function sub(h) {
     const wheels = [bike.rear, bike.front];
-    for (const w of wheels) {
-      w.v.y += G * h;
-      w.p.x += w.v.x * h; w.p.y += w.v.y * h;
-      w.contact = false;
+    const points = bike.body ? [bike.rear, bike.front, bike.body] : wheels;
+    for (const p of points) {
+      p.v.y += G * h;
+      p.p.x += p.v.x * h; p.p.y += p.v.y * h;
+      if ('contact' in p) p.contact = false;
     }
+
+    applySuspension(h, 0);
 
     // Wheelbase spring/damper. Soft enough to rebound off chart edges,
     // stiff enough to keep the old Gravity Defied silhouette.
@@ -115,6 +158,9 @@ window.SD = window.SD || {};
       }
     }
 
+    const preLeanInput = state === 'riding' ? (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0) : 0;
+    applySuspension(h, preLeanInput);
+
     // controls
     if (state === 'riding') {
       const leanInput = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
@@ -139,14 +185,17 @@ window.SD = window.SD || {};
         }
       }
       if (leanInput) {
+        const a = axis();
         applyRot(leanInput * LEAN * h * (contactCount ? 1.15 : 2.35));
+        bike.body.v.x += a.x * leanInput * 320 * h;
+        bike.body.v.y += a.y * leanInput * 320 * h;
         if (keys.fwd) {
-          if (bike.front.contact) bike.front.v.y += 240 * h;
-          bike.rear.v.y -= 70 * h;
+          if (bike.front.contact) bike.front.v.y += 340 * h;
+          bike.rear.v.y -= 95 * h;
         }
         if (keys.back) {
-          if (bike.rear.contact) bike.rear.v.y += 190 * h;
-          bike.front.v.y -= 130 * h;
+          if (bike.rear.contact) bike.rear.v.y += 280 * h;
+          bike.front.v.y -= 190 * h;
         }
       }
     }
@@ -465,7 +514,7 @@ window.SD = window.SD || {};
     drawWheel(bike.front);
 
     // frame
-    const bb = P(-2, 6), seat = P(-9, 16), handle = P(14, 22);
+    const bb = P(-2, 6), seat = bike.body ? bike.body.p : P(-9, 16), handle = P(14, 22);
     ctx.strokeStyle = th.frame; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(bike.rear.p.x, bike.rear.p.y); ctx.lineTo(seat.x, seat.y);
@@ -481,8 +530,8 @@ window.SD = window.SD || {};
     const lean = ((keys.fwd ? 1 : 0) - (keys.back ? 1 : 0)) * 5;
     const hp = headPos();
     const head = { x: hp.x + a.x * lean * 0.6, y: hp.y + a.y * lean * 0.6 };
-    const shoulder = { x: head.x - u.x * 8 - a.x * 2, y: head.y - u.y * 8 - a.y * 2 };
-    const hip = P(-8 + lean * 0.5, 17);
+    const hip = { x: seat.x + a.x * lean * 0.45, y: seat.y + a.y * lean * 0.45 };
+    const shoulder = { x: hip.x + u.x * 16 + a.x * (lean * 0.35 + 4), y: hip.y + u.y * 16 + a.y * (lean * 0.35 + 4) };
     const knee = P(4 + lean * 0.3, 12);
     const foot = { x: bb.x + a.x * 2, y: bb.y + a.y * 2 };
 
