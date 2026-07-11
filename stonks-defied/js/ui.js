@@ -64,6 +64,12 @@ window.SD = window.SD || {};
   function fmtPar(sec) {
     return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
   }
+  function fmtDate(d) {
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yy = String(d.getUTCFullYear()).slice(-2);
+    return dd + '.' + mm + '.' + yy;
+  }
 
   let toastT = null;
   function toast(msg, long) {
@@ -133,7 +139,8 @@ window.SD = window.SD || {};
       const btn = document.createElement('button');
       btn.className = 'mbtn lvl';
       btn.innerHTML =
-        '<span class="l-row1"><b>' + def.sym + '</b> ' + def.nick +
+        '<span class="l-row1"><b>' + def.sym + '</b> &#183; ' + (def.co || def.sym) +
+        ' &#8212; ' + def.nick +
         (beaten(def) ? ' <span class="medal">&#9650;</span>' : '') + '</span>' +
         '<span class="l-row2">' + def.era + ' &#183; PAR ' + fmtPar(def.par) +
         (b ? ' &#183; BEST ' + fmtTime(b) : '') + '</span>';
@@ -194,7 +201,7 @@ window.SD = window.SD || {};
     try {
       const r = await SD.levels.fetchTicker(sym);
       st.textContent = r.live ? 'CONNECTED ▲ LIVE DATA' : 'WIRE DOWN ▼ SIMULATED CHART';
-      const def = SD.levels.makeCustomDef(r.sym, r.prices, r.live);
+      const def = SD.levels.makeCustomDef(r.sym, r.prices, r.live, r.ts0, r.ts1);
       setTimeout(() => { startLevel(def); st.textContent = ''; }, 450);
     } catch (e) {
       st.textContent = 'BAD TICKER. TRY AGAIN.';
@@ -259,10 +266,11 @@ window.SD = window.SD || {};
     }
   };
 
-  U.hudTick = function (ms, def, price, state) {
+  U.hudTick = function (ms, def, price, state, date) {
     $('hud-time').textContent = fmtTime(ms);
     $('hud-time').classList.toggle('over', ms > def.par * 1000);
     $('hud-price').textContent = '$' + E().fmtPrice(price);
+    $('hud-date').textContent = date ? fmtDate(date) : '';
   };
 
   function banner(text, danger) {

@@ -308,7 +308,7 @@ window.SD = window.SD || {};
       }
     }
     render(dt);
-    if (state !== 'idle' && SD.ui) SD.ui.hudTick(rideMs, def, ter ? ter.priceAt(mid().x) : 0, state);
+    if (state !== 'idle' && SD.ui) SD.ui.hudTick(rideMs, def, ter ? ter.priceAt(mid().x) : 0, state, ter ? ter.dateAt(mid().x) : null);
   }
 
   // ---- rendering ----
