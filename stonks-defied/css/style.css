@@ -151,6 +151,13 @@ html, body {
 }
 
 /* level cards */
+#level-grid {
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  padding-right: 4px;
+  flex-shrink: 1;
+}
+#level-grid .mbtn { flex-shrink: 0; }
 .mbtn.lvl { text-align: left; line-height: 1.25; }
 .l-row1 { display: block; font-size: 21px; }
 .l-row1 b { color: var(--accent); }
