@@ -149,18 +149,15 @@ html, body {
   letter-spacing: 2px;
   margin-top: 10px;
 }
-.version-tag {
-  position: absolute;
-  left: 12px;
-  bottom: max(8px, env(safe-area-inset-bottom));
-  font-size: 12px;
-  color: var(--dim);
-  letter-spacing: 1px;
-  opacity: 0.7;
-  pointer-events: none;
-}
 
 /* level cards */
+#level-grid {
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  padding-right: 4px;
+  flex-shrink: 1;
+}
+#level-grid .mbtn { flex-shrink: 0; }
 .mbtn.lvl { text-align: left; line-height: 1.25; }
 .l-row1 { display: block; font-size: 21px; }
 .l-row1 b { color: var(--accent); }
@@ -236,6 +233,7 @@ html, body {
 .hud-right { flex-direction: row; gap: 8px; pointer-events: auto; }
 #hud-sym { font-size: 22px; color: var(--accent); letter-spacing: 2px; }
 #hud-price { font-size: 17px; color: var(--dim); }
+#hud-date { font-size: 14px; color: var(--dim); letter-spacing: 1px; opacity: 0.85; }
 #hud-time { font-size: 30px; letter-spacing: 2px; }
 #hud-time.over { color: #ff5d5d; }
 #hud-par { font-size: 14px; color: var(--dim); letter-spacing: 2px; }

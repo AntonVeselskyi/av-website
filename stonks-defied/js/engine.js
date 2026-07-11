@@ -6,18 +6,17 @@ window.SD = window.SD || {};
   const TAU = Math.PI * 2;
 
   // physics constants
-  const G = 1360;          // gravity (y-down)
-  const WHEEL_R = 12;
-  const WHEELBASE = 48;
-  const ENGINE = 1500;     // tangential accel on rear wheel
-  const VMAX = 620;        // top tangential speed
-  const BRAKE = 10.5;
-  const LEAN_GROUND = 12;  // rider torque while a wheel is planted
-  const LEAN_AIR = 9;      // air-control torque
-  const WHEELIE = 8.5;     // nose-up torque while on the gas
-  const ENDO = 18;         // nose-down torque from braking/leaning forward
-  const INV_I = 1 / 880;   // chassis angular inverse inertia
-  const STEP = 1 / 60, SUB = 8;
+  const G = 950;           // gravity (y-down) — floaty, GD-style hang time
+  const WHEEL_R = 11;
+  const WHEELBASE = 46;
+  const ENGINE = 1000;     // tangential accel on rear wheel
+  const VMAX = 520;        // top tangential speed
+  const BRAKE = 7;
+  const OMEGA = 5.6;       // max lean spin, rad/s (~320 deg/s — full flip in ~1.1s)
+  const LEAN_RESP = 10;    // spin servo responsiveness (1/s)
+  const LIFT = 1.45;       // grounded weight-shift lift (multiple of g)
+  const WHEELIE = 2.2;     // nose-up bias while on the gas
+  const STEP = 1 / 60, SUB = 4;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
   let ter = null, def = null, bike = null;
@@ -37,192 +36,128 @@ window.SD = window.SD || {};
   E.rideMs = () => rideMs;
 
   // ---- vec helpers ----
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function normAngle(a) {
-    while (a > Math.PI) a -= TAU;
-    while (a < -Math.PI) a += TAU;
-    return a;
-  }
-  function axis(b) {
-    b = b || bike;
-    if (b && 'a' in b) return { x: Math.cos(b.a), y: Math.sin(b.a) };
-    let ax = b.front.p.x - b.rear.p.x, ay = b.front.p.y - b.rear.p.y;
+  function axis() {
+    let ax = bike.front.p.x - bike.rear.p.x, ay = bike.front.p.y - bike.rear.p.y;
     const d = Math.hypot(ax, ay) || 1;
     return { x: ax / d, y: ay / d };
   }
-  function mid(b) {
-    b = b || bike;
-    if (b && b.p) return b.p;
-    return { x: (b.rear.p.x + b.front.p.x) / 2, y: (b.rear.p.y + b.front.p.y) / 2 };
-  }
-  function framePoint(dx, dy, b) {
-    b = b || bike;
-    const a = axis(b), u = { x: a.y, y: -a.x }, m = mid(b);
-    return { x: m.x + a.x * dx + u.x * dy, y: m.y + a.y * dx + u.y * dy };
+  function mid() {
+    return {
+      x: (bike.rear.p.x + bike.front.p.x) / 2,
+      y: (bike.rear.p.y + bike.front.p.y) / 2,
+    };
   }
   function headPos() {
-    const a = axis(), u = { x: a.y, y: -a.x }, b = riderBodyPos();
-    return { x: b.x + u.x * 26 + a.x * 5, y: b.y + u.y * 26 + a.y * 5 };
-  }
-
-  function riderBodyPos(b) {
-    return framePoint(-8, 19, b);
+    const a = axis(), u = { x: a.y, y: -a.x }, m = mid();
+    return { x: m.x + u.x * 32 + a.x * 4, y: m.y + u.y * 32 + a.y * 4 };
   }
 
   function newBike() {
     const x = ter.startX;
-    const rearY = ter.groundY(x) - WHEEL_R;
-    const frontY = ter.groundY(x + WHEELBASE) - WHEEL_R;
-    const a0 = Math.atan2(frontY - rearY, WHEELBASE);
-    const p = { x: x + WHEELBASE / 2, y: (rearY + frontY) / 2 };
-    const mk = () => ({
-      p: { x: 0, y: 0 },
+    const mk = (wx) => ({
+      p: { x: wx, y: ter.groundY(wx) - WHEEL_R },
       v: { x: 0, y: 0 },
-      rel: { x: 0, y: 0 },
       rot: 0, spinV: 0, contact: false, t: { x: 1, y: 0 },
     });
-    const bike = {
-      p,
-      v: { x: 0, y: 0 },
-      a: a0,
-      av: 0,
-      rear: mk(),
-      front: mk(),
-      body: { p: { x: 0, y: 0 }, v: { x: 0, y: 0 } },
-    };
-    syncBike(bike);
-    return bike;
+    return { rear: mk(x), front: mk(x + WHEELBASE) };
   }
 
-  function syncBike(b) {
-    const a = { x: Math.cos(b.a), y: Math.sin(b.a) };
-    const rearRel = { x: -a.x * WHEELBASE / 2, y: -a.y * WHEELBASE / 2 };
-    const frontRel = { x: a.x * WHEELBASE / 2, y: a.y * WHEELBASE / 2 };
-    setWheelFromRel(b.rear, b, rearRel);
-    setWheelFromRel(b.front, b, frontRel);
-    b.body.p = riderBodyPos(b);
-    b.body.v = pointVelocity(b.body.p, b);
-  }
-
-  function setWheelFromRel(w, b, rel) {
-    w.rel = rel;
-    w.p.x = b.p.x + rel.x;
-    w.p.y = b.p.y + rel.y;
-    const pv = pointVelocity(w.p, b);
-    w.v.x = pv.x;
-    w.v.y = pv.y;
-  }
-
-  function pointVelocity(p, b) {
-    b = b || bike;
-    const rx = p.x - b.p.x, ry = p.y - b.p.y;
-    return { x: b.v.x - ry * b.av, y: b.v.y + rx * b.av };
-  }
-
-  function applyImpulseAt(p, ix, iy) {
-    const rx = p.x - bike.p.x, ry = p.y - bike.p.y;
-    bike.v.x += ix;
-    bike.v.y += iy;
-    bike.av += (rx * iy - ry * ix) * INV_I;
-    bike.av = clamp(bike.av, -18, 18);
-  }
-
-  function solveWheel(w) {
-    const c = ter.contact(w.p.x, w.p.y, WHEEL_R);
-    if (!c) return false;
-
-    w.contact = true;
-    let tx = -c.ny, ty = c.nx;
-    if (tx < 0) { tx = -tx; ty = -ty; }
-    w.t = { x: tx, y: ty };
-
-    bike.p.x += c.nx * c.pen * 0.72;
-    bike.p.y += c.ny * c.pen * 0.72;
-    const rx = w.p.x - bike.p.x, ry = w.p.y - bike.p.y;
-    bike.a = normAngle(bike.a + (rx * c.ny - ry * c.nx) * c.pen * INV_I * 0.34);
-    syncBike(bike);
-
-    const pv = pointVelocity(w.p);
-    const rn = (w.p.x - bike.p.x) * c.ny - (w.p.y - bike.p.y) * c.nx;
-    const vn = pv.x * c.nx + pv.y * c.ny;
-    if (vn < 0) {
-      const j = -(1.16 + Math.min(0.18, Math.abs(vn) / 1600)) * vn / (1 + rn * rn * INV_I);
-      applyImpulseAt(w.p, c.nx * j, c.ny * j);
-    }
-
-    const pv2 = pointVelocity(w.p);
-    const rt = (w.p.x - bike.p.x) * ty - (w.p.y - bike.p.y) * tx;
-    const vt = pv2.x * tx + pv2.y * ty;
-    const grip = w === bike.rear ? 0.0032 : 0.0024;
-    const jt = -vt * grip / (1 + rt * rt * INV_I);
-    applyImpulseAt(w.p, tx * jt, ty * jt);
-    return true;
-  }
-
-  function wheelSpeed(w) {
-    const pv = pointVelocity(w.p);
-    return pv.x * w.t.x + pv.y * w.t.y;
+  function applyRot(dw) { // relative angular velocity change (rad/s)
+    const a = axis(), px = -a.y, py = a.x, s = dw * WHEELBASE / 2;
+    bike.front.v.x += px * s; bike.front.v.y += py * s;
+    bike.rear.v.x -= px * s; bike.rear.v.y -= py * s;
   }
 
   // ---- simulation ----
   function sub(h) {
     const wheels = [bike.rear, bike.front];
-    const wasGrounded = bike.rear.contact || bike.front.contact;
+    for (const w of wheels) {
+      w.v.y += G * h;
+      w.p.x += w.v.x * h; w.p.y += w.v.y * h;
+      w.contact = false;
+    }
+
+    // wheelbase spring/damper (suspension)
+    for (let it = 0; it < 2; it++) {
+      let dxv = bike.front.p.x - bike.rear.p.x, dyv = bike.front.p.y - bike.rear.p.y;
+      const dist = Math.hypot(dxv, dyv) || 1;
+      const ax = dxv / dist, ay = dyv / dist;
+      const c = (dist - WHEELBASE) * 0.5 * 0.4;
+      bike.rear.p.x += ax * c; bike.rear.p.y += ay * c;
+      bike.front.p.x -= ax * c; bike.front.p.y -= ay * c;
+      const rv = (bike.front.v.x - bike.rear.v.x) * ax + (bike.front.v.y - bike.rear.v.y) * ay;
+      const imp = rv * 0.5 * 0.15;
+      bike.front.v.x -= ax * imp; bike.front.v.y -= ay * imp;
+      bike.rear.v.x += ax * imp; bike.rear.v.y += ay * imp;
+    }
+
+    // ground contacts
+    for (const w of wheels) {
+      const c = ter.contact(w.p.x, w.p.y, WHEEL_R);
+      if (c) {
+        w.p.x += c.nx * c.pen; w.p.y += c.ny * c.pen;
+        const vn = w.v.x * c.nx + w.v.y * c.ny;
+        if (vn < 0) { w.v.x -= c.nx * vn * 1.15; w.v.y -= c.ny * vn * 1.15; }
+        let tx = -c.ny, ty = c.nx;
+        if (tx < 0) { tx = -tx; ty = -ty; }
+        const vt = w.v.x * tx + w.v.y * ty;
+        w.v.x -= tx * vt * 0.004; w.v.y -= ty * vt * 0.004; // rolling resistance
+        w.contact = true; w.t = { x: tx, y: ty };
+      }
+    }
+
+    // rotational damping — strong via tires on the ground, nearly free in air,
+    // and only when the rider isn't steering the spin
+    if (state !== 'riding' || (!keys.fwd && !keys.back)) {
+      const a = axis(), px = -a.y, py = a.x;
+      const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
+      const grounded = bike.rear.contact || bike.front.contact;
+      applyRot(-wRel * Math.min(1, (grounded ? 2.6 : 0.5) * h));
+    }
 
     // controls
     if (state === 'riding') {
-      const leanInput = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
-      const torque = wasGrounded ? LEAN_GROUND : LEAN_AIR;
-      bike.av += leanInput * torque * h;
-
       if (keys.gas && bike.rear.contact) {
         const t = bike.rear.t;
-        const vt = bike.v.x * t.x + bike.v.y * t.y;
+        const vt = ((bike.rear.v.x + bike.front.v.x) / 2) * t.x + ((bike.rear.v.y + bike.front.v.y) / 2) * t.y;
         if (vt < VMAX) {
-          const drive = ENGINE * (keys.back ? 1.08 : 1) * (keys.fwd ? 0.94 : 1);
-          applyImpulseAt(bike.rear.p, t.x * drive * h, t.y * drive * h);
+          bike.rear.v.x += t.x * ENGINE * h; bike.rear.v.y += t.y * ENGINE * h;
+          bike.front.v.x += t.x * ENGINE * h; bike.front.v.y += t.y * ENGINE * h;
         }
-        bike.av -= WHEELIE * h * (keys.back ? 0.85 : keys.fwd ? 0.04 : 0.72);
+        applyRot(-WHEELIE * h);
         if (Math.random() < h * 30) spawnExhaust();
+      }
+      // airborne throttle torques the bike backward (chain reaction) —
+      // feather the gas or lean forward mid-air, like the real thing
+      if (keys.gas && !bike.rear.contact && !bike.front.contact) {
+        applyRot(-10 * h);
       }
       if (keys.brake) {
         for (const w of wheels) if (w.contact) {
-          const vt = wheelSpeed(w);
-          const f = -vt * Math.min(0.52, BRAKE * h);
-          applyImpulseAt(w.p, w.t.x * f, w.t.y * f);
-        }
-        if (bike.front.contact || keys.fwd) bike.av += ENDO * h;
-      }
-      if (leanInput) {
-        if (keys.fwd) {
-          if (bike.rear.contact || bike.front.contact) applyImpulseAt(bike.rear.p, 0, -400 * h);
-          if (bike.front.contact) bike.av += ENDO * h * 0.28;
-        }
-        if (keys.back) {
-          if (bike.rear.contact || bike.front.contact) applyImpulseAt(bike.front.p, 0, -280 * h);
-          if (bike.rear.contact) bike.av -= WHEELIE * h * 0.2;
+          const vt = w.v.x * w.t.x + w.v.y * w.t.y;
+          const f = Math.min(1, BRAKE * h);
+          w.v.x -= w.t.x * vt * f; w.v.y -= w.t.y * vt * f;
         }
       }
-    }
-    bike.av = clamp(bike.av, -18, 18);
-
-    bike.v.y += G * h;
-    bike.p.x += bike.v.x * h;
-    bike.p.y += bike.v.y * h;
-    bike.a = normAngle(bike.a + bike.av * h);
-    bike.av *= 1 - (wasGrounded ? 0.45 : 0.12) * h;
-    bike.v.x *= 1 - 0.012 * h;
-
-    for (const w of wheels) w.contact = false;
-    syncBike(bike);
-    for (let it = 0; it < 3; it++) {
-      for (const w of wheels) solveWheel(w);
-      syncBike(bike);
+      const rot = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
+      if (rot) {
+        // spin servo: drive relative angular velocity toward the target —
+        // snappy in air, flip-capable, self-limiting (no infinite spin-up)
+        const a = axis(), px = -a.y, py = a.x;
+        const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
+        applyRot((rot * OMEGA - wRel) * Math.min(1, LEAN_RESP * h));
+        // grounded weight shift: unload one end — wheelies (back) & endos (fwd)
+        if (bike.rear.contact || bike.front.contact) {
+          const lift = G * LIFT * h;
+          if (rot < 0) { bike.front.v.y -= lift; bike.rear.v.y += lift * 0.25; }
+          else { bike.rear.v.y -= lift; bike.front.v.y += lift * 0.25; }
+        }
+      }
     }
 
     // wheel spin (visual)
     for (const w of wheels) {
-      if (w.contact) w.spinV = wheelSpeed(w) / WHEEL_R;
+      if (w.contact) w.spinV = (w.v.x * w.t.x + w.v.y * w.t.y) / WHEEL_R;
       else if (w === bike.rear && keys.gas && state === 'riding') w.spinV = Math.min(w.spinV + 60 * h, 55);
       else w.spinV *= 1 - 0.4 * h;
       w.rot += w.spinV * h;
@@ -230,12 +165,12 @@ window.SD = window.SD || {};
 
     // crash & finish checks
     if (state === 'riding') {
-      const hp = headPos(), shoulder = framePoint(-2, 35), hip = riderBodyPos();
-      if (rideMs > 700 && (
-        ter.contact(hp.x, hp.y, 7.5) ||
-        ter.contact(shoulder.x, shoulder.y, 5.5) ||
-        ter.contact(hip.x, hip.y, 5)
-      )) return doCrash();
+      const hp = headPos();
+      if (ter.contact(hp.x, hp.y, 7.5)) return doCrash();
+      // torso: botched landings wipe out even before the helmet plants
+      const a2 = axis(), m2 = mid();
+      const tor = { x: m2.x + a2.y * 17 - a2.x * 5, y: m2.y - a2.x * 17 - a2.y * 5 };
+      if (ter.contact(tor.x, tor.y, 8)) return doCrash();
       if (mid().y > ter.maxY + 700) return doCrash();
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
     }
@@ -373,10 +308,7 @@ window.SD = window.SD || {};
       }
     }
     render(dt);
-    if (state !== 'idle' && SD.ui) {
-      const mx = mid().x;
-      SD.ui.hudTick(rideMs, def, ter ? ter.priceAt(mx) : 0, state, ter && ter.dateAt ? ter.dateAt(mx) : '');
-    }
+    if (state !== 'idle' && SD.ui) SD.ui.hudTick(rideMs, def, ter ? ter.priceAt(mid().x) : 0, state, ter ? ter.dateAt(mid().x) : null);
   }
 
   // ---- rendering ----
@@ -388,7 +320,7 @@ window.SD = window.SD || {};
   }
 
   function zoomLevel() {
-    return Math.max(0.62, Math.min(1.5, Math.min(W / 860, H / 520)));
+    return Math.max(0.8, Math.min(2.2, Math.min(W / 600, H / 360)));
   }
 
   function render(dt) {
@@ -406,7 +338,7 @@ window.SD = window.SD || {};
     // camera
     const m = mid();
     const vx = (bike.rear.v.x + bike.front.v.x) / 2;
-    const tx = m.x + Math.max(-80, Math.min(240, vx * 0.4));
+    const tx = m.x + Math.max(-100, Math.min(320, vx * 0.55));
     const ty = m.y - 44;
     const k = Math.min(1, dt * 5);
     cam.x += (tx - cam.x) * k;
@@ -538,7 +470,7 @@ window.SD = window.SD || {};
     drawWheel(bike.front);
 
     // frame
-    const bb = P(-2, 6), seat = bike.body ? riderBodyPos() : P(-9, 16), handle = P(14, 22);
+    const bb = P(-2, 6), seat = P(-9, 16), handle = P(14, 22);
     ctx.strokeStyle = th.frame; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(bike.rear.p.x, bike.rear.p.y); ctx.lineTo(seat.x, seat.y);
@@ -554,8 +486,8 @@ window.SD = window.SD || {};
     const lean = ((keys.fwd ? 1 : 0) - (keys.back ? 1 : 0)) * 5;
     const hp = headPos();
     const head = { x: hp.x + a.x * lean * 0.6, y: hp.y + a.y * lean * 0.6 };
-    const hip = { x: seat.x + a.x * lean * 0.45, y: seat.y + a.y * lean * 0.45 };
-    const shoulder = { x: hip.x + u.x * 16 + a.x * (lean * 0.35 + 4), y: hip.y + u.y * 16 + a.y * (lean * 0.35 + 4) };
+    const shoulder = { x: head.x - u.x * 8 - a.x * 2, y: head.y - u.y * 8 - a.y * 2 };
+    const hip = P(-8 + lean * 0.5, 17);
     const knee = P(4 + lean * 0.3, 12);
     const foot = { x: bb.x + a.x * 2, y: bb.y + a.y * 2 };
 
@@ -625,10 +557,18 @@ window.SD = window.SD || {};
     // world y=400 is pmin, y=400-amp is pmax (pre-clamp approximation)
     const amp = def.amp || 260;
     for (let y = Math.floor(vy0 / gy) * gy; y < vy1; y += gy) {
-      let price = ter.pmin + ((400 - y) / amp) * (ter.pmax - ter.pmin);
-      if (def.log) {
+      const scale = def.scale || (def.log ? 'log' : 'linear');
+      const f = (400 - y) / amp;
+      let price;
+      if (scale === 'log') {
         const llo = Math.log(ter.pmin), lhi = Math.log(ter.pmax);
-        price = Math.exp(llo + ((400 - y) / amp) * (lhi - llo));
+        price = Math.exp(llo + f * (lhi - llo));
+      } else if (scale === 'sqrt') {
+        const slo = Math.sqrt(ter.pmin), shi = Math.sqrt(ter.pmax);
+        const s = slo + f * (shi - slo);
+        price = s * s;
+      } else {
+        price = ter.pmin + f * (ter.pmax - ter.pmin);
       }
       if (price < ter.pmin * 0.5 || price > ter.pmax * 2) continue;
       const sy = (y - cam.y) * z + H / 2;
