@@ -162,7 +162,7 @@ to the endpoints), which drives the live date readout in the HUD.
 | 5 | NVDA | NVIDIA | AI Ramp | 88 | 64 | 640 | 1.46 | 4.0 | 2.5 | linear | 0:25 |
 | 6 | ^GSPC | S&P 500 | COVID Crash | 90 | 64 | 420 | 1.40 | 3.3 | 1.6 | linear | 0:25 |
 | 7 | META | Meta | The Great Canyon | 92 | 64 | 580 | 1.40 | 3.9 | 2.4 | linear | 0:30 |
-| 8 | GME | GameStop | The Squeeze | 92 | 66 | 480 | 1.35 | 3.9 | 1.9 | log | 0:30 |
+| 8 | GME | GameStop | The Squeeze | 92 | 66 | 480 | 1.35 | 3.8 | 1.8 | log | 0:30 |
 | 9 | BTC-USD | Bitcoin | To The Moon | 94 | 66 | 550 | 1.45 | 3.9 | 2.4 | sqrt | 0:30 |
 | 10 | MSTR | MicroStrategy | Saylor Rollercoaster | 94 | 66 | 600 | 1.45 | 4.0 | 2.5 | sqrt | 0:35 |
 
