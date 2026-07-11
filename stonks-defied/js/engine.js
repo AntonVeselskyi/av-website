@@ -6,13 +6,15 @@ window.SD = window.SD || {};
   const TAU = Math.PI * 2;
 
   // physics constants
-  const G = 1100;          // gravity (y-down)
+  const G = 950;           // gravity (y-down) — floaty, GD-style hang time
   const WHEEL_R = 11;
   const WHEELBASE = 46;
   const ENGINE = 1000;     // tangential accel on rear wheel
-  const VMAX = 500;        // top tangential speed
+  const VMAX = 520;        // top tangential speed
   const BRAKE = 7;
-  const LEAN = 13.5;       // rad/s^2 torque from lean keys
+  const OMEGA = 5.6;       // max lean spin, rad/s (~320 deg/s — full flip in ~1.1s)
+  const LEAN_RESP = 10;    // spin servo responsiveness (1/s)
+  const LIFT = 1.45;       // grounded weight-shift lift (multiple of g)
   const WHEELIE = 2.2;     // nose-up bias while on the gas
   const STEP = 1 / 60, SUB = 4;
 
@@ -89,13 +91,6 @@ window.SD = window.SD || {};
       bike.rear.v.x += ax * imp; bike.rear.v.y += ay * imp;
     }
 
-    // rotational air damping
-    {
-      const a = axis(), px = -a.y, py = a.x;
-      const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
-      applyRot(-wRel * 0.5 * h * 2);
-    }
-
     // ground contacts
     for (const w of wheels) {
       const c = ter.contact(w.p.x, w.p.y, WHEEL_R);
@@ -111,6 +106,15 @@ window.SD = window.SD || {};
       }
     }
 
+    // rotational damping — strong via tires on the ground, nearly free in air,
+    // and only when the rider isn't steering the spin
+    if (state !== 'riding' || (!keys.fwd && !keys.back)) {
+      const a = axis(), px = -a.y, py = a.x;
+      const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
+      const grounded = bike.rear.contact || bike.front.contact;
+      applyRot(-wRel * Math.min(1, (grounded ? 2.6 : 0.5) * h));
+    }
+
     // controls
     if (state === 'riding') {
       if (keys.gas && bike.rear.contact) {
@@ -123,6 +127,11 @@ window.SD = window.SD || {};
         applyRot(-WHEELIE * h);
         if (Math.random() < h * 30) spawnExhaust();
       }
+      // airborne throttle torques the bike backward (chain reaction) —
+      // feather the gas or lean forward mid-air, like the real thing
+      if (keys.gas && !bike.rear.contact && !bike.front.contact) {
+        applyRot(-10 * h);
+      }
       if (keys.brake) {
         for (const w of wheels) if (w.contact) {
           const vt = w.v.x * w.t.x + w.v.y * w.t.y;
@@ -131,7 +140,19 @@ window.SD = window.SD || {};
         }
       }
       const rot = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
-      if (rot) applyRot(rot * LEAN * h);
+      if (rot) {
+        // spin servo: drive relative angular velocity toward the target —
+        // snappy in air, flip-capable, self-limiting (no infinite spin-up)
+        const a = axis(), px = -a.y, py = a.x;
+        const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
+        applyRot((rot * OMEGA - wRel) * Math.min(1, LEAN_RESP * h));
+        // grounded weight shift: unload one end — wheelies (back) & endos (fwd)
+        if (bike.rear.contact || bike.front.contact) {
+          const lift = G * LIFT * h;
+          if (rot < 0) { bike.front.v.y -= lift; bike.rear.v.y += lift * 0.25; }
+          else { bike.rear.v.y -= lift; bike.front.v.y += lift * 0.25; }
+        }
+      }
     }
 
     // wheel spin (visual)
@@ -146,6 +167,10 @@ window.SD = window.SD || {};
     if (state === 'riding') {
       const hp = headPos();
       if (ter.contact(hp.x, hp.y, 7.5)) return doCrash();
+      // torso: botched landings wipe out even before the helmet plants
+      const a2 = axis(), m2 = mid();
+      const tor = { x: m2.x + a2.y * 17 - a2.x * 5, y: m2.y - a2.x * 17 - a2.y * 5 };
+      if (ter.contact(tor.x, tor.y, 8)) return doCrash();
       if (mid().y > ter.maxY + 700) return doCrash();
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
     }
@@ -295,7 +320,7 @@ window.SD = window.SD || {};
   }
 
   function zoomLevel() {
-    return Math.max(0.62, Math.min(1.5, Math.min(W / 860, H / 520)));
+    return Math.max(0.8, Math.min(2.2, Math.min(W / 600, H / 360)));
   }
 
   function render(dt) {
@@ -313,7 +338,7 @@ window.SD = window.SD || {};
     // camera
     const m = mid();
     const vx = (bike.rear.v.x + bike.front.v.x) / 2;
-    const tx = m.x + Math.max(-80, Math.min(240, vx * 0.4));
+    const tx = m.x + Math.max(-100, Math.min(320, vx * 0.55));
     const ty = m.y - 44;
     const k = Math.min(1, dt * 5);
     cam.x += (tx - cam.x) * k;
