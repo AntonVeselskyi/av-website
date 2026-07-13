@@ -1,4 +1,4 @@
-// STONKS DEFIED — engine: GD-style bike physics, canvas renderer, game loop
+// STONKS DEFIED - engine: GD-style bike physics, canvas renderer, game loop
 window.SD = window.SD || {};
 
 (function () {
@@ -6,13 +6,13 @@ window.SD = window.SD || {};
   const TAU = Math.PI * 2;
 
   // physics constants
-  const G = 950;           // gravity (y-down) — floaty, GD-style hang time
+  const G = 950;           // gravity (y-down) - floaty, GD-style hang time
   const WHEEL_R = 11;
   const WHEELBASE = 46;
   const ENGINE = 1000;     // tangential accel on rear wheel
   const VMAX = 520;        // top tangential speed
   const BRAKE = 7;
-  const OMEGA = 5.6;       // max lean spin, rad/s (~320 deg/s — full flip in ~1.1s)
+  const OMEGA = 5.6;       // max lean spin, rad/s (~320 deg/s - full flip in ~1.1s)
   const LEAN_RESP = 10;    // spin servo responsiveness (1/s)
   const LIFT = 1.45;       // grounded weight-shift lift (multiple of g)
   const WHEELIE = 2.2;     // nose-up bias while on the gas
@@ -117,7 +117,7 @@ window.SD = window.SD || {};
       }
     }
 
-    // rotational damping — strong via tires on the ground, nearly free in air,
+    // rotational damping - strong via tires on the ground, nearly free in air,
     // and only when the rider isn't steering the spin
     if (state !== 'riding' || (!keys.fwd && !keys.back)) {
       const a = axis(), px = -a.y, py = a.x;
@@ -138,7 +138,7 @@ window.SD = window.SD || {};
         applyRot(-WHEELIE * h);
         if (Math.random() < h * 30) spawnExhaust();
       }
-      // airborne throttle torques the bike backward (chain reaction) —
+      // airborne throttle torques the bike backward (chain reaction) -
       // feather the gas or lean forward mid-air, like the real thing
       if (keys.gas && !bike.rear.contact && !bike.front.contact) {
         applyRot(-10 * h);
@@ -152,12 +152,12 @@ window.SD = window.SD || {};
       }
       const rot = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
       if (rot) {
-        // spin servo: drive relative angular velocity toward the target —
+        // spin servo: drive relative angular velocity toward the target -
         // snappy in air, flip-capable, self-limiting (no infinite spin-up)
         const a = axis(), px = -a.y, py = a.x;
         const wRel = ((bike.front.v.x - bike.rear.v.x) * px + (bike.front.v.y - bike.rear.v.y) * py) / WHEELBASE;
         applyRot((rot * OMEGA - wRel) * Math.min(1, LEAN_RESP * h));
-        // grounded weight shift: unload one end — wheelies (back) & endos (fwd)
+        // grounded weight shift: unload one end - wheelies (back) & endos (fwd)
         if (bike.rear.contact || bike.front.contact) {
           const lift = G * LIFT * h;
           if (rot < 0) { bike.front.v.y -= lift; bike.rear.v.y += lift * 0.25; }
@@ -181,7 +181,8 @@ window.SD = window.SD || {};
       // torso: botched landings wipe out even before the helmet plants
       const a2 = axis(), m2 = mid();
       const tor = { x: m2.x + a2.y * 17 - a2.x * 5, y: m2.y - a2.x * 17 - a2.y * 5 };
-      if (ter.contact(tor.x, tor.y, 8)) return doCrash();
+      const torsoHit = ter.contact(tor.x, tor.y, 6.5);
+      if (torsoHit && torsoHit.pen > 5.5) return doCrash();
       if (mid().y > ter.maxY + 700) return doCrash();
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
       trackTricks();
@@ -518,7 +519,7 @@ window.SD = window.SD || {};
 
     if (noRider) return;
 
-    // rider (THE driver — yellow by default)
+    // rider (THE driver - yellow by default)
     const lean = ((keys.fwd ? 1 : 0) - (keys.back ? 1 : 0)) * 5;
     const hp = headPos();
     const head = { x: hp.x + a.x * lean * 0.6, y: hp.y + a.y * lean * 0.6 };

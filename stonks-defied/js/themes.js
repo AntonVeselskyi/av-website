@@ -1,4 +1,4 @@
-// STONKS DEFIED — colorschemes (Sony Ericsson era y2k)
+// STONKS DEFIED - colorschemes (Sony Ericsson era y2k)
 window.SD = window.SD || {};
 
 SD.THEMES = {
@@ -21,7 +21,8 @@ SD.THEMES = {
     danger: '#1c2b12', good: '#1c2b12',
   },
   hotline: {
-    name: 'HOTLINE',
+    name: 'HOTLINE MIAMI',
+    locked: true, hint: 'DIE 10 TIMES',
     bg: '#16002a', bg2: '#22013d',
     grid: '#33124f', gridStrong: '#471a6b',
     map: '#ff3fd8', mapFill: 'rgba(255,63,216,0.10)',
@@ -47,6 +48,16 @@ SD.THEMES = {
     driver: '#ff9f1c', frame: '#e8fbff',
     text: '#caf7ff', dim: '#4da4c7', accent: '#ff8c1a',
     danger: '#ff406e', good: '#00f6ff',
+  },
+  chrome: {
+    name: 'CHROME METAL',
+    locked: true, hint: 'BEAT FIRST 5 CHARTS',
+    bg: '#080a0d', bg2: '#1a1f25',
+    grid: '#343b44', gridStrong: '#77828e',
+    map: '#d7e3ee', mapFill: 'rgba(215,227,238,0.12)',
+    driver: '#76f4ff', frame: '#f6fbff',
+    text: '#eef6fb', dim: '#8f9aa3', accent: '#ffffff',
+    danger: '#ff5e7a', good: '#9ff7ff',
   },
   goldenbull: {
     name: 'GOLDEN BULL',
@@ -80,6 +91,7 @@ SD.applyTheme = function (id) {
   if (document.body) {
     document.body.classList.toggle('matrix-theme', SD.themeId === 'matrix');
     document.body.classList.toggle('tron-theme', SD.themeId === 'tron');
+    document.body.classList.toggle('chrome-theme', SD.themeId === 'chrome');
   }
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) meta.content = t.bg;

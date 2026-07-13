@@ -1,4 +1,4 @@
-// STONKS DEFIED — ui: cookies save, menus, audio beeps, overlays, input wiring
+// STONKS DEFIED - ui: cookies save, menus, audio beeps, overlays, input wiring
 window.SD = window.SD || {};
 
 (function () {
@@ -8,7 +8,7 @@ window.SD = window.SD || {};
 
   // ================= cookies save =================
   const COOKIE = 'stonksdefied';
-  let save = { b: {}, th: 't610', un: [], mu: 0 };
+  let save = { b: {}, th: 't610', un: [], mu: 0, d: 0 };
 
   function loadSave() {
     const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)'));
@@ -81,6 +81,16 @@ window.SD = window.SD || {};
   }
   U.toast = toast;
 
+  let unlockT = null;
+  function showUnlock(id) {
+    const t = SD.THEMES[id];
+    if (!t) return;
+    $('unlock-name').textContent = t.name;
+    $('unlock-pop').classList.remove('hidden');
+    clearTimeout(unlockT);
+    unlockT = setTimeout(() => $('unlock-pop').classList.add('hidden'), 4300);
+  }
+
   // ================= screens & menu nav =================
   const screens = ['main', 'levels', 'ticker', 'colors', 'credits'];
   let activeScreen = 'main';
@@ -129,6 +139,7 @@ window.SD = window.SD || {};
 
   // ================= level select =================
   function bestOf(id) { return save.b[id] || 0; }
+  function finished(def) { return bestOf(def.id) > 0; }
   function beaten(def) { const b = bestOf(def.id); return b > 0 && b <= def.par * 1000; }
 
   function buildLevelGrid() {
@@ -152,10 +163,15 @@ window.SD = window.SD || {};
   // ================= colorschemes =================
   function unlockedTheme(id) { return !SD.THEMES[id].locked || save.un.includes(id); }
 
-  function unlockTheme(id) {
+  function unlockTheme(id, quiet) {
     if (!SD.THEMES[id] || save.un.includes(id)) return false;
     save.un.push(id);
     writeSave();
+    if (!quiet) {
+      sfx.unlock();
+      showUnlock(id);
+      if (activeScreen === 'colors') buildSchemeList();
+    }
     return true;
   }
 
@@ -185,9 +201,12 @@ window.SD = window.SD || {};
     }
   }
 
-  function checkUnlock() {
+  function checkProgressUnlocks(quiet) {
+    const firstFive = SD.levels.PRESETS.slice(0, 5).every(finished);
     const all = SD.levels.PRESETS.every(beaten);
-    return all ? unlockTheme('goldenbull') : false;
+    const chrome = firstFive ? unlockTheme('chrome', quiet) : false;
+    const gold = all ? unlockTheme('goldenbull', quiet) : false;
+    return chrome || gold;
   }
 
   // ================= ticker =================
@@ -201,7 +220,7 @@ window.SD = window.SD || {};
     st.textContent = 'DIALING UP ' + sym + '...';
     try {
       const r = await SD.levels.fetchTicker(sym);
-      st.textContent = r.live ? 'CONNECTED ▲ FULL HISTORY' : 'WIRE DOWN ▼ SIMULATED CHART';
+      st.textContent = r.live ? 'CONNECTED - FULL HISTORY' : 'WIRE DOWN - SIMULATED CHART';
       const def = SD.levels.makeCustomDef(r.sym, r.prices, r.live, r.ts0, r.ts1);
       setTimeout(() => { startLevel(def); st.textContent = ''; }, 450);
     } catch (e) {
@@ -231,15 +250,20 @@ window.SD = window.SD || {};
     hideOverlay();
     $('hud-sym').textContent = def.sym;
     $('hud-par').textContent = 'PAR ' + fmtPar(def.par);
-    banner('PRESS ▲ GAS TO OPEN POSITION');
+    banner('PRESS GAS TO OPEN POSITION');
   };
   U.onRideStart = function () { banner(null); sfx.start(); };
 
-  U.onCrash = function () { sfx.crash(); banner('LIQUIDATED!', true); };
+  U.onCrash = function () {
+    save.d = (save.d || 0) + 1;
+    writeSave();
+    sfx.crash();
+    banner('LIQUIDATED!', true);
+    if (save.d >= 10) unlockTheme('hotline');
+  };
   U.onBackflip = function () {
     if (unlockTheme('tron')) {
-      sfx.unlock();
-      toast('COLORSCHEME UNLOCKED: TRON GRID', true);
+      return;
     } else {
       toast('BACKFLIP LANDED');
     }
@@ -248,7 +272,7 @@ window.SD = window.SD || {};
     const prevBest = bestOf(def.id);
     if (!prevBest || ms < prevBest) { save.b[def.id] = Math.round(ms); writeSave(); }
     sfx.finish();
-    banner(ms <= def.par * 1000 ? 'TO THE MOON! ▲' : 'POSITION CLOSED');
+    banner(ms <= def.par * 1000 ? 'TO THE MOON!' : 'POSITION CLOSED');
   };
 
   U.showEnd = function (state, def, ms) {
@@ -265,7 +289,7 @@ window.SD = window.SD || {};
         'DIAMOND HANDS, GLASS HELMET', 'SELL SIGNAL CONFIRMED',
       ];
       showOverlay('LIQUIDATED!', quips[Math.floor(Math.random() * quips.length)], [
-        { label: 'RE-ENTER ↻', fn: restartLevel, primary: true },
+        { label: 'RE-ENTER ->', fn: restartLevel, primary: true },
         { label: 'EXIT TO MENU', fn: quitToMenu },
       ]);
     } else {
@@ -273,15 +297,13 @@ window.SD = window.SD || {};
       const best = bestOf(def.id);
       let sub = 'TIME ' + fmtTime(ms) + ' / PAR ' + fmtPar(def.par);
       if (best && Math.round(ms) <= best) sub += '<br>NEW BEST!';
-      sub += under ? '<br><span class="good">▲ UNDER PAR</span>' : '<br><span class="bad">▼ OVER PAR</span>';
+      sub += under ? '<br><span class="good">UNDER PAR</span>' : '<br><span class="bad">OVER PAR</span>';
       const btns = [];
-      if (next) btns.push({ label: 'NEXT: ' + next.sym + ' ▶', fn: () => startLevel(next), primary: true });
-      btns.push({ label: 'RETRY ↻', fn: restartLevel, primary: !next });
+      if (next) btns.push({ label: 'NEXT: ' + next.sym + ' ->', fn: () => startLevel(next), primary: true });
+      btns.push({ label: 'RETRY ->', fn: restartLevel, primary: !next });
       btns.push({ label: 'EXIT TO MENU', fn: quitToMenu });
-      showOverlay(under ? 'TO THE MOON! ▲' : 'POSITION CLOSED', sub, btns);
-      if (checkUnlock()) {
-        setTimeout(() => { sfx.unlock(); toast('★ COLORSCHEME UNLOCKED: GOLDEN BULL ★', true); }, 900);
-      }
+      showOverlay(under ? 'TO THE MOON!' : 'POSITION CLOSED', sub, btns);
+      setTimeout(() => { checkProgressUnlocks(false); }, 900);
     }
   };
 
@@ -349,8 +371,8 @@ window.SD = window.SD || {};
   function showPause() {
     E().setPaused(true);
     showOverlay('PAUSED', 'MARKET HALTED', [
-      { label: 'RESUME ▶', fn: () => { E().setPaused(false); hideOverlay(); }, primary: true },
-      { label: 'RETRY ↻', fn: restartLevel },
+      { label: 'RESUME ->', fn: () => { E().setPaused(false); hideOverlay(); }, primary: true },
+      { label: 'RETRY ->', fn: restartLevel },
       { label: 'SOUND: ' + (save.mu ? 'OFF' : 'ON'), fn: () => { toggleMute(); showPause(); } },
       { label: 'EXIT TO MENU', fn: quitToMenu },
     ]);
@@ -416,6 +438,13 @@ window.SD = window.SD || {};
   // ================= boot =================
   function boot() {
     loadSave();
+    if (!Array.isArray(save.un)) save.un = [];
+    save.d = save.d || 0;
+    checkProgressUnlocks(true);
+    if (!unlockedTheme(save.th)) {
+      save.th = 't610';
+      writeSave();
+    }
     SD.applyTheme(save.th);
     SD.engine.init();
 
