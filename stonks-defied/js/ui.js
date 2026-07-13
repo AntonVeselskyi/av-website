@@ -200,7 +200,7 @@ window.SD = window.SD || {};
     st.textContent = 'DIALING UP ' + sym + '...';
     try {
       const r = await SD.levels.fetchTicker(sym);
-      st.textContent = r.live ? 'CONNECTED ▲ LIVE DATA' : 'WIRE DOWN ▼ SIMULATED CHART';
+      st.textContent = r.live ? 'CONNECTED ▲ FULL HISTORY' : 'WIRE DOWN ▼ SIMULATED CHART';
       const def = SD.levels.makeCustomDef(r.sym, r.prices, r.live, r.ts0, r.ts1);
       setTimeout(() => { startLevel(def); st.textContent = ''; }, 450);
     } catch (e) {

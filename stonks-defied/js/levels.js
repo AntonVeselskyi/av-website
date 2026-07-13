@@ -363,8 +363,9 @@ window.SD = window.SD || {};
   L.fetchTicker = async function (sym) {
     sym = sym.toUpperCase().replace(/[^A-Z0-9.\-=^]/g, '');
     if (!sym) throw new Error('empty');
+    const period2 = Math.floor(Date.now() / 1000) + 86400;
     const api = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
-      encodeURIComponent(sym) + '?range=1y&interval=1wk';
+      encodeURIComponent(sym) + '?period1=0&period2=' + period2 + '&interval=1wk';
     const routes = [
       u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
       u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
@@ -379,9 +380,17 @@ window.SD = window.SD || {};
         if (!res.ok) continue;
         const j = await res.json();
         const r = j && j.chart && j.chart.result && j.chart.result[0];
-        const closes = r && r.indicators.quote[0].close.filter(c => c != null);
-        if (closes && closes.length >= 8) {
-          const ts = r.timestamp || [];
+        const quote = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
+        const rawTs = (r && r.timestamp) || [];
+        const rawCloses = (quote && quote.close) || [];
+        const ts = [], closes = [];
+        for (let i = 0; i < rawCloses.length; i++) {
+          if (rawCloses[i] != null && rawTs[i] != null) {
+            closes.push(rawCloses[i]);
+            ts.push(rawTs[i]);
+          }
+        }
+        if (closes.length >= 8) {
           return { sym, prices: closes, live: true, ts0: ts[0], ts1: ts[ts.length - 1] };
         }
       } catch (e) { /* next route */ }
@@ -393,7 +402,14 @@ window.SD = window.SD || {};
     let lo = Infinity, hi = -Infinity;
     for (const p of prices) { if (p < lo) lo = p; if (p > hi) hi = p; }
     const wild = hi / Math.max(lo, 1e-6) > 12;
-    // live: real first/last timestamps; sim: today back one year
+    const count = Math.max(8, prices.length);
+    const dx = live
+      ? (count > 1400 ? 30 : count > 900 ? 34 : count > 550 ? 38 : count > 300 ? 46 : 58)
+      : 60;
+    const amp = wild ? 520 : (count > 300 ? 420 : 360);
+    const routeLength = (PRE + count + POST - 1) * dx;
+    const par = Math.max(45, Math.round(routeLength / (live ? 205 : 190)));
+    // live: first/last timestamps from Yahoo full-history range; sim: one year
     let d0, d1;
     if (live && ts0 && ts1) {
       d0 = new Date(ts0 * 1000).toISOString(); d1 = new Date(ts1 * 1000).toISOString();
@@ -403,11 +419,11 @@ window.SD = window.SD || {};
     }
     return {
       id: 'T:' + sym, sym, co: sym,
-      nick: live ? 'LIVE В· 1Y WEEKLY' : 'SIMULATED CHART',
-      era: live ? 'THE WIRE' : 'OFFLINE SIM',
+      nick: live ? 'LIVE FULL HISTORY' : 'SIMULATED CHART',
+      era: live ? 'IPO-CURRENT / WEEKLY' : 'OFFLINE SIM',
       prices, live, d0, d1,
-      n: 96, dx: 60, amp: 340, slope: 1.35, drop: 2.8, punch: 1.3, smooth: live ? 1 : 2, log: wild,
-      par: 55,
+      n: count, dx, amp, slope: 1.35, drop: 2.8, punch: 1.3, smooth: live ? 1 : 2, log: wild,
+      par,
     };
   };
 })();
