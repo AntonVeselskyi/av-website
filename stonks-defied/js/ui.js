@@ -249,6 +249,7 @@ window.SD = window.SD || {};
   U.onLevelStart = function (def) {
     hideOverlay();
     $('hud-sym').textContent = def.sym;
+    $('hud-co').textContent = def.co || def.sym;
     $('hud-par').textContent = 'PAR ' + fmtPar(def.par);
     banner('PRESS GAS TO OPEN POSITION');
   };

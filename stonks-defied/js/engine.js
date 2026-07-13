@@ -441,6 +441,9 @@ window.SD = window.SD || {};
     cam.x += (tx - cam.x) * k;
     cam.y += (ty - cam.y) * k;
     const z = zoomLevel();
+    const currentPrice = ter.priceAt(m.x);
+
+    drawPriceEcho(currentPrice);
 
     ctx.save();
     ctx.translate(W / 2 - cam.x * z, H / 2 - cam.y * z);
@@ -486,6 +489,26 @@ window.SD = window.SD || {};
     ctx.font = '700 ' + Math.round(vh * 0.34) + 'px "VT323", monospace';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(def.sym, x0 + vw / 2 - (cam.x * 0.02 % vw) * 0, y0 + vh * 0.36);
+    ctx.restore();
+  }
+
+  function drawPriceEcho(price) {
+    if (!ter || !isFinite(price)) return;
+    const th = SD.theme;
+    const label = '$' + fmtPrice(price);
+    const drift = -((cam.x * 0.075) % 170);
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = th.text;
+    ctx.font = '700 46px "VT323", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    for (let x = drift + 8; x < Math.min(W * 0.62, 430); x += 170) {
+      ctx.fillText(label, x, 48);
+    }
+    ctx.globalAlpha = 0.05;
+    ctx.font = '700 18px "VT323", monospace';
+    ctx.fillText(def.sym + ' / ' + (def.co || def.sym), 10 + ((cam.x * 0.035) % 18), 38);
     ctx.restore();
   }
 

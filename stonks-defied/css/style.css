@@ -574,10 +574,21 @@ body.chrome-theme .note b {
   text-shadow: 0 0 6px rgba(0,0,0,0.4);
 }
 .hud-cell { display: flex; flex-direction: column; gap: 0; }
-.hud-left { align-items: flex-start; }
+.hud-left { align-items: flex-start; max-width: min(42vw, 250px); }
 .hud-mid { align-items: center; }
 .hud-right { flex-direction: row; gap: 8px; pointer-events: auto; }
 #hud-sym { font-size: 22px; color: var(--accent); letter-spacing: 2px; }
+#hud-co {
+  max-width: 100%;
+  margin-top: -2px;
+  font-size: 13px;
+  color: var(--text);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.88;
+}
 #hud-price { font-size: 17px; color: var(--dim); }
 #hud-date { font-size: 14px; color: var(--dim); letter-spacing: 1px; opacity: 0.85; }
 #hud-time { font-size: 30px; letter-spacing: 2px; }
