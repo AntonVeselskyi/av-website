@@ -71,6 +71,25 @@ html, body {
 }
 #statusbar .carrier { color: var(--text); }
 #statusbar #sb-clock { margin-left: auto; }
+#statusbar .sig {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 47px;
+  height: 14px;
+  line-height: 0;
+  transform: translateY(1px);
+}
+#statusbar .sig i {
+  display: block;
+  width: 10px;
+  background: var(--dim);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--text) 18%, transparent);
+}
+#statusbar .sig i:nth-child(1) { height: 5px; }
+#statusbar .sig i:nth-child(2) { height: 8px; }
+#statusbar .sig i:nth-child(3) { height: 11px; }
+#statusbar .sig i:nth-child(4) { height: 14px; }
 
 /* ---------- menu screens ---------- */
 .screen {
