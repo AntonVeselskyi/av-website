@@ -26,6 +26,7 @@ window.SD = window.SD || {};
   let cam = { x: 0, y: 0 };
   let particles = [], ragdoll = null;
   let trick = null;
+  let pinT = 0;
   let acc = 0, lastT = 0, idleT = 0;
 
   const keys = { gas: false, brake: false, back: false, fwd: false };
@@ -61,6 +62,56 @@ window.SD = window.SD || {};
   function headPos() {
     const a = axis(), u = { x: a.y, y: -a.x }, m = mid();
     return { x: m.x + u.x * 32 + a.x * 4, y: m.y + u.y * 32 + a.y * 4 };
+  }
+
+  function posePoints() {
+    const a = axis(), u = { x: a.y, y: -a.x }, m = mid();
+    const P = (dx2, dy2) => ({ x: m.x + a.x * dx2 + u.x * dy2, y: m.y + a.y * dx2 + u.y * dy2 });
+    const bb = P(-2, 6), seat = P(-9, 16), handle = P(14, 22);
+    const lean = ((keys.fwd ? 1 : 0) - (keys.back ? 1 : 0)) * 5;
+    const hp = headPos();
+    const head = { x: hp.x + a.x * lean * 0.6, y: hp.y + a.y * lean * 0.6 };
+    const shoulder = { x: head.x - u.x * 8 - a.x * 2, y: head.y - u.y * 8 - a.y * 2 };
+    const hip = P(-8 + lean * 0.5, 17);
+    const knee = P(4 + lean * 0.3, 12);
+    const foot = { x: bb.x + a.x * 2, y: bb.y + a.y * 2 };
+    return { bb, seat, handle, head, shoulder, hip, knee, foot };
+  }
+
+  function segmentProbe(out, a, b, count, r, pinPen, deepPen) {
+    for (let i = 1; i <= count; i++) {
+      const t = i / (count + 1);
+      out.push({
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+        r, pinPen, deepPen,
+      });
+    }
+  }
+
+  function bodyGroundContact() {
+    const p = posePoints();
+    const probes = [
+      { ...p.shoulder, r: 5.5, pinPen: 4.5, deepPen: 8.5 },
+      { ...p.hip, r: 5.5, pinPen: 4.5, deepPen: 8.5 },
+      { ...p.knee, r: 4.5, pinPen: 4.5, deepPen: 9.5 },
+      { ...p.foot, r: 4.2, pinPen: 5.5, deepPen: 11 },
+      { ...p.bb, r: 4.2, pinPen: 5.5, deepPen: 11 },
+      { ...p.seat, r: 4.2, pinPen: 5.5, deepPen: 11 },
+      { ...p.handle, r: 4.2, pinPen: 5.5, deepPen: 11 },
+    ];
+    segmentProbe(probes, p.hip, p.shoulder, 2, 5.2, 4.5, 8.5);
+    segmentProbe(probes, p.shoulder, p.handle, 2, 4.5, 5, 10);
+    segmentProbe(probes, p.hip, p.knee, 1, 4.5, 5, 10);
+
+    let pinned = false;
+    for (const q of probes) {
+      const c = ter.contact(q.x, q.y, q.r);
+      if (!c) continue;
+      if (c.pen > q.deepPen) return { deep: true, pinned: true };
+      if (c.pen > q.pinPen) pinned = true;
+    }
+    return { deep: false, pinned };
   }
 
   function newBike() {
@@ -183,6 +234,14 @@ window.SD = window.SD || {};
       const tor = { x: m2.x + a2.y * 17 - a2.x * 5, y: m2.y - a2.x * 17 - a2.y * 5 };
       const torsoHit = ter.contact(tor.x, tor.y, 6.5);
       if (torsoHit && torsoHit.pen > 5.5) return doCrash();
+      const bodyHit = bodyGroundContact();
+      if (bodyHit.deep) return doCrash();
+      if (bodyHit.pinned && (bike.rear.contact || bike.front.contact)) {
+        pinT += h;
+        if (pinT > 0.22) return doCrash();
+      } else {
+        pinT = Math.max(0, pinT - h * 2);
+      }
       if (mid().y > ter.maxY + 700) return doCrash();
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
       trackTricks();
@@ -312,6 +371,7 @@ window.SD = window.SD || {};
     trick = { lastAng: bikeAngle(), airborne: false, backRot: 0, backReady: false, backDone: false };
     state = 'ready'; paused = false;
     rideMs = 0; endT = 0; endShown = false;
+    pinT = 0;
     particles = []; ragdoll = null;
     const m = mid();
     cam.x = m.x; cam.y = m.y - 40;
