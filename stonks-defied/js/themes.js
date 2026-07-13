@@ -29,6 +29,15 @@ SD.THEMES = {
     text: '#f4d9ff', dim: '#8a5cb8', accent: '#00e8ff',
     danger: '#ff5d7d', good: '#3fffc4',
   },
+  matrix: {
+    name: 'THE MATRIX',
+    bg: '#010604', bg2: '#06120b',
+    grid: '#073615', gridStrong: '#0a6b2b',
+    map: '#1cff43', mapFill: 'rgba(28,255,67,0.14)',
+    driver: '#cfd7ff', frame: '#b4c3ff',
+    text: '#26ff45', dim: '#12a838', accent: '#c8d0ff',
+    danger: '#7dff8f', good: '#39ff58',
+  },
   goldenbull: {
     name: 'GOLDEN BULL',
     locked: true, hint: 'BEAT ALL 10 CHARTS UNDER PAR',
@@ -56,6 +65,9 @@ SD.applyTheme = function (id) {
   s.setProperty('--text', t.text);
   s.setProperty('--dim', t.dim);
   s.setProperty('--accent', t.accent);
+  s.setProperty('--good', t.good || '#39e07a');
+  s.setProperty('--danger', t.danger || '#ff5d5d');
+  if (document.body) document.body.classList.toggle('matrix-theme', SD.themeId === 'matrix');
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) meta.content = t.bg;
 };
