@@ -218,7 +218,16 @@ window.SD = window.SD || {};
     E().startLevel(def);
   }
 
+  function restartLevel() {
+    hideOverlay();
+    banner(null);
+    E().setPaused(false);
+    E().restart();
+    hideOverlay();
+  }
+
   U.onLevelStart = function (def) {
+    hideOverlay();
     $('hud-sym').textContent = def.sym;
     $('hud-par').textContent = 'PAR ' + fmtPar(def.par);
     banner('PRESS ▲ GAS TO OPEN POSITION');
@@ -234,6 +243,7 @@ window.SD = window.SD || {};
   };
 
   U.showEnd = function (state, def, ms) {
+    if (E().state && E().state() !== state) return;
     banner(null);
     const isPreset = SD.levels.PRESETS.some(p => p.id === def.id);
     const idx = SD.levels.PRESETS.findIndex(p => p.id === def.id);
@@ -246,7 +256,7 @@ window.SD = window.SD || {};
         'DIAMOND HANDS, GLASS HELMET', 'SELL SIGNAL CONFIRMED',
       ];
       showOverlay('LIQUIDATED!', quips[Math.floor(Math.random() * quips.length)], [
-        { label: 'RE-ENTER ↻', fn: () => E().restart(), primary: true },
+        { label: 'RE-ENTER ↻', fn: restartLevel, primary: true },
         { label: 'EXIT TO MENU', fn: quitToMenu },
       ]);
     } else {
@@ -257,7 +267,7 @@ window.SD = window.SD || {};
       sub += under ? '<br><span class="good">▲ UNDER PAR</span>' : '<br><span class="bad">▼ OVER PAR</span>';
       const btns = [];
       if (next) btns.push({ label: 'NEXT: ' + next.sym + ' ▶', fn: () => startLevel(next), primary: true });
-      btns.push({ label: 'RETRY ↻', fn: () => E().restart(), primary: !next });
+      btns.push({ label: 'RETRY ↻', fn: restartLevel, primary: !next });
       btns.push({ label: 'EXIT TO MENU', fn: quitToMenu });
       showOverlay(under ? 'TO THE MOON! ▲' : 'POSITION CLOSED', sub, btns);
       if (checkUnlock()) {
@@ -311,7 +321,13 @@ window.SD = window.SD || {};
     $('overlay').classList.remove('hidden');
   }
   function refreshOvFocus() { ovBtns.forEach((el, i) => el.classList.toggle('sel', i === ovIdx)); }
-  function hideOverlay() { $('overlay').classList.add('hidden'); ovBtns = []; }
+  function hideOverlay() {
+    $('overlay').classList.add('hidden');
+    $('ov-title').textContent = '';
+    $('ov-sub').textContent = '';
+    $('ov-btns').innerHTML = '';
+    ovBtns = [];
+  }
   function overlayVisible() { return !$('overlay').classList.contains('hidden'); }
   function overlayKey(e) {
     if (!ovBtns.length) return false;
@@ -325,7 +341,7 @@ window.SD = window.SD || {};
     E().setPaused(true);
     showOverlay('PAUSED', 'MARKET HALTED', [
       { label: 'RESUME ▶', fn: () => { E().setPaused(false); hideOverlay(); }, primary: true },
-      { label: 'RETRY ↻', fn: () => { E().setPaused(false); E().restart(); hideOverlay(); } },
+      { label: 'RETRY ↻', fn: restartLevel },
       { label: 'SOUND: ' + (save.mu ? 'OFF' : 'ON'), fn: () => { toggleMute(); showPause(); } },
       { label: 'EXIT TO MENU', fn: quitToMenu },
     ]);
@@ -360,7 +376,7 @@ window.SD = window.SD || {};
       // in game
       const st = E().state();
       if (KEYMAP[e.key]) { E().setKey(KEYMAP[e.key], true); e.preventDefault(); return; }
-      if (e.key === 'r' || e.key === 'R') { E().restart(); return; }
+      if (e.key === 'r' || e.key === 'R') { restartLevel(); return; }
       if (e.key === 'Escape') {
         if (E().paused()) { E().setPaused(false); hideOverlay(); }
         else if (st !== 'idle') showPause();
@@ -404,7 +420,7 @@ window.SD = window.SD || {};
     $('ticker-go').addEventListener('click', () => { sfx.click(); dialTicker($('ticker-input').value); });
     $('ticker-input').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase(); });
     $('btn-pause').addEventListener('click', () => { if (!overlayVisible()) showPause(); });
-    $('btn-restart').addEventListener('click', () => { sfx.click(); hideOverlay(); E().setPaused(false); E().restart(); });
+    $('btn-restart').addEventListener('click', () => { sfx.click(); restartLevel(); });
 
     // hover sets menu focus
     document.addEventListener('mouseover', (e) => {
