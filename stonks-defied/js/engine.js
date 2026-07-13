@@ -25,6 +25,7 @@ window.SD = window.SD || {};
   let rideMs = 0, endT = 0, endShown = false, finishMs = 0;
   let cam = { x: 0, y: 0 };
   let particles = [], ragdoll = null;
+  let trick = null;
   let acc = 0, lastT = 0, idleT = 0;
 
   const keys = { gas: false, brake: false, back: false, fwd: false };
@@ -46,6 +47,16 @@ window.SD = window.SD || {};
       x: (bike.rear.p.x + bike.front.p.x) / 2,
       y: (bike.rear.p.y + bike.front.p.y) / 2,
     };
+  }
+  function bikeAngle() {
+    const a = axis();
+    return Math.atan2(a.y, a.x);
+  }
+  function angleDelta(a, b) {
+    let d = a - b;
+    while (d > Math.PI) d -= TAU;
+    while (d < -Math.PI) d += TAU;
+    return d;
   }
   function headPos() {
     const a = axis(), u = { x: a.y, y: -a.x }, m = mid();
@@ -173,6 +184,7 @@ window.SD = window.SD || {};
       if (ter.contact(tor.x, tor.y, 8)) return doCrash();
       if (mid().y > ter.maxY + 700) return doCrash();
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
+      trackTricks();
     }
 
     // particles
@@ -215,6 +227,29 @@ window.SD = window.SD || {};
         life: 1.6 + Math.random(), max: 2.6, r: 4, grav: 0.35,
         a: Math.random() * TAU, spin: (Math.random() - 0.5) * 8,
       });
+    }
+  }
+
+  function trackTricks() {
+    if (!trick) return;
+    const ang = bikeAngle();
+    const d = angleDelta(ang, trick.lastAng);
+    trick.lastAng = ang;
+    const airborne = !bike.rear.contact && !bike.front.contact;
+    if (airborne) {
+      trick.airborne = true;
+      if (d < 0) trick.backRot += d;
+      else if (!trick.backReady) trick.backRot = Math.min(0, trick.backRot + d * 0.25);
+      if (trick.backRot <= -TAU * 0.9) trick.backReady = true;
+      return;
+    }
+    if (trick.backReady && !trick.backDone) {
+      trick.backDone = true;
+      if (SD.ui && SD.ui.onBackflip) SD.ui.onBackflip(def);
+    }
+    if (!trick.backReady) {
+      trick.airborne = false;
+      trick.backRot = 0;
     }
   }
 
@@ -273,6 +308,7 @@ window.SD = window.SD || {};
     def = d;
     ter = SD.levels.buildTerrain(d);
     bike = newBike();
+    trick = { lastAng: bikeAngle(), airborne: false, backRot: 0, backReady: false, backDone: false };
     state = 'ready'; paused = false;
     rideMs = 0; endT = 0; endShown = false;
     particles = []; ragdoll = null;

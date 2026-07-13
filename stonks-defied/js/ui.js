@@ -152,6 +152,13 @@ window.SD = window.SD || {};
   // ================= colorschemes =================
   function unlockedTheme(id) { return !SD.THEMES[id].locked || save.un.includes(id); }
 
+  function unlockTheme(id) {
+    if (!SD.THEMES[id] || save.un.includes(id)) return false;
+    save.un.push(id);
+    writeSave();
+    return true;
+  }
+
   function buildSchemeList() {
     const list = $('scheme-list');
     list.innerHTML = '';
@@ -179,14 +186,8 @@ window.SD = window.SD || {};
   }
 
   function checkUnlock() {
-    if (save.un.includes('goldenbull')) return false;
     const all = SD.levels.PRESETS.every(beaten);
-    if (all) {
-      save.un.push('goldenbull');
-      writeSave();
-      return true;
-    }
-    return false;
+    return all ? unlockTheme('goldenbull') : false;
   }
 
   // ================= ticker =================
@@ -235,6 +236,14 @@ window.SD = window.SD || {};
   U.onRideStart = function () { banner(null); sfx.start(); };
 
   U.onCrash = function () { sfx.crash(); banner('LIQUIDATED!', true); };
+  U.onBackflip = function () {
+    if (unlockTheme('tron')) {
+      sfx.unlock();
+      toast('COLORSCHEME UNLOCKED: TRON GRID', true);
+    } else {
+      toast('BACKFLIP LANDED');
+    }
+  };
   U.onFinish = function (def, ms) {
     const prevBest = bestOf(def.id);
     if (!prevBest || ms < prevBest) { save.b[def.id] = Math.round(ms); writeSave(); }

@@ -211,6 +211,31 @@ window.SD = window.SD || {};
     return out;
   }
 
+  function clamp(v, lo, hi) {
+    return Math.max(lo, Math.min(hi, v));
+  }
+
+  function localRelief(vals, n, range, def, amp) {
+    if (def.localZoom === 0 || n < 7) return new Array(n).fill(0);
+    const half = Math.round(def.localWindow || clamp(n / 28, 5, 32));
+    const trend = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - half);
+      const b = Math.min(n - 1, i + half);
+      let sum = 0;
+      for (let j = a; j <= b; j++) sum += vals[j];
+      trend[i] = sum / (b - a + 1);
+    }
+    const dev = vals.map((v, i) => v - trend[i]);
+    const abs = dev.map(Math.abs).sort((a, b) => a - b);
+    const p90 = abs[Math.floor(abs.length * 0.9)] || range / 50 || 1;
+    const px = def.localAmp != null
+      ? def.localAmp
+      : Math.min(180, Math.max(55, amp * (n > 180 ? 0.34 : 0.25)));
+    const zoom = def.localZoom != null ? def.localZoom : 1;
+    return dev.map(d => clamp(d / (p90 * 1.45), -1, 1) * px * zoom);
+  }
+
   // ---- terrain builder: prices -> rideable heightmap ----
   const PRE = 6, POST = 9; // flat platform columns before/after the chart
   L.buildTerrain = function (def) {
@@ -243,12 +268,13 @@ window.SD = window.SD || {};
     let lo = Infinity, hi = -Infinity;
     for (const v of vals) { if (v < lo) lo = v; if (v > hi) hi = v; }
     const range = (hi - lo) || 1;
+    const relief = localRelief(vals, n, range, def, amp);
 
     // world ys (y-down): higher price = higher ground (smaller y)
     const ys = new Array(PRE + n + POST);
     const prices = new Array(PRE + n + POST);
     for (let i = 0; i < n; i++) {
-      ys[PRE + i] = 400 - ((vals[i] - lo) / range) * amp;
+      ys[PRE + i] = 400 - ((vals[i] - lo) / range) * amp - relief[i];
       prices[PRE + i] = raw[i];
     }
     for (let i = 0; i < PRE; i++) { ys[i] = ys[PRE]; prices[i] = raw[0]; }

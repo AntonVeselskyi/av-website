@@ -38,6 +38,16 @@ SD.THEMES = {
     text: '#26ff45', dim: '#12a838', accent: '#c8d0ff',
     danger: '#7dff8f', good: '#39ff58',
   },
+  tron: {
+    name: 'TRON GRID',
+    locked: true, hint: 'LAND A BACKFLIP',
+    bg: '#020716', bg2: '#071329',
+    grid: '#073763', gridStrong: '#0b75b7',
+    map: '#00e5ff', mapFill: 'rgba(0,229,255,0.12)',
+    driver: '#ff9f1c', frame: '#e8fbff',
+    text: '#caf7ff', dim: '#4da4c7', accent: '#ff8c1a',
+    danger: '#ff406e', good: '#00f6ff',
+  },
   goldenbull: {
     name: 'GOLDEN BULL',
     locked: true, hint: 'BEAT ALL 10 CHARTS UNDER PAR',
@@ -67,7 +77,10 @@ SD.applyTheme = function (id) {
   s.setProperty('--accent', t.accent);
   s.setProperty('--good', t.good || '#39e07a');
   s.setProperty('--danger', t.danger || '#ff5d5d');
-  if (document.body) document.body.classList.toggle('matrix-theme', SD.themeId === 'matrix');
+  if (document.body) {
+    document.body.classList.toggle('matrix-theme', SD.themeId === 'matrix');
+    document.body.classList.toggle('tron-theme', SD.themeId === 'tron');
+  }
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) meta.content = t.bg;
 };
