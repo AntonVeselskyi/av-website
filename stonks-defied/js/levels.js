@@ -380,30 +380,24 @@ window.SD = window.SD || {};
       return new Date(t0 + f * (t1 - t0));
     };
 
-    // deepest circle-vs-heightmap contact; normal points away from ground (up-ish)
-    ter.contact = function (px, py, r) {
+    // Collect every active circle-vs-heightmap constraint. A chart apex has
+    // two valid faces; treating either one as the sole contact creates a
+    // left/right normal flip that can pin and rotate the bike.
+    ter.contacts = function (px, py, r) {
       const i0 = Math.max(0, Math.floor((px - r - x0) / dx) - 1);
       const i1 = Math.min(N - 2, Math.floor((px + r - x0) / dx) + 1);
-      let crest = null;
-      const v0 = Math.max(1, i0);
-      const v1 = Math.min(N - 2, i1 + 1);
-      for (let i = v0; i <= v1; i++) {
-        if (ys[i] >= ys[i - 1] || ys[i] >= ys[i + 1]) continue;
-        const vx = x0 + i * dx, vy = ys[i];
-        const ddx = px - vx, ddy = py - vy;
-        const d = Math.hypot(ddx, ddy);
-        // Above a convex chart tip, the vertex is one collision feature. Using
-        // either adjacent line here can switch normals and wedge the bike.
-        if (d < r && ddy <= 0) {
-          const pen = r - d;
-          const nx = d > 1e-6 ? ddx / d : 0;
-          const ny = d > 1e-6 ? ddy / d : -1;
-          if (!crest || pen > crest.pen) crest = { pen, nx, ny, crest: true };
+      const hits = [];
+      const add = (hit) => {
+        for (let j = 0; j < hits.length; j++) {
+          const sameNormal = hits[j].nx * hit.nx + hits[j].ny * hit.ny > 0.998;
+          if (sameNormal) {
+            if (hit.pen > hits[j].pen) hits[j] = hit;
+            return;
+          }
         }
-      }
-      if (crest) return crest;
+        hits.push(hit);
+      };
 
-      let best = null;
       for (let i = i0; i <= i1; i++) {
         const ax = x0 + i * dx, ay = ys[i];
         const sx = dx, sy = ys[i + 1] - ay;
@@ -415,7 +409,7 @@ window.SD = window.SD || {};
         if (t > 0 && t < 1) {
           const sd = (px - ax) * nx + (py - ay) * ny; // signed height above line
           const pen = r - sd;
-          if (pen > 0 && (!best || pen > best.pen)) best = { pen, nx, ny };
+          if (pen > 0) add({ pen, nx, ny });
         } else {
           const cx = ax + sx * Math.max(0, Math.min(1, t));
           const cy = ay + sy * Math.max(0, Math.min(1, t));
@@ -427,11 +421,38 @@ window.SD = window.SD || {};
             if (d > 1e-6) { cnx = ddx / d; cny = ddy / d; }
             else { cnx = nx; cny = ny; }
             if (cny > 0.2) { cnx = nx; cny = ny; } // never push down through ground
-            if (!best || pen > best.pen) best = { pen, nx: cnx, ny: cny };
+            add({ pen, nx: cnx, ny: cny });
           }
         }
       }
-      return best;
+      return hits;
+    };
+
+    // Collapse the active constraints into one manifold normal. Position and
+    // velocity solvers now see the balanced result of both apex faces instead
+    // of whichever face happened to penetrate a fraction more this frame.
+    ter.contact = function (px, py, r) {
+      const hits = ter.contacts(px, py, r);
+      if (!hits.length) return null;
+      if (hits.length === 1) return hits[0];
+      let maxPen = 0;
+      for (const hit of hits) maxPen = Math.max(maxPen, hit.pen);
+      const active = hits.filter((hit) => hit.pen >= maxPen * 0.3);
+      let sx = 0, sy = 0;
+      for (const hit of active) {
+        const weight = Math.max(0.01, hit.pen);
+        sx += hit.nx * weight;
+        sy += hit.ny * weight;
+      }
+      const len = Math.hypot(sx, sy);
+      if (len < 1e-6) return hits.reduce((a, b) => a.pen > b.pen ? a : b);
+      const nx = sx / len, ny = sy / len;
+      let pen = maxPen;
+      for (const hit of active) {
+        const projected = nx * hit.nx + ny * hit.ny;
+        if (projected > 0.15) pen = Math.max(pen, hit.pen / projected);
+      }
+      return { pen, nx, ny, manifold: active.length };
     };
 
     return ter;
