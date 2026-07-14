@@ -6,6 +6,12 @@
 - JoJo's Bizarre Adventure
 - Bleach
 - Lupin (Part 1 / Part 2)
+- Monster (Naoki Urasawa)
+- Castlevania
 
 ## Live Action
 - Peaky Blinders
+- The Penguin (HBO)
+
+## Animated
+- Devil May Cry (Netflix)
