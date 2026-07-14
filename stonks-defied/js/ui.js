@@ -573,6 +573,7 @@ window.SD = window.SD || {};
     bindKeys();
     bindTouch();
     show('main');
+    requestAnimationFrame(() => document.body.classList.add('content-ready'));
 
     // ticker deep link: ?ticker=NVDA
     const q = new URLSearchParams(location.search).get('ticker');

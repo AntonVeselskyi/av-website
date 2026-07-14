@@ -248,7 +248,14 @@ window.SD = window.SD || {};
     const targetLong = Math.max(SUSP_MIN, Math.min(SUSP_MAX, long));
     const targetX = mount.x + s.a.x * s.side + s.down.x * targetLong;
     const targetY = mount.y + s.a.y * s.side + s.down.y * targetLong;
-    const corrX = w.p.x - targetX, corrY = w.p.y - targetY;
+    let corrX = w.p.x - targetX, corrY = w.p.y - targetY;
+    const corrLen = Math.hypot(corrX, corrY);
+    // Sharp chart vertices can put the tires on opposing faces for one step.
+    // Resolve that disagreement progressively instead of snapping the chassis.
+    if (corrLen > 2.5) {
+      corrX *= 2.5 / corrLen;
+      corrY *= 2.5 / corrLen;
+    }
     w.susp = targetLong;
     const invSum = WHEEL_INV_MASS + BODY_INV_MASS;
     w.p.x -= corrX * WHEEL_INV_MASS / invSum;
@@ -356,7 +363,8 @@ window.SD = window.SD || {};
       w.contact = false;
       const c = ter.contact(w.p.x, w.p.y, WHEEL_R);
       if (c) {
-        w.p.x += c.nx * c.pen; w.p.y += c.ny * c.pen;
+        const correction = Math.min(c.pen, 2.5);
+        w.p.x += c.nx * correction; w.p.y += c.ny * correction;
         const vn = w.v.x * c.nx + w.v.y * c.ny;
         if (vn < 0) {
           const restitution = Math.min(0.38, 0.20 + Math.max(0, -vn - 35) * 0.0011);
@@ -369,6 +377,13 @@ window.SD = window.SD || {};
         w.v.x -= tx * vt * 0.0025; w.v.y -= ty * vt * 0.0025;
         w.contact = true; w.t = { x: tx, y: ty };
       }
+    }
+
+    // Ground projection moves each wheel independently. Re-couple the bike
+    // before rider collision checks, especially when straddling a sharp peak.
+    for (let it = 0; it < 2; it++) {
+      enforceSuspensionLimit(bike.rear);
+      enforceSuspensionLimit(bike.front);
     }
 
     if (state === 'riding') trackWheelie(h);

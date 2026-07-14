@@ -119,8 +119,31 @@ html, body {
   text-shadow: 0 0 18px color-mix(in srgb, var(--map) 55%, transparent);
   letter-spacing: 2px;
 }
-.t-arrow {
+.av-monogram {
+  display: inline-grid;
+  place-items: center;
+  font-family: 'Major Mono Display', monospace;
+  line-height: 1;
+  letter-spacing: 0;
   color: var(--accent);
+  text-decoration: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: rotate(-3deg);
+  transition: color .3s ease, -webkit-text-stroke .3s ease,
+    transform 1.3s ease-in-out, opacity .6s ease, visibility .6s ease;
+}
+.av-monogram span { grid-area: 1 / 1; text-align: center; }
+body.content-ready .av-monogram { opacity: 1; visibility: visible; }
+.av-monogram:hover,
+.av-monogram:focus-visible {
+  color: var(--text);
+  -webkit-text-stroke: 1px var(--bg);
+  transform: scale(1.08) rotate(-183deg);
+  outline: none;
+}
+.av-title {
+  font-size: .9em;
   text-shadow: 0 0 14px var(--accent);
 }
 .subtitle {
@@ -285,19 +308,13 @@ html, body {
 
 /* credits */
 .credits { display: flex; flex-direction: column; gap: 16px; align-items: center; }
-.monogram {
-  font-family: 'Major Mono Display', monospace;
+.av-credits {
   font-size: 64px;
-  line-height: 1;
-  color: var(--accent);
   border: 3px solid var(--accent);
   padding: 18px 22px;
-  transform: rotate(45deg);
   box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
   margin: 26px 0;
 }
-.monogram { display: inline-block; }
-.credits .monogram { transform: rotate(0deg); } /* keep it clean & readable */
 .cr-main { font-size: 26px; letter-spacing: 4px; line-height: 1.4; }
 .cr-sub { font-size: 16px; color: var(--dim); letter-spacing: 2px; line-height: 1.5; }
 .cr-tiny { font-size: 13px; color: var(--dim); opacity: 0.8; letter-spacing: 1px; line-height: 1.6; }
@@ -855,7 +872,7 @@ body.chrome-theme .note b {
   .screen { gap: 8px; padding-top: 30px; }
   .title { font-size: 30px; }
   .mbtn { font-size: 18px; padding: 6px 14px; }
-  .monogram { font-size: 40px; padding: 12px 16px; margin: 8px 0; }
+  .av-credits { font-size: 40px; padding: 12px 16px; margin: 8px 0; }
   .tbtn { width: 62px; height: 62px; }
   .tbtn.big { width: 78px; height: 78px; }
 }
