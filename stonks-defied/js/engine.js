@@ -6,12 +6,12 @@ window.SD = window.SD || {};
   const TAU = Math.PI * 2;
 
   // physics constants
-  const G = 980;           // gravity (y-down)
+  const G = 870;           // gravity (y-down), tuned for GD-style hang time
   const WHEEL_R = 11;
   const WHEELBASE = 46;
-  const BODY_MASS = 1.75;
-  const WHEEL_MASS = 0.34;
-  const BODY_INERTIA = 900;
+  const BODY_MASS = 1.45;
+  const WHEEL_MASS = 0.31;
+  const BODY_INERTIA = 620;
   const BODY_INV_MASS = 1 / BODY_MASS;
   const WHEEL_INV_MASS = 1 / WHEEL_MASS;
   const BODY_INV_INERTIA = 1 / BODY_INERTIA;
@@ -19,21 +19,24 @@ window.SD = window.SD || {};
   const SUSP_REST = 17;
   const SUSP_MIN = 9;
   const SUSP_MAX = 25;
-  const SUSP_K = 250;
-  const SUSP_BUMP_K = 900;
-  const SUSP_COMP_DAMP = 10.5;
-  const SUSP_REBOUND_DAMP = 6.5;
+  const SUSP_K = 220;
+  const SUSP_BUMP_K = 820;
+  const SUSP_COMP_DAMP = 9;
+  const SUSP_REBOUND_DAMP = 4.6;
   const ENGINE_FORCE = 1250;
   const VMAX = 520;
   const BRAKE = 8;
-  const DRIVE_TORQUE = 760;
-  const AIR_DRIVE_TORQUE = 1700;
-  const RIDER_MASS = 0.82;
-  const RIDER_SHIFT = 10.5;
-  const LEAN_RATE = 8;
-  const LEAN_GROUND_TORQUE = 1500;
-  const LEAN_AIR_TORQUE = 7600;
-  const MAX_OMEGA = 7.4;
+  const DRIVE_TORQUE = 900;
+  const AIR_DRIVE_TORQUE = 1450;
+  const RIDER_MASS = 0.72;
+  const RIDER_SHIFT = 14;
+  const LEAN_RATE = 11;
+  const LEAN_GROUND_TORQUE = 6500;
+  const LEAN_AIR_TORQUE = 5200;
+  const LEAN_UNLOAD = 2.2;
+  const STALL_FORCE = 3200;
+  const STALL_TORQUE = 1700;
+  const MAX_OMEGA = 8.2;
   const STEP = 1 / 60, SUB = 4;
 
   let canvas, ctx, W = 0, H = 0, dpr = 1;
@@ -44,7 +47,8 @@ window.SD = window.SD || {};
   let cam = { x: 0, y: 0 };
   let particles = [], ragdoll = null;
   let trick = null;
-  let pinT = 0;
+  let stallT = 0;
+  let riderHitT = 0, crashReason = '';
   let acc = 0, lastT = 0, idleT = 0;
 
   const keys = { gas: false, brake: false, back: false, fwd: false };
@@ -54,6 +58,7 @@ window.SD = window.SD || {};
   E.def = () => def;
   E.bike = () => bike;
   E.rideMs = () => rideMs;
+  E.crashReason = () => crashReason;
 
   // ---- vec helpers ----
   function axis() {
@@ -116,40 +121,55 @@ window.SD = window.SD || {};
     return { bb, seat, handle, head, shoulder, hip, knee, foot };
   }
 
-  function segmentProbe(out, a, b, count, r, pinPen, deepPen) {
+  function segmentProbe(out, a, b, count, r) {
     for (let i = 1; i <= count; i++) {
       const t = i / (count + 1);
       out.push({
         x: a.x + (b.x - a.x) * t,
         y: a.y + (b.y - a.y) * t,
-        r, pinPen, deepPen,
+        r,
       });
     }
   }
 
-  function bodyGroundContact() {
-    const p = posePoints();
-    const probes = [
-      { ...p.shoulder, r: 5.5, pinPen: 4.5, deepPen: 8.5 },
-      { ...p.hip, r: 5.5, pinPen: 4.5, deepPen: 8.5 },
-      { ...p.knee, r: 4.5, pinPen: 4.5, deepPen: 9.5 },
-      { ...p.foot, r: 4.2, pinPen: 5.5, deepPen: 11 },
-      { ...p.bb, r: 4.2, pinPen: 5.5, deepPen: 11 },
-      { ...p.seat, r: 4.2, pinPen: 5.5, deepPen: 11 },
-      { ...p.handle, r: 4.2, pinPen: 5.5, deepPen: 11 },
-    ];
-    segmentProbe(probes, p.hip, p.shoulder, 2, 5.2, 4.5, 8.5);
-    segmentProbe(probes, p.shoulder, p.handle, 2, 4.5, 5, 10);
-    segmentProbe(probes, p.hip, p.knee, 1, 4.5, 5, 10);
+  function resolveChassisGround() {
+    let touched = false;
+    for (let it = 0; it < 3; it++) {
+      const p = posePoints();
+      const probes = [
+        { ...p.bb, r: 5 },
+        { ...p.seat, r: 3.8 },
+        { ...p.handle, r: 3.8 },
+      ];
+      segmentProbe(probes, p.bb, p.seat, 2, 4.2);
+      segmentProbe(probes, p.bb, p.handle, 3, 4.2);
 
-    let pinned = false;
-    for (const q of probes) {
-      const c = ter.contact(q.x, q.y, q.r);
-      if (!c) continue;
-      if (c.pen > q.deepPen) return { deep: true, pinned: true };
-      if (c.pen > q.pinPen) pinned = true;
+      let best = null;
+      for (const q of probes) {
+        const c = ter.contact(q.x, q.y, q.r);
+        if (c && (!best || c.pen > best.c.pen)) best = { q, c };
+      }
+      if (!best) break;
+      touched = true;
+
+      const b = bike.body, c = best.c;
+      const correction = Math.min(8, c.pen) * 0.78 + 0.02;
+      b.p.x += c.nx * correction;
+      b.p.y += c.ny * correction;
+
+      const rx = best.q.x - b.p.x, ry = best.q.y - b.p.y;
+      const pvx = b.v.x - b.w * ry, pvy = b.v.y + b.w * rx;
+      const vn = pvx * c.nx + pvy * c.ny;
+      if (vn < 0) {
+        const arm = rx * c.ny - ry * c.nx;
+        const effInv = BODY_INV_MASS + arm * arm * BODY_INV_INERTIA;
+        const impulse = -vn * 1.08 / effInv;
+        b.v.x += c.nx * impulse * BODY_INV_MASS;
+        b.v.y += c.ny * impulse * BODY_INV_MASS;
+        b.w += arm * impulse * BODY_INV_INERTIA;
+      }
     }
-    return { deep: false, pinned };
+    return touched;
   }
 
   function newBike() {
@@ -304,10 +324,18 @@ window.SD = window.SD || {};
       if (steer) {
         const torque = wasGrounded ? LEAN_GROUND_TORQUE : LEAN_AIR_TORQUE;
         bike.body.w += steer * torque * BODY_INV_INERTIA * h;
+        if (wasGrounded) {
+          const a = axis(), up = { x: a.y, y: -a.x };
+          const lift = G * LEAN_UNLOAD * h;
+          const lifted = steer < 0 ? bike.front : bike.rear;
+          const loaded = steer < 0 ? bike.rear : bike.front;
+          lifted.v.x += up.x * lift; lifted.v.y += up.y * lift;
+          loaded.v.x -= up.x * lift * 0.16; loaded.v.y -= up.y * lift * 0.16;
+        }
       }
     }
 
-    bike.body.w *= Math.exp(-(wasGrounded ? 0.55 : 0.12) * h);
+    bike.body.w *= Math.exp(-(wasGrounded ? 0.25 : 0.08) * h);
     bike.body.w = Math.max(-MAX_OMEGA, Math.min(MAX_OMEGA, bike.body.w));
     bike.body.p.x += bike.body.v.x * h;
     bike.body.p.y += bike.body.v.y * h;
@@ -342,6 +370,27 @@ window.SD = window.SD || {};
       }
     }
 
+    if (state === 'riding' && keys.gas && bike.rear.contact && Math.abs(bike.body.v.x) < 85) {
+      stallT += h;
+    } else {
+      stallT = Math.max(0, stallT - h * 3);
+    }
+    if (stallT > 0.18) {
+      const ramp = Math.min(1, (stallT - 0.18) / 0.28);
+      const look = 30;
+      const dy = ter.groundY(bike.front.p.x + look) - ter.groundY(bike.front.p.x);
+      const dl = Math.hypot(look, dy) || 1;
+      const climb = { x: look / dl, y: dy / dl };
+      applyBikeForce(climb.x * STALL_FORCE * ramp, climb.y * STALL_FORCE * ramp, h);
+      if (!keys.fwd) {
+        const wheelie = keys.back ? 1 : 0.42;
+        bike.body.w -= STALL_TORQUE * wheelie * BODY_INV_INERTIA * h;
+        bike.front.v.y -= G * 0.2 * wheelie * ramp * h;
+      }
+    }
+
+    resolveChassisGround();
+
     // wheel spin (visual)
     for (const w of wheels) {
       if (w.contact) w.spinV = (w.v.x * w.t.x + w.v.y * w.t.y) / WHEEL_R;
@@ -350,28 +399,31 @@ window.SD = window.SD || {};
       w.rot += w.spinV * h;
     }
 
+    if (state === 'riding') trackTricks();
+
     // crash & finish checks
     if (state === 'riding') {
       const hp = headPos();
-      if (ter.contact(hp.x, hp.y, 7.5)) return doCrash();
+      const headHit = ter.contact(hp.x, hp.y, 7.5);
       const pose = posePoints();
       const tor = {
         x: (pose.shoulder.x + pose.hip.x) * 0.5,
         y: (pose.shoulder.y + pose.hip.y) * 0.5,
       };
       const torsoHit = ter.contact(tor.x, tor.y, 6.5);
-      if (torsoHit && torsoHit.pen > 5.5) return doCrash();
-      const bodyHit = bodyGroundContact();
-      if (bodyHit.deep) return doCrash();
-      if (bodyHit.pinned && (bike.rear.contact || bike.front.contact)) {
-        pinT += h;
-        if (pinT > 0.22) return doCrash();
+      const riderPen = Math.max(headHit ? headHit.pen - 1.5 : 0, torsoHit ? torsoHit.pen - 5.5 : 0);
+      if (riderPen > 0) {
+        riderHitT += h;
+        const supported = bike.rear.contact || bike.front.contact;
+        const grace = supported ? 0.16 : 0.055;
+        if (riderHitT > grace || (riderPen > 9 && !supported)) {
+          return doCrash(headHit && headHit.pen > 1.5 ? 'head' : 'torso');
+        }
       } else {
-        pinT = Math.max(0, pinT - h * 2);
+        riderHitT = Math.max(0, riderHitT - h * 3);
       }
-      if (mid().y > ter.maxY + 700) return doCrash();
+      if (mid().y > ter.maxY + 700) return doCrash('fall');
       if (Math.min(bike.rear.p.x, bike.front.p.x) > ter.finishX) return doFinish();
-      trackTricks();
     }
 
     // particles
@@ -422,25 +474,30 @@ window.SD = window.SD || {};
     const ang = bikeAngle();
     const d = angleDelta(ang, trick.lastAng);
     trick.lastAng = ang;
-    const airborne = !bike.rear.contact && !bike.front.contact;
-    if (airborne) {
-      trick.airborne = true;
+    const bothGrounded = bike.rear.contact && bike.front.contact;
+    const landed = bike.rear.contact || bike.front.contact;
+
+    // A backflip may begin from a wheelie and finish as soon as either tire lands.
+    if (!trick.active && !bothGrounded && d < -0.001) trick.active = true;
+    if (trick.active) {
       if (d < 0) trick.backRot += d;
-      else if (!trick.backReady) trick.backRot = Math.min(0, trick.backRot + d * 0.25);
-      if (trick.backRot <= -TAU * 0.9) trick.backReady = true;
-      return;
+      else if (!trick.backReady) trick.backRot = Math.min(0, trick.backRot + d * 0.15);
+      if (trick.backRot <= -Math.PI * 0.9) trick.backReady = true;
     }
-    if (trick.backReady && !trick.backDone) {
+
+    if (trick.backReady && landed && !trick.backDone) {
       trick.backDone = true;
       if (SD.ui && SD.ui.onBackflip) SD.ui.onBackflip(def);
     }
-    if (!trick.backReady) {
-      trick.airborne = false;
+
+    if (bothGrounded && !trick.backReady) {
+      trick.active = false;
       trick.backRot = 0;
     }
   }
 
-  function doCrash() {
+  function doCrash(reason) {
+    crashReason = reason || 'impact';
     state = 'crashed'; endT = 0; endShown = false;
     const hp = headPos(), m = mid();
     const mv = { x: bike.body.v.x, y: bike.body.v.y };
@@ -492,10 +549,11 @@ window.SD = window.SD || {};
     def = d;
     ter = SD.levels.buildTerrain(d);
     bike = newBike();
-    trick = { lastAng: bikeAngle(), airborne: false, backRot: 0, backReady: false, backDone: false };
+    trick = { lastAng: bikeAngle(), active: false, backRot: 0, backReady: false, backDone: false };
     state = 'ready'; paused = false;
     rideMs = 0; endT = 0; endShown = false;
-    pinT = 0;
+    stallT = 0;
+    riderHitT = 0; crashReason = '';
     acc = 0;
     particles = []; ragdoll = null;
     const m = mid();

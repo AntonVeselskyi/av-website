@@ -32,12 +32,12 @@ SD.THEMES = {
   },
   matrix: {
     name: 'THE MATRIX',
-    bg: '#010604', bg2: '#06120b',
-    grid: '#073615', gridStrong: '#0a6b2b',
-    map: '#1cff43', mapFill: 'rgba(28,255,67,0.14)',
-    driver: '#cfd7ff', frame: '#b4c3ff',
-    text: '#26ff45', dim: '#12a838', accent: '#c8d0ff',
-    danger: '#7dff8f', good: '#39ff58',
+    bg: '#010503', bg2: '#07100a',
+    grid: '#092514', gridStrong: '#14552a',
+    map: '#18dc4c', mapFill: 'rgba(24,220,76,0.09)',
+    driver: '#e1e5ff', frame: '#c8d0ff',
+    text: '#e8ffed', dim: '#76ad83', accent: '#d9ddff',
+    danger: '#ff7089', good: '#a9ffbc',
   },
   tron: {
     name: 'TRON GRID',
