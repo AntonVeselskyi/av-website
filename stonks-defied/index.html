@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260713-visual-core3">
+<link rel="stylesheet" href="css/style.css?v=20260713-wire-core4">
 </head>
 <body>
 <div id="app">
@@ -37,7 +37,7 @@
       <button class="mbtn" data-go="credits">CREDITS</button>
     </div>
     <div class="foot">&#9650; GAS &#9660; BRAKE &#9664;&#9654; LEAN &#183; R RETRY &#183; M SOUND</div>
-    <div class="version-tag">v2026.07.13 visual-core3</div>
+    <div class="version-tag">v2026.07.13 wire-core4</div>
   </div>
 
   <!-- LEVEL SELECT -->
@@ -55,6 +55,20 @@
       <input id="ticker-input" type="text" maxlength="10" placeholder="TSLA" autocomplete="off" spellcheck="false">
       <button class="mbtn" id="ticker-go">DIAL IN &#9654;</button>
       <div id="ticker-status"></div>
+      <div class="ticker-suggestions" aria-label="ticker suggestions">
+        <section class="suggest-group">
+          <div class="suggest-head">S&amp;P 500 TOP WEIGHTS</div>
+          <div class="suggest-chips" id="suggest-sp500"></div>
+        </section>
+        <section class="suggest-group">
+          <div class="suggest-head">WEEK GAINERS <span id="suggest-wire">WIRE</span></div>
+          <div class="suggest-chips" id="suggest-gainers"></div>
+        </section>
+        <section class="suggest-group">
+          <div class="suggest-head">WEEK LOSERS</div>
+          <div class="suggest-chips" id="suggest-losers"></div>
+        </section>
+      </div>
       <div class="note">RIDES FULL YAHOO HISTORY TO CURRENT DAY.<br>
       LONG-LIVED TICKERS MAKE LONGER ROUTES.<br>
       IF THE WIRE IS DOWN, A SIMULATED CHART IS GENERATED.<br>
@@ -130,9 +144,9 @@
   </div>
 </div>
 
-<script src="js/themes.js?v=20260713-visual-core3"></script>
-<script src="js/levels.js?v=20260713-visual-core3"></script>
-<script src="js/engine.js?v=20260713-visual-core3"></script>
-<script src="js/ui.js?v=20260713-visual-core3"></script>
+<script src="js/themes.js?v=20260713-wire-core4"></script>
+<script src="js/levels.js?v=20260713-wire-core4"></script>
+<script src="js/engine.js?v=20260713-wire-core4"></script>
+<script src="js/ui.js?v=20260713-wire-core4"></script>
 </body>
 </html>

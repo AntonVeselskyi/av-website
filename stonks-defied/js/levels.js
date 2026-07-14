@@ -414,6 +414,103 @@ window.SD = window.SD || {};
     return out;
   }
 
+  L.TOP_SP500 = [
+    { sym: 'NVDA', name: 'NVIDIA' },
+    { sym: 'GOOGL', name: 'ALPHABET' },
+    { sym: 'AAPL', name: 'APPLE' },
+    { sym: 'MSFT', name: 'MICROSOFT' },
+    { sym: 'AMZN', name: 'AMAZON' },
+    { sym: 'AVGO', name: 'BROADCOM' },
+    { sym: 'META', name: 'META' },
+    { sym: 'TSLA', name: 'TESLA' },
+    { sym: 'BRK-B', name: 'BERKSHIRE' },
+    { sym: 'LLY', name: 'ELI LILLY' },
+  ];
+
+  const FALLBACK_GAINERS = [
+    { sym: 'PBF', pct: 18.5 }, { sym: 'VOD', pct: 18.5 },
+    { sym: 'CVI', pct: 16.8 }, { sym: 'PARR', pct: 15.4 },
+    { sym: 'COCO', pct: 13.9 }, { sym: 'SHAK', pct: 13.2 },
+  ];
+  const FALLBACK_LOSERS = [
+    { sym: 'PLBL', pct: -27.6 }, { sym: 'DSC', pct: -26.1 },
+    { sym: 'STUB', pct: -23.9 }, { sym: 'MDA', pct: -20.4 },
+    { sym: 'APP', pct: -16.1 }, { sym: 'AUGO', pct: -15.6 },
+  ];
+
+  async function fetchWireJson(api, timeout) {
+    const routes = [
+      u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+      u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+      u => u,
+    ];
+    for (const route of routes) {
+      try {
+        const ctl = new AbortController();
+        const to = setTimeout(() => ctl.abort(), timeout || 6500);
+        const res = await fetch(route(api), { signal: ctl.signal });
+        clearTimeout(to);
+        if (res.ok) return await res.json();
+      } catch (e) { /* next wire */ }
+    }
+    throw new Error('wire down');
+  }
+
+  L.fetchTickerSuggestions = async function () {
+    const ids = ['day_gainers', 'day_losers', 'most_actives'];
+    const screeners = await Promise.allSettled(ids.map(id => {
+      const api = 'https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved' +
+        '?formatted=false&lang=en-US&region=US&scrIds=' + id + '&count=50&start=0';
+      return fetchWireJson(api, 6500);
+    }));
+
+    const names = new Map();
+    for (const result of screeners) {
+      if (result.status !== 'fulfilled') continue;
+      const rows = result.value && result.value.finance && result.value.finance.result;
+      const quotes = rows && rows[0] && rows[0].quotes || [];
+      for (const q of quotes) {
+        if (q.quoteType !== 'EQUITY' || !/^[A-Z.-]+$/.test(q.symbol || '')) continue;
+        if (q.regularMarketPrice != null && q.regularMarketPrice < 3) continue;
+        names.set(q.symbol, q.longName || q.shortName || q.symbol);
+      }
+    }
+
+    const symbols = [...names.keys()];
+    const chunks = [];
+    for (let i = 0; i < symbols.length; i += 20) chunks.push(symbols.slice(i, i + 20));
+    const sparks = await Promise.allSettled(chunks.map(chunk => {
+      const api = 'https://query1.finance.yahoo.com/v7/finance/spark?symbols=' +
+        chunk.map(encodeURIComponent).join(',') + '&range=5d&interval=1d';
+      return fetchWireJson(api, 6500);
+    }));
+
+    const moves = [];
+    for (const result of sparks) {
+      if (result.status !== 'fulfilled') continue;
+      const rows = result.value && result.value.spark && result.value.spark.result || [];
+      for (const row of rows) {
+        const response = row.response && row.response[0];
+        const quote = response && response.indicators && response.indicators.quote;
+        const closes = quote && quote[0] && quote[0].close || [];
+        const valid = closes.filter(v => v != null && isFinite(v));
+        if (valid.length < 2 || valid[0] <= 0) continue;
+        moves.push({
+          sym: row.symbol,
+          name: names.get(row.symbol) || row.symbol,
+          pct: Math.round((valid[valid.length - 1] / valid[0] - 1) * 1000) / 10,
+        });
+      }
+    }
+
+    moves.sort((a, b) => b.pct - a.pct);
+    return {
+      live: moves.length >= 12,
+      gainers: moves.length >= 12 ? moves.slice(0, 6) : FALLBACK_GAINERS,
+      losers: moves.length >= 12 ? moves.slice(-6).reverse() : FALLBACK_LOSERS,
+    };
+  };
+
   L.fetchTicker = async function (sym) {
     sym = sym.toUpperCase().replace(/[^A-Z0-9.\-=^]/g, '');
     if (!sym) throw new Error('empty');

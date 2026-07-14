@@ -104,7 +104,10 @@ window.SD = window.SD || {};
     refreshFocus();
     if (name === 'levels') buildLevelGrid();
     if (name === 'colors') buildSchemeList();
-    if (name === 'ticker') setTimeout(() => $('ticker-input').focus(), 50);
+    if (name === 'ticker') {
+      loadTickerSuggestions();
+      setTimeout(() => $('ticker-input').focus(), 50);
+    }
   }
   function hideScreens() {
     activeScreen = null;
@@ -211,6 +214,66 @@ window.SD = window.SD || {};
 
   // ================= ticker =================
   let dialing = false;
+  let suggestionsLoaded = false;
+  let suggestionsLoading = false;
+
+  function renderSuggestionChips(id, items, kind) {
+    const box = $(id);
+    box.innerHTML = '';
+    if (!items || !items.length) {
+      const empty = document.createElement('span');
+      empty.className = 'suggest-loading';
+      empty.textContent = 'NO SIGNAL';
+      box.appendChild(empty);
+      return;
+    }
+    for (const item of items) {
+      const btn = document.createElement('button');
+      btn.className = 'ticker-chip' + (kind ? ' ' + kind : '');
+      btn.type = 'button';
+      btn.title = item.name || item.sym;
+      const ticker = document.createElement('b');
+      ticker.textContent = item.sym;
+      btn.appendChild(ticker);
+      if (item.pct != null) {
+        const move = document.createElement('span');
+        move.className = 'move';
+        move.textContent = (item.pct > 0 ? '+' : '') + item.pct.toFixed(1) + '%';
+        btn.appendChild(move);
+      }
+      btn.addEventListener('click', () => {
+        $('ticker-input').value = item.sym;
+        sfx.click();
+        dialTicker(item.sym);
+      });
+      box.appendChild(btn);
+    }
+  }
+
+  async function loadTickerSuggestions() {
+    if (!$('suggest-sp500').children.length) {
+      renderSuggestionChips('suggest-sp500', SD.levels.TOP_SP500, 'weight');
+    }
+    if (suggestionsLoaded || suggestionsLoading) return;
+    suggestionsLoading = true;
+    $('suggest-wire').textContent = 'SCANNING';
+    $('suggest-gainers').innerHTML = '<span class="suggest-loading">READING TAPE...</span>';
+    $('suggest-losers').innerHTML = '<span class="suggest-loading">READING TAPE...</span>';
+    try {
+      const data = await SD.levels.fetchTickerSuggestions();
+      renderSuggestionChips('suggest-gainers', data.gainers, 'gain');
+      renderSuggestionChips('suggest-losers', data.losers, 'loss');
+      $('suggest-wire').textContent = data.live ? 'LIVE 5D' : 'CACHED';
+      suggestionsLoaded = true;
+      refreshFocus();
+    } catch (e) {
+      $('suggest-wire').textContent = 'WIRE DOWN';
+      renderSuggestionChips('suggest-gainers', [], 'gain');
+      renderSuggestionChips('suggest-losers', [], 'loss');
+    }
+    suggestionsLoading = false;
+  }
+
   async function dialTicker(sym) {
     if (dialing) return;
     sym = (sym || '').trim().toUpperCase();

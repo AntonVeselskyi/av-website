@@ -97,6 +97,7 @@ html, body {
 .screen {
   position: absolute;
   inset: 0;
+  box-sizing: border-box;
   z-index: 10;
   display: none;
   flex-direction: column;
@@ -106,6 +107,7 @@ html, body {
   padding: 44px 18px 20px;
   text-align: center;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .screen.active { display: flex; }
 
@@ -205,8 +207,11 @@ html, body {
 }
 
 /* ticker screen */
-.tick-box { display: flex; flex-direction: column; gap: 10px; width: min(420px, 92vw); }
+.tick-box { display: flex; flex-direction: column; gap: 10px; width: min(760px, 94vw); }
 #ticker-input {
+  align-self: center;
+  width: min(420px, 100%);
+  box-sizing: border-box;
   font-family: inherit;
   font-size: 30px;
   letter-spacing: 6px;
@@ -218,10 +223,65 @@ html, body {
   outline: none;
   text-transform: uppercase;
 }
+.tick-box > #ticker-go { align-self: center; width: min(420px, 100%); }
 #ticker-input.sel, #ticker-input:focus { box-shadow: 0 0 16px color-mix(in srgb, var(--map) 60%, transparent); }
 #ticker-status { min-height: 22px; font-size: 17px; color: var(--dim); letter-spacing: 2px; }
+.ticker-suggestions {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+.suggest-group {
+  min-width: 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--grid);
+}
+.suggest-head {
+  margin-bottom: 6px;
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+#suggest-wire { float: right; color: var(--accent); }
+.suggest-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.ticker-chip {
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--grid);
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg2) 78%, transparent);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+.ticker-chip b { color: var(--accent); font-weight: normal; }
+.ticker-chip .move { margin-left: 4px; color: var(--dim); }
+.ticker-chip.gain .move { color: var(--good); }
+.ticker-chip.loss .move { color: var(--danger); }
+.ticker-chip:hover, .ticker-chip.sel, .ticker-chip:focus-visible {
+  outline: none;
+  color: var(--bg);
+  border-color: var(--map);
+  background: var(--map);
+}
+.ticker-chip:hover b, .ticker-chip.sel b,
+.ticker-chip:hover .move, .ticker-chip.sel .move { color: var(--bg); }
+.suggest-loading { color: var(--dim); font-size: 14px; letter-spacing: 1px; }
 .note { font-size: 14px; color: var(--dim); line-height: 1.5; letter-spacing: 1px; }
 .note b { color: var(--text); }
+
+@media (max-width: 680px) {
+  .ticker-suggestions { grid-template-columns: 1fr; gap: 7px; }
+  .suggest-group { padding-top: 5px; }
+  .suggest-head { margin-bottom: 4px; }
+  .ticker-chip { padding: 4px 6px; }
+}
 
 /* credits */
 .credits { display: flex; flex-direction: column; gap: 16px; align-items: center; }
