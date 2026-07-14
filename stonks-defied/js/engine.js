@@ -49,6 +49,7 @@ window.SD = window.SD || {};
   let tronTrail = [];
   let trick = null;
   let stallT = 0;
+  let wheelieT = 0, wheelieBreakT = 0, wheelieDone = false;
   let riderHitT = 0, crashReason = '';
   let acc = 0, lastT = 0, idleT = 0;
 
@@ -59,6 +60,7 @@ window.SD = window.SD || {};
   E.def = () => def;
   E.bike = () => bike;
   E.rideMs = () => rideMs;
+  E.wheelieSeconds = () => wheelieT;
   E.crashReason = () => crashReason;
 
   // ---- vec helpers ----
@@ -369,6 +371,8 @@ window.SD = window.SD || {};
       }
     }
 
+    if (state === 'riding') trackWheelie(h);
+
     if (state === 'riding' && keys.gas && bike.rear.contact && Math.abs(bike.body.v.x) < 85) {
       stallT += h;
     } else {
@@ -497,6 +501,26 @@ window.SD = window.SD || {};
     }
   }
 
+  function trackWheelie(h) {
+    const frontClearance = ter.groundY(bike.front.p.x) - (bike.front.p.y + WHEEL_R);
+    const rearClearance = ter.groundY(bike.rear.p.x) - (bike.rear.p.y + WHEEL_R);
+    const attitude = angleDelta(bike.body.a, 0);
+    const rearSupported = bike.rear.contact || rearClearance < 7;
+    const holding = rearSupported && !bike.front.contact &&
+      attitude < -0.12 && attitude > -1.75 && frontClearance > 4;
+    if (holding) {
+      wheelieBreakT = 0;
+      wheelieT += h;
+      if (wheelieT >= 2 && !wheelieDone) {
+        wheelieDone = true;
+        if (SD.ui && SD.ui.onWheelie) SD.ui.onWheelie(def);
+      }
+    } else {
+      wheelieBreakT += h;
+      if (wheelieBreakT > 0.35) wheelieT = 0;
+    }
+  }
+
   function doCrash(reason) {
     crashReason = reason || 'impact';
     state = 'crashed'; endT = 0; endShown = false;
@@ -554,6 +578,7 @@ window.SD = window.SD || {};
     state = 'ready'; paused = false;
     rideMs = 0; endT = 0; endShown = false;
     stallT = 0;
+    wheelieT = 0; wheelieBreakT = 0; wheelieDone = false;
     riderHitT = 0; crashReason = '';
     acc = 0;
     particles = []; ragdoll = null; tronTrail = [];

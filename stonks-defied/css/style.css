@@ -550,6 +550,47 @@ body.tron-theme #toast {
   box-shadow: 0 0 24px rgba(255,140,26,0.75);
 }
 
+/* Gravity Defied: flat early-J2ME sky, dirt line, minimal effects */
+body.gravity-theme { background: #9fb4bb; }
+body.gravity-theme #statusbar {
+  color: var(--text);
+  border-bottom-color: var(--grid);
+  background: rgba(217,226,226,0.78);
+}
+body.gravity-theme .title,
+body.gravity-theme .scr-head,
+body.gravity-theme #hud-sym,
+body.gravity-theme #ov-title { text-shadow: none; }
+body.gravity-theme .mbtn,
+body.gravity-theme #ticker-input,
+body.gravity-theme .hbtn,
+body.gravity-theme .tbtn,
+body.gravity-theme #ov-box,
+body.gravity-theme .ticker-chip {
+  border-color: var(--grid);
+  color: var(--text);
+  background: rgba(217,226,226,0.58);
+  box-shadow: none;
+  text-shadow: none;
+}
+body.gravity-theme .mbtn:hover,
+body.gravity-theme .mbtn.sel,
+body.gravity-theme #ticker-input:focus,
+body.gravity-theme .hbtn:hover,
+body.gravity-theme .tbtn.on,
+body.gravity-theme .ticker-chip:hover,
+body.gravity-theme .ticker-chip.sel {
+  color: var(--bg2);
+  border-color: var(--map);
+  background: var(--map);
+  box-shadow: none;
+}
+body.gravity-theme #scan {
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+}
+body.gravity-theme #overlay { background: rgba(159,180,187,0.58); }
+
 /* Chrome colorscheme: cold metal, glassy highlights */
 body.chrome-theme {
   background:

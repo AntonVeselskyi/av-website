@@ -59,9 +59,19 @@ SD.THEMES = {
     text: '#eef6fb', dim: '#8f9aa3', accent: '#ffffff',
     danger: '#ff5e7a', good: '#9ff7ff',
   },
+  gravity: {
+    name: 'GRAVITY DEFIED',
+    locked: true, hint: 'HOLD A WHEELIE FOR 2 SECONDS',
+    bg: '#9fb4bb', bg2: '#d9e2e2',
+    grid: '#a5b5b3', gridStrong: '#82928f',
+    map: '#4b3322', mapFill: 'rgba(75,51,34,0.15)',
+    driver: '#d52f2f', frame: '#202322',
+    text: '#1e2422', dim: '#5b6965', accent: '#e6b928',
+    danger: '#b3192d', good: '#2f7040',
+  },
   goldenbull: {
     name: 'GOLDEN BULL',
-    locked: true, hint: 'BEAT ALL 12 CHARTS UNDER PAR',
+    locked: true, hint: 'BEAT ALL 13 CHARTS UNDER PAR',
     bg: '#0b0800', bg2: '#171003',
     grid: '#33270a', gridStrong: '#4b3a10',
     map: '#ffd23f', mapFill: 'rgba(255,210,63,0.12)',
@@ -92,6 +102,7 @@ SD.applyTheme = function (id) {
     document.body.classList.toggle('matrix-theme', SD.themeId === 'matrix');
     document.body.classList.toggle('tron-theme', SD.themeId === 'tron');
     document.body.classList.toggle('chrome-theme', SD.themeId === 'chrome');
+    document.body.classList.toggle('gravity-theme', SD.themeId === 'gravity');
   }
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) meta.content = t.bg;

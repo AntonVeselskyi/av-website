@@ -332,6 +332,13 @@ window.SD = window.SD || {};
       toast('BACKFLIP LANDED');
     }
   };
+  U.onWheelie = function () {
+    if (unlockTheme('gravity')) {
+      return;
+    } else {
+      toast('2.0S WHEELIE');
+    }
+  };
   U.onFinish = function (def, ms) {
     const prevBest = bestOf(def.id);
     if (!prevBest || ms < prevBest) { save.b[def.id] = Math.round(ms); writeSave(); }
