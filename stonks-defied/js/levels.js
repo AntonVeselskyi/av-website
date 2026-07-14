@@ -397,9 +397,11 @@ window.SD = window.SD || {};
         }
         hits.push(hit);
       };
-      const vertexTurn = (vi) => {
+      const vertexAngle = (vi) => {
         if (vi <= 0 || vi >= N - 1) return 0;
-        return (ys[vi + 1] - ys[vi]) - (ys[vi] - ys[vi - 1]);
+        const into = Math.atan2(ys[vi] - ys[vi - 1], dx);
+        const out = Math.atan2(ys[vi + 1] - ys[vi], dx);
+        return out - into;
       };
 
       for (let i = i0; i <= i1; i++) {
@@ -411,12 +413,12 @@ window.SD = window.SD || {};
         if (ny > 0) { nx = -nx; ny = -ny; }
         let t = ((px - ax) * sx + (py - ay) * sy) / (len * len);
         const withinColumn = px > ax && px < ax + dx;
-        // At a concave valley the next face must catch the tire before its
-        // center crosses the vertex. Restricting every face to its x column
-        // leaves a wheel-radius-wide curb at the foot of steep climbs.
+        // Collinear, gently rounded and concave joins are continuous road, so
+        // an adjacent face may catch the tire before its center crosses the
+        // vertex. Only a real convex corner owns a separate endpoint feature.
         const adjacentVertex = px <= ax ? i : px >= ax + dx ? i + 1 : -1;
-        const entersConcaveFace = adjacentVertex >= 0 && vertexTurn(adjacentVertex) < -1e-6;
-        if ((withinColumn || entersConcaveFace) && t > 0 && t < 1) {
+        const entersContinuousFace = adjacentVertex >= 0 && vertexAngle(adjacentVertex) <= 0.12;
+        if ((withinColumn || entersContinuousFace) && t > 0 && t < 1) {
           const sd = (px - ax) * nx + (py - ay) * ny; // signed height above line
           const pen = r - sd;
           if (pen > 0) add({ pen, nx, ny });
@@ -427,9 +429,9 @@ window.SD = window.SD || {};
           const ddx = px - cx, ddy = py - cy;
           const d = Math.hypot(ddx, ddy);
           const vi = endpointT <= 0 ? i : i + 1;
-          // A concave vertex belongs to the two road faces, not to a circular
-          // obstacle. Endpoint circles there create the wall-like magnetism.
-          const convexEndpoint = vi <= 0 || vi >= N - 1 || vertexTurn(vi) > 1e-6;
+          // Gentle joins belong to their road faces. Giving every tiny positive
+          // turn an endpoint circle creates an invisible curb on long slopes.
+          const convexEndpoint = vi <= 0 || vi >= N - 1 || vertexAngle(vi) > 0.12;
           if (convexEndpoint && d < r) {
             const pen = r - d;
             let cnx, cny;
