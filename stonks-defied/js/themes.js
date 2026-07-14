@@ -61,7 +61,7 @@ SD.THEMES = {
   },
   goldenbull: {
     name: 'GOLDEN BULL',
-    locked: true, hint: 'BEAT ALL 10 CHARTS UNDER PAR',
+    locked: true, hint: 'BEAT ALL 12 CHARTS UNDER PAR',
     bg: '#0b0800', bg2: '#171003',
     grid: '#33270a', gridStrong: '#4b3a10',
     map: '#ffd23f', mapFill: 'rgba(255,210,63,0.12)',

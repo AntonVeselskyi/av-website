@@ -46,6 +46,7 @@ window.SD = window.SD || {};
   let rideMs = 0, endT = 0, endShown = false, finishMs = 0;
   let cam = { x: 0, y: 0 };
   let particles = [], ragdoll = null;
+  let tronTrail = [];
   let trick = null;
   let stallT = 0;
   let riderHitT = 0, crashReason = '';
@@ -555,7 +556,7 @@ window.SD = window.SD || {};
     stallT = 0;
     riderHitT = 0; crashReason = '';
     acc = 0;
-    particles = []; ragdoll = null;
+    particles = []; ragdoll = null; tronTrail = [];
     const m = mid();
     cam.x = m.x; cam.y = m.y - 40;
     if (SD.ui) SD.ui.onLevelStart(d);
@@ -620,7 +621,7 @@ window.SD = window.SD || {};
     const vx = bike.body.v.x;
     const tx = m.x + Math.max(-100, Math.min(320, vx * 0.55));
     const ty = m.y - 28;
-    const k = Math.min(1, dt * 5);
+    const k = 1 - Math.exp(-11 * dt);
     cam.x += (tx - cam.x) * k;
     cam.y += (ty - cam.y) * k;
     const z = zoomLevel();
@@ -640,9 +641,11 @@ window.SD = window.SD || {};
     drawWatermark(vx0, vy0, vw, vh);
     drawTerrain(vx0, vx1, vy1);
     drawFlags();
+    updateTronTrail(dt);
+    drawTronTrail();
     drawParticles();
-    if (state === 'crashed') { drawBike(true); drawRagdoll(); }
-    else drawBike(false);
+    drawBikePixelSnapped(state === 'crashed', z);
+    if (state === 'crashed') drawRagdoll();
 
     ctx.restore();
 
@@ -783,6 +786,92 @@ window.SD = window.SD || {};
     ctx.stroke();
   }
 
+  function updateTronTrail(dt) {
+    for (const p of tronTrail) p.life -= dt;
+    while (tronTrail.length && tronTrail[0].life <= 0) tronTrail.shift();
+    if (SD.themeId !== 'tron') { tronTrail.length = 0; return; }
+    if (state !== 'riding') return;
+    const x = bike.rear.p.x, y = bike.rear.p.y;
+    const last = tronTrail[tronTrail.length - 1];
+    if (!last || Math.hypot(x - last.x, y - last.y) > 5) {
+      tronTrail.push({ x, y, life: 1.35 });
+      if (tronTrail.length > 84) tronTrail.shift();
+    }
+  }
+
+  function drawTronTrail() {
+    if (SD.themeId !== 'tron' || tronTrail.length < 2) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = '#00e5ff';
+    ctx.shadowBlur = 7;
+    for (let i = 1; i < tronTrail.length; i++) {
+      const a = tronTrail[i - 1], b = tronTrail[i];
+      ctx.globalAlpha = Math.min(0.5, b.life * 0.34) * (i / tronTrail.length);
+      ctx.strokeStyle = '#72f6ff';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawBikePixelSnapped(noRider, z) {
+    const sx = (W * 0.5 + (bike.body.p.x - cam.x) * z) * dpr;
+    const sy = (H * 0.5 + (bike.body.p.y - cam.y) * z) * dpr;
+    const snapX = (Math.round(sx) - sx) / (z * dpr);
+    const snapY = (Math.round(sy) - sy) / (z * dpr);
+    ctx.save();
+    ctx.translate(snapX, snapY);
+    drawBike(noRider);
+    ctx.restore();
+  }
+
+  const ROOSTER_MASK = [
+    '..KK...KK.......',
+    '.KRRK.KRRK......',
+    'KRRRRKRRRRK.....',
+    'KRRRRRRRRRRK....',
+    'KRRRRRRWWRRK....',
+    'KRRRRRRWKRRKKYY.',
+    'KRRRRRRRRRKKYYY.',
+    '.KRRRRRRRRRKYY..',
+    '..KRRRRRRRK.....',
+    '...KRRRRRK......',
+    '...KRRKKRK......',
+    '...KRK.KRK......',
+    '...KK..KK.......',
+  ];
+
+  function drawRoosterMask(head) {
+    const a = axis();
+    const along = bike.body.v.x * a.x + bike.body.v.y * a.y;
+    const facing = along < -8 ? -1 : 1;
+    const colors = { K: '#26000f', R: '#ff3f50', W: '#fff0df', Y: '#fff45b' };
+    const px = 1.35;
+    ctx.save();
+    ctx.translate(head.x, head.y);
+    ctx.rotate(bike.body.a);
+    ctx.scale(facing, 1);
+    ctx.translate(-8 * px, -6.5 * px);
+    for (let y = 0; y < ROOSTER_MASK.length; y++) {
+      const row = ROOSTER_MASK[y];
+      for (let x = 0; x < row.length; x++) {
+        const color = colors[row[x]];
+        if (!color) continue;
+        ctx.fillStyle = color;
+        ctx.fillRect(x * px, y * px, px + 0.12, px + 0.12);
+      }
+    }
+    ctx.fillStyle = '#16000a';
+    ctx.fillRect(9 * px, 5 * px, px, px);
+    ctx.restore();
+  }
+
   function drawBike(noRider) {
     const th = SD.theme;
     const pose = posePoints();
@@ -820,11 +909,15 @@ window.SD = window.SD || {};
     ctx.moveTo(shoulder.x, shoulder.y); ctx.lineTo(handle.x, handle.y);               // arm
     ctx.stroke();
 
-    // helmet
-    ctx.fillStyle = th.driver;
-    ctx.beginPath(); ctx.arc(head.x, head.y, 5.5, 0, TAU); ctx.fill();
-    ctx.strokeStyle = th.bg; ctx.lineWidth = 1.4;
-    ctx.beginPath(); ctx.arc(head.x, head.y, 3.4, -0.5, 0.9); ctx.stroke(); // visor
+    if (SD.themeId === 'hotline') {
+      drawRoosterMask(head);
+    } else {
+      // helmet
+      ctx.fillStyle = th.driver;
+      ctx.beginPath(); ctx.arc(head.x, head.y, 5.5, 0, TAU); ctx.fill();
+      ctx.strokeStyle = th.bg; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(head.x, head.y, 3.4, -0.5, 0.9); ctx.stroke(); // visor
+    }
   }
 
   function drawRagdoll() {
