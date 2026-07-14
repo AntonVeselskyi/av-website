@@ -8,7 +8,8 @@ window.SD = window.SD || {};
 
   // ================= cookies save =================
   const COOKIE = 'stonksdefied';
-  let save = { b: {}, th: 't610', un: [], mu: 0, d: 0 };
+  function freshSave() { return { b: {}, th: 't610', un: [], mu: 0, d: 0 }; }
+  let save = freshSave();
 
   function loadSave() {
     const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)'));
@@ -217,6 +218,28 @@ window.SD = window.SD || {};
   let suggestionsLoaded = false;
   let suggestionsLoading = false;
 
+  function runTickerCommand(command) {
+    const st = $('ticker-status');
+    if (command === 'ANTON') {
+      const locked = Object.keys(SD.THEMES).filter((id) => SD.THEMES[id].locked);
+      save.un = [...new Set(save.un.concat(locked))];
+      writeSave();
+      sfx.unlock();
+      st.textContent = 'CHEAT ACCEPTED - ALL COLORSCHEMES UNLOCKED';
+      toast('ALL COLORSCHEMES UNLOCKED', true);
+      return true;
+    }
+    if (command === 'RESET') {
+      save = freshSave();
+      writeSave();
+      SD.applyTheme(save.th);
+      st.textContent = 'ALL PROGRESS FLUSHED';
+      toast('FRESH SAVE', true);
+      return true;
+    }
+    return false;
+  }
+
   function renderSuggestionChips(id, items, kind) {
     const box = $(id);
     box.innerHTML = '';
@@ -278,6 +301,7 @@ window.SD = window.SD || {};
     if (dialing) return;
     sym = (sym || '').trim().toUpperCase();
     if (!sym) return;
+    if (runTickerCommand(sym)) return;
     dialing = true;
     const st = $('ticker-status');
     st.textContent = 'DIALING UP ' + sym + '...';
