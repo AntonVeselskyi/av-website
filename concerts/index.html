@@ -813,26 +813,7 @@
       background: var(--ink); color: var(--paper);
     }
     .yt-open-btn svg { width: 15px; height: 15px; display: block; }
-    .playlist-links {
-      display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
-      margin: .2rem 0 .85rem;
-    }
-    .playlist-link {
-      display: inline-flex; align-items: center; gap: .45rem;
-      font-family: inherit; font-size: .76rem; letter-spacing: .04em;
-      text-transform: uppercase; text-decoration: none;
-      color: var(--ink); background: var(--paper-deep);
-      border: 1px dashed var(--ink-soft); border-radius: 999px;
-      padding: .35rem .7rem;
-      transition: transform .15s, box-shadow .15s, background .15s;
-    }
-    .playlist-link:hover {
-      transform: translateY(-1px) rotate(-.35deg);
-      box-shadow: 2px 2px 0 rgba(21,17,13,.18);
-      background: var(--paper);
-    }
-    .playlist-link:nth-child(even):hover { transform: translateY(-1px) rotate(.35deg); }
-    .playlist-link svg { width: 14px; height: 14px; display: block; }
+    .yt-music-row { margin-top: .55rem; }
     /* Song titles that drive the inline player get a play affordance */
     .setlist-song.playable { cursor: pointer; }
     .setlist-song.playable::before {
@@ -1170,8 +1151,6 @@
        CONCERT DATA — edit this array to add / update shows.
        date format: "DD Mon YYYY" (display only, no parsing needed)
        spotifyEmbed: paste the src= URL from Spotify's embed dialog
-       playlistLinks.spotify: public Spotify playlist URL (optional)
-       playlistLinks.youtubeMusicIds: ordered video IDs for a YouTube Music queue
     ═══════════════════════════════════════════════════════════════ */
     const concerts = [
       {
@@ -1308,18 +1287,6 @@
           "Who Will You Follow": "MoNhLJKLAyQ",
           "My Immortal": "RxrTVf2vkLs",
           "Wide Open Heart": "s5ssDWA-Xm8"
-        },
-        "playlistLinks": {
-          "label": "Full bill",
-          "spotify": "https://open.spotify.com/playlist/73HZcoMOZPC4YeUilEBhFy",
-          "youtubeMusicIds": [
-            "E64jOWeVfpg", "wbXeXphnZwI", "AREN_HfQBfg", "xWDFSkPX5EY", "ysJ82L-1rEc", "IYSJFCMpHmY", "6UzAtPZcv1c",
-            "pVF4W2vgQLw", "6mk_EUnOhKg", "2v0xrVU0tFk", "gMkV2pvJt0o", "EdTpW4j4llQ", "C32KohbDDHY", "-eGM0IJc70Y",
-            "dpjz5uRCXTg", "omB95kDBN6E", "OSNCKngkfU4", "jhck0eJ93kY", "MoNhLJKLAyQ", "RxrTVf2vkLs", "s5ssDWA-Xm8",
-            "pWP_B6SCUjw", "VaXxnO3HVdA", "fT1gnV1RwgE", "O_1uDvLqMdU", "EjnZVpVvJ-k", "2hRgHHuk3hc", "F6bT9bvPz0c",
-            "I0WzT0OJ-E0", "Wpl28kp5WVA", "0pAWKSg0QOM", "cWE0sSZ9yLc", "iMgv0DhIuPc", "J8-8sdREABM", "BfqaPLU_epQ",
-            "r42HwRDxErA", "oVwxrwmyY74", "0xyRwrTidoY", "l86nDxVWGMU"
-          ]
         }
       },
       {
@@ -4179,28 +4146,14 @@
       <path d="M2 6V2h4"/><path d="M14 6V2h-4"/><path d="M2 10v4h4"/><path d="M14 10v4h-4"/>
     </svg>`;
 
-    function setlistHTML(list, artist, spotifyMap, ytMap, playlistLinks) {
+    function setlistHTML(list, artist, spotifyMap, ytMap) {
       if (!list || list.length === 0)
         return `<p class="setlist-empty">— to be added —</p>`;
       const playIds = list.map(s => ytMap && ytMap[s]).filter(Boolean);
-      const ytmIds = playlistLinks && playlistLinks.youtubeMusicIds;
-      const ytmUrl = playlistLinks && playlistLinks.youtubeMusic
-        ? playlistLinks.youtubeMusic
-        : ytmIds && ytmIds.length
-          ? `https://music.youtube.com/watch_videos?video_ids=${ytmIds.join(',')}`
-          : playIds.length
-            ? `https://music.youtube.com/watch_videos?video_ids=${playIds.join(',')}`
-            : '';
-      const playlistLabel = playlistLinks && playlistLinks.label
-        ? `${esc(playlistLinks.label)} · `
-        : '';
-      const playlistButtons = (ytmUrl || (playlistLinks && playlistLinks.spotify))
-        ? `<div class="playlist-links" aria-label="Setlist playlists">
-             ${ytmUrl ? `<a class="playlist-link" href="${esc(ytmUrl)}" target="_blank" rel="noopener"
-               title="Open as a playlist on YouTube Music">${ICON_YT}<span>${playlistLabel}YouTube Music ↗</span></a>` : ''}
-             ${playlistLinks && playlistLinks.spotify ? `<a class="playlist-link" href="${esc(playlistLinks.spotify)}" target="_blank" rel="noopener"
-               title="Open as a playlist on Spotify">${ICON_SP}<span>${playlistLabel}Spotify ↗</span></a>` : ''}
-           </div>`
+      // YouTube Music does not support YouTube's watch_videos endpoint. Link
+      // directly to the first available song so the button starts playback.
+      const ytmUrl = playIds.length
+        ? `https://music.youtube.com/watch?v=${playIds[0]}`
         : '';
       // watch_videos builds an ad-hoc YouTube playlist from raw video IDs —
       // lets "Open on YouTube" launch the whole setlist in order, no account.
@@ -4215,11 +4168,15 @@
                  ${ICON_YT}<span class="yt-play-label">Play setlist</span>
                  <span class="yt-count">${playIds.length}</span>
                </button>
-               <a class="yt-open-btn" href="${ytPlaylistUrl}" target="_blank" rel="noopener"
-                  title="Open this setlist as a playlist on YouTube">${ICON_YT}<span>Open on YouTube ↗</span></a>
-             </div>
-             <div class="yt-frame-host"></div>
-           </div>`
+                <a class="yt-open-btn" href="${ytPlaylistUrl}" target="_blank" rel="noopener"
+                   title="Open this setlist as a playlist on YouTube">${ICON_YT}<span>Open on YouTube ↗</span></a>
+              </div>
+              <div class="yt-music-row">
+                <a class="yt-open-btn" href="${ytmUrl}" target="_blank" rel="noopener"
+                   title="Open on YouTube Music">${ICON_YT}<span>Open on YouTube Music ↗</span></a>
+              </div>
+              <div class="yt-frame-host"></div>
+            </div>`
         : '';
       let ytIndex = -1;   // running position within playIds (skips songs w/o a video)
       const rows = list.map(song => {
@@ -4248,7 +4205,7 @@
           </span>
         </li>`;
       }).join('');
-      return `${playlistButtons}${player}<ol class="setlist">${rows}</ol>`;
+      return `${player}<ol class="setlist">${rows}</ol>`;
     }
 
     function photosHTML(photos) {
@@ -4386,8 +4343,7 @@
 
     /* One band's section — used for the headliner AND every support act,
        so every artist on the bill gets the same logo-banner + two-column layout. */
-    function bandBlockHTML(b, isHeadliner, inheritedPlaylistLinks) {
-      const playlistLinks = b.playlistLinks || inheritedPlaylistLinks;
+    function bandBlockHTML(b, isHeadliner) {
       const banner = b.logo
         ? `<div class="panel-logo-banner"${isHeadliner ? ' data-head="1"' : ''}>
              <img class="band-logo${b.logoInvert ? ' logo-invert' : ''}" src="${esc(b.logo)}" alt="${esc(b.artist)}" data-namestyle="${esc(b.nameStyle || '')}" loading="lazy">
@@ -4414,7 +4370,7 @@
       const right = `
         ${isHeadliner ? `<p class="panel-h">Media</p>${mediaHTML(b)}` : ''}
         <p class="panel-h">Setlist</p>
-        ${setlistHTML(b.setlist, b.artist, b.setlistSpotify, b.setlistYTMusic, playlistLinks)}`;
+        ${setlistHTML(b.setlist, b.artist, b.setlistSpotify, b.setlistYTMusic)}`;
 
       return `<div class="band-block${isHeadliner ? ' is-headliner' : ''}">
         ${banner}
@@ -4474,7 +4430,7 @@
           <div class="stop-panel" id="panel-${esc(c.id)}" aria-hidden="true">
             ${cat === 'sports' && c.game
               ? sportsPanelHTML(c)
-              : `${bandBlockHTML(c, true)}${(c.supports || []).map(s => bandBlockHTML(s, false, c.playlistLinks)).join('')}`}
+              : `${bandBlockHTML(c, true)}${(c.supports || []).map(s => bandBlockHTML(s, false)).join('')}`}
           </div>`;
         container.appendChild(article);
       });
