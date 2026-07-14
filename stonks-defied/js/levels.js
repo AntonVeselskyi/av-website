@@ -384,6 +384,25 @@ window.SD = window.SD || {};
     ter.contact = function (px, py, r) {
       const i0 = Math.max(0, Math.floor((px - r - x0) / dx) - 1);
       const i1 = Math.min(N - 2, Math.floor((px + r - x0) / dx) + 1);
+      let crest = null;
+      const v0 = Math.max(1, i0);
+      const v1 = Math.min(N - 2, i1 + 1);
+      for (let i = v0; i <= v1; i++) {
+        if (ys[i] >= ys[i - 1] || ys[i] >= ys[i + 1]) continue;
+        const vx = x0 + i * dx, vy = ys[i];
+        const ddx = px - vx, ddy = py - vy;
+        const d = Math.hypot(ddx, ddy);
+        // Above a convex chart tip, the vertex is one collision feature. Using
+        // either adjacent line here can switch normals and wedge the bike.
+        if (d < r && ddy <= 0) {
+          const pen = r - d;
+          const nx = d > 1e-6 ? ddx / d : 0;
+          const ny = d > 1e-6 ? ddy / d : -1;
+          if (!crest || pen > crest.pen) crest = { pen, nx, ny, crest: true };
+        }
+      }
+      if (crest) return crest;
+
       let best = null;
       for (let i = i0; i <= i1; i++) {
         const ax = x0 + i * dx, ay = ys[i];

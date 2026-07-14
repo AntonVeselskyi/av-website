@@ -49,6 +49,7 @@ window.SD = window.SD || {};
   let tronTrail = [];
   let trick = null;
   let stallT = 0;
+  let crestReleaseT = 0;
   let wheelieT = 0, wheelieBreakT = 0, wheelieDone = false;
   let riderHitT = 0, crashReason = '';
   let acc = 0, lastT = 0, idleT = 0;
@@ -158,6 +159,30 @@ window.SD = window.SD || {};
     const correction = Math.min(0.9, Math.max(0, c.pen - 0.35) * 0.18);
     b.p.x += c.nx * correction;
     b.p.y += c.ny * correction;
+
+    const crestRide = c.crest && state === 'riding' && Math.cos(b.a) > 0.2 && b.v.x > 20;
+    if (crestRide) {
+      // A motorcycle frame skids over a pointed crest; it does not stick to
+      // one face and convert all forward speed into rotation. Keep this
+      // frictionless and give the suspension one brief release impulse.
+      if (crestReleaseT <= 0) {
+        crestReleaseT = 0.38;
+        const targetVx = keys.gas ? 210 : 155;
+        const boost = Math.max(0, targetVx - b.v.x);
+        const lift = Math.max(0, b.v.y + 120);
+        bike.body.v.x += boost; bike.body.v.y -= lift;
+        bike.rear.v.x += boost; bike.rear.v.y -= lift;
+        bike.front.v.x += boost; bike.front.v.y -= lift;
+        b.w *= 0.35;
+      } else if (b.v.x < 120) {
+        const boost = Math.min(18, (120 - b.v.x) * 0.32);
+        bike.body.v.x += boost;
+        bike.rear.v.x += boost;
+        bike.front.v.x += boost;
+      }
+      b.w *= 0.72;
+      return true;
+    }
 
     const rx = best.q.x - b.p.x, ry = best.q.y - b.p.y;
     const pvx = b.v.x - b.w * ry, pvy = b.v.y + b.w * rx;
@@ -286,6 +311,7 @@ window.SD = window.SD || {};
 
   // ---- simulation ----
   function sub(h) {
+    crestReleaseT = Math.max(0, crestReleaseT - h);
     const wheels = [bike.rear, bike.front];
     const wasGrounded = bike.rear.contact || bike.front.contact;
     const steer = (keys.fwd ? 1 : 0) - (keys.back ? 1 : 0);
@@ -432,11 +458,12 @@ window.SD = window.SD || {};
       const riderPen = Math.max(headHit ? headHit.pen - 1.5 : 0, torsoHit ? torsoHit.pen - 5.5 : 0);
       if (riderPen > 0) {
         const uprightOnFrame = chassisContact && Math.cos(bike.body.a) > 0.2;
-        riderHitT += uprightOnFrame ? -h * 5 : h;
+        const crestProtected = crestReleaseT > 0 && Math.cos(bike.body.a) > 0.2;
+        riderHitT += (uprightOnFrame || crestProtected) ? -h * 5 : h;
         riderHitT = Math.max(0, riderHitT);
         const supported = bike.rear.contact || bike.front.contact;
         const grace = supported ? 0.16 : 0.055;
-        if (!uprightOnFrame && (riderHitT > grace || (riderPen > 9 && !supported))) {
+        if (!uprightOnFrame && !crestProtected && (riderHitT > grace || (riderPen > 9 && !supported))) {
           return doCrash(headHit && headHit.pen > 1.5 ? 'head' : 'torso');
         }
       } else {
@@ -593,6 +620,7 @@ window.SD = window.SD || {};
     state = 'ready'; paused = false;
     rideMs = 0; endT = 0; endShown = false;
     stallT = 0;
+    crestReleaseT = 0;
     wheelieT = 0; wheelieBreakT = 0; wheelieDone = false;
     riderHitT = 0; crashReason = '';
     acc = 0;
