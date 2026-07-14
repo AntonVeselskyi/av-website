@@ -813,7 +813,6 @@
       background: var(--ink); color: var(--paper);
     }
     .yt-open-btn svg { width: 15px; height: 15px; display: block; }
-    .yt-music-row { margin-top: .55rem; }
     /* Song titles that drive the inline player get a play affordance */
     .setlist-song.playable { cursor: pointer; }
     .setlist-song.playable::before {
@@ -4150,11 +4149,6 @@
       if (!list || list.length === 0)
         return `<p class="setlist-empty">— to be added —</p>`;
       const playIds = list.map(s => ytMap && ytMap[s]).filter(Boolean);
-      // YouTube Music does not support YouTube's watch_videos endpoint. Link
-      // directly to the first available song so the button starts playback.
-      const ytmUrl = playIds.length
-        ? `https://music.youtube.com/watch?v=${playIds[0]}`
-        : '';
       // watch_videos builds an ad-hoc YouTube playlist from raw video IDs —
       // lets "Open on YouTube" launch the whole setlist in order, no account.
       const ytPlaylistUrl = playIds.length
@@ -4170,10 +4164,6 @@
                </button>
                 <a class="yt-open-btn" href="${ytPlaylistUrl}" target="_blank" rel="noopener"
                    title="Open this setlist as a playlist on YouTube">${ICON_YT}<span>Open on YouTube ↗</span></a>
-              </div>
-              <div class="yt-music-row">
-                <a class="yt-open-btn" href="${ytmUrl}" target="_blank" rel="noopener"
-                   title="Open on YouTube Music">${ICON_YT}<span>Open on YouTube Music ↗</span></a>
               </div>
               <div class="yt-frame-host"></div>
             </div>`
