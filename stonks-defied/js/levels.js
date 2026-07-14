@@ -397,6 +397,10 @@ window.SD = window.SD || {};
         }
         hits.push(hit);
       };
+      const vertexTurn = (vi) => {
+        if (vi <= 0 || vi >= N - 1) return 0;
+        return (ys[vi + 1] - ys[vi]) - (ys[vi] - ys[vi - 1]);
+      };
 
       for (let i = i0; i <= i1; i++) {
         const ax = x0 + i * dx, ay = ys[i];
@@ -407,7 +411,12 @@ window.SD = window.SD || {};
         if (ny > 0) { nx = -nx; ny = -ny; }
         let t = ((px - ax) * sx + (py - ay) * sy) / (len * len);
         const withinColumn = px > ax && px < ax + dx;
-        if (withinColumn && t > 0 && t < 1) {
+        // At a concave valley the next face must catch the tire before its
+        // center crosses the vertex. Restricting every face to its x column
+        // leaves a wheel-radius-wide curb at the foot of steep climbs.
+        const adjacentVertex = px <= ax ? i : px >= ax + dx ? i + 1 : -1;
+        const entersConcaveFace = adjacentVertex >= 0 && vertexTurn(adjacentVertex) < -1e-6;
+        if ((withinColumn || entersConcaveFace) && t > 0 && t < 1) {
           const sd = (px - ax) * nx + (py - ay) * ny; // signed height above line
           const pen = r - sd;
           if (pen > 0) add({ pen, nx, ny });
@@ -417,13 +426,16 @@ window.SD = window.SD || {};
           const cy = ay + sy * endpointT;
           const ddx = px - cx, ddy = py - cy;
           const d = Math.hypot(ddx, ddy);
-          if (d < r) {
+          const vi = endpointT <= 0 ? i : i + 1;
+          // A concave vertex belongs to the two road faces, not to a circular
+          // obstacle. Endpoint circles there create the wall-like magnetism.
+          const convexEndpoint = vi <= 0 || vi >= N - 1 || vertexTurn(vi) > 1e-6;
+          if (convexEndpoint && d < r) {
             const pen = r - d;
             let cnx, cny;
             if (d > 1e-6) { cnx = ddx / d; cny = ddy / d; }
             else { cnx = nx; cny = ny; }
             if (cny > 0.2) {
-              const vi = endpointT <= 0 ? i : i + 1;
               const isCrest = vi > 0 && vi < N - 1 && ys[vi] < ys[vi - 1] && ys[vi] < ys[vi + 1];
               if (isCrest) {
                 const away = Math.sign(px - (x0 + vi * dx));
