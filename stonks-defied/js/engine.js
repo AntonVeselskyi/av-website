@@ -133,43 +133,41 @@ window.SD = window.SD || {};
   }
 
   function resolveChassisGround() {
-    let touched = false;
-    for (let it = 0; it < 3; it++) {
-      const p = posePoints();
-      const probes = [
-        { ...p.bb, r: 5 },
-        { ...p.seat, r: 3.8 },
-        { ...p.handle, r: 3.8 },
-      ];
-      segmentProbe(probes, p.bb, p.seat, 2, 4.2);
-      segmentProbe(probes, p.bb, p.handle, 3, 4.2);
+    const p = posePoints();
+    const probes = [
+      { ...p.bb, r: 5 },
+      { ...p.seat, r: 3.8 },
+      { ...p.handle, r: 3.8 },
+    ];
+    segmentProbe(probes, p.bb, p.seat, 2, 4.2);
+    segmentProbe(probes, p.bb, p.handle, 3, 4.2);
 
-      let best = null;
-      for (const q of probes) {
-        const c = ter.contact(q.x, q.y, q.r);
-        if (c && (!best || c.pen > best.c.pen)) best = { q, c };
-      }
-      if (!best) break;
-      touched = true;
-
-      const b = bike.body, c = best.c;
-      const correction = Math.min(8, c.pen) * 0.78 + 0.02;
-      b.p.x += c.nx * correction;
-      b.p.y += c.ny * correction;
-
-      const rx = best.q.x - b.p.x, ry = best.q.y - b.p.y;
-      const pvx = b.v.x - b.w * ry, pvy = b.v.y + b.w * rx;
-      const vn = pvx * c.nx + pvy * c.ny;
-      if (vn < 0) {
-        const arm = rx * c.ny - ry * c.nx;
-        const effInv = BODY_INV_MASS + arm * arm * BODY_INV_INERTIA;
-        const impulse = -vn * 1.08 / effInv;
-        b.v.x += c.nx * impulse * BODY_INV_MASS;
-        b.v.y += c.ny * impulse * BODY_INV_MASS;
-        b.w += arm * impulse * BODY_INV_INERTIA;
-      }
+    let best = null;
+    for (const q of probes) {
+      const c = ter.contact(q.x, q.y, q.r);
+      if (c && (!best || c.pen > best.c.pen)) best = { q, c };
     }
-    return touched;
+    if (!best) return false;
+
+    const b = bike.body, c = best.c;
+    // Keep frame contact continuous. Large repeated corrections at a chart
+    // vertex used to hoist the entire bike onto the peak in one frame.
+    const correction = Math.min(0.9, Math.max(0, c.pen - 0.35) * 0.18);
+    b.p.x += c.nx * correction;
+    b.p.y += c.ny * correction;
+
+    const rx = best.q.x - b.p.x, ry = best.q.y - b.p.y;
+    const pvx = b.v.x - b.w * ry, pvy = b.v.y + b.w * rx;
+    const vn = pvx * c.nx + pvy * c.ny;
+    if (vn < 0) {
+      const arm = rx * c.ny - ry * c.nx;
+      const effInv = BODY_INV_MASS + arm * arm * BODY_INV_INERTIA;
+      const impulse = -vn * 0.82 / effInv;
+      b.v.x += c.nx * impulse * BODY_INV_MASS;
+      b.v.y += c.ny * impulse * BODY_INV_MASS;
+      b.w += arm * impulse * BODY_INV_INERTIA;
+    }
+    return true;
   }
 
   function newBike() {
@@ -389,7 +387,7 @@ window.SD = window.SD || {};
       }
     }
 
-    resolveChassisGround();
+    const chassisContact = resolveChassisGround();
 
     // wheel spin (visual)
     for (const w of wheels) {
@@ -413,10 +411,12 @@ window.SD = window.SD || {};
       const torsoHit = ter.contact(tor.x, tor.y, 6.5);
       const riderPen = Math.max(headHit ? headHit.pen - 1.5 : 0, torsoHit ? torsoHit.pen - 5.5 : 0);
       if (riderPen > 0) {
-        riderHitT += h;
+        const uprightOnFrame = chassisContact && Math.cos(bike.body.a) > 0.2;
+        riderHitT += uprightOnFrame ? -h * 5 : h;
+        riderHitT = Math.max(0, riderHitT);
         const supported = bike.rear.contact || bike.front.contact;
         const grace = supported ? 0.16 : 0.055;
-        if (riderHitT > grace || (riderPen > 9 && !supported)) {
+        if (!uprightOnFrame && (riderHitT > grace || (riderPen > 9 && !supported))) {
           return doCrash(headHit && headHit.pen > 1.5 ? 'head' : 'torso');
         }
       } else {
@@ -482,7 +482,7 @@ window.SD = window.SD || {};
     if (trick.active) {
       if (d < 0) trick.backRot += d;
       else if (!trick.backReady) trick.backRot = Math.min(0, trick.backRot + d * 0.15);
-      if (trick.backRot <= -Math.PI * 0.9) trick.backReady = true;
+      if (trick.backRot <= -Math.PI * 0.83) trick.backReady = true;
     }
 
     if (trick.backReady && landed && !trick.backDone) {
