@@ -406,13 +406,15 @@ window.SD = window.SD || {};
         let nx = sy / len, ny = -sx / len;
         if (ny > 0) { nx = -nx; ny = -ny; }
         let t = ((px - ax) * sx + (py - ay) * sy) / (len * len);
-        if (t > 0 && t < 1) {
+        const withinColumn = px > ax && px < ax + dx;
+        if (withinColumn && t > 0 && t < 1) {
           const sd = (px - ax) * nx + (py - ay) * ny; // signed height above line
           const pen = r - sd;
           if (pen > 0) add({ pen, nx, ny });
         } else {
-          const cx = ax + sx * Math.max(0, Math.min(1, t));
-          const cy = ay + sy * Math.max(0, Math.min(1, t));
+          const endpointT = px <= ax ? 0 : px >= ax + dx ? 1 : Math.max(0, Math.min(1, t));
+          const cx = ax + sx * endpointT;
+          const cy = ay + sy * endpointT;
           const ddx = px - cx, ddy = py - cy;
           const d = Math.hypot(ddx, ddy);
           if (d < r) {
@@ -420,7 +422,18 @@ window.SD = window.SD || {};
             let cnx, cny;
             if (d > 1e-6) { cnx = ddx / d; cny = ddy / d; }
             else { cnx = nx; cny = ny; }
-            if (cny > 0.2) { cnx = nx; cny = ny; } // never push down through ground
+            if (cny > 0.2) {
+              const vi = endpointT <= 0 ? i : i + 1;
+              const isCrest = vi > 0 && vi < N - 1 && ys[vi] < ys[vi - 1] && ys[vi] < ys[vi + 1];
+              if (isCrest) {
+                const away = Math.sign(px - (x0 + vi * dx));
+                const horizontal = away ? Math.min(0.85, Math.max(0.25, Math.abs(nx))) : 0;
+                cnx = away * horizontal;
+                cny = -Math.sqrt(Math.max(0, 1 - cnx * cnx));
+              } else {
+                cnx = nx; cny = ny; // never push down through ground
+              }
+            }
             add({ pen, nx: cnx, ny: cny });
           }
         }
