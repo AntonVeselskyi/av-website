@@ -51,6 +51,7 @@ window.SD = window.SD || {};
   let stallT = 0;
   let wheelieT = 0, wheelieBreakT = 0, wheelieDone = false;
   let riderHitT = 0, crashReason = '';
+  let maxProgress = 0;
   let acc = 0, lastT = 0, idleT = 0;
 
   const keys = { gas: false, brake: false, back: false, fwd: false };
@@ -62,6 +63,7 @@ window.SD = window.SD || {};
   E.rideMs = () => rideMs;
   E.wheelieSeconds = () => wheelieT;
   E.crashReason = () => crashReason;
+  E.progress = () => maxProgress;
 
   // ---- vec helpers ----
   function axis() {
@@ -421,6 +423,8 @@ window.SD = window.SD || {};
 
     // crash & finish checks
     if (state === 'riding') {
+      const routeSpan = Math.max(1, ter.finishX - ter.startX);
+      maxProgress = Math.max(maxProgress, Math.max(0, Math.min(1, (mid().x - ter.startX) / routeSpan)));
       const hp = headPos();
       const headHit = ter.contact(hp.x, hp.y, 7.5);
       const pose = posePoints();
@@ -556,6 +560,7 @@ window.SD = window.SD || {};
 
   function doFinish() {
     state = 'finished'; endT = 0; endShown = false;
+    maxProgress = 1;
     finishMs = rideMs;
     spawnConfetti();
     if (SD.ui) SD.ui.onFinish(def, finishMs);
@@ -595,6 +600,7 @@ window.SD = window.SD || {};
     stallT = 0;
     wheelieT = 0; wheelieBreakT = 0; wheelieDone = false;
     riderHitT = 0; crashReason = '';
+    maxProgress = 0;
     acc = 0;
     particles = []; ragdoll = null; tronTrail = [];
     const m = mid();
@@ -744,14 +750,46 @@ window.SD = window.SD || {};
     const i1 = Math.min(ter.N - 1, Math.ceil((x1 - ter.x0) / ter.dx) + 1);
     if (i1 <= i0) return;
 
-    // area fill
-    ctx.beginPath();
-    ctx.moveTo(ter.x0 + i0 * ter.dx, ybot + 50);
-    for (let i = i0; i <= i1; i++) ctx.lineTo(ter.x0 + i * ter.dx, ter.ys[i]);
-    ctx.lineTo(ter.x0 + i1 * ter.dx, ybot + 50);
-    ctx.closePath();
-    ctx.fillStyle = th.mapFill;
-    ctx.fill();
+    if (SD.themeId === 'gravity') {
+      const depthX = 18, depthY = 24;
+
+      // The original game sold depth with a cheap extruded terrain ribbon.
+      // Keep the front edge physical and render the offset face as wire mesh.
+      ctx.beginPath();
+      for (let i = i0; i <= i1; i++) {
+        const x = ter.x0 + i * ter.dx;
+        if (i === i0) ctx.moveTo(x, ter.ys[i]); else ctx.lineTo(x, ter.ys[i]);
+      }
+      for (let i = i1; i >= i0; i--) ctx.lineTo(ter.x0 + i * ter.dx + depthX, ter.ys[i] + depthY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(75,51,34,0.16)';
+      ctx.fill();
+
+      ctx.beginPath();
+      for (let i = i0; i <= i1; i++) {
+        const x = ter.x0 + i * ter.dx + depthX;
+        if (i === i0) ctx.moveTo(x, ter.ys[i] + depthY); else ctx.lineTo(x, ter.ys[i] + depthY);
+      }
+      for (let i = i0; i <= i1; i++) {
+        const x = ter.x0 + i * ter.dx, y = ter.ys[i];
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + depthX, y + depthY);
+        if (i < i1) ctx.lineTo(x + ter.dx, ter.ys[i + 1]);
+      }
+      ctx.strokeStyle = th.gridStrong;
+      ctx.lineWidth = 1.15;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    } else {
+      // area fill
+      ctx.beginPath();
+      ctx.moveTo(ter.x0 + i0 * ter.dx, ybot + 50);
+      for (let i = i0; i <= i1; i++) ctx.lineTo(ter.x0 + i * ter.dx, ter.ys[i]);
+      ctx.lineTo(ter.x0 + i1 * ter.dx, ybot + 50);
+      ctx.closePath();
+      ctx.fillStyle = th.mapFill;
+      ctx.fill();
+    }
 
     // the chart line itself
     ctx.beginPath();

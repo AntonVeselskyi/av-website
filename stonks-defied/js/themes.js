@@ -76,7 +76,7 @@ SD.THEMES = {
     bg: '#f7f7f7', bg2: '#e9ebee',
     grid: '#d8dfea', gridStrong: '#8b9dc3',
     map: '#3b5998', mapFill: 'rgba(59,89,152,0.10)',
-    driver: '#ffffff', frame: '#263961',
+    driver: '#b23b3b', frame: '#263961',
     text: '#1c1e21', dim: '#606770', accent: '#3b5998',
     danger: '#b23b3b', good: '#2e7d32',
   },

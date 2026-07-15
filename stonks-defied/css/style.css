@@ -890,7 +890,7 @@ body.facebook-theme {
 body.facebook-theme #app::before,
 body.facebook-theme #scan { display: none; }
 body.facebook-theme .screen {
-  background: rgba(247, 247, 247, 0.94);
+  background: rgba(247, 247, 247, 0.68);
 }
 body.facebook-theme #statusbar {
   min-height: 27px;
@@ -900,8 +900,8 @@ body.facebook-theme #statusbar {
   font-size: 12px;
   letter-spacing: 0;
 }
-body.facebook-theme #statusbar .carrier,
-body.facebook-theme #statusbar .sig i { color: #fff; background: #fff; }
+body.facebook-theme #statusbar .carrier { color: #fff; }
+body.facebook-theme #statusbar .sig i { background: #fff; }
 body.facebook-theme .title,
 body.facebook-theme .scr-head {
   width: min(420px, 92vw);

@@ -321,6 +321,8 @@ window.SD = window.SD || {};
   }
 
   // ================= game flow =================
+  let crashProgress = 0;
+
   function startLevel(def) {
     document.body.classList.add('game-active');
     hideScreens();
@@ -339,6 +341,7 @@ window.SD = window.SD || {};
   }
 
   U.onLevelStart = function (def) {
+    crashProgress = 0;
     hideOverlay();
     $('hud-sym').textContent = def.sym;
     $('hud-co').textContent = def.co || def.sym;
@@ -348,6 +351,7 @@ window.SD = window.SD || {};
   U.onRideStart = function () { banner(null); sfx.start(); };
 
   U.onCrash = function () {
+    crashProgress = E().progress ? Math.max(0, Math.min(99, Math.floor(E().progress() * 100))) : 0;
     save.d = (save.d || 0) + 1;
     writeSave();
     sfx.crash();
@@ -388,7 +392,9 @@ window.SD = window.SD || {};
         'THE MARKET CAN STAY IRRATIONAL LONGER THAN YOU CAN STAY UPRIGHT',
         'DIAMOND HANDS, GLASS HELMET', 'SELL SIGNAL CONFIRMED',
       ];
-      showOverlay('LIQUIDATED!', quips[Math.floor(Math.random() * quips.length)], [
+      let sub = quips[Math.floor(Math.random() * quips.length)];
+      if (!finished(def)) sub += '<br><span class="bad">YOU BEAT ' + crashProgress + '% OF THIS CHART</span>';
+      showOverlay('LIQUIDATED!', sub, [
         { label: 'RE-ENTER ->', fn: restartLevel, primary: true },
         { label: 'EXIT TO MENU', fn: quitToMenu },
       ]);
