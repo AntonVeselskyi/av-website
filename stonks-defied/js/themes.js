@@ -13,6 +13,7 @@ SD.THEMES = {
   },
   lcd: {
     name: 'NOKIA LCD',
+    locked: true, hint: 'BEAT THE FIRST CHART',
     bg: '#a3b284', bg2: '#aebd8e',
     grid: '#93a375', gridStrong: '#86956b',
     map: '#28391b', mapFill: 'rgba(40,57,27,0.10)',
@@ -69,9 +70,19 @@ SD.THEMES = {
     text: '#1e2422', dim: '#5b6965', accent: '#e6b928',
     danger: '#b3192d', good: '#2f7040',
   },
+  facebook: {
+    name: 'THEFACEBOOK 2004',
+    locked: true, hint: 'BEAT META',
+    bg: '#f7f7f7', bg2: '#e9ebee',
+    grid: '#d8dfea', gridStrong: '#8b9dc3',
+    map: '#3b5998', mapFill: 'rgba(59,89,152,0.10)',
+    driver: '#ffffff', frame: '#263961',
+    text: '#1c1e21', dim: '#606770', accent: '#3b5998',
+    danger: '#b23b3b', good: '#2e7d32',
+  },
   goldenbull: {
     name: 'GOLDEN BULL',
-    locked: true, hint: 'BEAT ALL 13 CHARTS UNDER PAR',
+    locked: true, hint: 'BEAT EVERY CHART UNDER PAR',
     bg: '#0b0800', bg2: '#171003',
     grid: '#33270a', gridStrong: '#4b3a10',
     map: '#ffd23f', mapFill: 'rgba(255,210,63,0.12)',
@@ -103,6 +114,7 @@ SD.applyTheme = function (id) {
     document.body.classList.toggle('tron-theme', SD.themeId === 'tron');
     document.body.classList.toggle('chrome-theme', SD.themeId === 'chrome');
     document.body.classList.toggle('gravity-theme', SD.themeId === 'gravity');
+    document.body.classList.toggle('facebook-theme', SD.themeId === 'facebook');
   }
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) meta.content = t.bg;

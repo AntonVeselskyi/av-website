@@ -206,11 +206,15 @@ window.SD = window.SD || {};
   }
 
   function checkProgressUnlocks(quiet) {
+    const first = SD.levels.PRESETS[0];
+    const meta = SD.levels.PRESETS.find((def) => def.id === 'META');
     const firstFive = SD.levels.PRESETS.slice(0, 5).every(finished);
     const all = SD.levels.PRESETS.every(beaten);
+    const nokia = first && finished(first) ? unlockTheme('lcd', quiet) : false;
+    const facebook = meta && finished(meta) ? unlockTheme('facebook', quiet) : false;
     const chrome = firstFive ? unlockTheme('chrome', quiet) : false;
     const gold = all ? unlockTheme('goldenbull', quiet) : false;
-    return chrome || gold;
+    return nokia || facebook || chrome || gold;
   }
 
   // ================= ticker =================
@@ -318,6 +322,7 @@ window.SD = window.SD || {};
 
   // ================= game flow =================
   function startLevel(def) {
+    document.body.classList.add('game-active');
     hideScreens();
     $('hud').classList.remove('hidden');
     if (isTouch) $('touch').classList.remove('hidden');
@@ -419,6 +424,7 @@ window.SD = window.SD || {};
 
   function quitToMenu() {
     E().quit();
+    document.body.classList.remove('game-active');
     hideOverlay();
     banner(null);
     $('hud').classList.add('hidden');
@@ -541,6 +547,7 @@ window.SD = window.SD || {};
       writeSave();
     }
     SD.applyTheme(save.th);
+    document.body.classList.remove('game-active');
     SD.engine.init();
 
     // menu buttons

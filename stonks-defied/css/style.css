@@ -566,6 +566,10 @@ body.tron-theme #toast {
   background: var(--accent);
   box-shadow: 0 0 24px rgba(255,140,26,0.75);
 }
+body.tron-theme.game-active #app::before,
+body.tron-theme.game-active #scan {
+  display: none;
+}
 
 /* Gravity Defied: flat early-J2ME sky, dirt line, minimal effects */
 body.gravity-theme { background: #9fb4bb; }
@@ -876,3 +880,175 @@ body.chrome-theme .note b {
   .tbtn { width: 62px; height: 62px; }
   .tbtn.big { width: 78px; height: 78px; }
 }
+
+/* TheFacebook 2004: flat blue chrome, white modules, compact system type. */
+body.facebook-theme {
+  background: #e9ebee;
+  color: #1c1e21;
+  font-family: Tahoma, Verdana, Arial, sans-serif;
+}
+body.facebook-theme #app::before,
+body.facebook-theme #scan { display: none; }
+body.facebook-theme .screen {
+  background: rgba(247, 247, 247, 0.94);
+}
+body.facebook-theme #statusbar {
+  min-height: 27px;
+  color: #fff;
+  background: #3b5998;
+  border-bottom: 1px solid #263961;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+body.facebook-theme #statusbar .carrier,
+body.facebook-theme #statusbar .sig i { color: #fff; background: #fff; }
+body.facebook-theme .title,
+body.facebook-theme .scr-head {
+  width: min(420px, 92vw);
+  padding: 9px 14px;
+  color: #fff;
+  background: #3b5998;
+  border: 1px solid #263961;
+  border-bottom-width: 3px;
+  font-family: Tahoma, Verdana, Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+body.facebook-theme .title {
+  font-size: clamp(31px, 7vw, 46px);
+  line-height: 0.96;
+}
+body.facebook-theme .title .av-monogram,
+body.facebook-theme .scr-head .av-monogram {
+  color: #fff;
+  text-shadow: none;
+}
+body.facebook-theme .subtitle,
+body.facebook-theme .foot,
+body.facebook-theme .version-tag,
+body.facebook-theme .note,
+body.facebook-theme #ticker-status,
+body.facebook-theme .l-row2 {
+  color: #606770;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+body.facebook-theme .mbtn,
+body.facebook-theme #ticker-input,
+body.facebook-theme .ticker-chip,
+body.facebook-theme .hbtn,
+body.facebook-theme .tbtn {
+  color: #1c1e21;
+  background: #fff;
+  border: 1px solid #8b9dc3;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: Tahoma, Verdana, Arial, sans-serif;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+body.facebook-theme .mbtn { font-size: 15px; font-weight: 700; padding: 8px 12px; }
+body.facebook-theme .mbtn:hover,
+body.facebook-theme .mbtn.sel,
+body.facebook-theme #ticker-input:focus,
+body.facebook-theme #ticker-input.sel,
+body.facebook-theme .ticker-chip:hover,
+body.facebook-theme .ticker-chip.sel,
+body.facebook-theme .hbtn:hover,
+body.facebook-theme .tbtn.on {
+  color: #fff;
+  background: #3b5998;
+  border-color: #263961;
+  box-shadow: none;
+}
+body.facebook-theme .mbtn.primary { border: 2px solid #3b5998; }
+body.facebook-theme .l-row1 { font-size: 16px; }
+body.facebook-theme .l-row1 b,
+body.facebook-theme .ticker-chip b,
+body.facebook-theme .note b,
+body.facebook-theme .t-arrow,
+body.facebook-theme .monogram { color: #3b5998; text-shadow: none; }
+body.facebook-theme .mbtn:hover .l-row1 b,
+body.facebook-theme .mbtn.sel .l-row1 b,
+body.facebook-theme .mbtn:hover .l-row2,
+body.facebook-theme .mbtn.sel .l-row2,
+body.facebook-theme .mbtn:hover .medal,
+body.facebook-theme .mbtn.sel .medal,
+body.facebook-theme .ticker-chip:hover b,
+body.facebook-theme .ticker-chip.sel b,
+body.facebook-theme .ticker-chip:hover .move,
+body.facebook-theme .ticker-chip.sel .move { color: #fff; }
+body.facebook-theme #level-grid,
+body.facebook-theme .tick-box,
+body.facebook-theme .credits {
+  scrollbar-color: #8b9dc3 #e9ebee;
+}
+body.facebook-theme .suggest-group,
+body.facebook-theme .credits {
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #d8dfea;
+}
+body.facebook-theme .suggest-head { color: #3b5998; letter-spacing: 0; font-weight: 700; }
+body.facebook-theme #suggest-wire { color: #2e7d32; }
+body.facebook-theme #ticker-input { color: #1c1e21; font-size: 24px; }
+body.facebook-theme .av-credits {
+  color: #3b5998;
+  border: 2px solid #3b5998;
+  box-shadow: none;
+}
+body.facebook-theme #hud {
+  color: #fff;
+  background: #3b5998;
+  border-bottom: 2px solid #263961;
+  text-shadow: none;
+}
+body.facebook-theme #hud-sym,
+body.facebook-theme #hud-co,
+body.facebook-theme #hud-time { color: #fff; text-shadow: none; }
+body.facebook-theme #hud-price,
+body.facebook-theme #hud-date,
+body.facebook-theme #hud-par { color: #d8dfea; text-shadow: none; }
+body.facebook-theme .hbtn {
+  color: #fff;
+  background: #263961;
+  border-color: #8b9dc3;
+}
+body.facebook-theme #banner {
+  left: 50%; right: auto;
+  width: max-content;
+  max-width: 90vw;
+  padding: 7px 12px;
+  transform: translateX(-50%);
+  color: #3b5998;
+  background: #fff;
+  border: 1px solid #3b5998;
+  font-size: clamp(17px, 4vw, 24px);
+  letter-spacing: 0;
+  text-shadow: none;
+}
+body.facebook-theme #banner.danger { color: #b23b3b; text-shadow: none; }
+body.facebook-theme #overlay { background: rgba(38, 57, 97, 0.46); }
+body.facebook-theme #ov-box,
+body.facebook-theme #unlock-pop {
+  color: #1c1e21;
+  background: #fff;
+  border: 1px solid #3b5998;
+  border-top-width: 8px;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.facebook-theme #ov-title,
+body.facebook-theme #unlock-name { color: #3b5998; font-family: Tahoma, Verdana, Arial, sans-serif; text-shadow: none; }
+body.facebook-theme #ov-sub,
+body.facebook-theme .unlock-title { color: #606770; }
+body.facebook-theme #toast {
+  color: #1c1e21;
+  background: #fff;
+  border: 1px solid #3b5998;
+  box-shadow: none;
+  letter-spacing: 0;
+}
+body.facebook-theme .tbtn { color: #3b5998; font-weight: 700; }
+body.facebook-theme .tbtn.big { border: 2px solid #3b5998; }

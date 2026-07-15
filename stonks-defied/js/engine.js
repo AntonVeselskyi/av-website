@@ -833,30 +833,31 @@ window.SD = window.SD || {};
     if (state !== 'riding') return;
     const x = bike.rear.p.x, y = bike.rear.p.y;
     const last = tronTrail[tronTrail.length - 1];
-    if (!last || Math.hypot(x - last.x, y - last.y) > 5) {
-      tronTrail.push({ x, y, life: 1.35 });
-      if (tronTrail.length > 84) tronTrail.shift();
+    if (!last || Math.hypot(x - last.x, y - last.y) > 8) {
+      tronTrail.push({ x, y, life: 0.9 });
+      if (tronTrail.length > 36) tronTrail.shift();
     }
   }
 
   function drawTronTrail() {
     if (SD.themeId !== 'tron' || tronTrail.length < 2) return;
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.shadowColor = '#00e5ff';
-    ctx.shadowBlur = 7;
+    ctx.strokeStyle = '#00bcd4';
+    ctx.lineWidth = 3.2;
+    ctx.globalAlpha = 0.16;
+    ctx.beginPath();
+    ctx.moveTo(tronTrail[0].x, tronTrail[0].y);
     for (let i = 1; i < tronTrail.length; i++) {
-      const a = tronTrail[i - 1], b = tronTrail[i];
-      ctx.globalAlpha = Math.min(0.5, b.life * 0.34) * (i / tronTrail.length);
-      ctx.strokeStyle = '#72f6ff';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
+      ctx.lineTo(tronTrail[i].x, tronTrail[i].y);
     }
+    ctx.stroke();
+    ctx.strokeStyle = '#72f6ff';
+    ctx.lineWidth = 1.1;
+    ctx.globalAlpha = 0.42;
+    ctx.stroke();
     ctx.restore();
   }
 
