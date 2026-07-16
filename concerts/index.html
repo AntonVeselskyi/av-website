@@ -1145,6 +1145,7 @@
 
   <footer id="site-footer">— end of record —</footer>
 
+  <script src="spotify-track-map.js"></script>
   <script>
     /* ═══════════════════════════════════════════════════════════════
        CONCERT DATA — edit this array to add / update shows.
@@ -1182,7 +1183,7 @@
         "photos": [],
         "logo": "https://upload.wikimedia.org/wikipedia/commons/f/f7/That_Poppy_Signature.svg",
         "spotifyEmbed": "https://open.spotify.com/embed/artist/5mlbvTfWUOfDrUIK6dkNzv?utm_source=generator",
-        "notes": "w. Thousand Below, LANDMVRKS. 9:10–10:20 PM set. Photos to come!",
+        "notes": "w. Thousand Below, LANDMVRKS. 9:10–10:20 PM set.",
         "supports": [
           {
             "artist": "LANDMVRKS",
@@ -1334,7 +1335,7 @@
         "photos": [],
         "logo": "pics/logos/evanescence.svg",
         "spotifyEmbed": "https://open.spotify.com/embed/artist/5nGIFgo0shDenQYSE0Sn7c?utm_source=generator",
-        "notes": "w. Spiritbox, Nova Twins. Photos to come!",
+        "notes": "w. Spiritbox, Nova Twins.",
         "supports": [
           {
             "artist": "Spiritbox",
@@ -1451,7 +1452,7 @@
         "logo": "https://static.tildacdn.net/tild3939-3966-4438-b163-323162313861/jinjer-logo-lines-wh.png",
         "logoInvert": true,
         "spotifyEmbed": "https://open.spotify.com/embed/artist/7o6cOczXTB8ioTAAJTbESf?utm_source=generator",
-        "notes": "w. Entheos. Photos to come!",
+        "notes": "w. Entheos.",
         "supports": [
           {
             "artist": "Entheos",
@@ -4304,11 +4305,9 @@
       let ytIndex = -1;   // running position within playIds (skips songs w/o a video)
       const rows = list.map(song => {
         const q         = encodeURIComponent((artist ? artist + ' ' : '') + song);
-        const trackId   = spotifyMap && spotifyMap[song];
-        const sp        = trackId
-          ? `https://open.spotify.com/track/${trackId}`
-          : `https://open.spotify.com/search/${q}`;
-        const spTitle   = trackId ? 'Open on Spotify' : 'Search on Spotify';
+        const sharedMap = window.CONCERT_SPOTIFY_TRACKS && window.CONCERT_SPOTIFY_TRACKS[artist];
+        const trackId   = (spotifyMap && spotifyMap[song]) || (sharedMap && sharedMap[song]);
+        const sp        = trackId ? `https://open.spotify.com/track/${trackId}` : '';
         const ytVideoId = ytMap && ytMap[song];
         if (ytVideoId) ytIndex++;
         const yt        = ytVideoId
@@ -4324,7 +4323,7 @@
           <a href="${yt}" target="_blank" rel="noopener" ${titleAttrs}>${esc(song)}</a>
           <span class="song-btns">
             <a href="${yt}" target="_blank" rel="noopener" class="song-btn song-btn-yt" title="${ytTitle}">${ICON_YT}</a>
-            <a href="${sp}" target="_blank" rel="noopener" class="song-btn song-btn-sp" title="${spTitle}">${ICON_SP}</a>
+            ${sp ? `<a href="${sp}" target="_blank" rel="noopener" class="song-btn song-btn-sp" title="Open on Spotify">${ICON_SP}</a>` : ''}
           </span>
         </li>`;
       }).join('');
