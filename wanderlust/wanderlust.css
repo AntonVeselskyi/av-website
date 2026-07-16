@@ -47,6 +47,8 @@ html, body {
   margin: 0;
   height: 100%;
   -webkit-user-select: none; user-select: none;   /* UI, not a document — no text selection */
+  -webkit-tap-highlight-color: transparent;       /* no blue flash on tapped pins/labels */
+  -webkit-touch-callout: none;
   background:
     radial-gradient(ellipse at 50% -10%, #02323d 0%, transparent 60%),
     radial-gradient(ellipse at 80% 120%, #04222b 0%, transparent 55%),
@@ -172,8 +174,17 @@ body::after {
   inset: 0;
   z-index: 1;
 }
-#wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; }
+#wl-map svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 #wl-map svg.dragging { cursor: grabbing; }
+
+/* Mobile only: while actively panning/zooming, pause the drop-shadow glows
+   (only the focused country has one — the pause is invisible) so they aren't
+   re-rastered every frame. Patterns stay: they're part of the look.
+   Desktop is untouched — it never struggled. */
+@media (max-width: 640px) {
+  #wl-map svg.dragging .country { filter: none !important; transition: none !important; }
+  #wl-map svg.dragging .arc { filter: none !important; }
+}
 
 .wl-sphere   { fill: rgba(2,40,49,.55); stroke: rgba(148,210,189,.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .wl-graticule { fill: none; stroke: rgba(148,210,189,.10); stroke-width: .5; vector-effect: non-scaling-stroke; }
@@ -244,6 +255,7 @@ body::after {
 #wl-pins.pins-hidden .pin svg,
 #wl-pins.pins-hidden .pin .pin-img,
 #wl-pins.pins-hidden .pin .pin-badge { display: none; }
+.pin.density-hide { display: none !important; }   /* phone overlap culling (see positionPins) */
 #wl-pins.pins-hidden .pin.show-label .pin-label { opacity: 1; pointer-events: auto; cursor: pointer; }
 #wl-pins.pins-hidden .pin .pin-label {
   top: var(--pin-root-offset);
@@ -359,6 +371,7 @@ body::after {
   pointer-events: none;
 }
 #wl-left-ui > aside { pointer-events: auto; }
+#wl-collapse-toggle { display: none; pointer-events: auto; }
 
 #wl-filters, #wl-controls, #wl-country-info {
   max-width: calc(100vw - 24px);
@@ -600,7 +613,7 @@ body::after {
   position: fixed;
   top: clamp(54px, 7vw, 72px);
   right: clamp(12px, 2.5vw, 28px);
-  z-index: 69;
+  z-index: 74;   /* audio credits opens from the “i”, keep it above the stats panels */
   width: min(380px, calc(100vw - 24px));
   max-height: min(68vh, 620px);
   overflow-y: auto;
@@ -689,7 +702,7 @@ body::after {
 #wl-cities-panel,
 #wl-europe-panel {
   position: fixed;
-  z-index: 46;
+  z-index: 72;   /* above #wl-info-btn (70) so panel close buttons aren't shadowed by the “i” */
   padding: 16px 18px 18px;
   background: var(--glass-bg);
   background-blend-mode: screen, soft-light, normal;
@@ -765,7 +778,6 @@ body::after {
   top: clamp(48px, 6vh, 68px);
   bottom: clamp(96px, 13vh, 132px);
   transform: translateX(-50%);
-  z-index: 68;
   width: 780px;
   max-width: calc(100vw - 660px);
   display: flex;
@@ -1290,15 +1302,171 @@ button.wl-year-row {
     width: calc(58vw - 14px);
     gap: 8px;
   }
-  #wl-filters, #wl-controls, #wl-country-info { padding: 10px 12px; font-size: 12px; }
+  #wl-filters, #wl-controls, #wl-country-info { padding: 8px 10px; font-size: 12px; }
   #wl-controls {
     right: 8px;
     bottom: 8px;
     width: calc(42vw - 14px);
   }
-  #wl-filters { max-height: 38vh; }
+  /* country info becomes a top-of-screen drop-down so it never obstructs the
+     map or the bottom UI; it slides in only while a country is focused. */
+  #wl-country-info {
+    display: block;            /* stay rendered so the slide can animate */
+    position: fixed;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    transform: translateY(-102%);
+    transition: transform .34s cubic-bezier(.4,0,.2,1);
+    z-index: 30;
+    pointer-events: none;
+  }
+  #wl-country-info.active {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  #wl-collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+    width: 44px;
+    height: 26px;
+    font-family: var(--font-display);
+    font-size: 19px;
+    line-height: 1;
+    background: var(--glass-bg);
+    background-blend-mode: screen, soft-light, normal;
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: 9px;
+    box-shadow: var(--glass-shadow);
+    color: var(--pearl-aqua);
+    cursor: pointer;
+    padding: 0;
+    z-index: 25;
+    transition: color .18s ease, border-color .18s ease, transform .12s ease;
+  }
+  #wl-collapse-toggle:active { transform: scale(.94); color: var(--golden-orange); }
+  /* mini filter chip: appears bottom-left when a filter is locked with the HUD
+     tucked away — shows the active year + an "all" reset, nothing else */
+  #wl-mini-filter { display: none; }
+  #wl-mini-filter.show {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: start;
+    width: max-content;
+    padding: 6px 9px;
+    background: var(--glass-bg);
+    background-blend-mode: screen, soft-light, normal;
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    box-shadow: var(--glass-shadow);
+    pointer-events: auto;
+  }
+  .mini-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .8px;
+    color: var(--vanilla-custard);
+  }
+  .mini-chip .legend-swatch { width: 12px; height: 12px; }
+  button.mini-chip.mini-all {
+    background: rgba(148,210,189,.13);
+    border: 1px solid rgba(148,210,189,.42);
+    border-radius: 7px;
+    color: var(--pearl-aqua);
+    padding: 3px 9px;
+    cursor: pointer;
+    text-transform: lowercase;
+  }
+  button.mini-chip.mini-all:active { transform: scale(.95); }
+  #wl-filters, #wl-controls {
+    overflow: hidden;
+    transition:
+      max-height .4s cubic-bezier(.4,0,.2,1),
+      opacity .35s cubic-bezier(.4,0,.2,1),
+      padding .4s cubic-bezier(.4,0,.2,1),
+      transform .4s cubic-bezier(.4,0,.2,1);
+  }
+  /* expanded: equal caps so the two columns read as one HUD; both scroll when
+     content overflows, so nothing (e.g. "play the journey") is ever clipped */
+  #wl-filters  { max-height: 46vh; }
+  #wl-controls { max-height: 46vh; }
+  /* tighter HUD typography/controls for phone */
+  #wl-filters h2 { font-size: 15px; letter-spacing: 2px; margin: 0 0 8px; }
+  .legend-years { gap: 4px; }
+  .legend-row { gap: 8px; padding: 1px 3px; }
+  .legend-swatch { width: 13px; height: 13px; }
+  .legend-controls { gap: 7px; }
+  .wl-btn { font-size: 13px; padding: 6px 10px; letter-spacing: 1.5px; }
+  body:not(.wl-panels-collapsed) #wl-filters,
+  body:not(.wl-panels-collapsed) #wl-controls {
+    height: 46vh;          /* equal columns — ragged tops read as broken */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.wl-panels-collapsed #wl-filters,
+  body.wl-panels-collapsed #wl-controls {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+  }
   .legend-years { grid-template-columns: 1fr; gap: 5px; }
-  .ci-grid, .ci-salary { grid-template-columns: 1fr; }
+  /* compact country card: two tight columns, smaller type — it sits over the
+     map at the top of the screen, so every saved pixel is map view */
+  /* the fixed heading and the AV monogram yield to whatever occupies the top */
+  .wl-title { transition: opacity .25s ease; }
+  .av-monogram { transition: opacity .25s ease; }
+  body.wl-timeline-on .wl-title,
+  body:has(#wl-country-info.active) .wl-title { opacity: 0; }
+  body.wl-timeline-on .av-monogram,
+  body:has(#wl-country-info.active) .av-monogram { opacity: 0; pointer-events: none; }
+  /* timeline scrubber docks to the top edge (bottom is where the hands are) */
+  #wl-timeline {
+    top: 8px;
+    bottom: auto;
+    width: calc(100vw - 16px);
+    padding: 9px 12px 10px;
+    gap: 8px;
+    transform: translateX(-50%) translateY(-16px);
+  }
+  #wl-timeline.show { transform: translateX(-50%) translateY(0); }
+  /* while the timeline HUD is open, the country card yields the top edge */
+  body.wl-timeline-on #wl-country-info { top: var(--wl-timeline-h, 92px); }
+  #wl-country-info { padding: 7px 10px 8px; }
+  #wl-country-info .ci-name { font-size: 16px; letter-spacing: 2px; margin-bottom: 5px; }
+  /* 6-col lattice: population | visits | distance on one row (span 2 each),
+     salary and language side by side beneath (span 3 each) */
+  .ci-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px 5px; }
+  .ci-grid > .ci-item { grid-column: span 2; }
+  .ci-grid > .ci-item.wide { grid-column: span 3; }
+  .ci-item { padding: 3px 6px 4px; border-radius: 6px; }
+  .ci-label { font-size: 7.5px; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; }
+  .ci-value { margin-top: 1px; font-size: 11px; }
+  .ci-salary { grid-template-columns: 1fr; gap: 0; }
+  .ci-money { font-size: 9.5px; }
+  .ci-lang { gap: 6px; }
+  .ci-native { font-size: 13px; }
+  .ci-translit { font-size: 9px; }
+  #wl-country-info .pop-play.ci-play { width: 26px; height: 26px; }
   #wl-stats-panel {
     top: 8px;
     bottom: 8px;
@@ -1384,3 +1552,13 @@ body.measure-mode #wl-popup { pointer-events: none !important; }
   opacity: 0; transition: opacity .15s ease;
 }
 #wl-measure-label.show { opacity: 1; }
+
+/* touch devices: taps leave elements in a sticky :hover state — neutralize the
+   hover styles there (real hover pointers keep them) */
+@media (hover: none) {
+  .legend-row:hover { background: none; }
+  .legend-row.active { background: rgba(148,210,189,.16); }
+  .wl-btn:hover { background: var(--golden-orange); color: var(--ink-black); }
+  .wl-btn.ghost:hover { background: transparent; color: var(--pearl-aqua); }
+  .wl-btn.ghost.active { background: var(--dark-cyan); color: var(--ink-black); border-color: var(--dark-cyan); }
+}

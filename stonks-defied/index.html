@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=20260715-depth-progress15">
 </head>
 <body>
 <div id="app">
@@ -20,7 +20,7 @@
 
   <!-- fake old-phone status bar (menus only) -->
   <div id="statusbar">
-    <span class="sig">&#9602;&#9604;&#9606;&#9608;</span>
+    <span class="sig" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <span class="carrier">STONKS</span>
     <span id="sb-clock">--:--</span>
     <span class="batt">&#9646;&#9646;&#9646;&#9647;</span>
@@ -28,7 +28,7 @@
 
   <!-- MAIN MENU -->
   <div class="screen active" id="scr-main">
-    <div class="title"><span class="t-arrow">&#9650;</span><br>STONKS<br>DEFIED</div>
+    <div class="title"><a class="av-monogram av-title" href="https://antonveselskyi.com" aria-label="Anton Veselskyi"><span aria-hidden="true">A</span><span aria-hidden="true">V</span></a><br>STONKS<br>DEFIED</div>
     <div class="subtitle">GRAVITY DEFIED &#215; THE MARKET</div>
     <div class="list">
       <button class="mbtn" data-go="levels">RIDE CHARTS</button>
@@ -37,6 +37,7 @@
       <button class="mbtn" data-go="credits">CREDITS</button>
     </div>
     <div class="foot">&#9650; GAS &#9660; BRAKE &#9664;&#9654; LEAN &#183; R RETRY &#183; M SOUND</div>
+    <div class="version-tag">v2026.07.15 depth-progress15</div>
   </div>
 
   <!-- LEVEL SELECT -->
@@ -54,7 +55,22 @@
       <input id="ticker-input" type="text" maxlength="10" placeholder="TSLA" autocomplete="off" spellcheck="false">
       <button class="mbtn" id="ticker-go">DIAL IN &#9654;</button>
       <div id="ticker-status"></div>
-      <div class="note">RIDES THE LAST YEAR OF WEEKLY CLOSES.<br>
+      <div class="ticker-suggestions" aria-label="ticker suggestions">
+        <section class="suggest-group">
+          <div class="suggest-head">S&amp;P 500 TOP WEIGHTS</div>
+          <div class="suggest-chips" id="suggest-sp500"></div>
+        </section>
+        <section class="suggest-group">
+          <div class="suggest-head">WEEK GAINERS <span id="suggest-wire">WIRE</span></div>
+          <div class="suggest-chips" id="suggest-gainers"></div>
+        </section>
+        <section class="suggest-group">
+          <div class="suggest-head">WEEK LOSERS</div>
+          <div class="suggest-chips" id="suggest-losers"></div>
+        </section>
+      </div>
+      <div class="note">RIDES FULL YAHOO HISTORY TO CURRENT DAY.<br>
+      LONG-LIVED TICKERS MAKE LONGER ROUTES.<br>
       IF THE WIRE IS DOWN, A SIMULATED CHART IS GENERATED.<br>
       TIP: URL PARAM <b>?ticker=NVDA</b> WORKS TOO.</div>
     </div>
@@ -72,9 +88,9 @@
   <div class="screen" id="scr-credits">
     <div class="scr-head">CREDITS</div>
     <div class="credits">
-      <div class="monogram">AV</div>
+      <a class="av-monogram av-credits" href="https://antonveselskyi.com" aria-label="Anton Veselskyi"><span aria-hidden="true">A</span><span aria-hidden="true">V</span></a>
       <div class="cr-main">GAME BY<br>ANTON VESELSKYI</div>
-      <div class="cr-sub">A GRAVITY DEFIED TRIBUTE<br>WHERE EVERY TRACK IS A STOCK CHART</div>
+      <div class="cr-sub">EVERY TRACK IS A STOCK CHART</div>
       <div class="cr-tiny">MONOPHONIC AUDIO &#183; VECTOR PHYSICS &#183; COOKIES INSIDE<br>&#169; 2026</div>
     </div>
     <div class="list"><button class="mbtn back" data-go="main">&#9664; BACK</button></div>
@@ -84,7 +100,9 @@
   <div id="hud" class="hidden">
     <div class="hud-cell hud-left">
       <div id="hud-sym">----</div>
+      <div id="hud-co"></div>
       <div id="hud-price">$0.00</div>
+      <div id="hud-date"></div>
     </div>
     <div class="hud-cell hud-mid">
       <div id="hud-time">0:00.0</div>
@@ -119,11 +137,16 @@
   </div>
 
   <div id="toast" class="hidden"></div>
+  <div id="unlock-pop" class="hidden">
+    <div class="unlock-title">COLORSCHEME UNLOCKED</div>
+    <div id="unlock-name"></div>
+    <div id="unlock-hint">OPEN COLORSCHEME MENU</div>
+  </div>
 </div>
 
-<script src="js/themes.js"></script>
-<script src="js/levels.js"></script>
-<script src="js/engine.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/themes.js?v=20260715-depth-progress15"></script>
+<script src="js/levels.js?v=20260715-depth-progress15"></script>
+<script src="js/engine.js?v=20260715-depth-progress15"></script>
+<script src="js/ui.js?v=20260715-depth-progress15"></script>
 </body>
 </html>

@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Wanderlust — Anton Veselskyi</title>
   <meta name="description" content="A travel history visualization — pins, arcs and a morphing flat/globe world map." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Megrim&family=Major+Mono+Display&family=Jura:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="wanderlust.css?v=197" />
+  <link rel="stylesheet" href="wanderlust.css?v=206" />
   <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico" />
 
   <!-- mapping libs (CDN, like the existing GSAP usage) -->
@@ -19,7 +19,7 @@
   <script src="https://cdn.jsdelivr.net/npm/versor@0.2.0"></script>
 </head>
 
-<body>
+<body class="wl-panels-collapsed">
   <!-- AV monogram — signature mark, links home -->
   <a class="av-monogram" href="https://antonveselskyi.com" target="_blank" rel="noopener" aria-label="Anton Veselskyi">
     <span>A</span><span>V</span>
@@ -77,6 +77,10 @@
       <div class="ci-empty">hover a pin or focus a country</div>
     </aside>
 
+    <button id="wl-collapse-toggle" type="button"
+            aria-label="Toggle travels panel" aria-expanded="false"
+            aria-controls="wl-filters wl-controls">A</button>
+
     <aside id="wl-filters" aria-label="Travel filters">
       <h2 id="wl-filters-title">travels</h2>
       <div id="wl-legend-years" class="legend-years"></div>
@@ -124,8 +128,8 @@
 
   <div id="wl-hint">flat ⇄ globe · play the journey</div>
 
-  <script defer src="wanderlust-data.js?v=197"></script>
-  <script defer src="wanderlust-detail.js?v=197"></script>
-  <script defer src="wanderlust.js?v=197"></script>
+  <script defer src="wanderlust-data.js?v=206"></script>
+  <script defer src="wanderlust-detail.js?v=206"></script>
+  <script defer src="wanderlust.js?v=206"></script>
 </body>
 </html>

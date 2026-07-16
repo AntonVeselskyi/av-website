@@ -9,6 +9,10 @@
 
   const DATA = window.WANDERLUST;
   const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // touch taps replay synthetic mouseenter/leave, so hover-driven styling
+  // (country glow, hover popups, legend previews) flashes on every tap —
+  // attach those handlers only where a real hover pointer exists
+  const HAS_HOVER = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const WORLD_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
   const MAX_ZOOM = 240;         // allow zooming right down to tiny places (Comino, Vaduz, Vatican)
   const USD_TO_EUR = 0.86;      // approximate display conversion for country salary context
@@ -1135,8 +1139,8 @@
     // hover ANY country → show its name (visited ones also light their border);
     // click a country → zoom to it (so big targets like Egypt are selectable)
     gCountries.selectAll('path')
-      .on('mouseenter', (event, d) => { hoveredCountry = d.properties.name; styleCountries(); showCountryLabel(d); })
-      .on('mouseleave', () => { hoveredCountry = null; styleCountries(); hideCountryLabel(); })
+      .on('mouseenter', HAS_HOVER ? (event, d) => { hoveredCountry = d.properties.name; styleCountries(); showCountryLabel(d); } : null)
+      .on('mouseleave', HAS_HOVER ? () => { hoveredCountry = null; styleCountries(); hideCountryLabel(); } : null)
       .on('click', (event, d) => {
         event.stopPropagation();
         if (isolatedKey != null) { lockedKey = null; setIsolate(null); }
@@ -1594,7 +1598,13 @@
     let vis = !!xy;
     wlTitle.classList.toggle('gone', !vis);
     if (vis) {
-      wlTitle.style.setProperty('--wl-title-scale', Math.min(Math.max(zoomT.k, 1), 10));
+      // On phones the map occupies far fewer pixels, so the mounted wordmark is
+      // shrunk relative to it (×0.62 ≈ the desktop title/world width ratio) —
+      // it fits the Atlantic gap at every zoom instead of draping over land.
+      const narrow = width <= 640;
+      const scale = narrow ? Math.min(Math.max(zoomT.k * 0.5, 0.5), 10)
+                           : Math.min(Math.max(zoomT.k, 1), 10);
+      wlTitle.style.setProperty('--wl-title-scale', scale);
       wlTitle.style.left = (zoomT.x + zoomT.k * xy[0]) + 'px';
       wlTitle.style.top  = (zoomT.y + zoomT.k * xy[1]) + 'px';
     }
@@ -1663,7 +1673,10 @@
     });
   }
 
-  function positionPins() {
+  // `quick` (passed during an active pan/zoom gesture) skips the O(n²) label
+  // de-confliction below — that per-frame cost is what made touch dragging
+  // stutter. Pin positions still update every frame; labels settle on gesture end.
+  function positionPins(quick) {
     const r = projection.rotate();
     const center = [-r[0], -r[1]];
     const showLabels = showCityNames && zoomT.k >= 3.2; // reveal city names when enabled + zoomed in
@@ -1692,11 +1705,32 @@
       shown.push({ p, sx, sy });
     });
     fanClusters(shown);
+    if (quick) {
+      // lightweight frame: keep pins glued to the map, defer label work
+      if (popup.classList.contains('show') && popup.__owner) repositionPopup(popup.__owner);
+      positionSeas();
+      positionTitle();
+      positionCountryLabel();
+      refreshMeasure();
+      return;
+    }
     // labels only for zoomed-in, non-clustered pins; then de-conflict overlaps,
     // keeping the higher-priority pin's label (anchors / badged / bigger cities
     // win — so "Uray" beats "Mezhdurechensky" when their labels collide).
     shown.forEach((s) => s.p.el.classList.remove('show-label'));
     const pinsHidden = !!(pinLayer && pinLayer.classList.contains('pins-hidden'));
+    const placed = [];
+    // timeline: the active point's name is placed first (highest priority) and
+    // exempt from the zoom-in gate, so it always reads even mid-cluster
+    if (timelineCurrentPin) {
+      const cs = shown.find((s) => s.p === timelineCurrentPin);
+      if (cs) {
+        const w = dispCity(cs.p.city).length * 7 + 16;
+        const cy = cs.sy - (pinsHidden ? 17 : 52);
+        placed.push({ rect: { x0: cs.sx - w / 2, y0: cy - 9, x1: cs.sx + w / 2, y1: cy + 9 } });
+        cs.p.el.classList.add('show-label');
+      }
+    }
     const prio = (p) => (p.kind === 'origin' ? 5 : (p.badge || p.kind === 'home') ? 4 : p.kind === 'marker' ? 1 : 2)
                         + Math.min(0.9, (p.population || 0) / 3e6);
     const rectsOverlap = (a, b, pad = 0) => !(a.x1 + pad < b.x0 || a.x0 - pad > b.x1 || a.y1 + pad < b.y0 || a.y0 - pad > b.y1);
@@ -1709,8 +1743,25 @@
       return { x0: s.sx - rx, y0: top, x1: s.sx + rx, y1: bottom, pr: prio(s.p), p: s.p };
     };
     const pinHeads = shown.map(headRect);
-    const placed = [];
-    shown.filter((s) => showLabels && (!s.p._fan || s.p.kind === 'origin' || s.p.kind === 'home' || s.p.badge))
+    // phones: cull pins whose heads pile onto a higher-priority pin — the
+    // desktop-size map has room for every pin, a 390px one does not. Zooming
+    // in spreads the heads apart, so culled pins come back on their own.
+    if (width <= 640) {
+      const kept = [];
+      const heads = pinHeads.slice().sort((a, b) => b.pr - a.pr);
+      // seed with the active timeline point so it can never be culled by a neighbour
+      const curHead = timelineCurrentPin && heads.find((h) => h.p === timelineCurrentPin);
+      if (curHead) { kept.push(curHead); curHead.p.el.classList.remove('density-hide'); }
+      heads.forEach((h) => {
+        if (h === curHead) return;
+        const clash = kept.some((k2) => rectsOverlap(h, k2, -12));
+        h.p.el.classList.toggle('density-hide', clash);
+        if (!clash) kept.push(h);
+      });
+    } else {
+      pinHeads.forEach((h) => h.p.el.classList.remove('density-hide'));
+    }
+    shown.filter((s) => s.p !== timelineCurrentPin && showLabels && (!s.p._fan || s.p.kind === 'origin' || s.p.kind === 'home' || s.p.badge))
       .map((s) => {
         const w = dispCity(s.p.city).length * 7 + 16;
         const cx = s.sx;
@@ -1905,16 +1956,18 @@
   }
 
   function attachPopup(entry) {
-    entry.el.addEventListener('mouseenter', () => {
-      cancelHide(); showPopup(entry);
-      // also surface the country name + glow while hovering the pin
-      hoveredCountry = entry.country; styleCountries();
-      const feat = countries.find((f) => f.properties.name === entry.country);
-      if (feat) showCountryLabel(feat);
-    });
-    entry.el.addEventListener('mouseleave', () => {
-      scheduleHide(); hoveredCountry = null; styleCountries(); hideCountryLabel();
-    });
+    if (HAS_HOVER) {
+      entry.el.addEventListener('mouseenter', () => {
+        cancelHide(); showPopup(entry);
+        // also surface the country name + glow while hovering the pin
+        hoveredCountry = entry.country; styleCountries();
+        const feat = countries.find((f) => f.properties.name === entry.country);
+        if (feat) showCountryLabel(feat);
+      });
+      entry.el.addEventListener('mouseleave', () => {
+        scheduleHide(); hoveredCountry = null; styleCountries(); hideCountryLabel();
+      });
+    }
     // click → open popup + zoom so the country fills the view (click again = out).
     // Selecting a pin also clears any active year filter.
     entry.el.addEventListener('click', (e) => {
@@ -2003,7 +2056,7 @@
     if (typeof updateCountryHighlight === 'function') updateCountryHighlight();
     renderArcs();
     svg.transition().duration(600).ease(d3.easeCubicInOut)
-      .call(zoom.transform, d3.zoomIdentity);
+      .call(zoom.transform, homeTransform());
   }
 
   // moving the cursor onto the popup keeps it open (so the play button is reachable)
@@ -2148,12 +2201,15 @@
   function toggleGlobe() {
     if (morphing) return;
     morphing = true;
-    resetZoom();                        // each mode starts fit & unzoomed
     const from = isGlobe ? 1 : 0;
     const target = isGlobe ? 0 : 1;     // alpha: 0 = flat, 1 = globe
     projection.clipAngle(null);         // no clip during the morph
     isGlobe = target === 1;             // pins follow immediately
-    if (isGlobe) recenterGlobe();       // spin so the journeys face us
+    resetZoom();                        // each mode starts at its own home view
+    if (isGlobe) {
+      recenterGlobe();                  // spin so the journeys face us
+      if (isNarrowViewport()) setPanelsCollapsed(true);   // globe = viewing mode, tuck the HUD
+    }
     else projection.rotate([0, 0]);     // flat map is never angled
     showAllArcs();
 
@@ -2240,6 +2296,16 @@
      The two behaviours coexist via mode-aware filters. */
   function unzoom(pt) { return [(pt[0] - zoomT.x) / zoomT.k, (pt[1] - zoomT.y) / zoomT.k]; }
 
+  let zoomRaf = 0, pendingZoomT = null, pendingZoomQuick = false, oneFingerZooming = false;
+  function applyPendingZoom() {
+    zoomRaf = 0;
+    if (!pendingZoomT) return;
+    zoomT = pendingZoomT;
+    gZoom.attr('transform', zoomT);
+    syncAutoDetailCountry();
+    positionPins(pendingZoomQuick);
+  }
+
   function enableInteractions() {
     zoom = d3.zoom()
       .scaleExtent([1, MAX_ZOOM])
@@ -2256,12 +2322,22 @@
       })
       .on('start', (event) => { if (event.sourceEvent) { svg.interrupt('globe-rotate'); hidePopup(); forceTitleTracking(); } svg.classed('dragging', true); })
       .on('zoom', (event) => {
-        zoomT = event.transform;
-        gZoom.attr('transform', zoomT);
-        syncAutoDetailCountry();
-        positionPins();
+        // Touch/wheel can fire many zoom events per frame; each transform write
+        // re-rasterizes the pattern-filled countries (costly on mobile). Coalesce
+        // to at most one apply per animation frame so dragging stays smooth.
+        pendingZoomT = event.transform;
+        // quick (deferred-label) frames are a mobile responsiveness aid only;
+        // desktop always runs the full pass, exactly as before
+        pendingZoomQuick = (width <= 640) && (!!event.sourceEvent || oneFingerZooming);
+        if (zoomRaf) return;
+        zoomRaf = requestAnimationFrame(applyPendingZoom);
       })
-      .on('end', () => svg.classed('dragging', false));
+      .on('end', () => {
+        if (zoomRaf) { cancelAnimationFrame(zoomRaf); zoomRaf = 0; }
+        if (pendingZoomT) { zoomT = pendingZoomT; gZoom.attr('transform', zoomT); syncAutoDetailCountry(); }
+        svg.classed('dragging', false);
+        positionPins();   // final full pass settles labels
+      });
 
     let v0, q0, r0;
     const drag = d3.drag()
@@ -2287,6 +2363,131 @@
       .on('end', () => svg.classed('dragging', false));
 
     svg.call(zoom).call(drag);
+    wireOneFingerZoom();
+    wireGlobeTwist();
+    // Desktop double-click stays a no-op by design so it can't zoom into empty
+    // ocean and fight click-to-fly.
+  }
+
+  /* Globe mode, touch only: two fingers turning in a circle spin the globe
+     around the view axis (Google-Maps-style twist). Runs alongside d3-zoom's
+     pinch (capture-phase, no preventDefault), so twist + pinch-zoom combine
+     naturally. A dead zone keeps ordinary pinches from wobbling the globe. */
+  function wireGlobeTwist() {
+    const node = svg.node();
+    let tw = null;   // { a0: start angle, r0: start rotation, engaged }
+    const angleOf = (ts) =>
+      Math.atan2(ts[1].clientY - ts[0].clientY, ts[1].clientX - ts[0].clientX) * 180 / Math.PI;
+    node.addEventListener('touchstart', (e) => {
+      tw = (isGlobe && e.touches.length === 2)
+        ? { a0: angleOf(e.touches), r0: projection.rotate(), engaged: false }
+        : null;
+    }, { capture: true, passive: true });
+    node.addEventListener('touchmove', (e) => {
+      if (!tw || !isGlobe || morphing || e.touches.length !== 2) return;
+      let d = angleOf(e.touches) - tw.a0;
+      if (d > 180) d -= 360; else if (d < -180) d += 360;
+      if (!tw.engaged) {
+        if (Math.abs(d) < 12) return;           // dead zone: plain pinches don't twist
+        tw.engaged = true;
+        svg.interrupt('globe-rotate');
+      }
+      const r = tw.r0;
+      projection.rotate([r[0], r[1], r[2] - d]);   // globe follows the fingers
+      render();
+    }, { capture: true, passive: true });
+    node.addEventListener('touchend', (e) => { if (e.touches.length < 2) tw = null; }, { capture: true, passive: true });
+  }
+
+  /* Google-Maps-style one-hand zoom: tap once, then on the second tap hold and
+     slide up (zoom in) / down (zoom out). A plain double-tap (no slide) steps in
+     2×. Runs as capture-phase touch listeners that hide the gesture from d3-zoom
+     (via stopImmediatePropagation) so it never also pans or double-tap-zooms. */
+  function wireOneFingerZoom() {
+    const node = svg.node();
+    const DOUBLE_TAP_MS = 300;   // max gap between first tap and the zoom touch
+    const TAP_TOL = 26;          // px of movement still counted as a "tap"
+    const ZOOM_SENS = 150;       // px of vertical slide per zoom doubling
+    let lastTap = null;          // { t, x, y } of the previous quick tap
+    let down = null;             // current single-touch press info
+    const ofz = { active: false, startY: 0, startK: 1, center: [0, 0], t0: 0, moved: false };
+
+    const clampK = (k) => Math.max(1, Math.min(MAX_ZOOM, k));
+    const localPoint = (t) => { const r = node.getBoundingClientRect(); return [t.clientX - r.left, t.clientY - r.top]; };
+
+    function endZoom() {
+      ofz.active = false;
+      oneFingerZooming = false;
+      svg.classed('dragging', false);
+      positionPins();   // settle labels after the gesture
+    }
+
+    node.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { ofz.active = false; oneFingerZooming = false; return; } // pinch/multi → d3
+      const t = e.touches[0];
+      const now = performance.now();
+      down = { t: now, x: t.clientX, y: t.clientY };
+      if (lastTap && now - lastTap.t < DOUBLE_TAP_MS &&
+          Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < TAP_TOL) {
+        // second tap arrived quickly → take over as a one-hand zoom
+        ofz.active = true; ofz.moved = false; ofz.t0 = now;
+        ofz.startY = t.clientY; ofz.startK = zoomT.k; ofz.center = localPoint(t);
+        oneFingerZooming = true;
+        svg.interrupt();
+        svg.classed('dragging', true);
+        hidePopup();
+        lastTap = null;
+        e.preventDefault();
+        e.stopImmediatePropagation();   // keep d3-zoom out of this gesture
+      }
+    }, { capture: true, passive: false });
+
+    node.addEventListener('touchmove', (e) => {
+      if (!ofz.active) return;
+      if (e.touches.length !== 1) { endZoom(); return; }
+      const t = e.touches[0];
+      const dy = ofz.startY - t.clientY;          // slide up → positive → zoom in
+      if (Math.abs(dy) > 4) ofz.moved = true;
+      zoom.scaleTo(svg, clampK(ofz.startK * Math.pow(2, dy / ZOOM_SENS)), ofz.center);
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }, { capture: true, passive: false });
+
+    node.addEventListener('touchend', (e) => {
+      const now = performance.now();
+      if (ofz.active) {
+        if (!ofz.moved && now - ofz.t0 < 250) {   // plain double-tap → step-zoom in 2×
+          svg.transition().duration(300).ease(d3.easeCubicInOut)
+            .call(zoom.scaleTo, clampK(ofz.startK * 2), ofz.center);
+        }
+        endZoom();
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+      // otherwise: was this a clean tap? remember it so the next touch can pair.
+      if (e.touches.length === 0 && down &&
+          now - down.t < DOUBLE_TAP_MS && e.changedTouches.length) {
+        const c = e.changedTouches[0];
+        if (Math.hypot(c.clientX - down.x, c.clientY - down.y) < TAP_TOL) {
+          lastTap = { t: now, x: c.clientX, y: c.clientY };
+        }
+      }
+      down = null;
+    }, { capture: true, passive: false });
+  }
+
+  /* "Home" view: identity on desktop. On phones the width-fit world leaves big
+     empty bands above/below the map, so home is zoomed onto the journeys'
+     Atlantic corridor instead (users can still pinch out to the whole world). */
+  function homeTransform() {
+    if (width > 640 || !projection || isGlobe) return d3.zoomIdentity;
+    // frame Europe (the heart of the journeys) on open, with the inbound arcs
+    // and the Atlantic title still in view — not an empty mid-ocean crop
+    const k = 2.9;
+    const c = projection([-10, 45]);
+    if (!c) return d3.zoomIdentity;
+    return d3.zoomIdentity.translate(width / 2 - k * c[0], height / 2 - k * c[1]).scale(k);
   }
 
   function resetZoom() {
@@ -2298,8 +2499,9 @@
     clearCountryInfo();
     if (typeof updateCountryHighlight === 'function') updateCountryHighlight();
     renderArcs();
-    zoomT = d3.zoomIdentity;
-    svg.call(zoom.transform, d3.zoomIdentity);   // syncs behaviour + fires zoom
+    const t = homeTransform();
+    zoomT = t;
+    svg.call(zoom.transform, t);   // syncs behaviour + fires zoom
   }
 
   function normalizeGlobeTransform(dur = 0) {
@@ -2643,8 +2845,10 @@
   let timelineActive = false, timelineOrder = [], timelineLastIndex = 0;
   let timelinePlaying = false, timelinePlaybackTimer = null, timelineSpeedIndex = 0;
   let timelineStepTimers = [];
+  let timelineCurrentPin = null;   // the just-revealed point — always drawn + labelled
   function enterTimeline() {
     stopTimelinePlayback();
+    if (isNarrowViewport()) setPanelsCollapsed(true);   // timeline = viewing mode, tuck the HUD
     timelineActive = true; timelapseActive = true;
     normalizeGlobeTransform(1);
     if (isolatedKey != null) { lockedKey = null; setIsolate(null); }
@@ -2660,7 +2864,14 @@
     timelineOrder = arcEvents.concat(markerEvents)
       .sort((x, y) => String(x.date).localeCompare(String(y.date)));
     const range = $('#wl-timeline-range'); range.max = timelineOrder.length; range.value = 0;
-    $('#wl-timeline').classList.add('show');
+    const tl = $('#wl-timeline');
+    tl.classList.add('show');
+    document.body.classList.add('wl-timeline-on');
+    // tell CSS how tall the HUD is so the mobile country card can sit just
+    // below it (offsetHeight ignores the slide-in transform, unlike rects)
+    requestAnimationFrame(() => {
+      document.body.style.setProperty('--wl-timeline-h', (8 + tl.offsetHeight + 6) + 'px');
+    });
     $('#wl-timeline-btn').classList.add('active');
     timelineLastIndex = 0;
     setTimeline(0);
@@ -2669,8 +2880,10 @@
   function exitTimeline() {
     stopTimelinePlayback();
     timelineActive = false; timelapseActive = false;
+    timelineCurrentPin = null;
     playbackDetailCountryName = null;
     $('#wl-timeline').classList.remove('show');
+    document.body.classList.remove('wl-timeline-on');
     $('#wl-timeline-btn').classList.remove('active');
     revealedCountries.clear();
     Object.keys(revealedYearByCountry).forEach((k) => delete revealedYearByCountry[k]);
@@ -2690,6 +2903,12 @@
     const speed = opts.speed || 1;
     const rangeEl = $('#wl-timeline-range');
     if (rangeEl && +rangeEl.value !== +i) rangeEl.value = i;
+    // the point this step reveals is exempt from pin de-confliction / phone
+    // density culling below, so it always shows its dot + name even in a cluster
+    const curEv = i > 0 ? ord[i - 1] : null;
+    timelineCurrentPin = !curEv ? null
+      : curEv.kind === 'marker' ? curEv.p
+      : (pins.find((p) => p.kind !== 'marker' && p.city === curEv.a.trip.city) || null);
     playbackDetailCountryName = null;
     revealedCountries.clear();
     Object.keys(revealedYearByCountry).forEach((k) => delete revealedYearByCountry[k]);
@@ -2794,18 +3013,22 @@
     wrap.querySelectorAll('.legend-row').forEach((row) => {
       const raw = row.dataset.key;
       if (raw === 'all') {                       // the "all" reset row
-        row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(null); } });
+        if (HAS_HOVER) row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(null); } });
         row.addEventListener('click', () => { cancelTimelineForUserFilter(); lockedKey = null; setIsolate(null); frameKey(null); });
         return;
       }
       const key = ERAS[raw] ? raw : +raw;     // era stays a string, years are numbers
-      row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(key); } });
-      row.addEventListener('mouseleave', () => { if (lockedKey == null) setIsolate(null); });
+      if (HAS_HOVER) {
+        row.addEventListener('mouseenter', () => { if (lockedKey == null) { cancelTimelineForUserFilter(); setIsolate(key); } });
+        row.addEventListener('mouseleave', () => { if (lockedKey == null) setIsolate(null); });
+      }
       row.addEventListener('click', () => {
         cancelTimelineForUserFilter();
         lockedKey = (lockedKey === key) ? null : key;
         setIsolate(lockedKey);
         frameKey(lockedKey);
+        // on phones a locked filter tucks the HUD away and leaves the mini chip
+        if (lockedKey != null && isNarrowViewport()) setPanelsCollapsed(true);
       });
     });
   }
@@ -2853,6 +3076,7 @@
     renderArcs();
     applyPinColors();
     positionPins();
+    updateMiniFilter();   // every lock/unlock path funnels through here
   }
 
   function cancelTimelineForUserFilter() {
@@ -3026,12 +3250,72 @@
   }
   function setLang(l) { lang = l; applyLang(); }
 
+  const isNarrowViewport = () => window.matchMedia('(max-width: 640px)').matches;
+
+  /* Collapse/expand the two bottom HUD panels (mobile). Shared by the A/V
+     toggle button and the auto-collapse hooks (globe / timeline / filter).
+     The expanded panels are pinned to exactly 46vh by CSS, so animating the
+     46vh max-height cap tracks the real height pixel-for-pixel — no JS
+     measurement needed. */
+  function setPanelsCollapsed(collapsed) {
+    const body = document.body;
+    if (body.classList.contains('wl-panels-collapsed') === collapsed) { updateMiniFilter(); return; }
+    body.classList.toggle('wl-panels-collapsed', collapsed);
+    const btn = $('#wl-collapse-toggle');
+    if (btn) {
+      btn.textContent = collapsed ? 'A' : 'V';   // same letterforms as the AV monogram
+      btn.setAttribute('aria-expanded', String(!collapsed));
+    }
+    updateMiniFilter();
+  }
+
+  /* Mini filter chip (mobile): when a year/era filter is locked while the HUD
+     is collapsed, show a small [•year | all] box in the bottom-left. Pressing
+     "all" clears the filter and the box disappears. */
+  let miniFilterEl = null;
+  function updateMiniFilter() {
+    const show = isNarrowViewport() && lockedKey != null
+      && document.body.classList.contains('wl-panels-collapsed');
+    if (!miniFilterEl) {
+      if (!show) return;
+      miniFilterEl = document.createElement('div');
+      miniFilterEl.id = 'wl-mini-filter';
+      const host = $('#wl-left-ui');
+      if (host) host.appendChild(miniFilterEl); else document.body.appendChild(miniFilterEl);
+    }
+    if (!show) { miniFilterEl.classList.remove('show'); miniFilterEl.dataset.key = ''; return; }
+    if (miniFilterEl.dataset.key !== String(lockedKey)) {
+      miniFilterEl.dataset.key = String(lockedKey);
+      const col = keyColor(lockedKey);
+      miniFilterEl.innerHTML = `
+        <span class="mini-chip current"><span class="legend-swatch" style="background:${col};--sw:${col}"></span>${esc(keyLabel(lockedKey))}</span>
+        <button type="button" class="mini-chip mini-all">${esc(t('allYears'))}</button>`;
+      miniFilterEl.querySelector('.mini-all').addEventListener('click', (e) => {
+        e.stopPropagation();
+        cancelTimelineForUserFilter();
+        lockedKey = null;
+        setIsolate(null);
+        frameKey(null);
+      });
+    }
+    miniFilterEl.classList.add('show');
+  }
+
   function wireControls() {
     $('#wl-arcs-toggle').addEventListener('change', (e) => setArcs(e.target.checked, true));
     const pt = $('#wl-pins-toggle');
     if (pt) pt.addEventListener('change', (e) => setPins(e.target.checked));
+    if (window.matchMedia('(max-width: 640px)').matches) {
+      // phones start with pins hidden — the cluster swallows the map at phone
+      // size; countries stay tappable and the toggle brings pins back
+      if (pt) pt.checked = false;
+      const pl = $('#wl-pins'); if (pl) pl.classList.add('pins-hidden');
+    }
     const ct = $('#wl-city-labels-toggle');
     if (ct) ct.addEventListener('change', (e) => setCityNames(e.target.checked));
+    const collapseBtn = $('#wl-collapse-toggle');
+    if (collapseBtn) collapseBtn.addEventListener('click', () =>
+      setPanelsCollapsed(!document.body.classList.contains('wl-panels-collapsed')));
     renderCountryInfoEmpty();
     $('#wl-globe-btn').addEventListener('click', toggleGlobe);
     $('#wl-play-btn').addEventListener('click', playTimelapse);
@@ -3147,7 +3431,22 @@
   function onResize() {
     cancelAnimationFrame(resizeRAF);
     resizeRAF = requestAnimationFrame(() => {
+      const prevW = width, prevH = height;
       measure();
+      if (width === prevW && height === prevH) return;
+      // Mobile browser chrome (URL bar) showing/hiding fires resize with only
+      // a small height delta. The full path below resets the zoom (yanking the
+      // view home) and re-sizes every pattern def, which invalidates every
+      // country's raster — the whole map blinks for a frame. Height-only
+      // changes take a light path that keeps the view and the patterns.
+      if (width === prevW && Math.abs(height - prevH) < Math.max(160, prevH * 0.25)) {
+        svg.attr('viewBox', `0 0 ${width} ${height}`);
+        flatFit = globeFit = null;
+        fitKeepCenter();
+        render();
+        applyPanBounds();
+        return;
+      }
       svg.attr('viewBox', `0 0 ${width} ${height}`);
       flatFit = globeFit = null;   // re-measure framing for the new size
       resetZoom();
@@ -3222,6 +3521,7 @@
     wirePopupHover();
     enableInteractions();
     render();
+    svg.call(zoom.transform, homeTransform());   // phones start on the journeys, not the empty world
 
     introSequence();   // arcs all at once → pins drop → blink → arcs tuck away
 
@@ -3233,6 +3533,7 @@
       fitKeepCenter();
       render();
       applyPanBounds();
+      svg.call(zoom.transform, homeTransform());   // recompute against the settled fit
     });
     // size the patterns once getBBox is reliable (SVG layout fully resolved)
     setTimeout(sizePatterns, 800);

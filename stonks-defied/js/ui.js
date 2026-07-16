@@ -1,4 +1,4 @@
-// STONKS DEFIED — ui: cookies save, menus, audio beeps, overlays, input wiring
+// STONKS DEFIED - ui: cookies save, menus, audio beeps, overlays, input wiring
 window.SD = window.SD || {};
 
 (function () {
@@ -8,7 +8,8 @@ window.SD = window.SD || {};
 
   // ================= cookies save =================
   const COOKIE = 'stonksdefied';
-  let save = { b: {}, th: 't610', un: [], mu: 0 };
+  function freshSave() { return { b: {}, th: 't610', un: [], mu: 0, d: 0 }; }
+  let save = freshSave();
 
   function loadSave() {
     const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]*)'));
@@ -64,6 +65,12 @@ window.SD = window.SD || {};
   function fmtPar(sec) {
     return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
   }
+  function fmtDate(d) {
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const yy = String(d.getUTCFullYear()).slice(-2);
+    return dd + '.' + mm + '.' + yy;
+  }
 
   let toastT = null;
   function toast(msg, long) {
@@ -74,6 +81,16 @@ window.SD = window.SD || {};
     toastT = setTimeout(() => el.classList.add('hidden'), long ? 4200 : 2200);
   }
   U.toast = toast;
+
+  let unlockT = null;
+  function showUnlock(id) {
+    const t = SD.THEMES[id];
+    if (!t) return;
+    $('unlock-name').textContent = t.name;
+    $('unlock-pop').classList.remove('hidden');
+    clearTimeout(unlockT);
+    unlockT = setTimeout(() => $('unlock-pop').classList.add('hidden'), 4300);
+  }
 
   // ================= screens & menu nav =================
   const screens = ['main', 'levels', 'ticker', 'colors', 'credits'];
@@ -88,7 +105,10 @@ window.SD = window.SD || {};
     refreshFocus();
     if (name === 'levels') buildLevelGrid();
     if (name === 'colors') buildSchemeList();
-    if (name === 'ticker') setTimeout(() => $('ticker-input').focus(), 50);
+    if (name === 'ticker') {
+      loadTickerSuggestions();
+      setTimeout(() => $('ticker-input').focus(), 50);
+    }
   }
   function hideScreens() {
     activeScreen = null;
@@ -123,6 +143,7 @@ window.SD = window.SD || {};
 
   // ================= level select =================
   function bestOf(id) { return save.b[id] || 0; }
+  function finished(def) { return bestOf(def.id) > 0; }
   function beaten(def) { const b = bestOf(def.id); return b > 0 && b <= def.par * 1000; }
 
   function buildLevelGrid() {
@@ -133,10 +154,10 @@ window.SD = window.SD || {};
       const btn = document.createElement('button');
       btn.className = 'mbtn lvl';
       btn.innerHTML =
-        '<span class="l-row1"><b>' + def.sym + '</b> ' + def.nick +
+        '<span class="l-row1"><b>' + def.sym + '</b> &#183; ' + (def.co || def.sym) +
+        ' &#8212; ' + def.nick +
         (beaten(def) ? ' <span class="medal">&#9650;</span>' : '') + '</span>' +
-        '<span class="l-row2">' + (def.company || def.sym) + ' / ' + (def.level || 'Market Route') + '</span>' +
-        '<span class="l-row2">' + def.era + ' / PAR ' + fmtPar(def.par) +
+        '<span class="l-row2">' + def.era + ' &#183; PAR ' + fmtPar(def.par) +
         (b ? ' &#183; BEST ' + fmtTime(b) : '') + '</span>';
       btn.addEventListener('click', () => { sfx.click(); startLevel(def); });
       grid.appendChild(btn);
@@ -145,6 +166,18 @@ window.SD = window.SD || {};
 
   // ================= colorschemes =================
   function unlockedTheme(id) { return !SD.THEMES[id].locked || save.un.includes(id); }
+
+  function unlockTheme(id, quiet) {
+    if (!SD.THEMES[id] || save.un.includes(id)) return false;
+    save.un.push(id);
+    writeSave();
+    if (!quiet) {
+      sfx.unlock();
+      showUnlock(id);
+      if (activeScreen === 'colors') buildSchemeList();
+    }
+    return true;
+  }
 
   function buildSchemeList() {
     const list = $('scheme-list');
@@ -172,30 +205,114 @@ window.SD = window.SD || {};
     }
   }
 
-  function checkUnlock() {
-    if (save.un.includes('goldenbull')) return false;
+  function checkProgressUnlocks(quiet) {
+    const first = SD.levels.PRESETS[0];
+    const meta = SD.levels.PRESETS.find((def) => def.id === 'META');
+    const firstFive = SD.levels.PRESETS.slice(0, 5).every(finished);
     const all = SD.levels.PRESETS.every(beaten);
-    if (all) {
-      save.un.push('goldenbull');
+    const nokia = first && finished(first) ? unlockTheme('lcd', quiet) : false;
+    const facebook = meta && finished(meta) ? unlockTheme('facebook', quiet) : false;
+    const chrome = firstFive ? unlockTheme('chrome', quiet) : false;
+    const gold = all ? unlockTheme('goldenbull', quiet) : false;
+    return nokia || facebook || chrome || gold;
+  }
+
+  // ================= ticker =================
+  let dialing = false;
+  let suggestionsLoaded = false;
+  let suggestionsLoading = false;
+
+  function runTickerCommand(command) {
+    const st = $('ticker-status');
+    if (command === 'ANTON') {
+      const locked = Object.keys(SD.THEMES).filter((id) => SD.THEMES[id].locked);
+      save.un = [...new Set(save.un.concat(locked))];
       writeSave();
+      sfx.unlock();
+      st.textContent = 'CHEAT ACCEPTED - ALL COLORSCHEMES UNLOCKED';
+      toast('ALL COLORSCHEMES UNLOCKED', true);
+      return true;
+    }
+    if (command === 'RESET') {
+      save = freshSave();
+      writeSave();
+      SD.applyTheme(save.th);
+      st.textContent = 'ALL PROGRESS FLUSHED';
+      toast('FRESH SAVE', true);
       return true;
     }
     return false;
   }
 
-  // ================= ticker =================
-  let dialing = false;
+  function renderSuggestionChips(id, items, kind) {
+    const box = $(id);
+    box.innerHTML = '';
+    if (!items || !items.length) {
+      const empty = document.createElement('span');
+      empty.className = 'suggest-loading';
+      empty.textContent = 'NO SIGNAL';
+      box.appendChild(empty);
+      return;
+    }
+    for (const item of items) {
+      const btn = document.createElement('button');
+      btn.className = 'ticker-chip' + (kind ? ' ' + kind : '');
+      btn.type = 'button';
+      btn.title = item.name || item.sym;
+      const ticker = document.createElement('b');
+      ticker.textContent = item.sym;
+      btn.appendChild(ticker);
+      if (item.pct != null) {
+        const move = document.createElement('span');
+        move.className = 'move';
+        move.textContent = (item.pct > 0 ? '+' : '') + item.pct.toFixed(1) + '%';
+        btn.appendChild(move);
+      }
+      btn.addEventListener('click', () => {
+        $('ticker-input').value = item.sym;
+        sfx.click();
+        dialTicker(item.sym);
+      });
+      box.appendChild(btn);
+    }
+  }
+
+  async function loadTickerSuggestions() {
+    if (!$('suggest-sp500').children.length) {
+      renderSuggestionChips('suggest-sp500', SD.levels.TOP_SP500, 'weight');
+    }
+    if (suggestionsLoaded || suggestionsLoading) return;
+    suggestionsLoading = true;
+    $('suggest-wire').textContent = 'SCANNING';
+    $('suggest-gainers').innerHTML = '<span class="suggest-loading">READING TAPE...</span>';
+    $('suggest-losers').innerHTML = '<span class="suggest-loading">READING TAPE...</span>';
+    try {
+      const data = await SD.levels.fetchTickerSuggestions();
+      renderSuggestionChips('suggest-gainers', data.gainers, 'gain');
+      renderSuggestionChips('suggest-losers', data.losers, 'loss');
+      $('suggest-wire').textContent = data.live ? 'LIVE 5D' : 'CACHED';
+      suggestionsLoaded = true;
+      refreshFocus();
+    } catch (e) {
+      $('suggest-wire').textContent = 'WIRE DOWN';
+      renderSuggestionChips('suggest-gainers', [], 'gain');
+      renderSuggestionChips('suggest-losers', [], 'loss');
+    }
+    suggestionsLoading = false;
+  }
+
   async function dialTicker(sym) {
     if (dialing) return;
     sym = (sym || '').trim().toUpperCase();
     if (!sym) return;
+    if (runTickerCommand(sym)) return;
     dialing = true;
     const st = $('ticker-status');
     st.textContent = 'DIALING UP ' + sym + '...';
     try {
       const r = await SD.levels.fetchTicker(sym);
-      st.textContent = r.live ? 'CONNECTED ▲ LIVE DATA' : 'WIRE DOWN ▼ SIMULATED CHART';
-      const def = SD.levels.makeCustomDef(r.sym, r.prices, r.live);
+      st.textContent = r.live ? 'CONNECTED - FULL HISTORY' : 'WIRE DOWN - SIMULATED CHART';
+      const def = SD.levels.makeCustomDef(r.sym, r.prices, r.live, r.ts0, r.ts1);
       setTimeout(() => { startLevel(def); st.textContent = ''; }, 450);
     } catch (e) {
       st.textContent = 'BAD TICKER. TRY AGAIN.';
@@ -204,7 +321,10 @@ window.SD = window.SD || {};
   }
 
   // ================= game flow =================
+  let crashProgress = 0;
+
   function startLevel(def) {
+    document.body.classList.add('game-active');
     hideScreens();
     $('hud').classList.remove('hidden');
     if (isTouch) $('touch').classList.remove('hidden');
@@ -212,22 +332,55 @@ window.SD = window.SD || {};
     E().startLevel(def);
   }
 
+  function restartLevel() {
+    hideOverlay();
+    banner(null);
+    E().setPaused(false);
+    E().restart();
+    hideOverlay();
+  }
+
   U.onLevelStart = function (def) {
+    crashProgress = 0;
+    hideOverlay();
     $('hud-sym').textContent = def.sym;
+    $('hud-co').textContent = def.co || def.sym;
     $('hud-par').textContent = 'PAR ' + fmtPar(def.par);
-    banner((def.level || def.company || def.sym) + ' / PRESS GAS');
+    banner('PRESS GAS TO OPEN POSITION');
   };
   U.onRideStart = function () { banner(null); sfx.start(); };
 
-  U.onCrash = function () { sfx.crash(); banner('LIQUIDATED!', true); };
+  U.onCrash = function () {
+    crashProgress = E().progress ? Math.max(0, Math.min(99, Math.floor(E().progress() * 100))) : 0;
+    save.d = (save.d || 0) + 1;
+    writeSave();
+    sfx.crash();
+    banner('LIQUIDATED!', true);
+    if (save.d >= 10) unlockTheme('hotline');
+  };
+  U.onBackflip = function () {
+    if (unlockTheme('tron')) {
+      return;
+    } else {
+      toast('BACKFLIP LANDED');
+    }
+  };
+  U.onWheelie = function () {
+    if (unlockTheme('gravity')) {
+      return;
+    } else {
+      toast('2.0S WHEELIE');
+    }
+  };
   U.onFinish = function (def, ms) {
     const prevBest = bestOf(def.id);
     if (!prevBest || ms < prevBest) { save.b[def.id] = Math.round(ms); writeSave(); }
     sfx.finish();
-    banner(ms <= def.par * 1000 ? 'TO THE MOON! ▲' : 'POSITION CLOSED');
+    banner(ms <= def.par * 1000 ? 'TO THE MOON!' : 'POSITION CLOSED');
   };
 
   U.showEnd = function (state, def, ms) {
+    if (E().state && E().state() !== state) return;
     banner(null);
     const isPreset = SD.levels.PRESETS.some(p => p.id === def.id);
     const idx = SD.levels.PRESETS.findIndex(p => p.id === def.id);
@@ -239,32 +392,32 @@ window.SD = window.SD || {};
         'THE MARKET CAN STAY IRRATIONAL LONGER THAN YOU CAN STAY UPRIGHT',
         'DIAMOND HANDS, GLASS HELMET', 'SELL SIGNAL CONFIRMED',
       ];
-      showOverlay('LIQUIDATED!', quips[Math.floor(Math.random() * quips.length)], [
-        { label: 'RE-ENTER ↻', fn: () => E().restart(), primary: true },
+      let sub = quips[Math.floor(Math.random() * quips.length)];
+      if (!finished(def)) sub += '<br><span class="bad">YOU BEAT ' + crashProgress + '% OF THIS CHART</span>';
+      showOverlay('LIQUIDATED!', sub, [
+        { label: 'RE-ENTER ->', fn: restartLevel, primary: true },
         { label: 'EXIT TO MENU', fn: quitToMenu },
       ]);
     } else {
       const under = ms <= def.par * 1000;
       const best = bestOf(def.id);
-      let sub = (def.company || def.sym) + '<br>' + (def.level || def.nick || 'Market Route') +
-        '<br>TIME ' + fmtTime(ms) + ' / PAR ' + fmtPar(def.par);
+      let sub = 'TIME ' + fmtTime(ms) + ' / PAR ' + fmtPar(def.par);
       if (best && Math.round(ms) <= best) sub += '<br>NEW BEST!';
-      sub += under ? '<br><span class="good">▲ UNDER PAR</span>' : '<br><span class="bad">▼ OVER PAR</span>';
+      sub += under ? '<br><span class="good">UNDER PAR</span>' : '<br><span class="bad">OVER PAR</span>';
       const btns = [];
-      if (next) btns.push({ label: 'NEXT: ' + next.sym + ' / ' + (next.level || next.nick) + ' ▶', fn: () => startLevel(next), primary: true });
-      btns.push({ label: 'RETRY ↻', fn: () => E().restart(), primary: !next });
+      if (next) btns.push({ label: 'NEXT: ' + next.sym + ' ->', fn: () => startLevel(next), primary: true });
+      btns.push({ label: 'RETRY ->', fn: restartLevel, primary: !next });
       btns.push({ label: 'EXIT TO MENU', fn: quitToMenu });
-      showOverlay(under ? 'TO THE MOON! ▲' : 'POSITION CLOSED', sub, btns);
-      if (checkUnlock()) {
-        setTimeout(() => { sfx.unlock(); toast('★ COLORSCHEME UNLOCKED: GOLDEN BULL ★', true); }, 900);
-      }
+      showOverlay(under ? 'TO THE MOON!' : 'POSITION CLOSED', sub, btns);
+      setTimeout(() => { checkProgressUnlocks(false); }, 900);
     }
   };
 
-  U.hudTick = function (ms, def, price, state) {
+  U.hudTick = function (ms, def, price, state, date) {
     $('hud-time').textContent = fmtTime(ms);
     $('hud-time').classList.toggle('over', ms > def.par * 1000);
     $('hud-price').textContent = '$' + E().fmtPrice(price);
+    $('hud-date').textContent = date ? fmtDate(date) : '';
   };
 
   function banner(text, danger) {
@@ -277,6 +430,7 @@ window.SD = window.SD || {};
 
   function quitToMenu() {
     E().quit();
+    document.body.classList.remove('game-active');
     hideOverlay();
     banner(null);
     $('hud').classList.add('hidden');
@@ -305,7 +459,13 @@ window.SD = window.SD || {};
     $('overlay').classList.remove('hidden');
   }
   function refreshOvFocus() { ovBtns.forEach((el, i) => el.classList.toggle('sel', i === ovIdx)); }
-  function hideOverlay() { $('overlay').classList.add('hidden'); ovBtns = []; }
+  function hideOverlay() {
+    $('overlay').classList.add('hidden');
+    $('ov-title').textContent = '';
+    $('ov-sub').textContent = '';
+    $('ov-btns').innerHTML = '';
+    ovBtns = [];
+  }
   function overlayVisible() { return !$('overlay').classList.contains('hidden'); }
   function overlayKey(e) {
     if (!ovBtns.length) return false;
@@ -318,8 +478,8 @@ window.SD = window.SD || {};
   function showPause() {
     E().setPaused(true);
     showOverlay('PAUSED', 'MARKET HALTED', [
-      { label: 'RESUME ▶', fn: () => { E().setPaused(false); hideOverlay(); }, primary: true },
-      { label: 'RETRY ↻', fn: () => { E().setPaused(false); E().restart(); hideOverlay(); } },
+      { label: 'RESUME ->', fn: () => { E().setPaused(false); hideOverlay(); }, primary: true },
+      { label: 'RETRY ->', fn: restartLevel },
       { label: 'SOUND: ' + (save.mu ? 'OFF' : 'ON'), fn: () => { toggleMute(); showPause(); } },
       { label: 'EXIT TO MENU', fn: quitToMenu },
     ]);
@@ -354,7 +514,7 @@ window.SD = window.SD || {};
       // in game
       const st = E().state();
       if (KEYMAP[e.key]) { E().setKey(KEYMAP[e.key], true); e.preventDefault(); return; }
-      if (e.key === 'r' || e.key === 'R') { E().restart(); return; }
+      if (e.key === 'r' || e.key === 'R') { restartLevel(); return; }
       if (e.key === 'Escape') {
         if (E().paused()) { E().setPaused(false); hideOverlay(); }
         else if (st !== 'idle') showPause();
@@ -385,7 +545,15 @@ window.SD = window.SD || {};
   // ================= boot =================
   function boot() {
     loadSave();
+    if (!Array.isArray(save.un)) save.un = [];
+    save.d = save.d || 0;
+    checkProgressUnlocks(true);
+    if (!unlockedTheme(save.th)) {
+      save.th = 't610';
+      writeSave();
+    }
     SD.applyTheme(save.th);
+    document.body.classList.remove('game-active');
     SD.engine.init();
 
     // menu buttons
@@ -398,7 +566,7 @@ window.SD = window.SD || {};
     $('ticker-go').addEventListener('click', () => { sfx.click(); dialTicker($('ticker-input').value); });
     $('ticker-input').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase(); });
     $('btn-pause').addEventListener('click', () => { if (!overlayVisible()) showPause(); });
-    $('btn-restart').addEventListener('click', () => { sfx.click(); hideOverlay(); E().setPaused(false); E().restart(); });
+    $('btn-restart').addEventListener('click', () => { sfx.click(); restartLevel(); });
 
     // hover sets menu focus
     document.addEventListener('mouseover', (e) => {
@@ -418,6 +586,7 @@ window.SD = window.SD || {};
     bindKeys();
     bindTouch();
     show('main');
+    requestAnimationFrame(() => document.body.classList.add('content-ready'));
 
     // ticker deep link: ?ticker=NVDA
     const q = new URLSearchParams(location.search).get('ticker');
