@@ -1,0 +1,21 @@
+{
+  "name": "sandstorm-theme",
+  "displayName": "Sandstorm",
+  "description": "A warm desert.vim descendant — sand canvas, storm-blue keywords, gold gutter. Ported from the Visual Studio 2022 scheme.",
+  "version": "1.0.0",
+  "publisher": "antonveselskyi",
+  "license": "MIT",
+  "engines": { "vscode": "^1.70.0" },
+  "categories": ["Themes"],
+  "keywords": ["theme", "dark", "desert", "warm", "cpp"],
+  "homepage": "https://antonveselskyi.com",
+  "contributes": {
+    "themes": [
+      {
+        "label": "Sandstorm",
+        "uiTheme": "vs-dark",
+        "path": "./themes/sandstorm-color-theme.json"
+      }
+    ]
+  }
+}

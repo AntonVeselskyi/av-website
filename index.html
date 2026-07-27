@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Anton Veselskyi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Megrim&family=Poiret+One&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Megrim&family=Michroma&family=Poiret+One&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="title.css">
     <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
@@ -93,6 +93,7 @@
       .proj-tab[data-theme="show"]     { --stripe:#141414; --tab-particle:#8a857c; }
       .proj-tab[data-theme="shrt"]     { --stripe:#0a0a0a; --tab-particle:#c9a96e; }
       .proj-tab[data-theme="concerts"] { --stripe:#f4ede0; --tab-particle:rgba(235,215,155,.6); }
+      .proj-tab[data-theme="sandstorm"]{ --stripe:#111111; --tab-particle:#e8a038; }
       .proj-tab[data-theme="stonks"]   { --stripe:#061033; --tab-particle:#3d7bff; }
       .proj-tab[data-theme="stonks"] .proj-tab__label { font-size: 15px; letter-spacing: 3px; }
       .proj-tab[data-theme="wander"] {
@@ -109,6 +110,20 @@
         font-family: 'Cinzel Decorative', serif; font-weight: 900;
         font-size: 34px; letter-spacing: 1px; text-transform: uppercase;
       }
+      /* sandstorm: hover swaps to the wordmark from the destination page —
+         Michroma, sand + storm two-tone. The halves inherit at rest so the tab
+         looks like every other one until you touch it. */
+      .proj-tab[data-theme="sandstorm"] .ss-sand,
+      .proj-tab[data-theme="sandstorm"] .ss-storm { color: inherit; }
+      .proj-tab[data-theme="sandstorm"]:is(:hover, .is-tapped) { border-color: #e8a038; }
+      .proj-tab[data-theme="sandstorm"]:is(:hover, .is-tapped) .proj-tab__label {
+        font-family: 'Michroma', sans-serif; font-weight: 400;
+        font-size: 26px; letter-spacing: .04em; text-transform: lowercase;
+        mix-blend-mode: normal;
+      }
+      .proj-tab[data-theme="sandstorm"]:is(:hover, .is-tapped) .ss-sand  { color: #e8a038; }
+      .proj-tab[data-theme="sandstorm"]:is(:hover, .is-tapped) .ss-storm { color: #58a8e8; }
+
       .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) { border-color: #15110d; }
       .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) .proj-tab__label {
         font-family: 'UnifrakturCook', serif; font-weight: 700;
@@ -334,6 +349,7 @@
       <a class="proj-tab" data-theme="game"     href="gamelist.html"><span class="proj-tab__label">game list</span></a>
       <a class="proj-tab" data-theme="show"     href="showlist.html"><span class="proj-tab__label">show list</span></a>
       <a class="proj-tab" data-theme="shrt"     href="shrt.html"><span class="proj-tab__label">shrt</span></a>
+      <a class="proj-tab" data-theme="sandstorm" href="sandstorm/sandstorm_compare.html"><span class="proj-tab__label"><span class="ss-sand">sand</span><span class="ss-storm">storm</span></span></a>
       <a class="proj-tab" data-theme="concerts" href="concerts/index.html"><span class="proj-tab__label">concerts</span></a>
     </nav>
 

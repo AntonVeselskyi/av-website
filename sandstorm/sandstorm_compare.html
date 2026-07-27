@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandstorm Colorscheme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Michroma&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sand:  #e8a038;
+  --sand2: #f8dc68;
+  --storm: #58a8e8;
+  --storm2:#b8a0d8;
+  --ink:   #d8d0c0;
+  --logo-font: 'Michroma', sans-serif;
+  --logo-weight: 400;
+  --logo-track: .04em;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  font-family: 'Sarasa Mono J','Cascadia Code','Consolas',monospace;
+  font-size: 16px;
+  background: #111;
+  color: #bbb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  padding: 108px 20px 20px;
+  text-align: center;
+  border-bottom: 1px solid #1e1e1e;
+  background:
+    radial-gradient(120% 150% at 50% -30%, rgba(232,160,56,.10), transparent 60%),
+    radial-gradient(100% 140% at 80% 0%, rgba(88,168,232,.08), transparent 55%);
+}
+
+.av-monogram {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100002;
+  display: inline-grid;
+  place-items: center;
+  font-family: 'Major Mono Display', monospace;
+  font-size: 3.6rem;
+  line-height: 1;
+  letter-spacing: 0;
+  text-decoration: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 1.3s ease-in-out, opacity .6s ease, visibility .6s ease;
+}
+/* both letters share one cell → they intersect into a single mark */
+.av-monogram span { grid-area: 1 / 1; text-align: center; transition: color .3s ease; }
+.av-monogram span:nth-child(1) { color: var(--sand); }
+.av-monogram span:nth-child(2) { color: var(--storm); }
+.av-monogram:hover { transform: translateX(-50%) scale(1.08) rotate(-183deg); }
+.av-monogram:hover span:nth-child(1) { color: var(--storm); }
+.av-monogram:hover span:nth-child(2) { color: var(--sand); }
+body.content-ready .av-monogram { opacity: 1; visibility: visible; }
+
+.wordmark {
+  display: inline-block;
+  font-family: var(--logo-font);
+  font-weight: var(--logo-weight);
+  font-size: clamp(1.5rem, 6.4vw, 4.2rem);
+  line-height: 1.06;
+  letter-spacing: var(--logo-track);
+  white-space: nowrap;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .3s cubic-bezier(.16,1,.3,1);
+}
+.wordmark:hover { transform: translateY(-2px); }
+.wordmark:active { transform: translateY(0) scale(.985); }
+.wordmark .sand  { color: var(--sand); }
+.wordmark .storm { color: var(--storm); }
+
+.tagline {
+  margin: 14px auto 0;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #6a6a6a;
+}
+.tagline b { color: #9a8f7c; font-weight: normal; }
+
+.hero-swatches { display:flex; justify-content:center; flex-wrap:wrap; gap:5px; margin-top:16px; }
+.hero-swatches .hs {
+  width: 26px; height: 12px; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.hero-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:18px; }
+.hero-actions a, .mode-btn {
+  background:#181818; border:1px solid #2a2a2a; color:#8a8a8a;
+  padding:7px 16px; font:inherit; font-size:13px; border-radius:3px;
+  text-decoration:none; cursor:pointer;
+}
+.hero-actions a:hover { border-color:#5a4a30; color:var(--sand); }
+.mode-btn.active { background:#221d16; border-color:#5a4a30; color:var(--sand); }
+.mode-btn:hover:not(.active) { color:#aaa; border-color:#3a3a3a; }
+
+.egg-hint { margin-top:10px; font-size:11px; color:#333; height:14px; letter-spacing:.08em; }
+
+/* default view: one short snippet holding every token colour.
+   Any tab press hides it (body gets a .picked class). */
+.hero-snippet { margin:20px auto 0; max-width:640px; text-align:left; }
+.hero-snippet .editor { font-size:14px; }
+/* the taster is a fixed short sample — nothing to scroll to */
+.hero-snippet pre.code { overflow-x:hidden; }
+body.picked .hero-snippet { display:none; }
+
+/* ── Get it ───────────────────────────────────────────────── */
+#get { display:none; padding:22px 20px 30px; }
+body.m-get #get { display:block; }
+.get-grid {
+  display:grid; gap:14px; max-width:1180px; margin:0 auto;
+  grid-template-columns:repeat(auto-fit, minmax(min(280px,100%), 1fr));
+}
+.get-card {
+  border:1px solid #232323; border-radius:6px; padding:16px 17px 17px;
+  background:#151515; display:flex; flex-direction:column;
+}
+.get-card h3 {
+  font-size:15px; font-weight:normal; color:var(--sand);
+  letter-spacing:.04em; margin-bottom:3px;
+}
+.get-card .gc-sub { font-size:12px; color:#5a5a5a; margin-bottom:12px; }
+.get-card ol { margin:0 0 14px 16px; padding:0; }
+.get-card li { font-size:12.5px; line-height:1.75; color:#8a8a8a; margin-bottom:3px; }
+.get-card code {
+  background:#1e1e1e; border:1px solid #262626; border-radius:3px;
+  padding:1px 5px; color:#c9a96e; font-size:12px;
+  overflow-wrap:anywhere;   /* menu paths are long; never push the card wide */
+}
+.get-card .dl { margin-top:auto; display:flex; flex-wrap:wrap; gap:7px; }
+.get-card .dl a {
+  background:#1c1813; border:1px solid #4a3c22; color:var(--sand);
+  padding:7px 14px; border-radius:3px; text-decoration:none; font-size:12.5px;
+}
+.get-card .dl a:hover { background:#251f16; border-color:var(--sand); }
+.get-card .note { font-size:11.5px; color:#4e4e4e; margin-top:10px; line-height:1.6; }
+
+/* scheme picker — same treatment the font picker had */
+.compare-with { display:none; margin-top:22px; padding-top:16px; border-top:1px solid #1d1d1d; }
+body.m-compare .compare-with { display:block; }
+.compare-with .cw-label {
+  font-size:12px; color:#4a4a4a; letter-spacing:.14em; margin-bottom:10px;
+  text-transform:uppercase;
+}
+.compare-with .cw-label b { color:var(--sand); font-weight:normal; }
+.compare-with .tab-row { justify-content:center; }
+
+/* ── Compare layout ───────────────────────────────────────── */
+main { flex:1; }
+
+/* Titles occupy row 1, editors row 2 — so however tall either header gets,
+   both code views start at the same y and stay aligned line-to-line. */
+.compare {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 0;
+}
+/* body state classes are prefixed m- so they can never collide with a
+   component class name (a bare .compare on <body> hid the whole page). */
+body.m-compare .compare { display: grid; }
+.cell { min-width:0; padding: 0 20px; }
+.cell-l { border-right: 1px solid #1e1e1e; }
+.head { padding-top:16px; }
+.body { padding-bottom:24px; }
+
+.legend-bar { display:none; padding: 12px 20px 0; }
+body.m-compare .legend-bar { display:block; }
+.legend-bar .tab-btn { font-size:12px; }
+.legend-bar .tab-btn .caret { color:#4a4a4a; margin-right:5px; }
+
+.pane-title { font-size:14px; color:#666; margin-bottom:9px; letter-spacing:.04em; }
+.pane-title .sub { color:#3a3a3a; font-size:12px; }
+/* the reference pane is titled with the logo itself */
+.pane-title .pt-mark {
+  font-family: var(--logo-font);
+  font-weight: var(--logo-weight);
+  letter-spacing: var(--logo-track);
+  font-size: 17px;
+}
+.pane-title .pt-mark .sand  { color: var(--sand); }
+.pane-title .pt-mark .storm { color: var(--storm); }
+.pane-title .pt-name { color:#9a9a9a; font-size:15px; }
+
+.tab-row { display:flex; gap:4px; flex-wrap:wrap; }
+.tab-btn {
+  background:#181818; border:1px solid #252525; color:#585858;
+  padding:5px 13px; font:inherit; font-size:13px; cursor:pointer; border-radius:3px;
+}
+.tab-btn.active { background:#222; border-color:#3a3a3a; color:#bbb; }
+.tab-btn:hover:not(.active) { color:#888; border-color:#2e2e2e; }
+
+/* hex legends are hidden until the single toggle turns them on */
+.chips { display:none; flex-wrap:wrap; gap:4px 5px; margin-bottom:12px; }
+body.legend-on .chips { display:flex; }
+.chip {
+  display:flex; align-items:center; gap:4px;
+  background:#161616; border:1px solid #202020; border-radius:3px;
+  padding:3px 7px 3px 5px; font-size:12px; white-space:nowrap;
+}
+.chip.chg { border-color:#3a2a14; background:#1c1810; }
+.sw { width:13px; height:13px; border-radius:2px; border:1px solid rgba(255,255,255,.07); flex-shrink:0; }
+.ch { color:#3a3a3a; margin-left:2px; }
+.arr { color:#5a5a5a; margin:0 4px; font-size:13px; }
+.was { opacity:.75; }
+.sw-was { width:13px; height:13px; border-radius:2px; border:1px solid rgba(255,255,255,.07); flex-shrink:0; opacity:.6; }
+
+.editor { border-radius:4px; border:1px solid #222; overflow:hidden; font-size:15.5px; }
+.tb { padding:6px 14px; font-size:13px; color:#4a4a4a; display:flex; align-items:center; gap:5px; }
+.dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+pre.code {
+  padding:12px 0 14px; line-height:1.7;
+  overflow-x:auto; white-space:pre; font:inherit; margin:0;
+  position:relative;
+}
+/* No col-100 ruler: it sat at 52px + 100ch and, being absolutely positioned
+   inside the scroll container, padded scrollWidth out to column 100 on every
+   pane — so you could scroll a long way past the end of the code into nothing.
+   No sample reaches 100 columns anyway. */
+.ln {
+  display:inline-block; width:32px; text-align:right;
+  margin-right:20px; user-select:none; font-size:13px;
+}
+
+/* ── Gallery: a revolver cylinder ─────────────────────────────
+   Sandstorm sits in the hub; the rivals are chambers on the ring.
+   Scrolling (or dragging) spins the ring past the 12 o'clock slot. */
+#gallery { display:none; }
+body.m-gallery #gallery { display:block; position:relative; overflow:hidden; touch-action:none; }
+
+/* The rig is a wide ellipse, not a circle: viewports have far more width than
+   height, so a circle big enough to hold 15 chambers had to be scaled down to
+   fit vertically, shrinking the very tiles it was meant to enlarge. */
+.rev-inner {
+  position:absolute; left:50%; top:0;
+  width:1100px; height:720px; margin-left:-550px;
+  transform-origin: top center;
+  transform: scale(var(--s, 1));
+}
+.rev-ring {
+  position:absolute; left:50%; top:50%;
+  width:920px; height:580px; margin:-290px 0 0 -460px;
+  border-radius:50%;
+  border:1px dashed #202020;
+  pointer-events:none;
+}
+
+.tile {
+  position:absolute; left:50%; top:50%;
+  width:160px; height:123px; margin:-61px 0 0 -80px;
+  border:1px solid #262626; border-radius:5px;
+  background:#141414; padding:0; overflow:hidden;
+  font:inherit; cursor:pointer; display:block;
+  transition: border-color .25s ease, opacity .25s ease, box-shadow .25s ease;
+  opacity:.62;
+}
+.tile.hub {
+  cursor:default; opacity:1; z-index:5;
+  border-color:rgba(232,160,56,.55);
+  box-shadow:0 0 0 1px rgba(232,160,56,.18), 0 0 46px -8px rgba(232,160,56,.32);
+}
+.tile.at-top { opacity:1; border-color:#4a4038; box-shadow:0 0 28px -8px rgba(0,0,0,.9); }
+.tile.orb:hover { opacity:1; border-color:var(--sand); }
+
+.tile-code {
+  height:94px; overflow:hidden; padding:6px 0 0;
+  font-size:7.7px; line-height:1.5; white-space:pre;
+}
+.tile-code .tln { display:inline-block; width:14px; text-align:right; margin-right:6px; }
+.tile-label {
+  height:29px; display:flex; align-items:center; justify-content:center;
+  font-size:11.9px; letter-spacing:.04em; color:#7a7a7a;
+  background:#171717; border-top:1px solid #222;
+  white-space:nowrap; overflow:hidden;
+}
+.tile.hub .tile-label {
+  font-family: var(--logo-font); font-weight: var(--logo-weight);
+  letter-spacing: var(--logo-track); font-size:10px;
+}
+.tile.hub .tile-label .sand { color:var(--sand); }
+.tile.hub .tile-label .storm { color:var(--storm); }
+.tile.at-top .tile-label, .tile.orb:hover .tile-label { color:#d8d0c0; }
+
+/* ── Code-sample bar (bottom, under all code views) ───────── */
+#code-bar {
+  position: sticky; bottom: 0; z-index: 50;
+  background: #111; border-top: 1px solid #1e1e1e;
+  padding: 10px 20px;
+  display: none; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+/* the sample switcher only means anything where code is on screen */
+body.m-compare #code-bar, body.m-gallery #code-bar { display: flex; }
+#code-bar .cb-label { font-size:12px; color:#3f3f3f; letter-spacing:.08em; flex-shrink:0; }
+
+/* ── Mobile ───────────────────────────────────────────────── */
+/* NOTE: .compare stays two columns at every width — the side-by-side,
+   line-to-line reading is the whole point of the tool. Narrow screens get
+   smaller type and per-pane horizontal scroll instead of stacking. */
+@media (max-width: 900px) {
+  .cell { padding: 0 10px; }
+  .head { padding-top:12px; }
+  .body { padding-bottom:18px; }
+  .legend-bar { padding: 10px 10px 0; }
+  .tile.hub .tile-label { font-size:11px; }
+  .hero { padding: 84px 12px 18px; }
+  .editor { font-size:12px; }
+  .ln { width:22px; margin-right:10px; font-size:10px; }
+  .tb { padding:5px 9px; font-size:11px; }
+  .dot { width:7px; height:7px; }
+  pre.code { padding:8px 0 10px; }
+  .pane-title { font-size:12px; margin-bottom:7px; }
+  .pane-title .pt-mark { font-size:13px; }
+  .pane-title .pt-name { font-size:12px; }
+  .pane-title .sub { display:none; }
+  .hero-snippet .editor { font-size:12px; }
+  /* columns are ~195px on a phone — a nowrap chip would punch out of the grid */
+  .chips { gap:3px; }
+  .chip { white-space:normal; font-size:10px; padding:2px 5px 2px 4px; gap:3px; }
+  .sw, .sw-was { width:10px; height:10px; }
+  .arr { margin:0 2px; font-size:11px; }
+  #code-bar { padding: 9px 10px; }
+  #code-bar .tab-row { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  #code-bar .tab-row::-webkit-scrollbar { display:none; }
+  #code-bar .tab-btn { flex-shrink:0; }
+  .tagline { font-size:12px; }
+}
+@media (max-width: 520px) {
+  .chip { font-size:11px; }
+  .tab-btn { font-size:12px; padding:5px 10px; }
+  .editor { font-size:10.5px; }
+  .hero-snippet .editor { font-size:10.5px; }
+  .ln { width:18px; margin-right:7px; font-size:9px; }
+  .hero-swatches .hs { width:18px; height:10px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <a class="av-monogram" href="https://antonveselskyi.com" target="_blank" rel="noopener" aria-label="Anton Veselskyi">
+    <span>A</span><span>V</span>
+  </a>
+
+  <h1 class="wordmark" id="wordmark" title="Sandstorm"><span class="sand">sand</span><span class="storm">storm</span></h1>
+
+  <p class="tagline">Colorscheme inspired by <b>desert.vim</b></p>
+
+  <div class="hero-swatches" id="hero-swatches"></div>
+
+  <div class="hero-snippet" id="hero-snippet"></div>
+
+  <div class="hero-actions">
+    <button class="mode-btn" id="btn-compare" onclick="setMode('compare')">Compare</button>
+    <button class="mode-btn" id="btn-gallery" onclick="setMode('gallery')">Gallery</button>
+    <button class="mode-btn get" id="btn-get" onclick="setMode('get')">Get it</button>
+  </div>
+
+  <div class="egg-hint" id="egg-hint"></div>
+
+  <div class="compare-with" id="compare-with">
+    <div class="cw-label">compare <b>sandstorm</b> with:</div>
+    <div class="tab-row" id="scheme-tabs"></div>
+  </div>
+</header>
+
+<main>
+  <div class="legend-bar" id="legend-bar">
+    <button class="tab-btn" id="legend-toggle" onclick="toggleLegend()"></button>
+  </div>
+  <div class="compare" id="compare">
+    <div class="cell cell-l head" id="left-top"></div>
+    <div class="cell cell-r head" id="right-top"></div>
+    <div class="cell cell-l body" id="left-editor"></div>
+    <div class="cell cell-r body" id="right-editor"></div>
+  </div>
+  <div id="gallery"></div>
+  <div id="get"></div>
+</main>
+
+<div id="code-bar">
+  <span class="cb-label">SAMPLE</span>
+  <div class="tab-row" id="code-tabs"></div>
+</div>
+
+<script>
+// ── Colour schemes ─────────────────────────────────────────────────────────
+// Token keys: bg/tb page + titlebar · hl current-line bg · ln gutter fg
+// lnc current-line number · sel selection bg · kw keyword · ty type
+// cl class/struct · mt method · va variable · cm comment · st string
+// nm number · pp preprocessor · mc macro · en enum/constant · uk user keyword
+// pl plain fg · bm brace match
+const S = {
+  sandstorm: {
+    label:'Sandstorm', desc:'mine · desert.vim descendant · VS 2022 + Visual Assist',
+    bg:'#1e1e1e', tb:'#222', hl:'#4a4038', ln:'#907040',
+    kw:'#58a8e8', ty:'#38dcc0', cl:'#ff7060', mt:'#00ff7f',
+    va:'#f8dc68', cm:'#b8a0d8', st:'#e07848', nm:'#88d878',
+    pp:'#989080', mc:'#d050f0', en:'#e8a038', uk:'#ff5800',
+    pl:'#d8d0c0', bm:'#00ff7f', sel:'#c9a96e', lnc:'#907040',
+  },
+  desert: {
+    label:'desert.vim', desc:'fugalh · the ancestor · no macro/enum distinction',
+    bg:'#333333', tb:'#2a2a2a', hl:'#4d4d4d', ln:'#555',
+    kw:'#f0e68c', ty:'#bdb76b', cl:'#bdb76b', mt:'#98fb98',
+    va:'#98fb98', cm:'#87ceeb', st:'#ffa0a0', nm:'#ffa0a0',
+    pp:'#cd5c5c', mc:'#cd5c5c', en:'#ffa0a0', uk:'#cd5c5c',
+    pl:'#ffffff', bm:'#98fb98',
+  },
+  vscode: {
+    label:'VS Code Dark+', desc:'class = type teal · macro = directive violet',
+    bg:'#1e1e1e', tb:'#252526', hl:'#2a2d2e', ln:'#858585', lnc:'#c6c6c6', sel:'#264f78',
+    kw:'#569cd6', ty:'#4ec9b0', cl:'#4ec9b0', mt:'#dcdcaa',
+    va:'#9cdcfe', cm:'#6a9955', st:'#ce9178', nm:'#b5cea8',
+    pp:'#c586c0', mc:'#c586c0', en:'#4fc1ff', uk:'#569cd6',
+    pl:'#d4d4d4', bm:'#d4d4d4',
+  },
+  dracula: {
+    label:'Dracula', desc:'variables = plain fg · macro = keyword pink',
+    bg:'#282a36', tb:'#21222c', hl:'#44475a', ln:'#6272a4', lnc:'#f8f8f2', sel:'#44475a',
+    kw:'#ff79c6', ty:'#8be9fd', cl:'#8be9fd', mt:'#50fa7b',
+    va:'#f8f8f2', cm:'#6272a4', st:'#f1fa8c', nm:'#bd93f9',
+    pp:'#ff79c6', mc:'#ff79c6', en:'#bd93f9', uk:'#ffb86c',
+    pl:'#f8f8f2', bm:'#f8f8f2',
+  },
+  gruvbox: {
+    label:'Gruvbox Dark', desc:'hard contrast · variables = plain fg · macro = preproc aqua',
+    bg:'#1d2021', tb:'#282828', hl:'#3c3836', ln:'#7c6f64', lnc:'#fabd2f', sel:'#504945',
+    kw:'#fb4934', ty:'#fabd2f', cl:'#fabd2f', mt:'#b8bb26',
+    va:'#ebdbb2', cm:'#928374', st:'#b8bb26', nm:'#d3869b',
+    pp:'#8ec07c', mc:'#8ec07c', en:'#d3869b', uk:'#fe8019',
+    pl:'#ebdbb2', bm:'#ebdbb2',
+  },
+  nord: {
+    label:'Nord', desc:'class = type frost · macro = preproc nord10',
+    bg:'#2e3440', tb:'#3b4252', hl:'#3b4252', ln:'#4c566a', lnc:'#d8dee9', sel:'#434c5e',
+    kw:'#81a1c1', ty:'#8fbcbb', cl:'#8fbcbb', mt:'#88c0d0',
+    va:'#d8dee9', cm:'#616e88', st:'#a3be8c', nm:'#b48ead',
+    pp:'#5e81ac', mc:'#5e81ac', en:'#b48ead', uk:'#d08770',
+    pl:'#d8dee9', bm:'#d8dee9',
+  },
+  solarized: {
+    label:'Solarized Dark', desc:'class = type · macro = preproc · numbers = strings (cyan)',
+    bg:'#002b36', tb:'#073642', hl:'#073642', ln:'#586e75', lnc:'#93a1a1', sel:'#073642',
+    kw:'#859900', ty:'#b58900', cl:'#b58900', mt:'#268bd2',
+    va:'#839496', cm:'#586e75', st:'#2aa198', nm:'#2aa198',
+    pp:'#cb4b16', mc:'#cb4b16', en:'#2aa198', uk:'#d33682',
+    pl:'#839496', bm:'#839496',
+  },
+  monokai: {
+    label:'Monokai', desc:'class = function green · macro = keyword pink',
+    bg:'#272822', tb:'#1e1f1c', hl:'#3e3d32', ln:'#90908a', lnc:'#c2c2bf', sel:'#49483e',
+    kw:'#f92672', ty:'#66d9ef', cl:'#a6e22e', mt:'#a6e22e',
+    va:'#f8f8f2', cm:'#75715e', st:'#e6db74', nm:'#ae81ff',
+    pp:'#f92672', mc:'#f92672', en:'#ae81ff', uk:'#fd971f',
+    pl:'#f8f8f2', bm:'#f8f8f2',
+  },
+  onedark: {
+    label:'One Dark', desc:'class = type gold · macro = cyan special',
+    bg:'#282c34', tb:'#21252b', hl:'#2c313a', ln:'#4b5263', lnc:'#abb2bf', sel:'#3e4451',
+    kw:'#c678dd', ty:'#e5c07b', cl:'#e5c07b', mt:'#61afef',
+    va:'#e06c75', cm:'#5c6370', st:'#98c379', nm:'#d19a66',
+    pp:'#c678dd', mc:'#56b6c2', en:'#d19a66', uk:'#56b6c2',
+    pl:'#abb2bf', bm:'#abb2bf',
+  },
+  tokyonight: {
+    label:'Tokyo Night', desc:'Storm variant · class = type cyan · macro = special blue',
+    bg:'#24283b', tb:'#1f2335', hl:'#292e42', ln:'#3b4261', lnc:'#737aa2', sel:'#364a82',
+    kw:'#bb9af7', ty:'#2ac3de', cl:'#2ac3de', mt:'#7aa2f7',
+    va:'#c0caf5', cm:'#565f89', st:'#9ece6a', nm:'#ff9e64',
+    pp:'#7dcfff', mc:'#7dcfff', en:'#ff9e64', uk:'#f7768e',
+    pl:'#c0caf5', bm:'#c0caf5',
+  },
+  catppuccin: {
+    label:'Catppuccin Mocha', desc:'class = type yellow · macro = preproc pink',
+    bg:'#1e1e2e', tb:'#181825', hl:'#313244', ln:'#6c7086', lnc:'#b4befe', sel:'#45475a',
+    kw:'#cba6f7', ty:'#f9e2af', cl:'#f9e2af', mt:'#89b4fa',
+    va:'#cdd6f4', cm:'#6c7086', st:'#a6e3a1', nm:'#fab387',
+    pp:'#f5c2e7', mc:'#f5c2e7', en:'#fab387', uk:'#f38ba8',
+    pl:'#cdd6f4', bm:'#cdd6f4',
+  },
+  kanagawa: {
+    label:'Kanagawa', desc:'wave variant · class = type aqua · macro = preproc orange',
+    bg:'#1f1f28', tb:'#16161d', hl:'#2a2a37', ln:'#54546d', lnc:'#c8c093', sel:'#2d4f67',
+    kw:'#957fb8', ty:'#7aa89f', cl:'#7aa89f', mt:'#7e9cd8',
+    va:'#dcd7ba', cm:'#727169', st:'#98bb6c', nm:'#d27e99',
+    pp:'#ffa066', mc:'#ffa066', en:'#ffa066', uk:'#e46876',
+    pl:'#dcd7ba', bm:'#dcd7ba',
+  },
+  everforest: {
+    label:'Everforest', desc:'dark medium · class = type yellow · macro = preproc aqua',
+    bg:'#2d353b', tb:'#232a2e', hl:'#343f44', ln:'#859289', lnc:'#d3c6aa', sel:'#475258',
+    kw:'#e67e80', ty:'#dbbc7f', cl:'#dbbc7f', mt:'#a7c080',
+    va:'#d3c6aa', cm:'#859289', st:'#a7c080', nm:'#d699b6',
+    pp:'#7fbbb3', mc:'#7fbbb3', en:'#d699b6', uk:'#e69875',
+    pl:'#d3c6aa', bm:'#d3c6aa',
+  },
+  rosepine: {
+    label:'Rosé Pine', desc:'class = type foam · macro = preproc iris',
+    bg:'#191724', tb:'#1f1d2e', hl:'#21202e', ln:'#6e6a86', lnc:'#e0def4', sel:'#403d52',
+    kw:'#31748f', ty:'#9ccfd8', cl:'#9ccfd8', mt:'#ebbcba',
+    va:'#e0def4', cm:'#6e6a86', st:'#f6c177', nm:'#eb6f92',
+    pp:'#c4a7e7', mc:'#c4a7e7', en:'#eb6f92', uk:'#eb6f92',
+    pl:'#e0def4', bm:'#e0def4',
+  },
+  ayu: {
+    label:'Ayu Mirage', desc:'class = type blue · macro = special coral',
+    bg:'#1f2430', tb:'#1c212b', hl:'#1a1f29', ln:'#5c6773', lnc:'#cbccc6', sel:'#33415e',
+    kw:'#ffa759', ty:'#73d0ff', cl:'#73d0ff', mt:'#ffd580',
+    va:'#cbccc6', cm:'#5c6773', st:'#bae67e', nm:'#ffcc66',
+    pp:'#ffa759', mc:'#f28779', en:'#d4bfff', uk:'#f28779',
+    pl:'#cbccc6', bm:'#cbccc6',
+  },
+  zenburn: {
+    label:'Zenburn', desc:'the low-contrast classic · class = function yellow',
+    bg:'#3f3f3f', tb:'#383838', hl:'#4f4f4f', ln:'#6f6f6f', lnc:'#9fafaf', sel:'#2f2f2f',
+    kw:'#f0dfaf', ty:'#dfdfbf', cl:'#efef8f', mt:'#efef8f',
+    va:'#dcdccc', cm:'#7f9f7f', st:'#cc9393', nm:'#8cd0d3',
+    pp:'#ffcfaf', mc:'#ffcfaf', en:'#dca3a3', uk:'#dfaf8f',
+    pl:'#dcdccc', bm:'#dcdccc',
+  },
+};
+
+// ── Code datasets ─────────────────────────────────────────────────────────
+const CODES = {
+  game: {
+    label:'Game C++', filename:'ProjectileSystem.cpp', hl:20,
+    lines:[
+      [['pp','#pragma once']],
+      [['pp','#include '],['st','"CollisionQuery.h"']],
+      [['pp','#include '],['st','"World.h"']],
+      null,
+      [['kw','enum class '],['cl','ImpactResponse'],['pl',' : '],['ty','u8']],
+      [['pl','{']],
+      [['pl','    '],['en','Absorb'],['pl',', '],['en','Ricochet'],['pl',', '],['en','Penetrate'],['pl',' = '],['nm','0xFF']],
+      [['pl','};']],
+      null,
+      [['kw','template'],['pl','<'],['kw','typename '],['ty','T'],['pl',', '],['ty','u32 '],['va','N'],['pl',' = '],['nm','4'],['pl','>']],
+      [['kw','struct '],['cl','HitBuffer']],
+      [['pl','{']],
+      [['pl','    '],['ty','T'],['pl','*          '],['va','actors'],['pl','['],['va','N'],['pl','] = {};']],
+      [['pl','    '],['ty','float'],['pl','      '],['va','distances'],['pl','['],['va','N'],['pl','] = {};']],
+      [['pl','    '],['cl','ImpactResponse'],['pl',' '],['va','response'],['pl',' = '],['en','ImpactResponse::Absorb'],['pl',';']],
+      [['pl','};']],
+      null,
+      [['kw','static '],['ty','bool']],
+      [['cl','ProjectileSystem'],['pl','::'],['mt','Trace'],['pl','('],['kw','const '],['cl','Ray'],['pl','& '],['va','ray'],['pl',', '],['cl','HitBuffer'],['pl','<'],['cl','Actor'],['pl','> '],['pl','& '],['va','out'],['pl',')']],
+      [['pl','{']],
+      [['pl','    '],['kw','constexpr '],['ty','float'],['pl',' '],['va','kMaxDist'],['pl',' = '],['nm','8000.f'],['pl',';']],
+      [['pl','    '],['kw','const '],['ty','u32'],['pl',' '],['va','n'],['pl',' = '],['cl','World'],['pl','::'],['mt','SweepSphere'],['pl','('],['va','ray'],['pl',', '],['nm','.05f'],['pl',', '],['va','kMaxDist'],['pl',', '],['va','out'],['pl',');']],
+      [['pl','    '],['kw','switch'],['pl',' ('],['va','out'],['pl','.'],['va','response'],['pl',')']],
+      [['pl','    {']],
+      [['pl','    '],['kw','case '],['en','ImpactResponse::Ricochet'],['pl','  : '],['va','out'],['pl','.'],['va','distances'],['pl','['],['nm','0'],['pl','] *= '],['nm','.4f'],['pl','; '],['kw','break'],['pl',';']],
+      [['pl','    '],['kw','case '],['en','ImpactResponse::Penetrate'],['pl',': '],['kw','break'],['pl',';']],
+      [['pl','    '],['kw','default'],['pl',':                    '],['kw','return '],['kw','false'],['pl',';']],
+      [['pl','    }']],
+      [['pl','    '],['kw','return '],['va','n'],['pl',' > '],['nm','0'],['pl',';']],
+      [['pl','}']],
+    ],
+  },
+  ue: {
+    label:'Unreal Engine', filename:'APlayerCharacter.cpp', hl:17,
+    lines:[
+      [['pp','#include '],['st','"APlayerCharacter.h"']],
+      [['pp','#include '],['st','"MovementComponent.h"']],
+      [['pp','#include '],['st','"Components/SkeletalMeshComponent.h"']],
+      null,
+      [['mc','DEFINE_LOG_CATEGORY_STATIC'],['pl','('],['va','LogPlayer'],['pl',', '],['en','Log'],['pl',', '],['en','All'],['pl',')']],
+      null,
+      [['cm','// Called from movement component on landing']],
+      [['kw','void '],['cl','APlayerCharacter'],['pl','::'],['mt','OnLanded'],['pl','('],['kw','const '],['cl','FHitResult'],['pl','& '],['va','Hit'],['pl',')']],
+      [['pl','{']],
+      [['pl','    '],['kw','const '],['ty','float'],['pl',' '],['va','FallSpeed'],['pl',' = '],['mt','GetVelocity'],['pl','().'],['va','Z'],['pl',';']],
+      [['pl','    '],['mc','UE_LOG'],['pl','('],['va','LogPlayer'],['pl',', '],['en','Verbose'],['pl',', '],['st','"Landed speed=%.1f"'],['pl',', '],['va','FallSpeed'],['pl',');']],
+      null,
+      [['pl','    '],['kw','if '],['pl','('],['va','FallSpeed'],['pl',' < '],['nm','-1200.f'],['pl',')']],
+      [['pl','    {']],
+      [['pl','        '],['mt','ApplyFallDamage'],['pl','('],['va','FallSpeed'],['pl',');']],
+      [['pl','        '],['kw','return'],['pl',';']],
+      [['pl','    }']],
+      null,
+      [['pl','    '],['mt','PlayLandMontage'],['pl','();']],
+      [['pl','}']],
+      null,
+      [['kw','void '],['cl','APlayerCharacter'],['pl','::'],['mt','ApplyFallDamage'],['pl','('],['ty','float '],['va','Speed'],['pl',')']],
+      [['pl','{']],
+      [['pl','    '],['kw','const '],['ty','float'],['pl',' '],['va','Dmg'],['pl',' = '],['cl','FMath'],['pl','::'],['mt','Abs'],['pl','('],['va','Speed'],['pl',') * '],['nm','.04f'],['pl',';']],
+      [['pl','    '],['mt','TakeDamage'],['pl','('],['va','Dmg'],['pl',', '],['cl','FDamageEvent'],['pl','(), '],['kw','nullptr'],['pl',', '],['kw','this'],['pl',');']],
+      [['pl','}']],
+    ],
+  },
+  net: {
+    label:'C Network', filename:'relay_server.c', hl:16,
+    lines:[
+      [['pp','#include '],['st','"relay.h"']],
+      [['pp','#include '],['pl','<'],['pp','sys/epoll.h'],['pl','>']],
+      [['pp','#include '],['pl','<'],['pp','netinet/tcp.h'],['pl','>']],
+      null,
+      [['pp','#define '],['mc','MAX_EVENTS'],['pl','  '],['nm','64']],
+      [['pp','#define '],['mc','BUF_SIZE'],['pl','   '],['nm','4096']],
+      null,
+      [['kw','typedef struct']],
+      [['pl','{']],
+      [['pl','    '],['ty','int'],['pl','      '],['va','fd'],['pl',';']],
+      [['pl','    '],['ty','uint32_t'],['pl',' '],['va','peer_ip'],['pl',';']],
+      [['pl','    '],['ty','uint16_t'],['pl',' '],['va','peer_port'],['pl',';']],
+      [['pl','    '],['ty','char'],['pl','     '],['va','buf'],['pl','['],['mc','BUF_SIZE'],['pl','];']],
+      [['pl','} '],['cl','relay_conn_t'],['pl',';']],
+      null,
+      [['kw','static '],['ty','int'],['pl',' '],['mt','set_nonblocking'],['pl','('],['ty','int '],['va','fd'],['pl',')']],
+      [['pl','{']],
+      [['pl','    '],['ty','int '],['va','flags'],['pl',' = '],['mt','fcntl'],['pl','('],['va','fd'],['pl',', '],['en','F_GETFL'],['pl',', '],['nm','0'],['pl',');']],
+      [['pl','    '],['kw','if '],['pl','('],['va','flags'],['pl',' < '],['nm','0'],['pl',') '],['kw','return '],['nm','-1'],['pl',';']],
+      [['pl','    '],['kw','return '],['mt','fcntl'],['pl','('],['va','fd'],['pl',', '],['en','F_SETFL'],['pl',', '],['va','flags'],['pl',' | '],['en','O_NONBLOCK'],['pl',');']],
+      [['pl','}']],
+      null,
+      [['ty','int'],['pl',' '],['mt','relay_loop'],['pl','('],['ty','int '],['va','listen_fd'],['pl',')']],
+      [['pl','{']],
+      [['pl','    '],['ty','struct epoll_event '],['va','ev'],['pl',', '],['va','events'],['pl','['],['mc','MAX_EVENTS'],['pl','];']],
+      [['pl','    '],['ty','int '],['va','epfd'],['pl',' = '],['mt','epoll_create1'],['pl','('],['nm','0'],['pl',');']],
+      [['pl','    '],['kw','if '],['pl','('],['va','epfd'],['pl',' < '],['nm','0'],['pl',') '],['kw','return '],['nm','-1'],['pl',';']],
+      [['pl','    '],['va','ev'],['pl','.'],['va','events'],['pl',' = '],['en','EPOLLIN'],['pl',';  '],['va','ev'],['pl','.'],['va','data'],['pl','.'],['va','fd'],['pl',' = '],['va','listen_fd'],['pl',';']],
+      [['pl','    '],['mt','epoll_ctl'],['pl','('],['va','epfd'],['pl',', '],['en','EPOLL_CTL_ADD'],['pl',', '],['va','listen_fd'],['pl',', &'],['va','ev'],['pl',');']],
+      [['pl','    '],['cm','// event loop omitted for brevity']],
+      [['pl','    '],['kw','return '],['nm','0'],['pl',';']],
+      [['pl','}']],
+    ],
+  },
+  std: {
+    label:'STL-heavy C++', filename:'asset_cache.cpp', hl:17,
+    lines:[
+      [['pp','#include '],['pl','<'],['pp','unordered_map'],['pl','>']],
+      [['pp','#include '],['pl','<'],['pp','memory'],['pl','>']],
+      [['pp','#include '],['pl','<'],['pp','functional'],['pl','>']],
+      [['pp','#include '],['pl','<'],['pp','optional'],['pl','>']],
+      null,
+      [['kw','template'],['pl','<'],['kw','typename '],['ty','K'],['pl',', '],['kw','typename '],['ty','V'],['pl','>']],
+      [['kw','class '],['cl','LRUCache']],
+      [['pl','{']],
+      [['pl','    '],['kw','using '],['cl','Map'],['pl',' = '],['ty','std::unordered_map'],['pl','<'],['ty','K'],['pl',', '],['ty','std::shared_ptr'],['pl','<'],['ty','V'],['pl','>>;']],
+      [['pl','    '],['cl','Map'],['pl','             '],['va','cache_'],['pl',';']],
+      [['pl','    '],['ty','std::size_t'],['pl','  '],['va','cap_'],['pl',';']],
+      null,
+      [['kw','public'],['pl',':']],
+      [['pl','    '],['kw','explicit '],['cl','LRUCache'],['pl','('],['ty','std::size_t '],['va','cap'],['pl',') : '],['va','cap_'],['pl','{'],['va','cap'],['pl','} {}']],
+      null,
+      [['pl','    '],['ty','std::optional'],['pl','<'],['ty','std::shared_ptr'],['pl','<'],['ty','V'],['pl','>> '],['mt','get'],['pl','('],['kw','const '],['ty','K'],['pl','& '],['va','key'],['pl',')']],
+      [['pl','    {']],
+      [['pl','        '],['kw','auto '],['va','it'],['pl',' = '],['va','cache_'],['pl','.'],['mt','find'],['pl','('],['va','key'],['pl',');']],
+      [['pl','        '],['kw','if '],['pl','('],['va','it'],['pl',' == '],['va','cache_'],['pl','.'],['mt','end'],['pl','()) '],['kw','return '],['ty','std::nullopt'],['pl',';']],
+      [['pl','        '],['kw','return '],['va','it'],['pl','->'],['va','second'],['pl',';']],
+      [['pl','    }']],
+      null,
+      [['pl','    '],['kw','void '],['mt','put'],['pl','('],['ty','K '],['va','key'],['pl',', '],['ty','std::shared_ptr'],['pl','<'],['ty','V'],['pl','> '],['va','val'],['pl',')']],
+      [['pl','    {']],
+      [['pl','        '],['kw','if '],['pl','('],['va','cache_'],['pl','.'],['mt','size'],['pl','() >= '],['va','cap_'],['pl',') '],['va','cache_'],['pl','.'],['mt','clear'],['pl','();']],
+      [['pl','        '],['va','cache_'],['pl','['],['ty','std::move'],['pl','('],['va','key'],['pl',')] = '],['ty','std::move'],['pl','('],['va','val'],['pl',');']],
+      [['pl','    }']],
+      [['pl','};']],
+    ],
+  },
+  shrt: {
+    label:'SHRT', filename:'player_inspector.cpp', hl:19,
+    lines:[
+      [['pp','i '],['pl','iostream']],
+      [['pp','i '],['pl','format']],
+      [['pp','i '],['pl','string']],
+      null,
+      [['kw','s '],['cl','Weapon']],
+      [['pl','{']],
+      [['pl','    '],['ty','$string'],['pl',' '],['va','name'],['pl',';']],
+      [['pl','    '],['ty','int'],['pl',' '],['va','damage'],['pl',';']],
+      [['pl','};']],
+      null,
+      [['kw','s '],['cl','Player']],
+      [['pl','{']],
+      [['pl','    '],['ty','$string'],['pl',' '],['va','name'],['pl',';']],
+      [['pl','    '],['cl','Weapon'],['pl','* '],['va','weapon'],['pl',';']],
+      [['pl','    '],['ty','int'],['pl',' '],['va','hp'],['pl',';']],
+      [['pl','};']],
+      null,
+      [['ty','void'],['pl',' '],['mt','inspect'],['pl','('],['cl','Player'],['pl','* '],['va','player'],['pl',')']],
+      [['pl','{']],
+      [['pl','    '],['va','player'],['pl',' '],['mc','??'],['pl',' '],['kw','r'],['pl',';']],
+      null,
+      [['pl','    '],['kw','a'],['pl',' '],['va','weapon_name'],['pl',' = '],['va','player'],['pl','->'],['va','weapon'],['mc','?.'],['va','name'],['pl',' '],['mc','??'],['pl',' '],['st','"fists"'],['pl',';']],
+      [['pl','    '],['kw','a'],['pl',' '],['va','weapon_dmg'],['pl','  = '],['va','player'],['pl','->'],['va','weapon'],['mc','?.'],['va','damage'],['pl',' '],['mc','??'],['pl',' '],['nm','1'],['pl',';']],
+      null,
+      [['pl','    '],['kw','p'],['pl',' '],['st','$"{player->name} wields {weapon_name} ({weapon_dmg}dmg) hp={player->hp}"'],['pl',';']],
+      [['pl','}']],
+    ],
+  },
+};
+
+// ── Hero snippet: every token colour in one short breath ──────────────────
+const SNIPPET = {
+  label:'All colours', filename:'sandstorm.h', hl:9,
+  lines:[
+    [['pp','#include '],['st','"sandstorm.h"']],
+    [['pp','#define '],['mc','GRAINS'],['pl','  '],['nm','0xFFFF']],
+    null,
+    [['cm','// one line of every colour']],
+    [['kw','template'],['pl','<'],['kw','typename '],['uk','T'],['pl','>']],
+    [['kw','enum class '],['cl','Grain'],['pl',' : '],['ty','u8'],['pl',' { '],['en','Fine'],['pl',', '],['en','Coarse'],['pl',' };']],
+    null,
+    [['ty','bool'],['pl',' '],['cl','Storm'],['pl','::'],['mt','Sweep'],['pl','('],['kw','const '],['cl','Ray'],['pl','& '],['va','ray'],['pl',', '],['ty','float'],['pl',' '],['va','dist'],['pl',')']],
+    [['pl','{']],
+    [['pl','    '],['kw','return '],['cl','World'],['pl','::'],['mt','Trace'],['pl','('],['va','ray'],['pl',', '],['va','dist'],['pl',') > '],['nm','0'],['pl',';']],
+    [['pl','}']],
+  ],
+};
+
+// ── Chip config ───────────────────────────────────────────────────────────
+const CHIP_KEYS = ['bg','cl','mt','va','cm','st','nm','mc','en','uk','kw','ty','pp','pl','sel','lnc'];
+const CHIP_LABELS = {
+  bg:'BG', cl:'Class', mt:'Method', va:'Variable', cm:'Comment',
+  st:'String', nm:'Number', mc:'Macro', en:'Enum', uk:'UserKw',
+  kw:'Keyword', ty:'Type', pp:'Preproc', pl:'Plain', sel:'Select', lnc:'LineNum',
+};
+
+// ── Renderers ─────────────────────────────────────────────────────────────
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderMeta(schemeKey, refKey) {
+  const s = S[schemeKey], r = refKey ? S[refKey] : null;
+  // the reference pane is titled with the wordmark itself; rivals get name + note
+  const title = schemeKey === REF
+    ? `<span class="pt-mark"><span class="sand">sand</span><span class="storm">storm</span></span>`
+    : `<span class="pt-name">${s.label}</span> <span class="sub">${s.desc}</span>`;
+  let h = `<div class="pane-title">${title}</div>`;
+  h += '<div class="chips">';
+  CHIP_KEYS.forEach(k => {
+    const c = s[k]; if (!c) return;
+    const changed = r && r[k] && r[k].toLowerCase() !== c.toLowerCase();
+    h += `<div class="chip${changed?' chg':''}">`;
+    h += `<div class="sw" style="background:${c}${k==='bg'?';border-color:#666':''}"></div>`;
+    h += `<span class="cn" style="color:${k==='pl'?'#888':c}">${CHIP_LABELS[k]||k}</span>`;
+    h += `<span class="ch">${c}</span>`;
+    if (changed) {
+      h += `<span class="arr">&#x2190;</span>`;
+      h += `<div class="sw-was" style="background:${r[k]}"></div>`;
+      h += `<span class="was" style="color:${r[k]}">${r[k]}</span>`;
+    }
+    h += '</div>';
+  });
+  return h + '</div>';
+}
+
+function renderEditor(schemeKey, code) {
+  const s = S[schemeKey];
+  const d = typeof code === 'string' ? CODES[code] : code;   // key or dataset
+  let h = `<div class="editor"><div class="tb" style="background:${s.tb}">`;
+  h += `<span class="dot" style="background:#ff5f56"></span>`;
+  h += `<span class="dot" style="background:#ffbd2e"></span>`;
+  h += `<span class="dot" style="background:#27c93f"></span>&nbsp;${d.filename}</div>`;
+  h += `<pre class="code" style="background:${s.bg}">`;
+  d.lines.forEach((line, i) => {
+    const isHL = i === d.hl;
+    const lnColor = isHL ? (s.lnc || '#686868') : s.ln;
+    const bg = isHL ? `background:${s.hl};` : '';
+    h += `<span style="display:block;${bg}">`;
+    h += `<span class="ln" style="color:${lnColor}">${i+1}</span>`;
+    if (line) line.forEach(([tok, txt]) => {
+      h += `<span style="color:${s[tok]||s.pl}">${esc(txt)}</span>`;
+    });
+    h += '</span>';
+  });
+  return h + '</pre></div>';
+}
+
+// ── State ─────────────────────────────────────────────────────────────────
+const REF = 'sandstorm';
+const SCHEME_TABS = [
+  'vscode','dracula','gruvbox','nord','solarized','monokai','onedark',
+  'tokyonight','catppuccin','kanagawa','everforest','rosepine','ayu',
+  'zenburn','desert',
+];
+let activeScheme = 'vscode';
+let activeCode   = 'game';
+let mode         = 'none';   // default view is the hero snippet, no tab picked
+
+function buildSchemeTabs() {
+  document.getElementById('scheme-tabs').innerHTML = SCHEME_TABS.map(k =>
+    `<button class="tab-btn${k===activeScheme?' active':''}" onclick="setScheme('${k}')">${S[k].label}</button>`
+  ).join('');
+}
+
+function buildCodeTabs() {
+  document.getElementById('code-tabs').innerHTML =
+    Object.keys(CODES).map(k =>
+      `<button class="tab-btn${k===activeCode?' active':''}" onclick="setCode('${k}')">${CODES[k].label}</button>`
+    ).join('');
+}
+
+function renderCompare() {
+  document.getElementById('left-top').innerHTML     = renderMeta(REF, null);
+  document.getElementById('left-editor').innerHTML  = renderEditor(REF, activeCode);
+  document.getElementById('right-top').innerHTML    = renderMeta(activeScheme, REF);
+  document.getElementById('right-editor').innerHTML = renderEditor(activeScheme, activeCode);
+}
+
+// ── Revolver gallery ──────────────────────────────────────────────────────
+// Sandstorm in the hub, the 15 rivals as chambers on the ring. All tiles are
+// the same size and stay upright — only their position on the circle rotates,
+// so you read the colour vibe of each scheme against Sandstorm in the middle.
+// Ellipse sized so 15 chambers of tile-width sit shoulder to shoulder.
+const REV_W = 1100, REV_H = 720, REV_RX = 460, REV_RY = 290;
+
+// Equal ANGLE steps around an ellipse give uneven spacing (chambers bunch at
+// the ends of the major axis), so positions are distributed by equal ARC
+// LENGTH instead. Build the arc-length table once.
+const ARC = (() => {
+  const N = 1440, t = [], cum = [0];
+  for (let i = 0; i <= N; i++) t.push(i / N * 2 * Math.PI);
+  for (let i = 1; i <= N; i++) {
+    const x0 = REV_RX * Math.cos(t[i-1]), y0 = REV_RY * Math.sin(t[i-1]);
+    const x1 = REV_RX * Math.cos(t[i]),   y1 = REV_RY * Math.sin(t[i]);
+    cum.push(cum[i-1] + Math.hypot(x1 - x0, y1 - y0));
+  }
+  return { N, t, cum, total: cum[N] };
+})();
+
+// fraction of the perimeter (0..1, wrapping) -> {x, y} on the ellipse
+function pointAtFraction(f) {
+  f = ((f % 1) + 1) % 1;
+  const target = ARC.total * f;
+  let lo = 0, hi = ARC.N;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (ARC.cum[mid] < target) lo = mid + 1; else hi = mid; }
+  const a = ARC.t[lo];
+  return { x: REV_RX * Math.cos(a), y: REV_RY * Math.sin(a) };
+}
+const rev = { angle: 0, tiles: [], step: 0, dragging: false, lastA: 0 };
+
+// A dense slice of the sample — enough tokens to read the palette at 7px.
+function tileCode(schemeKey, codeKey, count = 11) {
+  const s = S[schemeKey], d = CODES[codeKey];
+  const start = Math.max(0, Math.min(d.hl - 5, d.lines.length - count));
+  let h = `<div class="tile-code" style="background:${s.bg}">`;
+  for (let i = start; i < Math.min(start + count, d.lines.length); i++) {
+    const line = d.lines[i], isHL = i === d.hl;
+    h += `<span style="display:block;${isHL ? `background:${s.hl};` : ''}">`;
+    h += `<span class="tln" style="color:${s.ln}">${i + 1}</span>`;
+    if (line) line.forEach(([tok, txt]) => {
+      h += `<span style="color:${s[tok] || s.pl}">${esc(txt)}</span>`;
+    });
+    h += `</span>`;
+  }
+  return h + '</div>';
+}
+
+function tileLabel(k) {
+  return k === REF
+    ? `<div class="tile-label"><span class="sand">sand</span><span class="storm">storm</span></div>`
+    : `<div class="tile-label">${S[k].label}</div>`;
+}
+
+function renderRevolver() {
+  rev.step = 360 / SCHEME_TABS.length;
+  let h = `<div class="rev-inner" id="rev-inner"><div class="rev-ring"></div>`;
+  h += `<div class="tile hub">${tileCode(REF, activeCode)}${tileLabel(REF)}</div>`;
+  // no inline onclick: the drag handler takes pointer capture, which retargets
+  // the click to the container, so the press is resolved on pointerup instead
+  h += SCHEME_TABS.map((k, i) =>
+    `<button class="tile orb" data-i="${i}" data-k="${k}" title="${S[k].label} — ${S[k].desc}"
+       >${tileCode(k, activeCode)}${tileLabel(k)}</button>`
+  ).join('');
+  h += `</div>`;
+  document.getElementById('gallery').innerHTML = h;
+  rev.tiles = [...document.querySelectorAll('#rev-inner .orb')];
+  layoutRevolver();
+}
+
+function layoutRevolver() {
+  const g = document.getElementById('gallery');
+  const inner = document.getElementById('rev-inner');
+  if (!inner) return;
+  // scale the whole rig so the composition survives any viewport
+  const availW = g.clientWidth - 12;
+  const availH = Math.max(360, innerHeight - 150);
+  const s = Math.min(1, availW / REV_W, availH / REV_H);
+  inner.style.setProperty('--s', s);
+  g.style.height = (REV_H * s) + 'px';
+
+  const n = rev.tiles.length;
+  const turn = rev.angle / 360;                        // spin, in perimeter turns
+  const active = ((Math.round(-turn * n) % n) + n) % n;
+  rev.tiles.forEach((t, i) => {
+    // -0.25 puts chamber 0 at 12 o'clock (ellipse param 0 is at 3 o'clock)
+    const p = pointAtFraction(i / n + turn - 0.25);
+    t.style.transform = `translate(${p.x}px, ${p.y}px)`;  // tiles stay upright
+    t.classList.toggle('at-top', i === active);
+  });
+}
+
+function spin(delta) { rev.angle += delta; layoutRevolver(); }
+
+(() => {
+  const g = document.getElementById('gallery');
+  g.addEventListener('wheel', e => {
+    if (mode !== 'gallery') return;
+    e.preventDefault();
+    spin(e.deltaY * 0.22);
+  }, { passive: false });
+
+  const angleAt = e => {
+    const r = g.getBoundingClientRect();
+    return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI;
+  };
+  g.addEventListener('pointerdown', e => {
+    if (mode !== 'gallery') return;
+    rev.dragging = true; rev.lastA = angleAt(e); rev.moved = 0;
+    rev.pressed = e.target.closest('.tile.orb');   // remember what was pressed
+    g.setPointerCapture(e.pointerId);
+  });
+  g.addEventListener('pointermove', e => {
+    if (!rev.dragging) return;
+    const a = angleAt(e);
+    let d = a - rev.lastA;
+    if (d > 180) d -= 360; if (d < -180) d += 360;
+    rev.lastA = a; rev.moved += Math.abs(d);
+    spin(d);
+  });
+  g.addEventListener('pointerup', () => {
+    // a press that barely moved is a click on that chamber
+    if (rev.dragging && rev.pressed && rev.moved < 4) {
+      pickFromGallery(rev.pressed.dataset.k);
+    }
+    rev.dragging = false; rev.pressed = null;
+  });
+  g.addEventListener('pointercancel', () => { rev.dragging = false; rev.pressed = null; });
+  addEventListener('resize', () => { if (mode === 'gallery') layoutRevolver(); });
+})();
+
+function applyMode() {
+  const b = document.body;
+  b.classList.toggle('picked',     mode !== 'none');
+  b.classList.toggle('m-compare',  mode === 'compare');
+  b.classList.toggle('m-gallery',  mode === 'gallery');
+  b.classList.toggle('m-get',      mode === 'get');
+  document.getElementById('btn-compare').classList.toggle('active', mode === 'compare');
+  document.getElementById('btn-gallery').classList.toggle('active', mode === 'gallery');
+  document.getElementById('btn-get').classList.toggle('active',     mode === 'get');
+  if (mode === 'gallery')      renderRevolver();
+  else if (mode === 'compare') renderCompare();
+  else if (mode === 'get')     renderGet();
+}
+
+// clicking the active tab returns to the default snippet view
+function setMode(m) { mode = (mode === m) ? 'none' : m; applyMode(); }
+function setScheme(k) { activeScheme = k; mode = 'compare'; buildSchemeTabs(); applyMode(); }
+function setCode(k)   { activeCode = k; buildCodeTabs(); applyMode(); }
+function pickFromGallery(k) {
+  if (!k || k === REF) return;
+  setScheme(k);
+  document.getElementById('compare').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ── Hex legend: one toggle drives both panes ──────────────────────────────
+let legendOn = false;
+function toggleLegend() {
+  legendOn = !legendOn;
+  document.body.classList.toggle('legend-on', legendOn);
+  paintLegendToggle();
+}
+function paintLegendToggle() {
+  document.getElementById('legend-toggle').innerHTML =
+    `<span class="caret">${legendOn ? '▾' : '▸'}</span>${legendOn ? 'hide' : 'show'} hex legend`;
+}
+
+// ── Get it: one card per editor ───────────────────────────────────────────
+const GET = [
+  {
+    name: 'Visual Studio 2022',
+    sub: 'with Visual Assist — the original build',
+    steps: [
+      'Download <code>sandstormVS.vssettings</code>.',
+      'In VS: <code>Tools ▸ Import and Export Settings…</code>',
+      'Pick <b>Import selected environment settings</b>, then <b>No, just import</b>.',
+      'Browse to the file and import <b>Fonts and Colors</b> only.',
+    ],
+    dl: [['sandstormVS.vssettings', 'sandstormVS.vssettings']],
+    note: 'Ships the full Visual Assist token map — VA Class, VA Method, VA Variable, '
+        + 'VA Enumerator — plus the warm current-line row.',
+  },
+  {
+    name: 'Visual Studio 2022',
+    sub: 'stock — no Visual Assist',
+    steps: [
+      'Turn on <code>Tools ▸ Options ▸ Text Editor ▸ C/C++ ▸ View ▸ Enable Enhanced Colorization</code>, then restart VS.',
+      'Download <code>sandstormVS-noVA.vssettings</code>.',
+      'Import it the same way as above.',
+    ],
+    dl: [['sandstormVS-noVA.vssettings', 'sandstormVS-noVA.vssettings']],
+    note: 'Rebuilds the palette on VS\'s own C++ classifier. The one thing it cannot '
+        + 'reproduce is the warm current-line row — that was VA\'s.',
+  },
+  {
+    name: 'VS Code',
+    sub: 'theme extension',
+    steps: [
+      'Download both files, keeping the folder shape <code>sandstorm-theme/package.json</code> and <code>sandstorm-theme/themes/…</code>.',
+      'Drop the folder into <code>%USERPROFILE%\\.vscode\\extensions\\</code>.',
+      'Restart VS Code, then <code>Ctrl+K Ctrl+T</code> ▸ <b>Sandstorm</b>.',
+    ],
+    dl: [
+      ['package.json', 'vscode-sandstorm/package.json'],
+      ['sandstorm-color-theme.json', 'vscode-sandstorm/themes/sandstorm-color-theme.json'],
+    ],
+    note: 'Full workbench theming plus semantic token colours, so classes, methods and '
+        + 'variables split the same way they do in VS.',
+  },
+  {
+    name: 'Vim / Neovim',
+    sub: 'where the family started',
+    steps: [
+      'Download <code>sandstorm.vim</code>.',
+      'Drop it in <code>~/.vim/colors/</code> — or <code>~/.config/nvim/colors/</code>.',
+      'Add <code>set termguicolors</code>, then <code>colorscheme sandstorm</code>.',
+    ],
+    dl: [['sandstorm.vim', 'sandstorm.vim']],
+    note: 'Closing the loop on desert.vim. Includes treesitter and LSP semantic-token '
+        + 'links for Neovim, and 256-colour fallbacks.',
+  },
+];
+
+function renderGet() {
+  document.getElementById('get').innerHTML =
+    '<div class="get-grid">' + GET.map(g => `
+      <div class="get-card">
+        <h3>${g.name}</h3>
+        <div class="gc-sub">${g.sub}</div>
+        <ol>${g.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+        <div class="note">${g.note}</div>
+        <div class="dl">${g.dl.map(([label, href]) =>
+          `<a href="${href}" download>↓ ${label}</a>`).join('')}</div>
+      </div>`).join('') + '</div>';
+}
+
+// ── Hero swatches ─────────────────────────────────────────────────────────
+function buildSwatches() {
+  const s = S[REF];
+  const keys = ['cl','mt','va','cm','st','nm','mc','en','uk','kw','ty','pp','sel','lnc','pl','bg'];
+  document.getElementById('hero-swatches').innerHTML = keys.map(k =>
+    `<span class="hs" style="background:${s[k]}" title="${CHIP_LABELS[k]} ${s[k]}"></span>`
+  ).join('');
+}
+
+// ── Easter egg: 7 clicks on the wordmark ──────────────────────────────────
+const EGG_URL = 'https://www.youtube.com/watch?v=y6120QOlsfU';
+let eggClicks = 0, eggTimer = null;
+document.getElementById('wordmark').addEventListener('click', () => {
+  eggClicks++;
+  clearTimeout(eggTimer);
+  eggTimer = setTimeout(() => { eggClicks = 0; setHint(''); }, 1600);
+  if (eggClicks >= 7) { setHint('🌪 here we go'); window.location.href = EGG_URL; return; }
+  if (eggClicks >= 3) setHint('· '.repeat(7 - eggClicks).trim());
+});
+function setHint(t) { document.getElementById('egg-hint').textContent = t; }
+
+// Michroma is a wide face, so size the mark from a measurement rather than a
+// fixed clamp: measure the word at a known size, then scale it to fill the hero.
+const MARK_MAX = 92, MARK_MIN = 15;
+function fitWordmark() {
+  const w = document.getElementById('wordmark');
+  const cs = getComputedStyle(w);
+  const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+            + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+  const avail = document.querySelector('.hero').clientWidth - 24 - pad;
+  // measure unconstrained: any width cap on the element would flatten the ratio
+  w.style.maxWidth = 'none';
+  w.style.fontSize = '100px';
+  const at100 = w.getBoundingClientRect().width - pad;
+  w.style.maxWidth = '';
+  if (at100 <= 0) { w.style.fontSize = ''; return; }
+  const fs = Math.max(MARK_MIN, Math.min(MARK_MAX, Math.floor(100 * avail / at100)));
+  w.style.fontSize = fs + 'px';
+}
+let fitTimer = null;
+addEventListener('resize', () => { clearTimeout(fitTimer); fitTimer = setTimeout(fitWordmark, 120); });
+document.fonts.ready.then(fitWordmark);
+
+// ── Init ──────────────────────────────────────────────────────────────────
+try {
+  buildSchemeTabs();
+  buildCodeTabs();
+  buildSwatches();
+  paintLegendToggle();
+  document.getElementById('hero-snippet').innerHTML = renderEditor(REF, SNIPPET);
+  applyMode();
+  fitWordmark();
+} catch (e) {
+  console.error(e);
+} finally {
+  document.body.classList.add('content-ready');
+}
+</script>
+</body>
+</html>

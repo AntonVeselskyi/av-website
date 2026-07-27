@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sandstorm — Visual Studio 2022, WITHOUT Visual Assist.
+
+  The main sandstormVS.vssettings leans on VA for the tokens VS cannot colour on
+  its own (class vs. method vs. variable). This variant drops every "VA *" item
+  and rebuilds the same look out of Visual Studio's own C++ semantic classifier.
+
+  REQUIRED for the C++ items below to do anything:
+      Tools > Options > Text Editor > C/C++ > View
+        - "Enable Enhanced Colorization"  ->  True
+      (restart VS after changing it)
+
+  Colours are Win32 COLORREF: 0x00BBGGRR — the bytes read BACK-TO-FRONT versus
+  the hex you'd write in CSS. #58a8e8 (sky blue) is written 0x00E8A858.
+
+  ONE THING THIS BUILD CANNOT REPRODUCE: the warm current-line row (#4a4038).
+  That was "VA Current Line", and stock VS has no equivalent filled-row item —
+  Text Editor > General > "Highlight current line" only draws a thin border.
+  Everything else carries over.
+-->
+<UserSettings>
+  <ApplicationIdentity version="17.0"/>
+  <ToolsOptions>
+    <ToolsOptionsCategory name="Environment" RegisteredName="Environment">
+      <ToolsOptionsSubCategory name="Environment_FontsAndColors"
+                               Category="{1EDA5DD4-927A-43a7-810E-7FD247D0DA1D}"
+                               Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}"
+                               RegisteredName="Environment_FontsAndColors"
+                               PackageName="Visual Studio Environment Package">
+        <PropertyValue name="Version">2</PropertyValue>
+        <FontsAndColors Version="2.0">
+          <Theme Id="{1DED0138-47CE-435E-84EF-9EC1F439B749}"/>
+          <Categories>
+            <Category GUID="{75A05685-00A8-4DED-BAE5-E7A50BFA929A}"
+                      FontName="Sarasa Mono J" FontSize="10" CharSet="1" FontIsDefault="No">
+              <Items>
+
+                <!-- ── Canvas ─────────────────────────────────────────────── -->
+                <!-- Plain Text: warm sand #d8d0c0 on #1e1e1e -->
+                <Item Name="Plain Text"             Foreground="0x00C0D0D8" Background="0x001E1E1E" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Selected Text: sand gold #c9a96e, black ink -->
+                <Item Name="Selected Text"          Foreground="0x00000000" Background="0x006EA9C9" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="Inactive Selected Text" Foreground="0x00000000" Background="0x008A9AAE" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Line Number: gold #907040 -->
+                <Item Name="Line Number"            Foreground="0x00407090" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+
+                <!-- ── Core syntax (identical to the VA build) ────────────── -->
+                <!-- Comment: pale lavender #b8a0d8 -->
+                <Item Name="Comment"                Foreground="0x00D8A0B8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- String / Character: warm terracotta #e07848 -->
+                <Item Name="String"                 Foreground="0x004878E0" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="Character"              Foreground="0x004878E0" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Number: green #88d878 -->
+                <Item Name="Number"                 Foreground="0x0078D888" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Keyword: sky blue #58a8e8 -->
+                <Item Name="Keyword"                Foreground="0x00E8A858" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Preprocessor: muted sand #989080 -->
+                <Item Name="Preprocessor Keyword"   Foreground="0x00809098" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- C/C++ User Keywords: orange-red #ff5800 -->
+                <Item Name="C/C++ User Keywords"    Foreground="0x000058FF" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Operator: plain, so punctuation stays quiet -->
+                <Item Name="Operator"               Foreground="0x00C0D0D8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+
+                <!-- ── User types: VS-native, no VA needed ────────────────── -->
+                <!-- User Types (struct/class/typedef): aqua #38dcc0 -->
+                <Item Name="User Types"                             Foreground="0x00C0DC38" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="User Types(Interfaces and Delegates)"   Foreground="0x00C0DC38" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="User Types(Value types)"                Foreground="0x00C0DC38" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Enum type names: amber #e8a038 -->
+                <Item Name="User Types(Enums)"                      Foreground="0x0038A0E8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Macro at call site: magenta-violet #d050f0 -->
+                <Item Name="User Defined Macro"                     Foreground="0x00F050D0" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+
+                <!-- ── C++ semantic classifier: the VA replacements ───────────
+                     These are what stand in for VA Class / VA Method / VA
+                     Variable / VA Enumerator. They only take effect with
+                     "Enable Enhanced Colorization" turned on (see header).    -->
+                <!-- Functions -> spring green #00ff7f (was VA Method) -->
+                <Item Name="C++ Functions"           Foreground="0x007FFF00" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Every flavour of variable -> yellow #f8dc68 (was VA Variable) -->
+                <Item Name="C++ Local Variables"     Foreground="0x0068DCF8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="C++ Parameters"          Foreground="0x0068DCF8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="C++ Member Fields"       Foreground="0x0068DCF8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="C++ Static Member Fields" Foreground="0x0068DCF8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <Item Name="C++ Global Variables"    Foreground="0x0068DCF8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Enumerators -> amber #e8a038 (was VA Enumerator) -->
+                <Item Name="C++ Enumerators"         Foreground="0x0038A0E8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Macros -> magenta-violet #d050f0 -->
+                <Item Name="C++ Macros"              Foreground="0x00F050D0" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Types / classes -> aqua #38dcc0 -->
+                <Item Name="C++ Types"               Foreground="0x00C0DC38" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+
+                <!-- ── Editor chrome that VA used to own ──────────────────── -->
+                <!-- Symbol under cursor: the VA Reference tint #2e281e -->
+                <Item Name="Highlighted Reference"          Foreground="0x02000000" Background="0x001E282E" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Matching brace -> spring green, bold (was VA Brace Matching) -->
+                <Item Name="Brace Matching (Rectangle)"     Foreground="0x007FFF00" Background="0x0038322A" BoldFont="Yes" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+              </Items>
+            </Category>
+
+            <!-- Printer / other editor windows: comment colour only -->
+            <Category GUID="{E0187991-B458-4F7E-8CA9-42C9A573B56C}"
+                      FontName="Sarasa Mono J" FontSize="10" CharSet="1" FontIsDefault="No">
+              <Items>
+                <Item Name="Comment" Foreground="0x00D8A0B8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+              </Items>
+            </Category>
+          </Categories>
+        </FontsAndColors>
+      </ToolsOptionsSubCategory>
+    </ToolsOptionsCategory>
+  </ToolsOptions>
+</UserSettings>
