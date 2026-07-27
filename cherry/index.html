@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#4c1327">
+<title>Washed Away Cherry 🌸🍒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Metal+Mania&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efd0d8;
+    --paper-hot: #f6e1e6;
+    --pink: #f08baa;
+    --blue: #6d8fa2;
+    --blue-light: #a9c0cc;
+    --white: #f8f2f3;
+    --grey: #b2a8ac;
+    --apple: #78a946;
+    --cherry: #7f1737;
+    --blood: #a82143;
+    --dark: #4c1327;
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--dark); }
+  body {
+    margin: 0;
+    min-width: 300px;
+    color: var(--white);
+    background:
+      radial-gradient(circle at 20% 3%, rgba(240,139,170,.16), transparent 26rem),
+      radial-gradient(circle at 83% 12%, rgba(109,143,162,.23), transparent 30rem),
+      var(--dark);
+    font-family: Anton, Impact, sans-serif;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    opacity: .16;
+    mix-blend-mode: screen;
+    background-image:
+      repeating-radial-gradient(circle at 10% 20%, transparent 0 1px, rgba(255,255,255,.2) 1px 2px),
+      repeating-linear-gradient(93deg, transparent 0 5px, rgba(255,255,255,.05) 5px 6px);
+    background-size: 7px 7px, 17px 17px;
+  }
+
+  .poster {
+    isolation: isolate;
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(40px, 7vw, 92px) 20px 78px;
+    border-bottom: 8px solid var(--pink);
+  }
+
+  .poster::before,
+  .poster::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    z-index: -4;
+    width: min(1160px, 96vw);
+    height: min(1160px, 96vw);
+    border: 2px solid rgba(248,242,243,.11);
+    border-radius: 50%;
+    transform: translateX(-50%);
+  }
+  .poster::before { top: -72%; }
+  .poster::after { bottom: -77%; }
+
+  .tree {
+    position: absolute;
+    z-index: -2;
+    width: clamp(330px, 38vw, 650px);
+    aspect-ratio: 349 / 417;
+    background: var(--white);
+    opacity: .93;
+    filter: drop-shadow(12px 10px 0 rgba(109,143,162,.7));
+    -webkit-mask: url("assets/tree.svg") center / contain no-repeat;
+    mask: url("assets/tree.svg") center / contain no-repeat;
+  }
+  .tree.hero-tree {
+    top: 3%;
+    left: 50%;
+    transform: translateX(-50%) scale(.72);
+    transform-origin: top center;
+    opacity: .24;
+  }
+  .tree.left-tree {
+    bottom: -19%;
+    left: -8%;
+    transform: rotate(8deg) scaleX(-1);
+    background:
+      radial-gradient(circle at 28% 18%, var(--white) 0 2.2%, transparent 2.7%),
+      radial-gradient(circle at 55% 25%, var(--pink) 0 2.4%, transparent 2.9%),
+      radial-gradient(circle at 70% 13%, var(--white) 0 1.8%, transparent 2.3%),
+      radial-gradient(circle at 38% 39%, var(--pink) 0 1.8%, transparent 2.3%),
+      var(--blue-light);
+    opacity: .47;
+  }
+  .tree.right-tree {
+    right: -7%;
+    bottom: -21%;
+    transform: rotate(-7deg);
+    background:
+      radial-gradient(circle at 25% 20%, var(--white) 0 2.2%, transparent 2.7%),
+      radial-gradient(circle at 52% 15%, var(--blue-light) 0 2.4%, transparent 2.9%),
+      radial-gradient(circle at 72% 31%, var(--white) 0 1.8%, transparent 2.3%),
+      radial-gradient(circle at 43% 41%, var(--blue-light) 0 1.8%, transparent 2.3%),
+      var(--pink);
+    opacity: .41;
+  }
+
+  .flame-field { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .flame {
+    position: absolute;
+    width: clamp(70px, 10vw, 155px);
+    aspect-ratio: 308 / 534;
+    background: var(--pink);
+    -webkit-mask: url("assets/flame.svg") center / contain no-repeat;
+    mask: url("assets/flame.svg") center / contain no-repeat;
+    transform-origin: 50% 85%;
+    filter: drop-shadow(5px 5px 0 rgba(248,242,243,.12));
+  }
+  .f1 { top: -3%; left: 5%; transform: rotate(-31deg); }
+  .f2 { top: 4%; left: 17%; background: var(--blue-light); transform: rotate(-12deg) scale(.73); }
+  .f3 { top: -5%; right: 17%; background: var(--blue); transform: rotate(15deg) scale(.85); }
+  .f4 { top: 1%; right: 4%; transform: rotate(31deg); }
+  .f5 { bottom: -11%; left: 3%; background: var(--blue); transform: rotate(11deg) scale(1.4); }
+  .f6 { bottom: -8%; left: 27%; transform: rotate(-14deg) scale(1.08); }
+  .f7 { bottom: -10%; right: 26%; background: var(--white); transform: rotate(15deg) scale(.86); opacity: .82; }
+  .f8 { bottom: -12%; right: 4%; background: var(--pink); transform: rotate(-9deg) scale(1.42); }
+
+  .petals { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .petal {
+    position: absolute;
+    width: 13px;
+    height: 19px;
+    border-radius: 82% 18% 72% 28%;
+    background: var(--pink);
+    transform: rotate(var(--r, 20deg));
+    box-shadow: 2px 2px 0 rgba(248,242,243,.22);
+  }
+  .petal:nth-child(2n) { background: var(--blue-light); }
+  .petal:nth-child(3n) { width: 9px; height: 14px; background: var(--white); opacity: .76; }
+  .p1 { left: 12%; top: 35%; --r: 22deg; }
+  .p2 { left: 24%; top: 14%; --r: -38deg; }
+  .p3 { left: 32%; top: 67%; --r: 71deg; }
+  .p4 { right: 14%; top: 28%; --r: -19deg; }
+  .p5 { right: 27%; top: 68%; --r: 42deg; }
+  .p6 { right: 36%; top: 16%; --r: -62deg; }
+  .p7 { left: 7%; top: 72%; --r: 85deg; }
+  .p8 { right: 6%; top: 60%; --r: 13deg; }
+
+  .masthead {
+    position: relative;
+    z-index: 2;
+    width: min(1050px, 95vw);
+    text-align: center;
+    transform: rotate(-.65deg);
+  }
+
+  .kicker {
+    margin-bottom: clamp(12px, 2vw, 24px);
+    color: var(--blue-light);
+    font: 18px/1 Anton, Impact, sans-serif;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    text-shadow: 3px 3px 0 var(--blood);
+  }
+
+  h1 { margin: 0; text-transform: uppercase; line-height: .74; }
+  .washed,
+  .away {
+    display: block;
+    font-family: "Metal Mania", Impact, fantasy;
+    font-weight: 400;
+    font-size: clamp(78px, 16vw, 235px);
+    letter-spacing: -.055em;
+    -webkit-text-stroke: clamp(1px, .2vw, 3px) var(--white);
+    paint-order: stroke fill;
+    filter: drop-shadow(10px 11px 0 var(--blue));
+  }
+  .washed { color: var(--pink); transform: skewX(-4deg) scaleX(1.05); }
+  .away {
+    color: var(--blue-light);
+    transform: translateX(-.04em) skewX(4deg) scaleX(.95);
+    filter: drop-shadow(-10px 11px 0 var(--pink));
+  }
+
+  .cherry-wrap {
+    position: relative;
+    display: inline-block;
+    margin-top: clamp(32px, 6vw, 76px);
+    padding: .08em .2em .12em;
+    color: var(--dark);
+    background: var(--white);
+    box-shadow: 12px 12px 0 var(--blue), -10px -9px 0 var(--pink);
+    font: clamp(70px, 13vw, 190px)/.8 Anton, Impact, sans-serif;
+    letter-spacing: -.035em;
+  }
+  .cherry-wrap::before,
+  .cherry-wrap::after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-51%) rotate(var(--tilt));
+    color: var(--white);
+    font: clamp(34px, 5vw, 75px)/1 sans-serif;
+    filter: drop-shadow(4px 4px 0 var(--blood));
+  }
+  .cherry-wrap::before { content: "🌸"; left: -.95em; --tilt: -14deg; }
+  .cherry-wrap::after { content: "🍒"; right: -.95em; --tilt: 12deg; }
+
+  .strap {
+    width: fit-content;
+    margin: clamp(24px, 4vw, 45px) auto 0;
+    padding: 7px 15px 8px;
+    color: var(--white);
+    background: var(--blood);
+    font: clamp(17px, 2.3vw, 29px)/1 Anton, Impact, sans-serif;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    box-shadow: 7px 7px 0 var(--blue);
+  }
+
+  .scheme {
+    position: relative;
+    padding: clamp(70px, 10vw, 130px) 22px 90px;
+    color: var(--dark);
+    background:
+      linear-gradient(rgba(255,255,255,.14) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168,33,67,.08) 1px, transparent 1px),
+      var(--paper);
+    background-size: 31px 31px;
+    overflow: hidden;
+  }
+  .scheme::before {
+    content: "";
+    position: absolute;
+    inset: auto -4% -160px auto;
+    width: 440px;
+    aspect-ratio: 349 / 417;
+    background: var(--blue);
+    opacity: .12;
+    transform: rotate(-13deg);
+    -webkit-mask: url("assets/tree.svg") center / contain no-repeat;
+    mask: url("assets/tree.svg") center / contain no-repeat;
+  }
+
+  .scheme-inner { position: relative; width: min(1180px, 100%); margin: 0 auto; }
+  .scheme-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 30px;
+    align-items: end;
+    margin-bottom: 27px;
+  }
+  .scheme-head .small {
+    margin: 0 0 8px;
+    color: var(--blood);
+    font: 15px/1 Anton, Impact, sans-serif;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+  .scheme h2 {
+    margin: 0;
+    max-width: 700px;
+    color: var(--dark);
+    font: clamp(54px, 8vw, 105px)/.82 "Metal Mania", Impact, fantasy;
+    text-transform: uppercase;
+    letter-spacing: -.035em;
+  }
+  .rule {
+    max-width: 250px;
+    padding: 12px 14px;
+    color: var(--white);
+    background: var(--blue);
+    font: 15px/1.2 Anton, Impact, sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    box-shadow: 7px 7px 0 var(--blood);
+  }
+
+  .palette {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr 1.55fr .85fr;
+    border: 3px solid var(--dark);
+    border-bottom: 0;
+  }
+  .swatch {
+    min-height: 76px;
+    padding: 13px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 2px solid var(--dark);
+    font: 12px/1 Anton, Impact, sans-serif;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+  .swatch:last-child { border-right: 0; }
+  .swatch b { font-weight: 400; letter-spacing: .15em; }
+  .canvas { color: var(--dark); background: var(--paper); }
+  .variable { color: var(--white); background: var(--blue); }
+  .function { color: var(--white); background: var(--apple); }
+  .syntax { color: var(--white); background: linear-gradient(90deg, var(--dark), var(--blood)); }
+  .comment-chip { color: var(--white); background: var(--grey); }
+
+  .editor {
+    overflow: hidden;
+    border: 3px solid var(--dark);
+    background: var(--paper);
+    box-shadow: 14px 14px 0 var(--blue), -8px 9px 0 var(--pink);
+  }
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 43px;
+    padding: 0 15px;
+    color: #986174;
+    background: var(--paper-hot);
+    border-bottom: 2px solid rgba(76,19,39,.18);
+    font: 12px/1 "Sarasa Mono J", "Cascadia Code", Consolas, monospace;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pink); }
+  .dot:nth-child(2) { background: var(--blue); }
+  .dot:nth-child(3) { background: var(--apple); }
+  .file { margin-left: 6px; }
+  .semantic { margin-left: auto; }
+
+  pre {
+    margin: 0;
+    padding: 19px 0 24px;
+    overflow-x: auto;
+    color: var(--dark);
+    font: 15px/1.67 "Sarasa Mono J", "Cascadia Code", Consolas, monospace;
+    tab-size: 4;
+  }
+  .line { display: block; min-width: max-content; padding-right: 22px; }
+  .line.hot { background: rgba(255,255,255,.3); box-shadow: inset 4px 0 var(--blood); }
+  .ln {
+    display: inline-block;
+    width: 43px;
+    margin-right: 18px;
+    color: #b7798a;
+    text-align: right;
+    user-select: none;
+  }
+  .hot .ln { color: var(--blood); }
+  .kw, .op, .punct { color: var(--cherry); }
+  .type, .class, .number, .string, .macro, .preproc { color: var(--blood); }
+  .type, .class { font-weight: 700; }
+  .var { color: var(--blue); }
+  .fn { color: var(--apple); font-weight: 700; }
+  .comment { color: var(--grey); font-style: italic; }
+
+  footer {
+    position: relative;
+    padding: 34px 20px 42px;
+    color: var(--blue-light);
+    background: var(--dark);
+    text-align: center;
+    font: 11px/1.65 system-ui, sans-serif;
+    letter-spacing: .04em;
+  }
+  footer strong { color: var(--white); font-weight: 600; }
+  footer a { color: var(--pink); text-decoration: underline; text-underline-offset: 3px; }
+
+  @media (max-width: 760px) {
+    .poster { min-height: 800px; padding-inline: 11px; }
+    .masthead { width: 100%; }
+    .washed, .away { font-size: clamp(58px, 18vw, 118px); }
+    .washed { transform: skewX(-4deg) scaleX(.9); }
+    .away { transform: translateX(-.02em) skewX(4deg) scaleX(.86); }
+    .cherry-wrap { margin-top: 54px; font-size: clamp(56px, 17vw, 108px); }
+    .cherry-wrap::before { left: -.55em; }
+    .cherry-wrap::after { right: -.55em; }
+    .tree.left-tree { left: -39%; bottom: -8%; }
+    .tree.right-tree { right: -40%; bottom: -11%; }
+    .f2, .f3, .f6, .f7 { display: none; }
+    .scheme { padding-inline: 12px; }
+    .scheme-head { grid-template-columns: 1fr; }
+    .rule { max-width: 100%; }
+    .palette { grid-template-columns: repeat(2, 1fr); }
+    .swatch { border-bottom: 2px solid var(--dark); }
+    .syntax { grid-column: span 2; }
+    pre { font-size: 12px; }
+    .ln { width: 30px; margin-right: 10px; }
+    .semantic { display: none; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .petal { animation: drift 6s ease-in-out infinite alternate; }
+    .petal:nth-child(2n) { animation-delay: -2.2s; animation-duration: 7.5s; }
+    @keyframes drift { to { translate: 12px 22px; rotate: 48deg; } }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section class="poster" aria-labelledby="title">
+    <div class="tree hero-tree" aria-hidden="true"></div>
+    <div class="tree left-tree" aria-hidden="true"></div>
+    <div class="tree right-tree" aria-hidden="true"></div>
+
+    <div class="flame-field" aria-hidden="true">
+      <i class="flame f1"></i><i class="flame f2"></i><i class="flame f3"></i><i class="flame f4"></i>
+      <i class="flame f5"></i><i class="flame f6"></i><i class="flame f7"></i><i class="flame f8"></i>
+    </div>
+    <div class="petals" aria-hidden="true">
+      <i class="petal p1"></i><i class="petal p2"></i><i class="petal p3"></i><i class="petal p4"></i>
+      <i class="petal p5"></i><i class="petal p6"></i><i class="petal p7"></i><i class="petal p8"></i>
+    </div>
+
+    <div class="masthead">
+      <div class="kicker">a minimal colorscheme</div>
+      <h1 id="title">
+        <span class="washed">Washed</span>
+        <span class="away">Away</span>
+        <span class="cherry-wrap">Cherry</span>
+      </h1>
+      <p class="strap">powder · poison · dark fruit</p>
+    </div>
+  </section>
+
+  <section class="scheme" aria-labelledby="scheme-title">
+    <div class="scheme-inner">
+      <header class="scheme-head">
+        <div>
+          <p class="small">Semantic color study / C++</p>
+          <h2 id="scheme-title">Three voices.<br>One wound.</h2>
+        </div>
+        <div class="rule">Variables hold data.<br>Functions make it move.<br>Cherry is the language.</div>
+      </header>
+
+      <div class="palette" aria-label="Washed Away Cherry palette">
+        <div class="swatch canvas"><b>Canvas</b><span>#EFD0D8</span></div>
+        <div class="swatch variable"><b>Variables</b><span>#6D8FA2</span></div>
+        <div class="swatch function"><b>Functions</b><span>#78A946</span></div>
+        <div class="swatch syntax"><b>All other syntax</b><span>#4C1327 → #A82143</span></div>
+        <div class="swatch comment-chip"><b>Comments</b><span>#B2A8AC</span></div>
+      </div>
+
+      <div class="editor" aria-label="C++ colorscheme preview">
+        <div class="titlebar">
+          <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+          <span class="file">APlayerCharacter.cpp</span>
+          <span class="semantic">C++ · semantic preview</span>
+        </div>
+        <pre><span class="line"><span class="ln">1</span><span class="preproc">#include</span> <span class="string">"APlayerCharacter.h"</span></span>
+<span class="line"><span class="ln">2</span><span class="preproc">#include</span> <span class="string">"MovementComponent.h"</span></span>
+<span class="line"><span class="ln">3</span></span>
+<span class="line"><span class="ln">4</span><span class="comment">// Called by the movement component after a hard landing</span></span>
+<span class="line"><span class="ln">5</span><span class="type">void</span> <span class="class">APlayerCharacter</span><span class="punct">::</span><span class="fn">OnLanded</span><span class="punct">(</span><span class="kw">const</span> <span class="class">FHitResult</span><span class="op">&amp;</span> <span class="var">Hit</span><span class="punct">)</span></span>
+<span class="line"><span class="ln">6</span><span class="punct">{</span></span>
+<span class="line hot"><span class="ln">7</span>    <span class="kw">const</span> <span class="type">float</span> <span class="var">FallSpeed</span> <span class="op">=</span> <span class="fn">GetVelocity</span><span class="punct">()</span><span class="op">.</span><span class="var">Z</span><span class="punct">;</span></span>
+<span class="line"><span class="ln">8</span>    <span class="macro">UE_LOG</span><span class="punct">(</span><span class="var">LogPlayer</span><span class="punct">,</span> <span class="kw">Verbose</span><span class="punct">,</span> <span class="string">"Landed speed=%.1f"</span><span class="punct">,</span> <span class="var">FallSpeed</span><span class="punct">);</span></span>
+<span class="line"><span class="ln">9</span></span>
+<span class="line"><span class="ln">10</span>    <span class="kw">if</span> <span class="punct">(</span><span class="var">FallSpeed</span> <span class="op">&lt;</span> <span class="number">-1200.f</span><span class="punct">)</span></span>
+<span class="line"><span class="ln">11</span>    <span class="punct">{</span></span>
+<span class="line"><span class="ln">12</span>        <span class="fn">ApplyFallDamage</span><span class="punct">(</span><span class="var">FallSpeed</span><span class="punct">);</span></span>
+<span class="line"><span class="ln">13</span>        <span class="kw">return</span><span class="punct">;</span></span>
+<span class="line"><span class="ln">14</span>    <span class="punct">}</span></span>
+<span class="line"><span class="ln">15</span></span>
+<span class="line"><span class="ln">16</span>    <span class="fn">PlayLandMontage</span><span class="punct">();</span></span>
+<span class="line"><span class="ln">17</span><span class="punct">}</span></span>
+<span class="line"><span class="ln">18</span></span>
+<span class="line"><span class="ln">19</span><span class="type">void</span> <span class="class">APlayerCharacter</span><span class="punct">::</span><span class="fn">ApplyFallDamage</span><span class="punct">(</span><span class="type">float</span> <span class="var">Speed</span><span class="punct">)</span></span>
+<span class="line"><span class="ln">20</span><span class="punct">{</span></span>
+<span class="line"><span class="ln">21</span>    <span class="kw">constexpr</span> <span class="type">float</span> <span class="var">DamageScale</span> <span class="op">=</span> <span class="number">0.04f</span><span class="punct">;</span></span>
+<span class="line"><span class="ln">22</span>    <span class="kw">const</span> <span class="type">float</span> <span class="var">Damage</span> <span class="op">=</span> <span class="class">FMath</span><span class="punct">::</span><span class="fn">Abs</span><span class="punct">(</span><span class="var">Speed</span><span class="punct">)</span> <span class="op">*</span> <span class="var">DamageScale</span><span class="punct">;</span></span>
+<span class="line"><span class="ln">23</span>    <span class="fn">TakeDamage</span><span class="punct">(</span><span class="var">Damage</span><span class="punct">,</span> <span class="class">FDamageEvent</span><span class="punct">(),</span> <span class="kw">nullptr</span><span class="punct">,</span> <span class="kw">this</span><span class="punct">);</span></span>
+<span class="line"><span class="ln">24</span><span class="punct">}</span></span></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <strong>Washed Away Cherry 🌸🍒</strong><br>
+  Tree silhouette: public domain, Amada44 · Flame: Jacqueline Fernandes,
+  <a href="https://creativecommons.org/licenses/by/3.0/" rel="license">CC BY 3.0</a> ·
+  Display faces: Metal Mania and Anton via Google Fonts
+</footer>
+</body>
+</html>
