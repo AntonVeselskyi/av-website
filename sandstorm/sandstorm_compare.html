@@ -313,20 +313,22 @@ body.m-gallery #gallery { display:block; position:relative; overflow:hidden; tou
   border:1px solid #262626; border-radius:5px;
   background:#141414; padding:0; overflow:hidden;
   font:inherit; cursor:pointer; display:block;
+  transform-origin:center;
   transition: border-color .25s ease, opacity .25s ease, box-shadow .25s ease;
   opacity:.62;
 }
 .tile.hub {
   cursor:default; opacity:1; z-index:5;
+  transform:scale(1.7);
   border-color:rgba(232,160,56,.55);
   box-shadow:0 0 0 1px rgba(232,160,56,.18), 0 0 46px -8px rgba(232,160,56,.32);
 }
-.tile.at-top { opacity:1; border-color:#4a4038; box-shadow:0 0 28px -8px rgba(0,0,0,.9); }
+.tile.at-top { opacity:1; z-index:4; border-color:#4a4038; box-shadow:0 0 28px -8px rgba(0,0,0,.9); }
 .tile.orb:hover { opacity:1; border-color:var(--sand); }
 
 .tile-code {
   height:94px; overflow:hidden; padding:6px 0 0;
-  font-size:7.7px; line-height:1.5; white-space:pre;
+  font-size:7.7px; line-height:1.5; white-space:pre; text-align:left;
 }
 .tile-code .tln { display:inline-block; width:14px; text-align:right; margin-right:6px; }
 .tile-label {
@@ -899,7 +901,9 @@ const rev = { angle: 0, tiles: [], step: 0, dragging: false, lastA: 0 };
 // A dense slice of the sample — enough tokens to read the palette at 7px.
 function tileCode(schemeKey, codeKey, count = 11) {
   const s = S[schemeKey], d = CODES[codeKey];
-  const start = Math.max(0, Math.min(d.hl - 5, d.lines.length - count));
+  // Three rows of context put the Game C++ slice at line 18, skipping the
+  // closing brace and blank row that previously wasted the top of every tile.
+  const start = Math.max(0, Math.min(d.hl - 3, d.lines.length - count));
   let h = `<div class="tile-code" style="background:${s.bg}">`;
   for (let i = start; i < Math.min(start + count, d.lines.length); i++) {
     const line = d.lines[i], isHL = i === d.hl;
@@ -952,7 +956,11 @@ function layoutRevolver() {
   rev.tiles.forEach((t, i) => {
     // -0.25 puts chamber 0 at 12 o'clock (ellipse param 0 is at 3 o'clock)
     const p = pointAtFraction(i / n + turn - 0.25);
-    t.style.transform = `translate(${p.x}px, ${p.y}px)`;  // tiles stay upright
+    // The focused 1.7x chamber moves slightly inward so its enlarged top edge
+    // remains inside the clipped gallery viewport.
+    const focusInset = i === active ? 46 : 0;
+    const focusScale = i === active ? 1.7 : 1;
+    t.style.transform = `translate(${p.x}px, ${p.y + focusInset}px) scale(${focusScale})`;  // tiles stay upright
     t.classList.toggle('at-top', i === active);
   });
 }
