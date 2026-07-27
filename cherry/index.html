@@ -25,6 +25,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { background: var(--dark); }
   body {
     margin: 0;
@@ -55,11 +56,12 @@
   .poster {
     isolation: isolate;
     position: relative;
-    min-height: 100svh;
+    height: 100svh;
+    min-height: 0;
     display: grid;
     place-items: center;
     overflow: hidden;
-    padding: clamp(40px, 7vw, 92px) 20px 78px;
+    padding: clamp(18px, 5vh, 72px) 20px clamp(24px, 6vh, 78px);
     border-bottom: 8px solid var(--pink);
   }
 
@@ -165,7 +167,8 @@
   .masthead {
     position: relative;
     z-index: 2;
-    width: min(1050px, 95vw);
+    width: min(1050px, calc(100vw - 28px));
+    max-height: calc(100svh - 34px);
     text-align: center;
     transform: rotate(-.65deg);
   }
@@ -185,7 +188,7 @@
     display: block;
     font-family: "Metal Mania", Impact, fantasy;
     font-weight: 400;
-    font-size: clamp(78px, 16vw, 235px);
+    font-size: clamp(62px, min(16vw, 20vh), 235px);
     letter-spacing: -.055em;
     -webkit-text-stroke: clamp(1px, .2vw, 3px) var(--white);
     paint-order: stroke fill;
@@ -201,12 +204,12 @@
   .cherry-wrap {
     position: relative;
     display: inline-block;
-    margin-top: clamp(32px, 6vw, 76px);
+    margin-top: clamp(18px, min(6vw, 5vh), 76px);
     padding: .08em .2em .12em;
     color: var(--dark);
     background: var(--white);
     box-shadow: 12px 12px 0 var(--blue), -10px -9px 0 var(--pink);
-    font: clamp(70px, 13vw, 190px)/.8 Anton, Impact, sans-serif;
+    font: clamp(58px, min(13vw, 18vh), 190px)/.8 Anton, Impact, sans-serif;
     letter-spacing: -.035em;
   }
   .cherry-wrap::before,
@@ -223,7 +226,7 @@
 
   .strap {
     width: fit-content;
-    margin: clamp(24px, 4vw, 45px) auto 0;
+    margin: clamp(16px, min(4vw, 4vh), 45px) auto 0;
     padding: 7px 15px 8px;
     color: var(--white);
     background: var(--blood);
@@ -235,6 +238,8 @@
 
   .scheme {
     position: relative;
+    min-height: 100svh;
+    scroll-margin-top: 0;
     padding: clamp(70px, 10vw, 130px) 22px 90px;
     color: var(--dark);
     background:
@@ -344,10 +349,10 @@
     padding: 19px 0 24px;
     overflow-x: auto;
     color: var(--dark);
-    font: 15px/1.67 "Sarasa Mono J", "Cascadia Code", Consolas, monospace;
+    font: 15px/1.5 "Sarasa Mono J", "Cascadia Code", Consolas, monospace;
     tab-size: 4;
   }
-  .line { display: block; min-width: max-content; padding-right: 22px; }
+  .line { display: block; min-width: max-content; padding-right: 22px; line-height: inherit; }
   .line.hot { background: rgba(255,255,255,.3); box-shadow: inset 4px 0 var(--blood); }
   .ln {
     display: inline-block;
@@ -358,12 +363,44 @@
     user-select: none;
   }
   .hot .ln { color: var(--blood); }
-  .kw, .op, .punct { color: var(--cherry); }
+  .kw, .op, .punct, .plain { color: var(--cherry); }
   .type, .class, .number, .string, .macro, .preproc { color: var(--blood); }
+  .syntax-token { color: var(--dark); }
   .type, .class { font-weight: 700; }
   .var { color: var(--blue); }
   .fn { color: var(--apple); font-weight: 700; }
   .comment { color: var(--grey); font-style: italic; }
+
+  .code-tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    background: var(--dark);
+    border-top: 3px solid var(--dark);
+  }
+  .code-tabs button {
+    flex: 1 0 auto;
+    min-width: 132px;
+    margin: 0;
+    padding: 12px 15px 13px;
+    border: 0;
+    border-right: 2px solid rgba(248,242,243,.2);
+    color: var(--blue-light);
+    background: var(--dark);
+    font: 14px/1 Anton, Impact, sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .code-tabs button:last-child { border-right: 0; }
+  .code-tabs button:hover { color: var(--white); background: var(--cherry); }
+  .code-tabs button.active {
+    color: var(--dark);
+    background: var(--pink);
+    box-shadow: inset 0 -5px 0 var(--blue);
+  }
+  .code-tabs button:focus-visible { outline: 3px solid var(--white); outline-offset: -5px; }
 
   footer {
     position: relative;
@@ -378,12 +415,13 @@
   footer a { color: var(--pink); text-decoration: underline; text-underline-offset: 3px; }
 
   @media (max-width: 760px) {
-    .poster { min-height: 800px; padding-inline: 11px; }
+    .poster { height: 100svh; min-height: 0; padding: 14px 11px 22px; }
     .masthead { width: 100%; }
-    .washed, .away { font-size: clamp(58px, 18vw, 118px); }
+    .kicker { font-size: 13px; letter-spacing: .18em; white-space: nowrap; }
+    .washed, .away { font-size: clamp(48px, min(18vw, 15vh), 118px); }
     .washed { transform: skewX(-4deg) scaleX(.9); }
     .away { transform: translateX(-.02em) skewX(4deg) scaleX(.86); }
-    .cherry-wrap { margin-top: 54px; font-size: clamp(56px, 17vw, 108px); }
+    .cherry-wrap { margin-top: clamp(22px, 5vh, 54px); font-size: clamp(48px, min(17vw, 13vh), 108px); }
     .cherry-wrap::before { left: -.55em; }
     .cherry-wrap::after { right: -.55em; }
     .tree.left-tree { left: -39%; bottom: -8%; }
@@ -398,6 +436,14 @@
     pre { font-size: 12px; }
     .ln { width: 30px; margin-right: 10px; }
     .semantic { display: none; }
+    .code-tabs button { min-width: 112px; padding: 11px 12px 12px; font-size: 12px; }
+  }
+
+  @media (max-height: 620px) {
+    .kicker { margin-bottom: 7px; font-size: 12px; }
+    .washed, .away { font-size: clamp(46px, min(15vw, 18vh), 120px); }
+    .cherry-wrap { margin-top: 14px; font-size: clamp(44px, min(12vw, 16vh), 98px); }
+    .strap { margin-top: 12px; font-size: clamp(13px, 2vw, 20px); }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -434,7 +480,7 @@
     </div>
   </section>
 
-  <section class="scheme" aria-labelledby="scheme-title">
+  <section class="scheme" id="preview" aria-labelledby="scheme-title">
     <div class="scheme-inner">
       <header class="scheme-head">
         <div>
@@ -455,33 +501,11 @@
       <div class="editor" aria-label="C++ colorscheme preview">
         <div class="titlebar">
           <i class="dot"></i><i class="dot"></i><i class="dot"></i>
-          <span class="file">APlayerCharacter.cpp</span>
-          <span class="semantic">C++ · semantic preview</span>
+          <span class="file" id="sample-file"></span>
+          <span class="semantic" id="sample-name"></span>
         </div>
-        <pre><span class="line"><span class="ln">1</span><span class="preproc">#include</span> <span class="string">"APlayerCharacter.h"</span></span>
-<span class="line"><span class="ln">2</span><span class="preproc">#include</span> <span class="string">"MovementComponent.h"</span></span>
-<span class="line"><span class="ln">3</span></span>
-<span class="line"><span class="ln">4</span><span class="comment">// Called by the movement component after a hard landing</span></span>
-<span class="line"><span class="ln">5</span><span class="type">void</span> <span class="class">APlayerCharacter</span><span class="punct">::</span><span class="fn">OnLanded</span><span class="punct">(</span><span class="kw">const</span> <span class="class">FHitResult</span><span class="op">&amp;</span> <span class="var">Hit</span><span class="punct">)</span></span>
-<span class="line"><span class="ln">6</span><span class="punct">{</span></span>
-<span class="line hot"><span class="ln">7</span>    <span class="kw">const</span> <span class="type">float</span> <span class="var">FallSpeed</span> <span class="op">=</span> <span class="fn">GetVelocity</span><span class="punct">()</span><span class="op">.</span><span class="var">Z</span><span class="punct">;</span></span>
-<span class="line"><span class="ln">8</span>    <span class="macro">UE_LOG</span><span class="punct">(</span><span class="var">LogPlayer</span><span class="punct">,</span> <span class="kw">Verbose</span><span class="punct">,</span> <span class="string">"Landed speed=%.1f"</span><span class="punct">,</span> <span class="var">FallSpeed</span><span class="punct">);</span></span>
-<span class="line"><span class="ln">9</span></span>
-<span class="line"><span class="ln">10</span>    <span class="kw">if</span> <span class="punct">(</span><span class="var">FallSpeed</span> <span class="op">&lt;</span> <span class="number">-1200.f</span><span class="punct">)</span></span>
-<span class="line"><span class="ln">11</span>    <span class="punct">{</span></span>
-<span class="line"><span class="ln">12</span>        <span class="fn">ApplyFallDamage</span><span class="punct">(</span><span class="var">FallSpeed</span><span class="punct">);</span></span>
-<span class="line"><span class="ln">13</span>        <span class="kw">return</span><span class="punct">;</span></span>
-<span class="line"><span class="ln">14</span>    <span class="punct">}</span></span>
-<span class="line"><span class="ln">15</span></span>
-<span class="line"><span class="ln">16</span>    <span class="fn">PlayLandMontage</span><span class="punct">();</span></span>
-<span class="line"><span class="ln">17</span><span class="punct">}</span></span>
-<span class="line"><span class="ln">18</span></span>
-<span class="line"><span class="ln">19</span><span class="type">void</span> <span class="class">APlayerCharacter</span><span class="punct">::</span><span class="fn">ApplyFallDamage</span><span class="punct">(</span><span class="type">float</span> <span class="var">Speed</span><span class="punct">)</span></span>
-<span class="line"><span class="ln">20</span><span class="punct">{</span></span>
-<span class="line"><span class="ln">21</span>    <span class="kw">constexpr</span> <span class="type">float</span> <span class="var">DamageScale</span> <span class="op">=</span> <span class="number">0.04f</span><span class="punct">;</span></span>
-<span class="line"><span class="ln">22</span>    <span class="kw">const</span> <span class="type">float</span> <span class="var">Damage</span> <span class="op">=</span> <span class="class">FMath</span><span class="punct">::</span><span class="fn">Abs</span><span class="punct">(</span><span class="var">Speed</span><span class="punct">)</span> <span class="op">*</span> <span class="var">DamageScale</span><span class="punct">;</span></span>
-<span class="line"><span class="ln">23</span>    <span class="fn">TakeDamage</span><span class="punct">(</span><span class="var">Damage</span><span class="punct">,</span> <span class="class">FDamageEvent</span><span class="punct">(),</span> <span class="kw">nullptr</span><span class="punct">,</span> <span class="kw">this</span><span class="punct">);</span></span>
-<span class="line"><span class="ln">24</span><span class="punct">}</span></span></pre>
+        <pre id="code-view" aria-live="polite"></pre>
+        <div class="code-tabs" id="code-tabs" role="tablist" aria-label="Code samples"></div>
       </div>
     </div>
   </section>
@@ -493,5 +517,6 @@
   <a href="https://creativecommons.org/licenses/by/3.0/" rel="license">CC BY 3.0</a> ·
   Display faces: Metal Mania and Anton via Google Fonts
 </footer>
+<script src="examples.js"></script>
 </body>
 </html>
