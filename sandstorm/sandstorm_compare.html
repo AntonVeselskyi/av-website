@@ -97,7 +97,15 @@ body.content-ready .av-monogram { opacity: 1; visibility: visible; }
   line-height: 1.65;
   color: #6a6a6a;
 }
-.tagline b { color: #9a8f7c; font-weight: normal; }
+.tagline-link {
+  color:#9a8f7c;
+  text-decoration:underline;
+  text-decoration-color:#5a4a30;
+  text-underline-offset:3px;
+  cursor:pointer;
+}
+.tagline-link:hover { color:var(--sand); text-decoration-color:var(--sand); }
+.tagline-link:focus-visible { outline:1px solid var(--sand); outline-offset:3px; }
 
 .hero-swatches { display:flex; justify-content:center; flex-wrap:wrap; gap:5px; margin-top:16px; }
 .hero-swatches .hs {
@@ -407,7 +415,7 @@ body.m-compare #code-bar, body.m-gallery #code-bar { display: flex; }
 
   <h1 class="wordmark" id="wordmark" title="Sandstorm"><span class="sand">sand</span><span class="storm">storm</span></h1>
 
-  <p class="tagline">Colorscheme inspired by <b>desert.vim</b></p>
+  <p class="tagline">Colorscheme inspired by <a class="tagline-link" href="#compare" onclick="setScheme('desert')">desert.vim</a></p>
 
   <div class="hero-swatches" id="hero-swatches"></div>
 
