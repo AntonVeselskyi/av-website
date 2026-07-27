@@ -28,8 +28,8 @@ from that array — you never touch the HTML/CSS, just add an object.
 | `supports` | ✅ | array of support-act objects (`[]` if none) — same shape, see §6 |
 | `logoInvert` | optional | `true` if the logo art is dark and needs inverting on the cream page |
 | `nameStyle` | optional | `"serif"` \| `"cond"` \| `"didone"` — font style for the **name banner** when there's no logo |
-| `setlistSpotify` | optional | `{ "Song": "spotifyTrackId" }` — makes each song a playable Spotify link |
-| `setlistYTMusic` | optional | `{ "Song": "youtubeVideoId" }` — playable YouTube links |
+| `setlistSpotify` | **see §3.5** | `{ "Song": "spotifyTrackId" }` — per-song Spotify link icon |
+| `setlistYTMusic` | **see §3.5** | `{ "Song": "youtubeVideoId" }` — **required for clickable songs + the playlist buttons** |
 
 ## 3. Spotify embed
 Spotify → the artist (or album/playlist/track) → **Share → Embed → Copy** the
@@ -41,6 +41,38 @@ The middle chunk is the artist ID. **Verify the ID is the right artist** (a wron
 ID silently embeds the wrong band). Fastest check: open
 `https://open.spotify.com/artist/<ID>` and confirm the name. `artist/`,
 `album/`, `playlist/`, and `track/` embeds all work.
+
+## 3.5 ⚠️ Per-song IDs — don't skip these
+A bare `setlist` of strings renders as **plain, dead text**: songs aren't
+clickable, and the **"Play setlist" / "Open on YouTube" buttons don't appear at
+all.** Those come *only* from **`setlistYTMusic`**:
+
+- `setlistYTMusic` → makes each song `.playable` (click = plays in the inline
+  player) **and** creates both playlist buttons. The "Open on YouTube" link is
+  built as `watch_videos?video_ids=…` from these IDs, in setlist order.
+- `setlistSpotify` → adds the per-song Spotify icon linking to that exact track.
+
+**The map keys must match the `setlist` strings character-for-character** (same
+apostrophes, capitalisation, punctuation) or that song silently stays dead.
+
+Getting the IDs:
+- **YouTube:** web-search `Artist "Song" official audio youtube.com/watch` and
+  take the 11-char `v=` value. Prefer the artist's official audio/video; avoid
+  live/remix/lyric re-uploads unless that's what you want.
+- **Spotify:** `kworb.net/spotify/artist/<artistId>_songs.html` lists a whole
+  artist's tracks with IDs in one page — much faster than one-by-one.
+
+A song with no ID still renders fine (it just falls back to a YouTube *search*
+link and isn't part of the inline playlist), so partial coverage is OK — e.g.
+unreleased live jams that have no official upload.
+
+Quick self-check in the browser console after adding:
+```js
+const b = concerts.find(c => c.id === 'your-id');           // or a supports[n]
+const set = new Set(b.setlist);
+Object.keys(b.setlistYTMusic).filter(k => !set.has(k));      // [] = no typos
+b.setlist.filter(s => !b.setlistYTMusic[s]);                 // songs left dead
+```
 
 ## 4. Logos
 - **Preferred:** drop a file in `concerts/pics/logos/` (svg or png) and set
