@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Michroma&display=swap" rel="stylesheet">
 <style>
+@font-face {
+  font-family:'Sarasa Preview';
+  src:local('Sarasa Mono J');
+  font-display:swap;
+}
 :root {
   --sand:  #e8a038;
   --sand2: #f8dc68;
@@ -166,6 +171,30 @@ body.m-get #get { display:block; }
 .font-toggle input:checked + .toggle-track { background:#1d3344; border-color:#64b0ec; }
 .font-toggle input:checked + .toggle-track::after { transform:translateX(14px); background:#64b0ec; }
 .font-toggle input:focus-visible + .toggle-track { outline:2px solid #c9a96e; outline-offset:2px; }
+.font-preview {
+  margin:2px 0 11px; border:1px solid #292929; border-radius:5px;
+  overflow:hidden; background:#111;
+}
+.font-preview-head {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:7px 9px; border-bottom:1px solid #242424; background:#181818;
+}
+.font-preview-title { color:#c9a96e; font-size:11px; letter-spacing:.08em; }
+.font-preview-title b { color:#d8d0c0; font-weight:normal; letter-spacing:.02em; }
+.font-preview-link { color:#64b0ec; font-size:10.5px; text-decoration:none; white-space:nowrap; }
+.font-preview-link:hover { color:#8bc8f4; text-decoration:underline; }
+.font-preview-code {
+  padding:10px 9px 5px; color:#d8d0c0; white-space:nowrap; overflow:hidden;
+  font:13px/1.45 'Sarasa Preview', 'Sarasa Mono J', ui-monospace, monospace;
+}
+.font-preview-glyphs {
+  padding:0 9px 9px; color:#68625a; letter-spacing:.04em;
+  font:11.5px/1.4 'Sarasa Preview', 'Sarasa Mono J', ui-monospace, monospace;
+}
+.fp-bi { color:#64b0ec; }
+.fp-cl { color:#ff7060; }
+.fp-mt { color:#00ff7f; }
+.fp-va { color:#f8dc68; }
 
 /* scheme picker — same treatment the font picker had */
 .compare-with { display:none; margin-top:22px; padding-top:16px; border-top:1px solid #1d1d1d; }
@@ -1068,6 +1097,14 @@ function renderGet() {
         <h3>${g.name}</h3>
         <div class="gc-sub">${g.sub}</div>
         <ol>${g.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+        ${g.preserveFont ? `<div class="font-preview">
+          <div class="font-preview-head">
+            <span class="font-preview-title">FONT&nbsp; <b>Sarasa Mono J · 10 pt</b></span>
+            <a class="font-preview-link" href="https://picaq.github.io/sarasa/" target="_blank" rel="noopener">original font site &#8599;</a>
+          </div>
+          <div class="font-preview-code"><span class="fp-bi">bool</span> <span class="fp-cl">Storm</span>::<span class="fp-mt">Sweep</span>(<span class="fp-bi">float</span> <span class="fp-va">distance</span>);</div>
+          <div class="font-preview-glyphs">Aa Bb 0O 1lI &#123;&#125; [] -&gt; != ::</div>
+        </div>` : ''}
         <div class="note">${g.note}</div>
         ${g.preserveFont ? `<label class="font-toggle">
           <input class="keep-font-input" type="checkbox" checked>
