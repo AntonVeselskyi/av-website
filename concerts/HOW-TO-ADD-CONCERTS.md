@@ -24,7 +24,7 @@ from that array — you never touch the HTML/CSS, just add an object.
 | `photos` | ✅ | array of image paths (start `[]`; see §5) |
 | `logo` | ✅ | `"pics/logos/name.png"` **or** `""` (empty → styled name banner, see §4) |
 | `spotifyEmbed` | ✅ | embed URL, `""` if none (see §3) |
-| `notes` | ✅ | freeform, e.g. `"w. Djo. Tour · 8:50–10:55 PM set. Photos to come!"` |
+| `notes` | ✅ | freeform, e.g. `"w. Djo. Tour · 8:50–10:55 PM set."` |
 | `supports` | ✅ | array of support-act objects (`[]` if none) — same shape, see §6 |
 | `logoInvert` | optional | `true` if the logo art is dark and needs inverting on the cream page |
 | `nameStyle` | optional | `"serif"` \| `"cond"` \| `"didone"` — font style for the **name banner** when there's no logo |
@@ -84,7 +84,7 @@ b.setlist.filter(s => !b.setlistYTMusic[s]);                 // songs left dead
   - `"serif"` — elegant serif
   - `"didone"` — high-contrast Didone
   - omit for the plain default
-  (Tame Impala uses `cond`, Djo uses `serif` — neither has a logo file.)
+  (Tame Impala uses its official stacked logo; Djo uses `serif`.)
 
 ## 5. Photos
 Start with `"photos": []`. When you have shots, drop them in `concerts/pics/`
@@ -130,7 +130,7 @@ same page.
   "logo": "",
   "nameStyle": "cond",
   "spotifyEmbed": "https://open.spotify.com/embed/artist/XXXX?utm_source=generator",
-  "notes": "w. Opener. Tour · 8:00–10:00 PM set. Photos to come!",
+  "notes": "w. Opener. Tour · 8:00–10:00 PM set.",
   "supports": [
     {
       "artist": "Opener",
