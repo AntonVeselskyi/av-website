@@ -24,8 +24,8 @@
                 <Item Name="String"             Foreground="0x004878E0" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Number -->
                 <Item Name="Number"             Foreground="0x0078D888" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
-                <!-- Keyword: sky blue -->
-                <Item Name="Keyword"            Foreground="0x00E8A858" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Keyword: deeper storm blue #4c9cdc -->
+                <Item Name="Keyword"            Foreground="0x00DC9C4C" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- C++ built-in types: lighter sky blue #64b0ec, separated from functions -->
                 <Item Name="C++ Types"          Foreground="0x00ECB064" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Preprocessor: muted sand -->

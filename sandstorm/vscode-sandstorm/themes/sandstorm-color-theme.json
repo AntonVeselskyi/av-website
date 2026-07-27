@@ -133,9 +133,9 @@
       "settings": { "foreground": "#88d878" }
     },
     {
-      "name": "Keyword — sky blue",
+      "name": "Keyword — deeper storm blue",
       "scope": ["keyword", "keyword.control", "storage", "storage.type", "storage.modifier", "keyword.operator.new", "keyword.operator.expression"],
-      "settings": { "foreground": "#58a8e8" }
+      "settings": { "foreground": "#4c9cdc" }
     },
     {
       "name": "Operators + punctuation stay quiet",
@@ -235,7 +235,7 @@
     "variable": "#f8dc68",
     "parameter": "#f8dc68",
     "property": "#f8dc68",
-    "keyword": "#58a8e8",
+    "keyword": "#4c9cdc",
     "comment": "#b8a0d8",
     "string": "#e07848",
     "number": "#88d878"

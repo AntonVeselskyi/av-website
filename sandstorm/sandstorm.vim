@@ -25,7 +25,7 @@ let g:colors_name = "sandstorm"
 "   fg      #d8d0c0   plain text (warm sand)
 "   sand    #e8a038   enum / constant
 "   gold    #907040   line numbers
-"   storm   #58a8e8   keywords
+"   storm   #4c9cdc   keywords
 "   btype   #64b0ec   built-in types
 "   aqua    #38dcc0   user-defined types
 "   coral   #ff7060   classes / structs / namespaces
@@ -93,18 +93,18 @@ hi String        guifg=#e07848 ctermfg=173
 hi Character     guifg=#e07848 ctermfg=173
 hi Number        guifg=#88d878 ctermfg=114
 hi Float         guifg=#88d878 ctermfg=114
-hi Boolean       guifg=#58a8e8 ctermfg=75
+hi Boolean       guifg=#4c9cdc ctermfg=68
 
 hi Identifier    guifg=#f8dc68 ctermfg=222 gui=NONE cterm=NONE
 hi Function      guifg=#00ff7f ctermfg=48
 
-hi Statement     guifg=#58a8e8 ctermfg=75  gui=NONE cterm=NONE
-hi Conditional   guifg=#58a8e8 ctermfg=75
-hi Repeat        guifg=#58a8e8 ctermfg=75
-hi Label         guifg=#58a8e8 ctermfg=75
+hi Statement     guifg=#4c9cdc ctermfg=68  gui=NONE cterm=NONE
+hi Conditional   guifg=#4c9cdc ctermfg=68
+hi Repeat        guifg=#4c9cdc ctermfg=68
+hi Label         guifg=#4c9cdc ctermfg=68
 hi Operator      guifg=#d8d0c0 ctermfg=252
-hi Keyword       guifg=#58a8e8 ctermfg=75
-hi Exception     guifg=#58a8e8 ctermfg=75
+hi Keyword       guifg=#4c9cdc ctermfg=68
+hi Exception     guifg=#4c9cdc ctermfg=68
 
 hi PreProc       guifg=#989080 ctermfg=246
 hi Include       guifg=#989080 ctermfg=246
@@ -114,7 +114,7 @@ hi PreCondit     guifg=#989080 ctermfg=246
 
 hi Type          guifg=#38dcc0 ctermfg=79  gui=NONE cterm=NONE
 hi BuiltinType   guifg=#64b0ec ctermfg=75  gui=NONE cterm=NONE
-hi StorageClass  guifg=#58a8e8 ctermfg=75
+hi StorageClass  guifg=#4c9cdc ctermfg=68
 hi Structure     guifg=#ff7060 ctermfg=203
 hi Typedef       guifg=#38dcc0 ctermfg=79
 

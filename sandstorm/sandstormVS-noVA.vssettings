@@ -12,7 +12,7 @@
       (restart VS after changing it)
 
   Colours are Win32 COLORREF: 0x00BBGGRR — the bytes read BACK-TO-FRONT versus
-  the hex you'd write in CSS. #58a8e8 (sky blue) is written 0x00E8A858.
+  the hex you'd write in CSS. #4c9cdc (storm blue) is written 0x00DC9C4C.
 
   ONE THING THIS BUILD CANNOT REPRODUCE: the warm current-line row (#4a4038).
   That was "VA Current Line", and stock VS has no equivalent filled-row item —
@@ -53,8 +53,8 @@
                 <Item Name="Character"              Foreground="0x004878E0" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Number: green #88d878 -->
                 <Item Name="Number"                 Foreground="0x0078D888" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
-                <!-- Keyword: sky blue #58a8e8 -->
-                <Item Name="Keyword"                Foreground="0x00E8A858" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- Keyword: deeper storm blue #4c9cdc -->
+                <Item Name="Keyword"                Foreground="0x00DC9C4C" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Preprocessor: muted sand #989080 -->
                 <Item Name="Preprocessor Keyword"   Foreground="0x00809098" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- C/C++ User Keywords: orange-red #ff5800 -->
