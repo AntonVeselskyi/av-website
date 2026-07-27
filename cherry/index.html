@@ -17,9 +17,10 @@
     --blue: #6d8fa2;
     --blue-light: #a9c0cc;
     --white: #f8f2f3;
-    --grey: #b2a8ac;
+    --grey: #f5f1f2;
     --apple: #78a946;
     --cherry: #7f1737;
+    --juice: #8e163e;
     --blood: #a82143;
     --dark: #4c1327;
   }
@@ -318,8 +319,50 @@
   .canvas { color: var(--dark); background: var(--paper); }
   .variable { color: var(--white); background: var(--blue); }
   .function { color: var(--white); background: var(--apple); }
-  .syntax { color: var(--white); background: linear-gradient(90deg, var(--dark), var(--blood)); }
-  .comment-chip { color: var(--white); background: var(--grey); }
+  .syntax { color: var(--white); background: var(--juice); }
+  .comment-chip { color: var(--dark); background: var(--grey); }
+  .syntax-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .range-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font: 9px/1 Anton, Impact, sans-serif;
+    letter-spacing: .12em;
+  }
+  .range-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .toggle-track {
+    position: relative;
+    width: 23px;
+    height: 12px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+  }
+  .toggle-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    transition: transform .16s ease;
+  }
+  .range-toggle input:checked + .toggle-track::after { transform: translateX(11px); }
+  .range-toggle input:focus-visible + .toggle-track { outline: 2px solid var(--white); outline-offset: 2px; }
+  body.syntax-range .syntax { background: linear-gradient(90deg, var(--dark), var(--blood)); }
 
   .editor {
     overflow: hidden;
@@ -363,9 +406,20 @@
     user-select: none;
   }
   .hot .ln { color: var(--blood); }
-  .kw, .op, .punct, .plain { color: var(--cherry); }
-  .type, .class, .number, .string, .macro, .preproc { color: var(--blood); }
-  .syntax-token { color: var(--dark); }
+  .kw, .op, .punct, .plain,
+  .type, .class, .number, .string, .macro, .preproc,
+  .syntax-token { color: var(--juice); }
+  body.syntax-range .kw,
+  body.syntax-range .op,
+  body.syntax-range .punct,
+  body.syntax-range .plain { color: var(--cherry); }
+  body.syntax-range .type,
+  body.syntax-range .class,
+  body.syntax-range .number,
+  body.syntax-range .string,
+  body.syntax-range .macro,
+  body.syntax-range .preproc { color: var(--blood); }
+  body.syntax-range .syntax-token { color: var(--dark); }
   .type, .class { font-weight: 700; }
   .var { color: var(--blue); }
   .fn { color: var(--apple); font-weight: 700; }
@@ -494,8 +548,18 @@
         <div class="swatch canvas"><b>Canvas</b><span>#EFD0D8</span></div>
         <div class="swatch variable"><b>Variables</b><span>#6D8FA2</span></div>
         <div class="swatch function"><b>Functions</b><span>#78A946</span></div>
-        <div class="swatch syntax"><b>All other syntax</b><span>#4C1327 → #A82143</span></div>
-        <div class="swatch comment-chip"><b>Comments</b><span>#B2A8AC</span></div>
+        <div class="swatch syntax">
+          <div class="syntax-head">
+            <b>All other syntax</b>
+            <label class="range-toggle" title="Use the original cherry color range">
+              <input id="range-toggle" type="checkbox">
+              <i class="toggle-track" aria-hidden="true"></i>
+              <span>Range</span>
+            </label>
+          </div>
+          <span id="syntax-value">#8E163E</span>
+        </div>
+        <div class="swatch comment-chip"><b>Comments</b><span>#F5F1F2</span></div>
       </div>
 
       <div class="editor" aria-label="C++ colorscheme preview">

@@ -178,6 +178,8 @@ const codeView = document.getElementById('code-view');
 const codeTabs = document.getElementById('code-tabs');
 const filename = document.getElementById('sample-file');
 const sampleName = document.getElementById('sample-name');
+const rangeToggle = document.getElementById('range-toggle');
+const syntaxValue = document.getElementById('syntax-value');
 let activeSample = 'ue';
 
 function escapeHtml(value) {
@@ -228,6 +230,11 @@ codeTabs.addEventListener('keydown', (event) => {
 });
 
 renderSample(activeSample);
+
+rangeToggle.addEventListener('change', () => {
+  document.body.classList.toggle('syntax-range', rangeToggle.checked);
+  syntaxValue.textContent = rangeToggle.checked ? '#4C1327 → #A82143' : '#8E163E';
+});
 
 const poster = document.querySelector('.poster');
 const scheme = document.querySelector('.scheme');
