@@ -149,6 +149,23 @@ body.m-get #get { display:block; }
 }
 .get-card .dl a:hover { background:#251f16; border-color:var(--sand); }
 .get-card .note { font-size:11.5px; color:#4e4e4e; margin-top:10px; line-height:1.6; }
+.font-toggle {
+  display:flex; align-items:center; gap:8px; margin:3px 0 10px;
+  color:#8a8a8a; font-size:12px; cursor:pointer; user-select:none;
+}
+.font-toggle input { position:absolute; opacity:0; pointer-events:none; }
+.toggle-track {
+  position:relative; flex:0 0 auto; width:30px; height:16px;
+  border:1px solid #4a4a4a; border-radius:999px; background:#242424;
+  transition:background .18s ease, border-color .18s ease;
+}
+.toggle-track::after {
+  content:''; position:absolute; left:2px; top:2px; width:10px; height:10px;
+  border-radius:50%; background:#777; transition:transform .18s ease, background .18s ease;
+}
+.font-toggle input:checked + .toggle-track { background:#1d3344; border-color:#64b0ec; }
+.font-toggle input:checked + .toggle-track::after { transform:translateX(14px); background:#64b0ec; }
+.font-toggle input:focus-visible + .toggle-track { outline:2px solid #c9a96e; outline-offset:2px; }
 
 /* scheme picker — same treatment the font picker had */
 .compare-with { display:none; margin-top:22px; padding-top:16px; border-top:1px solid #1d1d1d; }
@@ -409,7 +426,7 @@ const S = {
   sandstorm: {
     label:'Sandstorm', desc:'mine · desert.vim descendant · VS 2022 + Visual Assist',
     bg:'#1e1e1e', tb:'#222', hl:'#4a4038', ln:'#907040',
-    kw:'#58a8e8', bi:'#58a8e8', ty:'#38dcc0', cl:'#ff7060', mt:'#00ff7f',
+    kw:'#58a8e8', bi:'#64b0ec', ty:'#38dcc0', cl:'#ff7060', mt:'#00ff7f',
     va:'#f8dc68', cm:'#b8a0d8', st:'#e07848', nm:'#88d878',
     pp:'#989080', mc:'#d050f0', en:'#e8a038', uk:'#ff5800',
     pl:'#d8d0c0', bm:'#00ff7f', sel:'#c9a96e', lnc:'#907040',
@@ -998,6 +1015,7 @@ const GET = [
       'Browse to the file and import <b>Fonts and Colors</b> only.',
     ],
     dl: [['sandstormVS.vssettings', 'sandstormVS.vssettings']],
+    preserveFont: true,
     note: 'Ships the full Visual Assist token map — VA Class, VA Method, VA Variable, '
         + 'VA Enumerator — plus storm-blue built-in types and the warm current-line row.',
   },
@@ -1010,6 +1028,7 @@ const GET = [
       'Import it the same way as above.',
     ],
     dl: [['sandstormVS-noVA.vssettings', 'sandstormVS-noVA.vssettings']],
+    preserveFont: true,
     note: 'Rebuilds the palette on VS\'s own C++ classifier. The one thing it cannot '
         + 'reproduce is the warm current-line row — that was VA\'s.',
   },
@@ -1050,9 +1069,42 @@ function renderGet() {
         <div class="gc-sub">${g.sub}</div>
         <ol>${g.steps.map(s => `<li>${s}</li>`).join('')}</ol>
         <div class="note">${g.note}</div>
+        ${g.preserveFont ? `<label class="font-toggle">
+          <input class="keep-font-input" type="checkbox" checked>
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span>Keep my current editor font</span>
+        </label>` : ''}
         <div class="dl">${g.dl.map(([label, href]) =>
-          `<a href="${href}" download>↓ ${label}</a>`).join('')}</div>
+          `<a href="${href}" download${href.endsWith('.vssettings') ? ' data-vssettings' : ''}>&#8595; ${label}</a>`).join('')}</div>
       </div>`).join('') + '</div>';
+  document.querySelectorAll('#get a[data-vssettings]').forEach(link =>
+    link.addEventListener('click', downloadVsSettings));
+}
+
+async function downloadVsSettings(e) {
+  const link = e.currentTarget;
+  const keepFont = link.closest('.get-card').querySelector('.keep-font-input');
+  if (!keepFont || !keepFont.checked) return;
+
+  e.preventDefault();
+  try {
+    const response = await fetch(link.href);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const source = await response.text();
+    const colorsOnly = source.replace(/\s+(FontName|FontSize|CharSet|FontIsDefault)="[^"]*"/g, '');
+    const blobUrl = URL.createObjectURL(new Blob([colorsOnly], { type:'text/xml;charset=utf-8' }));
+    const download = document.createElement('a');
+    download.href = blobUrl;
+    download.download = decodeURIComponent(new URL(link.href).pathname.split('/').pop());
+    download.style.display = 'none';
+    document.body.appendChild(download);
+    download.click();
+    download.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+  } catch (error) {
+    console.error(error);
+    alert('Could not create the font-preserving settings file. No download was started.');
+  }
 }
 
 // ── Hero swatches ─────────────────────────────────────────────────────────

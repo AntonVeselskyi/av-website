@@ -158,9 +158,9 @@
       "settings": { "foreground": "#38dcc0" }
     },
     {
-      "name": "Built-in type - storm blue",
+      "name": "Built-in type - light storm blue",
       "scope": ["storage.type.built-in"],
-      "settings": { "foreground": "#58a8e8" }
+      "settings": { "foreground": "#64b0ec" }
     },
     {
       "name": "Class / struct / namespace — coral",
@@ -224,7 +224,7 @@
     "struct": "#ff7060",
     "namespace": "#ff7060",
     "type": "#38dcc0",
-    "type.builtin": "#58a8e8",
+    "type.builtin": "#64b0ec",
     "typeParameter": "#ff5800",
     "interface": "#38dcc0",
     "enum": "#e8a038",
