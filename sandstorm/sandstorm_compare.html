@@ -172,8 +172,8 @@ body.m-get #get { display:block; }
 .font-toggle input:checked + .toggle-track::after { transform:translateX(14px); background:#64b0ec; }
 .font-toggle input:focus-visible + .toggle-track { outline:2px solid #c9a96e; outline-offset:2px; }
 .font-preview {
-  margin:2px 0 11px; border:1px solid #292929; border-radius:5px;
-  overflow:hidden; background:#111;
+  max-width:1180px; margin:18px auto 0; border:1px solid #292929;
+  border-radius:5px; overflow:hidden; background:#111;
 }
 .font-preview-head {
   display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -1044,7 +1044,7 @@ const GET = [
       'Browse to the file and import <b>Fonts and Colors</b> only.',
     ],
     dl: [['sandstormVS.vssettings', 'sandstormVS.vssettings']],
-    preserveFont: true,
+    preferredFont: true,
     note: 'Ships the full Visual Assist token map — VA Class, VA Method, VA Variable, '
         + 'VA Enumerator — plus storm-blue built-in types and the warm current-line row.',
   },
@@ -1057,7 +1057,7 @@ const GET = [
       'Import it the same way as above.',
     ],
     dl: [['sandstormVS-noVA.vssettings', 'sandstormVS-noVA.vssettings']],
-    preserveFont: true,
+    preferredFont: true,
     note: 'Rebuilds the palette on VS\'s own C++ classifier. The one thing it cannot '
         + 'reproduce is the warm current-line row — that was VA\'s.',
   },
@@ -1097,31 +1097,31 @@ function renderGet() {
         <h3>${g.name}</h3>
         <div class="gc-sub">${g.sub}</div>
         <ol>${g.steps.map(s => `<li>${s}</li>`).join('')}</ol>
-        ${g.preserveFont ? `<div class="font-preview">
-          <div class="font-preview-head">
-            <span class="font-preview-title">FONT&nbsp; <b>Sarasa Mono J · 10 pt</b></span>
-            <a class="font-preview-link" href="https://picaq.github.io/sarasa/" target="_blank" rel="noopener">original font site &#8599;</a>
-          </div>
-          <div class="font-preview-code"><span class="fp-bi">bool</span> <span class="fp-cl">Storm</span>::<span class="fp-mt">Sweep</span>(<span class="fp-bi">float</span> <span class="fp-va">distance</span>);</div>
-          <div class="font-preview-glyphs">Aa Bb 0O 1lI &#123;&#125; [] -&gt; != ::</div>
-        </div>` : ''}
         <div class="note">${g.note}</div>
-        ${g.preserveFont ? `<label class="font-toggle">
-          <input class="keep-font-input" type="checkbox" checked>
+        ${g.preferredFont ? `<label class="font-toggle">
+          <input class="omit-font-input" type="checkbox">
           <span class="toggle-track" aria-hidden="true"></span>
-          <span>Keep my current editor font</span>
+          <span>Don't override my editor font</span>
         </label>` : ''}
         <div class="dl">${g.dl.map(([label, href]) =>
           `<a href="${href}" download${href.endsWith('.vssettings') ? ' data-vssettings' : ''}>&#8595; ${label}</a>`).join('')}</div>
-      </div>`).join('') + '</div>';
+      </div>`).join('') + `</div>
+      <div class="font-preview">
+        <div class="font-preview-head">
+          <span class="font-preview-title">PREFERRED FONT&nbsp; <b>Sarasa Mono J · 10 pt</b></span>
+          <a class="font-preview-link" href="https://picaq.github.io/sarasa/" target="_blank" rel="noopener">original font site &#8599;</a>
+        </div>
+        <div class="font-preview-code"><span class="fp-bi">bool</span> <span class="fp-cl">Storm</span>::<span class="fp-mt">Sweep</span>(<span class="fp-bi">float</span> <span class="fp-va">distance</span>);</div>
+        <div class="font-preview-glyphs">Aa Bb 0O 1lI &#123;&#125; [] -&gt; != ::</div>
+      </div>`;
   document.querySelectorAll('#get a[data-vssettings]').forEach(link =>
     link.addEventListener('click', downloadVsSettings));
 }
 
 async function downloadVsSettings(e) {
   const link = e.currentTarget;
-  const keepFont = link.closest('.get-card').querySelector('.keep-font-input');
-  if (!keepFont || !keepFont.checked) return;
+  const omitFont = link.closest('.get-card').querySelector('.omit-font-input');
+  if (!omitFont || !omitFont.checked) return;
 
   e.preventDefault();
   try {
