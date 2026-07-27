@@ -2,7 +2,7 @@
   "name": "sandstorm-theme",
   "displayName": "Sandstorm",
   "description": "A warm desert.vim descendant — sand canvas, storm-blue keywords, gold gutter. Ported from the Visual Studio 2022 scheme.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "antonveselskyi",
   "license": "MIT",
   "engines": { "vscode": "^1.70.0" },

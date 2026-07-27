@@ -25,8 +25,8 @@ let g:colors_name = "sandstorm"
 "   fg      #d8d0c0   plain text (warm sand)
 "   sand    #e8a038   enum / constant
 "   gold    #907040   line numbers
-"   storm   #58a8e8   keywords
-"   aqua    #38dcc0   types
+"   storm   #58a8e8   keywords / built-in types
+"   aqua    #38dcc0   user-defined types
 "   coral   #ff7060   classes / structs / namespaces
 "   spring  #00ff7f   functions / methods
 "   yellow  #f8dc68   variables
@@ -112,6 +112,7 @@ hi Macro         guifg=#d050f0 ctermfg=171
 hi PreCondit     guifg=#989080 ctermfg=246
 
 hi Type          guifg=#38dcc0 ctermfg=79  gui=NONE cterm=NONE
+hi BuiltinType   guifg=#58a8e8 ctermfg=75  gui=NONE cterm=NONE
 hi StorageClass  guifg=#58a8e8 ctermfg=75
 hi Structure     guifg=#ff7060 ctermfg=203
 hi Typedef       guifg=#38dcc0 ctermfg=79
@@ -141,7 +142,7 @@ hi SpellRare     guisp=#d050f0 gui=undercurl cterm=undercurl
 hi SpellLocal    guisp=#38dcc0 gui=undercurl cterm=undercurl
 
 " ── C / C++ specifics (mirrors the Visual Studio build) ─────────────────────
-hi link cType            Type
+hi link cType            BuiltinType
 hi link cStorageClass    StorageClass
 hi link cStructure       Structure
 hi link cppStructure     Structure
@@ -178,7 +179,7 @@ if has('nvim')
   hi link @field              Identifier
   hi link @property           Identifier
   hi link @type               Type
-  hi link @type.builtin       Type
+  hi link @type.builtin       BuiltinType
   hi link @type.definition    Typedef
   hi link @namespace          Structure
   hi link @constant           Constant

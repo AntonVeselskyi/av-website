@@ -153,9 +153,14 @@
       "settings": { "foreground": "#d050f0" }
     },
     {
-      "name": "Type — aqua",
-      "scope": ["entity.name.type", "support.type", "storage.type.built-in", "entity.name.type.template"],
+      "name": "User-defined type — aqua",
+      "scope": ["entity.name.type", "support.type", "entity.name.type.template"],
       "settings": { "foreground": "#38dcc0" }
+    },
+    {
+      "name": "Built-in type - storm blue",
+      "scope": ["storage.type.built-in"],
+      "settings": { "foreground": "#58a8e8" }
     },
     {
       "name": "Class / struct / namespace — coral",
@@ -219,6 +224,7 @@
     "struct": "#ff7060",
     "namespace": "#ff7060",
     "type": "#38dcc0",
+    "type.builtin": "#58a8e8",
     "typeParameter": "#ff5800",
     "interface": "#38dcc0",
     "enum": "#e8a038",

@@ -26,6 +26,8 @@
                 <Item Name="Number"             Foreground="0x0078D888" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Keyword: sky blue -->
                 <Item Name="Keyword"            Foreground="0x00E8A858" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- C++ built-in types: sky blue, separated from spring-green functions -->
+                <Item Name="C++ Types"          Foreground="0x00E8A858" Background="0x02000000" BoldFont="No"  StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Preprocessor: muted sand -->
                 <Item Name="Preprocessor Keyword" Foreground="0x00809098" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- C/C++ User Keywords: macro/user define orange-red -->

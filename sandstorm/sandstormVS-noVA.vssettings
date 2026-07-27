@@ -88,8 +88,8 @@
                 <Item Name="C++ Enumerators"         Foreground="0x0038A0E8" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
                 <!-- Macros -> magenta-violet #d050f0 -->
                 <Item Name="C++ Macros"              Foreground="0x00F050D0" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
-                <!-- Types / classes -> aqua #38dcc0 -->
-                <Item Name="C++ Types"               Foreground="0x00C0DC38" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
+                <!-- C++ built-in types -> sky blue #58a8e8; user types stay aqua above -->
+                <Item Name="C++ Types"               Foreground="0x00E8A858" Background="0x02000000" BoldFont="No" StrikethroughFont="No" ItalicFont="No" UnderlineFont="No"/>
 
                 <!-- ── Editor chrome that VA used to own ──────────────────── -->
                 <!-- Symbol under cursor: the VA Reference tint #2e281e -->

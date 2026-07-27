@@ -401,7 +401,7 @@ body.m-compare #code-bar, body.m-gallery #code-bar { display: flex; }
 <script>
 // ── Colour schemes ─────────────────────────────────────────────────────────
 // Token keys: bg/tb page + titlebar · hl current-line bg · ln gutter fg
-// lnc current-line number · sel selection bg · kw keyword · ty type
+// lnc current-line number · sel selection bg · kw keyword · bi built-in type · ty user type
 // cl class/struct · mt method · va variable · cm comment · st string
 // nm number · pp preprocessor · mc macro · en enum/constant · uk user keyword
 // pl plain fg · bm brace match
@@ -409,7 +409,7 @@ const S = {
   sandstorm: {
     label:'Sandstorm', desc:'mine · desert.vim descendant · VS 2022 + Visual Assist',
     bg:'#1e1e1e', tb:'#222', hl:'#4a4038', ln:'#907040',
-    kw:'#58a8e8', ty:'#38dcc0', cl:'#ff7060', mt:'#00ff7f',
+    kw:'#58a8e8', bi:'#58a8e8', ty:'#38dcc0', cl:'#ff7060', mt:'#00ff7f',
     va:'#f8dc68', cm:'#b8a0d8', st:'#e07848', nm:'#88d878',
     pp:'#989080', mc:'#d050f0', en:'#e8a038', uk:'#ff5800',
     pl:'#d8d0c0', bm:'#00ff7f', sel:'#c9a96e', lnc:'#907040',
@@ -537,6 +537,10 @@ const S = {
 };
 
 // ── Code datasets ─────────────────────────────────────────────────────────
+// Rival palettes predate the built-in/user-type split; preserve their previous
+// type colour while Sandstorm gives built-ins their own storm-blue lane.
+Object.values(S).forEach(s => { if (!s.bi) s.bi = s.ty; });
+
 const CODES = {
   game: {
     label:'Game C++', filename:'ProjectileSystem.cpp', hl:20,
@@ -554,14 +558,14 @@ const CODES = {
       [['kw','struct '],['cl','HitBuffer']],
       [['pl','{']],
       [['pl','    '],['ty','T'],['pl','*          '],['va','actors'],['pl','['],['va','N'],['pl','] = {};']],
-      [['pl','    '],['ty','float'],['pl','      '],['va','distances'],['pl','['],['va','N'],['pl','] = {};']],
+      [['pl','    '],['bi','float'],['pl','      '],['va','distances'],['pl','['],['va','N'],['pl','] = {};']],
       [['pl','    '],['cl','ImpactResponse'],['pl',' '],['va','response'],['pl',' = '],['en','ImpactResponse::Absorb'],['pl',';']],
       [['pl','};']],
       null,
-      [['kw','static '],['ty','bool']],
+      [['kw','static '],['bi','bool']],
       [['cl','ProjectileSystem'],['pl','::'],['mt','Trace'],['pl','('],['kw','const '],['cl','Ray'],['pl','& '],['va','ray'],['pl',', '],['cl','HitBuffer'],['pl','<'],['cl','Actor'],['pl','> '],['pl','& '],['va','out'],['pl',')']],
       [['pl','{']],
-      [['pl','    '],['kw','constexpr '],['ty','float'],['pl',' '],['va','kMaxDist'],['pl',' = '],['nm','8000.f'],['pl',';']],
+      [['pl','    '],['kw','constexpr '],['bi','float'],['pl',' '],['va','kMaxDist'],['pl',' = '],['nm','8000.f'],['pl',';']],
       [['pl','    '],['kw','const '],['ty','u32'],['pl',' '],['va','n'],['pl',' = '],['cl','World'],['pl','::'],['mt','SweepSphere'],['pl','('],['va','ray'],['pl',', '],['nm','.05f'],['pl',', '],['va','kMaxDist'],['pl',', '],['va','out'],['pl',');']],
       [['pl','    '],['kw','switch'],['pl',' ('],['va','out'],['pl','.'],['va','response'],['pl',')']],
       [['pl','    {']],
@@ -583,9 +587,9 @@ const CODES = {
       [['mc','DEFINE_LOG_CATEGORY_STATIC'],['pl','('],['va','LogPlayer'],['pl',', '],['en','Log'],['pl',', '],['en','All'],['pl',')']],
       null,
       [['cm','// Called from movement component on landing']],
-      [['kw','void '],['cl','APlayerCharacter'],['pl','::'],['mt','OnLanded'],['pl','('],['kw','const '],['cl','FHitResult'],['pl','& '],['va','Hit'],['pl',')']],
+      [['bi','void '],['cl','APlayerCharacter'],['pl','::'],['mt','OnLanded'],['pl','('],['kw','const '],['cl','FHitResult'],['pl','& '],['va','Hit'],['pl',')']],
       [['pl','{']],
-      [['pl','    '],['kw','const '],['ty','float'],['pl',' '],['va','FallSpeed'],['pl',' = '],['mt','GetVelocity'],['pl','().'],['va','Z'],['pl',';']],
+      [['pl','    '],['kw','const '],['bi','float'],['pl',' '],['va','FallSpeed'],['pl',' = '],['mt','GetVelocity'],['pl','().'],['va','Z'],['pl',';']],
       [['pl','    '],['mc','UE_LOG'],['pl','('],['va','LogPlayer'],['pl',', '],['en','Verbose'],['pl',', '],['st','"Landed speed=%.1f"'],['pl',', '],['va','FallSpeed'],['pl',');']],
       null,
       [['pl','    '],['kw','if '],['pl','('],['va','FallSpeed'],['pl',' < '],['nm','-1200.f'],['pl',')']],
@@ -597,9 +601,9 @@ const CODES = {
       [['pl','    '],['mt','PlayLandMontage'],['pl','();']],
       [['pl','}']],
       null,
-      [['kw','void '],['cl','APlayerCharacter'],['pl','::'],['mt','ApplyFallDamage'],['pl','('],['ty','float '],['va','Speed'],['pl',')']],
+      [['bi','void '],['cl','APlayerCharacter'],['pl','::'],['mt','ApplyFallDamage'],['pl','('],['bi','float '],['va','Speed'],['pl',')']],
       [['pl','{']],
-      [['pl','    '],['kw','const '],['ty','float'],['pl',' '],['va','Dmg'],['pl',' = '],['cl','FMath'],['pl','::'],['mt','Abs'],['pl','('],['va','Speed'],['pl',') * '],['nm','.04f'],['pl',';']],
+      [['pl','    '],['kw','const '],['bi','float'],['pl',' '],['va','Dmg'],['pl',' = '],['cl','FMath'],['pl','::'],['mt','Abs'],['pl','('],['va','Speed'],['pl',') * '],['nm','.04f'],['pl',';']],
       [['pl','    '],['mt','TakeDamage'],['pl','('],['va','Dmg'],['pl',', '],['cl','FDamageEvent'],['pl','(), '],['kw','nullptr'],['pl',', '],['kw','this'],['pl',');']],
       [['pl','}']],
     ],
@@ -616,23 +620,23 @@ const CODES = {
       null,
       [['kw','typedef struct']],
       [['pl','{']],
-      [['pl','    '],['ty','int'],['pl','      '],['va','fd'],['pl',';']],
+      [['pl','    '],['bi','int'],['pl','      '],['va','fd'],['pl',';']],
       [['pl','    '],['ty','uint32_t'],['pl',' '],['va','peer_ip'],['pl',';']],
       [['pl','    '],['ty','uint16_t'],['pl',' '],['va','peer_port'],['pl',';']],
-      [['pl','    '],['ty','char'],['pl','     '],['va','buf'],['pl','['],['mc','BUF_SIZE'],['pl','];']],
+      [['pl','    '],['bi','char'],['pl','     '],['va','buf'],['pl','['],['mc','BUF_SIZE'],['pl','];']],
       [['pl','} '],['cl','relay_conn_t'],['pl',';']],
       null,
-      [['kw','static '],['ty','int'],['pl',' '],['mt','set_nonblocking'],['pl','('],['ty','int '],['va','fd'],['pl',')']],
+      [['kw','static '],['bi','int'],['pl',' '],['mt','set_nonblocking'],['pl','('],['bi','int '],['va','fd'],['pl',')']],
       [['pl','{']],
-      [['pl','    '],['ty','int '],['va','flags'],['pl',' = '],['mt','fcntl'],['pl','('],['va','fd'],['pl',', '],['en','F_GETFL'],['pl',', '],['nm','0'],['pl',');']],
+      [['pl','    '],['bi','int '],['va','flags'],['pl',' = '],['mt','fcntl'],['pl','('],['va','fd'],['pl',', '],['en','F_GETFL'],['pl',', '],['nm','0'],['pl',');']],
       [['pl','    '],['kw','if '],['pl','('],['va','flags'],['pl',' < '],['nm','0'],['pl',') '],['kw','return '],['nm','-1'],['pl',';']],
       [['pl','    '],['kw','return '],['mt','fcntl'],['pl','('],['va','fd'],['pl',', '],['en','F_SETFL'],['pl',', '],['va','flags'],['pl',' | '],['en','O_NONBLOCK'],['pl',');']],
       [['pl','}']],
       null,
-      [['ty','int'],['pl',' '],['mt','relay_loop'],['pl','('],['ty','int '],['va','listen_fd'],['pl',')']],
+      [['bi','int'],['pl',' '],['mt','relay_loop'],['pl','('],['bi','int '],['va','listen_fd'],['pl',')']],
       [['pl','{']],
       [['pl','    '],['ty','struct epoll_event '],['va','ev'],['pl',', '],['va','events'],['pl','['],['mc','MAX_EVENTS'],['pl','];']],
-      [['pl','    '],['ty','int '],['va','epfd'],['pl',' = '],['mt','epoll_create1'],['pl','('],['nm','0'],['pl',');']],
+      [['pl','    '],['bi','int '],['va','epfd'],['pl',' = '],['mt','epoll_create1'],['pl','('],['nm','0'],['pl',');']],
       [['pl','    '],['kw','if '],['pl','('],['va','epfd'],['pl',' < '],['nm','0'],['pl',') '],['kw','return '],['nm','-1'],['pl',';']],
       [['pl','    '],['va','ev'],['pl','.'],['va','events'],['pl',' = '],['en','EPOLLIN'],['pl',';  '],['va','ev'],['pl','.'],['va','data'],['pl','.'],['va','fd'],['pl',' = '],['va','listen_fd'],['pl',';']],
       [['pl','    '],['mt','epoll_ctl'],['pl','('],['va','epfd'],['pl',', '],['en','EPOLL_CTL_ADD'],['pl',', '],['va','listen_fd'],['pl',', &'],['va','ev'],['pl',');']],
@@ -666,7 +670,7 @@ const CODES = {
       [['pl','        '],['kw','return '],['va','it'],['pl','->'],['va','second'],['pl',';']],
       [['pl','    }']],
       null,
-      [['pl','    '],['kw','void '],['mt','put'],['pl','('],['ty','K '],['va','key'],['pl',', '],['ty','std::shared_ptr'],['pl','<'],['ty','V'],['pl','> '],['va','val'],['pl',')']],
+      [['pl','    '],['bi','void '],['mt','put'],['pl','('],['ty','K '],['va','key'],['pl',', '],['ty','std::shared_ptr'],['pl','<'],['ty','V'],['pl','> '],['va','val'],['pl',')']],
       [['pl','    {']],
       [['pl','        '],['kw','if '],['pl','('],['va','cache_'],['pl','.'],['mt','size'],['pl','() >= '],['va','cap_'],['pl',') '],['va','cache_'],['pl','.'],['mt','clear'],['pl','();']],
       [['pl','        '],['va','cache_'],['pl','['],['ty','std::move'],['pl','('],['va','key'],['pl',')] = '],['ty','std::move'],['pl','('],['va','val'],['pl',');']],
@@ -684,17 +688,17 @@ const CODES = {
       [['kw','s '],['cl','Weapon']],
       [['pl','{']],
       [['pl','    '],['ty','$string'],['pl',' '],['va','name'],['pl',';']],
-      [['pl','    '],['ty','int'],['pl',' '],['va','damage'],['pl',';']],
+      [['pl','    '],['bi','int'],['pl',' '],['va','damage'],['pl',';']],
       [['pl','};']],
       null,
       [['kw','s '],['cl','Player']],
       [['pl','{']],
       [['pl','    '],['ty','$string'],['pl',' '],['va','name'],['pl',';']],
       [['pl','    '],['cl','Weapon'],['pl','* '],['va','weapon'],['pl',';']],
-      [['pl','    '],['ty','int'],['pl',' '],['va','hp'],['pl',';']],
+      [['pl','    '],['bi','int'],['pl',' '],['va','hp'],['pl',';']],
       [['pl','};']],
       null,
-      [['ty','void'],['pl',' '],['mt','inspect'],['pl','('],['cl','Player'],['pl','* '],['va','player'],['pl',')']],
+      [['bi','void'],['pl',' '],['mt','inspect'],['pl','('],['cl','Player'],['pl','* '],['va','player'],['pl',')']],
       [['pl','{']],
       [['pl','    '],['va','player'],['pl',' '],['mc','??'],['pl',' '],['kw','r'],['pl',';']],
       null,
@@ -718,7 +722,7 @@ const SNIPPET = {
     [['kw','template'],['pl','<'],['kw','typename '],['uk','T'],['pl','>']],
     [['kw','enum class '],['cl','Grain'],['pl',' : '],['ty','u8'],['pl',' { '],['en','Fine'],['pl',', '],['en','Coarse'],['pl',' };']],
     null,
-    [['ty','bool'],['pl',' '],['cl','Storm'],['pl','::'],['mt','Sweep'],['pl','('],['kw','const '],['cl','Ray'],['pl','& '],['va','ray'],['pl',', '],['ty','float'],['pl',' '],['va','dist'],['pl',')']],
+    [['bi','bool'],['pl',' '],['cl','Storm'],['pl','::'],['mt','Sweep'],['pl','('],['kw','const '],['cl','Ray'],['pl','& '],['va','ray'],['pl',', '],['bi','float'],['pl',' '],['va','dist'],['pl',')']],
     [['pl','{']],
     [['pl','    '],['kw','return '],['cl','World'],['pl','::'],['mt','Trace'],['pl','('],['va','ray'],['pl',', '],['va','dist'],['pl',') > '],['nm','0'],['pl',';']],
     [['pl','}']],
@@ -726,11 +730,11 @@ const SNIPPET = {
 };
 
 // ── Chip config ───────────────────────────────────────────────────────────
-const CHIP_KEYS = ['bg','cl','mt','va','cm','st','nm','mc','en','uk','kw','ty','pp','pl','sel','lnc'];
+const CHIP_KEYS = ['bg','cl','mt','va','cm','st','nm','mc','en','uk','kw','bi','ty','pp','pl','sel','lnc'];
 const CHIP_LABELS = {
   bg:'BG', cl:'Class', mt:'Method', va:'Variable', cm:'Comment',
   st:'String', nm:'Number', mc:'Macro', en:'Enum', uk:'UserKw',
-  kw:'Keyword', ty:'Type', pp:'Preproc', pl:'Plain', sel:'Select', lnc:'LineNum',
+  kw:'Keyword', bi:'BuiltIn', ty:'UserType', pp:'Preproc', pl:'Plain', sel:'Select', lnc:'LineNum',
 };
 
 // ── Renderers ─────────────────────────────────────────────────────────────
@@ -995,7 +999,7 @@ const GET = [
     ],
     dl: [['sandstormVS.vssettings', 'sandstormVS.vssettings']],
     note: 'Ships the full Visual Assist token map — VA Class, VA Method, VA Variable, '
-        + 'VA Enumerator — plus the warm current-line row.',
+        + 'VA Enumerator — plus storm-blue built-in types and the warm current-line row.',
   },
   {
     name: 'Visual Studio 2022',
@@ -1054,7 +1058,7 @@ function renderGet() {
 // ── Hero swatches ─────────────────────────────────────────────────────────
 function buildSwatches() {
   const s = S[REF];
-  const keys = ['cl','mt','va','cm','st','nm','mc','en','uk','kw','ty','pp','sel','lnc','pl','bg'];
+  const keys = ['cl','mt','va','cm','st','nm','mc','en','uk','kw','bi','ty','pp','sel','lnc','pl','bg'];
   document.getElementById('hero-swatches').innerHTML = keys.map(k =>
     `<span class="hs" style="background:${s[k]}" title="${CHIP_LABELS[k]} ${s[k]}"></span>`
   ).join('');
