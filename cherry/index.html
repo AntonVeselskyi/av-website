@@ -211,6 +211,20 @@
   .p7 { left: 7%; top: 72%; --r: 85deg; }
   .p8 { right: 6%; top: 60%; --r: 13deg; }
 
+  .landing-charms {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .landing-charm {
+    position: absolute;
+    display: block;
+    font: clamp(32px, 4.8vw, 72px)/1 sans-serif;
+    filter: drop-shadow(5px 6px 0 rgba(109,143,162,.62));
+  }
+  .landing-charm-1 { top: 17%; right: 24%; transform: rotate(13deg); }
+
   .masthead {
     position: relative;
     z-index: 2;
@@ -411,12 +425,43 @@
   .range-toggle input:focus-visible + .toggle-track { outline: 2px solid var(--white); outline-offset: 2px; }
   body.syntax-range .syntax { background: linear-gradient(90deg, var(--dark), var(--blood)); }
 
+  .editor-stage {
+    position: relative;
+    isolation: isolate;
+  }
   .editor {
+    position: relative;
+    z-index: 1;
     overflow: hidden;
     border: 3px solid var(--dark);
     background: var(--paper);
     box-shadow: 14px 14px 0 var(--blue), -8px 9px 0 var(--pink);
   }
+  .code-charms {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .code-charm {
+    position: absolute;
+    display: block;
+    font: clamp(46px, 6vw, 82px)/1 sans-serif;
+    opacity: .44;
+    filter: blur(1.8px) saturate(.82) drop-shadow(5px 6px 0 rgba(109,143,162,.45));
+  }
+  .code-charm-1 { top: -31px; left: -41px; transform: rotate(-16deg); }
+  .code-charm-2 { top: 27%; right: -48px; transform: rotate(18deg) scale(.82); }
+  .code-charm-3 { bottom: 13%; left: -47px; transform: rotate(12deg) scale(.9); }
+  .code-charm-4 { right: 8%; bottom: -39px; transform: rotate(-10deg) scale(.78); }
+  .side-charm {
+    opacity: .28;
+    filter: blur(3px) saturate(.72) drop-shadow(7px 8px 0 rgba(109,143,162,.38));
+  }
+  .code-charm-5 { top: 10%; left: -112px; transform: rotate(-19deg) scale(.72); }
+  .code-charm-6 { bottom: 21%; left: -101px; transform: rotate(14deg) scale(.86); }
+  .code-charm-7 { top: 13%; right: -110px; transform: rotate(17deg) scale(.8); }
+  .code-charm-8 { right: -98px; bottom: 18%; transform: rotate(-12deg) scale(.68); }
   .titlebar {
     display: flex;
     align-items: center;
@@ -528,6 +573,9 @@
     .tree.left-tree { left: -39%; bottom: -8%; }
     .tree.right-tree { right: -40%; bottom: -11%; }
     .f2, .f3, .f6, .f7 { display: none; }
+    .landing-charms { z-index: 3; }
+    .landing-charm { font-size: clamp(28px, 11vw, 46px); }
+    .landing-charm-1 { top: 20%; right: 4%; }
     .scheme { padding-inline: 12px; }
     .scheme-head { grid-template-columns: 1fr; }
     .rule { max-width: 100%; }
@@ -538,6 +586,11 @@
     .ln { width: 30px; margin-right: 10px; }
     .semantic { display: none; }
     .code-tabs button { min-width: 112px; padding: 11px 12px 12px; font-size: 12px; }
+    .code-charm { font-size: 48px; opacity: .36; }
+    .code-charm-1 { left: -18px; }
+    .code-charm-2 { right: -18px; }
+    .code-charm-3 { left: -20px; }
+    .side-charm { display: none; }
   }
 
   @media (max-height: 620px) {
@@ -572,6 +625,9 @@
     <div class="petals" aria-hidden="true">
       <i class="petal p1"></i><i class="petal p2"></i><i class="petal p3"></i><i class="petal p4"></i>
       <i class="petal p5"></i><i class="petal p6"></i><i class="petal p7"></i><i class="petal p8"></i>
+    </div>
+    <div class="landing-charms" aria-hidden="true">
+      <span class="landing-charm landing-charm-1">&#x1F338;</span>
     </div>
 
     <div class="masthead">
@@ -616,14 +672,26 @@
         <div class="swatch comment-chip"><b>Comments</b><span>#C2B2AD</span></div>
       </div>
 
-      <div class="editor" aria-label="C++ colorscheme preview">
-        <div class="titlebar">
-          <i class="dot"></i><i class="dot"></i><i class="dot"></i>
-          <span class="file" id="sample-file"></span>
-          <span class="semantic" id="sample-name"></span>
+      <div class="editor-stage">
+        <div class="code-charms" aria-hidden="true">
+          <span class="code-charm code-charm-1">&#x1F338;</span>
+          <span class="code-charm code-charm-2">&#x1F352;</span>
+          <span class="code-charm code-charm-3">&#x1F338;</span>
+          <span class="code-charm code-charm-4">&#x1F352;</span>
+          <span class="code-charm side-charm code-charm-5">&#x1F352;</span>
+          <span class="code-charm side-charm code-charm-6">&#x1F352;</span>
+          <span class="code-charm side-charm code-charm-7">&#x1F352;</span>
+          <span class="code-charm side-charm code-charm-8">&#x1F352;</span>
         </div>
-        <pre id="code-view" aria-live="polite"></pre>
-        <div class="code-tabs" id="code-tabs" role="tablist" aria-label="Code samples"></div>
+        <div class="editor" aria-label="C++ colorscheme preview">
+          <div class="titlebar">
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <span class="file" id="sample-file"></span>
+            <span class="semantic" id="sample-name"></span>
+          </div>
+          <pre id="code-view" aria-live="polite"></pre>
+          <div class="code-tabs" id="code-tabs" role="tablist" aria-label="Code samples"></div>
+        </div>
       </div>
     </div>
   </section>
