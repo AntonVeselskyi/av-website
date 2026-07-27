@@ -66,6 +66,52 @@
     border-bottom: 8px solid var(--pink);
   }
 
+  .av-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--white);
+    background: var(--blue);
+    border: 2px solid var(--white);
+    box-shadow: 6px 6px 0 var(--pink);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: translate .15s ease, box-shadow .15s ease;
+  }
+  .av-mark:hover { translate: -2px -2px; box-shadow: 8px 8px 0 var(--pink); }
+  .av-mark:focus-visible { outline: 3px solid var(--white); outline-offset: 5px; }
+  .av-mark-top {
+    position: absolute;
+    top: clamp(17px, 3vw, 34px);
+    left: clamp(17px, 3vw, 38px);
+    z-index: 4;
+    padding: 7px 11px 8px 9px;
+  }
+  .av-glyph {
+    position: relative;
+    display: block;
+    width: 49px;
+    height: 40px;
+    flex: 0 0 49px;
+  }
+  .av-glyph i {
+    position: absolute;
+    top: 0;
+    font: 40px/.95 Anton, Impact, sans-serif;
+    font-style: normal;
+    letter-spacing: -.08em;
+    -webkit-text-stroke: 1px var(--white);
+    paint-order: stroke fill;
+  }
+  .av-a { left: 0; color: var(--dark); transform: skewX(-7deg) rotate(-3deg); }
+  .av-v { right: 0; color: var(--pink); transform: skewX(7deg) rotate(3deg); }
+  .av-name {
+    padding-left: 10px;
+    border-left: 2px solid rgba(248,242,243,.72);
+    font: 10px/1.08 Anton, Impact, sans-serif;
+    letter-spacing: .15em;
+  }
+
   .poster::before,
   .poster::after {
     content: "";
@@ -287,15 +333,16 @@
     letter-spacing: -.035em;
   }
   .rule {
-    max-width: 250px;
-    padding: 12px 14px;
-    color: var(--white);
-    background: var(--blue);
-    font: 15px/1.2 Anton, Impact, sans-serif;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+    min-width: 230px;
+    justify-content: center;
+    padding: 12px 18px;
+    border-color: var(--dark);
     box-shadow: 7px 7px 0 var(--blood);
   }
+  .rule:hover { box-shadow: 9px 9px 0 var(--blood); }
+  .rule .av-glyph { width: 70px; height: 57px; flex-basis: 70px; }
+  .rule .av-glyph i { font-size: 57px; }
+  .rule .av-name { font-size: 12px; }
 
   .palette {
     display: grid;
@@ -420,9 +467,9 @@
   body.syntax-range .macro,
   body.syntax-range .preproc { color: var(--blood); }
   body.syntax-range .syntax-token { color: var(--dark); }
-  .type, .class { font-weight: 700; }
+  .line > span:not(.ln) { font-weight: 700; }
   .var { color: var(--blue); }
-  .fn { color: var(--apple); font-weight: 700; }
+  .fn { color: var(--apple); }
   .comment { color: var(--grey); font-style: italic; }
 
   .code-tabs {
@@ -510,6 +557,10 @@
 <body>
 <main>
   <section class="poster" aria-labelledby="title">
+    <a class="av-mark av-mark-top" href="/" aria-label="Anton Veselskyi home">
+      <span class="av-glyph" aria-hidden="true"><i class="av-a">A</i><i class="av-v">V</i></span>
+      <span class="av-name">Anton<br>Veselskyi</span>
+    </a>
     <div class="tree hero-tree" aria-hidden="true"></div>
     <div class="tree left-tree" aria-hidden="true"></div>
     <div class="tree right-tree" aria-hidden="true"></div>
@@ -539,9 +590,12 @@
       <header class="scheme-head">
         <div>
           <p class="small">Semantic color study / C++</p>
-          <h2 id="scheme-title">Three voices.<br>One wound.</h2>
+          <h2 id="scheme-title">Three voices.</h2>
         </div>
-        <div class="rule">Variables hold data.<br>Functions make it move.<br>Cherry is the language.</div>
+        <a class="av-mark rule" href="/" aria-label="Anton Veselskyi home">
+          <span class="av-glyph" aria-hidden="true"><i class="av-a">A</i><i class="av-v">V</i></span>
+          <span class="av-name">Anton<br>Veselskyi</span>
+        </a>
       </header>
 
       <div class="palette" aria-label="Washed Away Cherry palette">
