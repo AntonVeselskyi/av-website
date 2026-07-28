@@ -11,8 +11,8 @@ import {
   renderOfflineProject,
   resolveInstrumentGesture,
 } from "./music/index.js?v=4";
-import { LoopTransport } from "./looper.js?v=4";
-import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=3";
+import { LoopTransport } from "./looper.js?v=5";
+import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
 import {
   clearCalibrationDraft,
   createAutosaver,
@@ -22,7 +22,7 @@ import {
   saveCalibration,
   saveCalibrationDraft,
   saveProject,
-} from "./storage.js?v=3";
+} from "./storage.js?v=4";
 import { createSpellVisualizer } from "./visual/visualizer.js";
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -234,7 +234,7 @@ function reflectLiveLaneSound(lane, label = "") {
   if (lane.muted || (soloed && !lane.solo)) return;
 
   const loopBeats = Math.max(1, Number(lane.lengthBars) || 1) * BEATS_PER_BAR;
-  const localBeat = transport.currentBeat() % loopBeats;
+  const localBeat = transport.localBeatForLane(lane);
   const nextEvent = [...lane.events]
     .sort((left, right) => left.beat - right.beat)
     .find((event) => event.beat >= localBeat) || lane.events[0];
@@ -346,8 +346,8 @@ function drawLanes() {
     });
     length.addEventListener("change", () => { lane.lengthBars = Number(length.value); lane.events = lane.events.filter((item) => item.beat < lane.lengthBars * BEATS_PER_BAR); markChanged({ renderLanes: true }); });
     gain.addEventListener("input", () => { lane.gain = Number(gain.value); markChanged(); });
-    $(".lane-undo", row).addEventListener("click", () => { if (Array.isArray(lane.undoSnapshot)) { lane.events = lane.undoSnapshot.map((event) => ({ ...event })); markChanged({ renderLanes: true }); } });
-    $(".lane-clear", row).addEventListener("click", () => { lane.undoSnapshot = lane.events.map((event) => ({ ...event })); lane.events = []; music?.stopGroup?.(lane.id); showToast(`${lane.name} CLEARED AND SILENCED`); markChanged({ renderLanes: true }); });
+    $(".lane-undo", row).addEventListener("click", () => { if (Array.isArray(lane.undoSnapshot)) { lane.events = lane.undoSnapshot.map((event) => ({ ...event })); lane.loopOriginBeat = Number.isFinite(lane.undoLoopOriginBeat) ? lane.undoLoopOriginBeat : lane.loopOriginBeat; music?.stopGroup?.(lane.id); markChanged({ renderLanes: true }); } });
+    $(".lane-clear", row).addEventListener("click", () => { lane.undoSnapshot = lane.events.map((event) => ({ ...event })); lane.undoLoopOriginBeat = lane.loopOriginBeat; lane.events = []; music?.stopGroup?.(lane.id); showToast(`${lane.name} CLEARED AND SILENCED`); markChanged({ renderLanes: true }); });
     dom.lanes.append(fragment);
   });
 }
@@ -478,7 +478,8 @@ function beginFocusedEventDrag(pointerEvent, track, lane, loopEvent) {
 function updateFocusedPlayhead(beat = 0) {
   const lane = activeLane();
   if (!lane || !dom.focusedRoll) return;
-  const percent = ((beat % (lane.lengthBars * BEATS_PER_BAR)) / (lane.lengthBars * BEATS_PER_BAR)) * 100;
+  const localBeat = transport?.localBeatForLane(lane, beat) ?? (beat % (lane.lengthBars * BEATS_PER_BAR));
+  const percent = (localBeat / (lane.lengthBars * BEATS_PER_BAR)) * 100;
   for (const playhead of $$(".focused-roll-playhead", dom.focusedRoll)) playhead.style.left = `${percent}%`;
 }
 
@@ -540,7 +541,8 @@ function updatePlayheads(beat = 0) {
   for (const row of $$(".loop-lane", dom.lanes)) {
     const lane = project.lanes.find((item) => item.id === row.dataset.laneId);
     if (!lane) continue;
-    const percent = ((beat % (lane.lengthBars * BEATS_PER_BAR)) / (lane.lengthBars * BEATS_PER_BAR)) * 100;
+    const localBeat = transport?.localBeatForLane(lane, beat) ?? (beat % (lane.lengthBars * BEATS_PER_BAR));
+    const percent = (localBeat / (lane.lengthBars * BEATS_PER_BAR)) * 100;
     const playhead = $(".lane-playhead", row);
     if (playhead) playhead.style.left = `${percent}%`;
     row.classList.toggle("recording", lane.recording);

@@ -53,6 +53,11 @@ export function createLane(index = 0) {
     armed: false,
     recording: false,
     overdub: true,
+    // Runtime transport phase. It is reset when a project is loaded or a new
+    // transport session starts, so absolute audio-clock beats are never
+    // resumed from storage.
+    loopOriginBeat: 0,
+    undoLoopOriginBeat: 0,
   };
 }
 
@@ -83,6 +88,8 @@ export function normalizeProject(input) {
         // Arm/record are live transport states, never resumable project data.
         armed: false,
         recording: false,
+        loopOriginBeat: 0,
+        undoLoopOriginBeat: 0,
       }))
     : base.lanes;
   while (lanes.length < MAX_LANES) lanes.push(createLane(lanes.length));

@@ -1,4 +1,4 @@
-import { BEATS_PER_BAR, MAX_LANES, clamp, createId, quantizeBeat, sanitizeBpm } from "./shared.js?v=3";
+import { BEATS_PER_BAR, MAX_LANES, clamp, createId, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
 
 export class LoopTransport extends EventTarget {
   constructor({ getAudioTime, scheduleEvent, project }) {
@@ -43,8 +43,22 @@ export class LoopTransport extends EventTarget {
     return Math.max(0, (audioTime - this.startedAt) / this.secondsPerBeat());
   }
 
+  localBeatForLane(lane, absoluteBeat = this.currentBeat()) {
+    const loopBeats = Math.max(1, Number(lane?.lengthBars) || 1) * BEATS_PER_BAR;
+    const originBeat = Number.isFinite(lane?.loopOriginBeat) ? lane.loopOriginBeat : 0;
+    const relativeBeat = (absoluteBeat - originBeat) % loopBeats;
+    return relativeBeat < 0 ? relativeBeat + loopBeats : relativeBeat;
+  }
+
   start() {
     if (this.playing) return;
+    // Each stopped -> playing transition creates a new transport epoch. Event
+    // beats are stored in lane-local coordinates, so every saved line begins
+    // from phase zero in the new session.
+    for (const lane of this.project.lanes) {
+      lane.loopOriginBeat = 0;
+      lane.undoLoopOriginBeat = 0;
+    }
     this.playing = true;
     this.startedAt = this.getAudioTime() + 0.04;
     this.lastScheduledBeat = -0.00001;
@@ -96,11 +110,13 @@ export class LoopTransport extends EventTarget {
     for (const lane of this.project.lanes) {
       if (lane.muted || (soloed && !lane.solo) || !lane.events.length) continue;
       const loopBeats = Math.max(1, Number(lane.lengthBars) || 1) * BEATS_PER_BAR;
-      const firstCycle = Math.floor(Math.max(0, fromBeat) / loopBeats);
-      const lastCycle = Math.floor(Math.max(0, toBeat) / loopBeats);
+      const originBeat = Number.isFinite(lane.loopOriginBeat) ? lane.loopOriginBeat : 0;
+      if (toBeat < originBeat) continue;
+      const firstCycle = Math.floor(Math.max(0, fromBeat - originBeat) / loopBeats);
+      const lastCycle = Math.floor(Math.max(0, toBeat - originBeat) / loopBeats);
       for (let cycle = firstCycle; cycle <= lastCycle; cycle += 1) {
         for (const event of lane.events) {
-          const eventBeat = cycle * loopBeats + clamp(event.beat, 0, loopBeats - 0.0001);
+          const eventBeat = originBeat + cycle * loopBeats + clamp(event.beat, 0, loopBeats - 0.0001);
           if (eventBeat <= fromBeat || eventBeat > toBeat) continue;
           const audioTime = this.startedAt + eventBeat * secondsPerBeat;
           this.scheduleEvent({ ...event, lane, eventBeat }, audioTime);
@@ -118,7 +134,9 @@ export class LoopTransport extends EventTarget {
     }
     const wasPlaying = this.playing;
     if (!wasPlaying) this.start();
+    const startsFreshLoop = !lane.overdub || !lane.events.length;
     lane.undoSnapshot = lane.events.map((event) => ({ ...event }));
+    lane.undoLoopOriginBeat = Number.isFinite(lane.loopOriginBeat) ? lane.loopOriginBeat : 0;
     if (!lane.overdub) lane.events = [];
     if (!wasPlaying) {
       lane.armBeat = 0;
@@ -130,6 +148,9 @@ export class LoopTransport extends EventTarget {
     const beat = this.currentBeat();
     const nextBar = Math.ceil((beat + 0.0001) / BEATS_PER_BAR) * BEATS_PER_BAR;
     lane.armBeat = nextBar + Math.max(0, countInBars - 1) * BEATS_PER_BAR;
+    // A replacement/new recording defines a fresh loop whose phase begins at
+    // REC, not at transport beat zero. Existing overdubs retain their phase.
+    if (startsFreshLoop) lane.loopOriginBeat = lane.armBeat;
     lane.armed = true;
     lane.recording = false;
     return lane.armBeat;
@@ -150,7 +171,8 @@ export class LoopTransport extends EventTarget {
     const lane = this.project.lanes.find((item) => item.id === laneId);
     if (!lane?.recording) return null;
     const loopBeats = lane.lengthBars * BEATS_PER_BAR;
-    const rawBeat = (this.currentBeat() - lane.recordStartedBeat) % loopBeats;
+    const originBeat = Number.isFinite(lane.loopOriginBeat) ? lane.loopOriginBeat : lane.recordStartedBeat;
+    const rawBeat = (this.currentBeat() - originBeat) % loopBeats;
     const beat = quantizeBeat(rawBeat < 0 ? rawBeat + loopBeats : rawBeat, this.project.quantization) % loopBeats;
     const event = {
       id: createId("event"),

@@ -1,4 +1,4 @@
-import { normalizeProject } from "./shared.js?v=3";
+import { normalizeProject } from "./shared.js?v=4";
 
 const DB_NAME = "sign-spell";
 const DB_VERSION = 1;

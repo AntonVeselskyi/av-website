@@ -21,10 +21,11 @@ test("default project exposes eight independent lanes", () => {
 });
 
 test("normalizeProject migrates malformed data without resuming live recording state", () => {
-  const project = normalizeProject({ lanes: [{ id: "kept", events: null, armed: true, recording: true }], tonalScene: { bpm: 999 } });
+  const project = normalizeProject({ lanes: [{ id: "kept", events: null, armed: true, recording: true, loopOriginBeat: 12 }], tonalScene: { bpm: 999 } });
   assert.equal(project.lanes.length, 8);
   assert.deepEqual(project.lanes[0].events, []);
   assert.equal(project.activeLaneId, "kept");
   assert.equal(project.lanes[0].armed, false);
   assert.equal(project.lanes[0].recording, false);
+  assert.equal(project.lanes[0].loopOriginBeat, 0);
 });
