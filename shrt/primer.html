@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a0a">
+<title>SHRT Primer</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #11110f;
+    --ink: #e8e6e1;
+    --dim: #8a8580;
+    --rule: #2d2a25;
+    --accent: #c9a96e;
+    --blue: #79a8d8;
+    --green: #8ebf87;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--bg);
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  }
+  .back {
+    position: fixed;
+    top: 14px;
+    left: 16px;
+    z-index: 2;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    color: var(--dim);
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    font-size: 16px;
+    text-decoration: none;
+  }
+  .back:hover, .back:focus-visible { color: var(--bg); background: var(--accent); }
+  main { width: min(1480px, calc(100% - 32px)); margin: 0 auto; padding: 52px 0 28px; }
+  header { display: flex; align-items: baseline; gap: 14px; margin: 0 0 18px; }
+  h1 { margin: 0; color: var(--accent); font-size: clamp(28px, 5vw, 58px); line-height: 1; letter-spacing: -.06em; }
+  header span { color: var(--dim); font-size: 11px; letter-spacing: .22em; }
+  .sheet { display: grid; grid-template-columns: 1.05fr 1fr 1fr; border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+  section { min-width: 0; padding: 18px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--panel); }
+  .sheet section:last-child { grid-column: 1 / -1; }
+  h2 { margin: 0 0 13px; color: var(--accent); font-size: 10px; line-height: 1; letter-spacing: .18em; text-transform: uppercase; }
+  pre { margin: 0; overflow-x: auto; color: var(--ink); font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 4; }
+  .tokens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; }
+  .tokens span { display: grid; grid-template-columns: 38px 1fr; gap: 6px; color: var(--dim); font-size: 11px; white-space: nowrap; }
+  .tokens b { color: var(--blue); font-weight: 700; }
+  .sigil { color: var(--green); }
+  .rule { color: var(--dim); }
+  @media (max-width: 1040px) { .sheet { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 680px) {
+    main { width: min(100% - 20px, 1480px); padding-top: 58px; }
+    .sheet { grid-template-columns: 1fr; }
+    section { padding: 16px; }
+    .tokens { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    pre { font-size: 11px; }
+  }
+  @media print {
+    :root { --bg: #fff; --panel: #fff; --ink: #111; --dim: #555; --rule: #bbb; --accent: #765a22; --blue: #245b91; --green: #356d35; }
+    @page { size: landscape; margin: 8mm; }
+    .back { display: none; }
+    main { width: 100%; padding: 0; }
+    section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<a class="back" href="/shrt.html" aria-label="Back to SHRT">←</a>
+<main>
+  <header><h1>SHRT</h1><span>PRIMER</span></header>
+  <div class="sheet">
+    <section>
+      <h2>keywords</h2>
+      <div class="tokens">
+        <span><b>c</b>class</span><span><b>s</b>struct</span><span><b>e</b>enum class</span>
+        <span><b>a</b>auto</span><span><b>f</b>for</span><span><b>w</b>while</span>
+        <span><b>el</b>else</span><span><b>v</b>virtual</span><span><b>n</b>namespace</span>
+        <span><b>u</b>using</span><span><b>k</b>const</span><span><b>d</b>delete</span>
+        <span><b>o</b>override</span><span><b>r</b>return</span><span><b>b</b>break</span>
+        <span><b>cont</b>continue</span><span><b>ke</b>constexpr</span><span><b>op</b>operator</span>
+        <span><b>pub</b>public</span><span><b>pri</b>private</span><span><b>pro</b>protected</span>
+        <span><b>which</b>switch</span><span><b>nil</b>nullptr</span><span><b>p</b>cout + endl</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>include · std · print</h2>
+      <pre><span class="sigil">i</span> vector
+<span class="sigil">li</span> project/local.hpp
+
+<span class="sigil">$</span>vector&lt;int&gt; nums;
+<span class="sigil">$</span>cout &lt;&lt; nums.size() &lt;&lt; <span class="sigil">$</span>endl;
+
+<span class="sigil">p</span> nums.size();
+<span class="sigil">p</span> <span class="sigil">$</span>"size: {nums.size()}";</pre>
+    </section>
+
+    <section>
+      <h2>types · members</h2>
+      <pre><span class="sigil">n</span> demo
+{
+    <span class="sigil">u</span> Count = int;
+    <span class="sigil">ke</span> Count limit = 3;
+    <span class="sigil">e</span> Mode { Fast, Safe };
+
+    <span class="sigil">s</span> Point { int xx; int yy; };
+
+    <span class="sigil">c</span> Item : <span class="sigil">pub</span> Base
+    {
+    <span class="sigil">pri</span>: int value;
+    <span class="sigil">pro</span>: void reset();
+    <span class="sigil">pub</span>:
+        <span class="sigil">v</span> int score() <span class="sigil">k o</span> =&gt; value;
+        int <span class="sigil">op</span>[](int index) <span class="sigil">k</span> =&gt; value;
+    };
+}</pre>
+    </section>
+
+    <section>
+      <h2>flow</h2>
+      <pre><span class="sigil">f</span> (int index = 0; index &lt; 10; index += 1)
+{
+    if index == 3 { <span class="sigil">cont</span>; }
+    if index == 8 { <span class="sigil">b</span>; }
+}
+
+<span class="sigil">w</span> ready
+{
+    ready = false;
+}
+
+if value &gt; 0 { <span class="sigil">r</span> value; }
+<span class="sigil">el</span> { <span class="sigil">r</span> 0; }</pre>
+    </section>
+
+    <section>
+      <h2>which</h2>
+      <pre><span class="sigil">which</span> mode
+{
+    Mode::Fast:
+        <span class="sigil">p</span> "fast";
+        <span class="sigil">b</span>;
+    Mode::Safe:
+        <span class="sigil">p</span> "safe";
+        <span class="sigil">b</span>;
+    default:
+        <span class="sigil">r</span>;
+}</pre>
+    </section>
+
+    <section>
+      <h2>result arrows</h2>
+      <pre>int add(int left, int right) <span class="sigil">=&gt;</span> left + right;
+
+<span class="sigil">a</span> answer = <span class="sigil">=&gt;</span> 6 * 7;
+
+<span class="sigil">a</span> work = [=] <span class="sigil">=&gt;</span>
+{
+    <span class="sigil">p</span> "work";
+};
+
+<span class="sigil">a</span> twice = [&amp;](int value) <span class="sigil">=&gt;</span> value * 2;</pre>
+    </section>
+
+    <section>
+      <h2>elvis · guards</h2>
+      <pre><span class="sigil">a</span> chosen = value <span class="sigil">??</span> fallback;
+value <span class="sigil">??=</span> fallback;
+
+pointer <span class="sigil">?? r</span> nil;
+ready <span class="sigil">?? r</span>;
+ready <span class="sigil">??</span> start();
+
+<span class="sigil">a</span> first = aa <span class="sigil">??</span> bb <span class="sigil">??</span> cc;</pre>
+    </section>
+
+    <section>
+      <h2>null-safe</h2>
+      <pre><span class="sigil">a</span> name = player.weapon<span class="sigil">?.</span>name;
+
+<span class="sigil">a</span> damage = player<span class="sigil">?.</span>weapon<span class="sigil">?.</span>damage
+           <span class="sigil">??</span> 0;
+
+Node* node = <span class="sigil">nil</span>;</pre>
+    </section>
+
+    <section>
+      <h2>defer</h2>
+      <pre>int* item = new int(7);
+<span class="sigil">defer d</span> item;
+
+int* data = new int[8];
+<span class="sigil">defer d</span>[] data;
+
+<span class="sigil">defer p</span> "leaving";
+
+<span class="sigil">defer</span>
+{
+    close();
+    release();
+}</pre>
+    </section>
+
+    <section>
+      <h2>rule 1</h2>
+      <pre class="rule">identifier.length &gt;= 2 · T · F · template&lt;typename T&gt; · true · false · C++20 ⊂ SHRT</pre>
+    </section>
+  </div>
+</main>
+</body>
+</html>
