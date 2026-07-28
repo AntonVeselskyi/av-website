@@ -10,5 +10,5 @@ export {
   calibrationToStorage,
   calibrationFromStorage,
 } from "./calibration.js";
-export { SignSpellRecognizer } from "./recognizer.js";
+export { SignSpellRecognizer, createDiagnostics } from "./recognizer.js";
 export { createVisionWorkerController } from "./vision-worker.js";

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=4">
+  <link rel="stylesheet" href="css/sign-spell.css?v=5">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
@@ -44,6 +44,7 @@
     <section class="desktop-grid">
       <article class="panel camera-panel" aria-labelledby="camera-title">
         <header class="panel-title"><h2 id="camera-title">HAND TERMINAL</h2><span>CAM::01</span></header>
+        <div class="camera-stage-home" id="camera-stage-home">
         <div class="camera-stage" id="camera-stage">
           <video id="camera-feed" playsinline muted></video>
           <canvas id="hand-overlay" aria-hidden="true"></canvas>
@@ -54,6 +55,18 @@
           </div>
           <p class="camera-message" id="camera-message">Camera offline.</p>
         </div>
+        </div>
+        <section class="hand-diagnostics" id="hand-diagnostics" aria-labelledby="hand-diagnostics-title" data-state="idle">
+          <header><h3 id="hand-diagnostics-title">HAND BUS / FINGERTIP DIAGNOSTICS</h3><output id="hand-diagnostic-status" aria-live="polite">NO SIGNAL</output></header>
+          <div class="hand-diagnostic-grid" role="list" aria-label="Fingertip recognition status">
+            <div class="finger-diagnostic" data-finger="thumb" role="listitem"><i aria-hidden="true"></i><span>T1 / THUMB</span><output id="tip-thumb">--</output></div>
+            <div class="finger-diagnostic" data-finger="index" role="listitem"><i aria-hidden="true"></i><span>T2 / INDEX</span><output id="tip-index">--</output></div>
+            <div class="finger-diagnostic" data-finger="middle" role="listitem"><i aria-hidden="true"></i><span>T3 / MIDDLE</span><output id="tip-middle">--</output></div>
+            <div class="finger-diagnostic" data-finger="ring" role="listitem"><i aria-hidden="true"></i><span>T4 / RING</span><output id="tip-ring">--</output></div>
+            <div class="finger-diagnostic" data-finger="pinky" role="listitem"><i aria-hidden="true"></i><span>T5 / PINKY</span><output id="tip-pinky">--</output></div>
+          </div>
+          <footer><span>POSE <output id="hand-diagnostic-pose">--</output></span><span>CONTACT <output id="hand-diagnostic-contact">--</output></span><span>STROKE <output id="hand-diagnostic-stroke">--</output></span><span>FRAME <output id="hand-diagnostic-frame">--</output></span></footer>
+        </section>
         <footer class="panel-footer">
           <label>HAND <select id="handedness-select"><option value="Right">RIGHT</option><option value="Left">LEFT</option></select></label>
           <button id="calibrate-button" type="button">CALIBRATE</button>
@@ -138,6 +151,10 @@
       <p class="eyebrow">PERSONAL RECOGNITION PROFILE</p>
       <h2 id="calibration-heading">CALIBRATE THE SIGNAL</h2>
       <p id="calibration-instruction">Choose a well-lit space. Only normalized hand landmarks are retained.</p>
+      <div class="calibration-camera-mount" id="calibration-camera-mount" aria-label="Calibration camera view">
+        <p class="calibration-mount-placeholder">CAMERA SIGNAL WILL MOUNT HERE DURING CALIBRATION</p>
+      </div>
+      <div class="calibration-diagnostic-mount" id="calibration-diagnostic-mount"></div>
       <p class="calibration-orientation" id="calibration-orientation">ORIENTATION CHECK</p>
       <div class="calibration-glyph" id="calibration-glyph">⸸</div>
       <div class="calibration-readout" aria-live="polite">
@@ -171,6 +188,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="js/hints.js?v=2"></script>
-  <script type="module" src="js/app.js?v=4"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>

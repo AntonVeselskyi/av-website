@@ -39,14 +39,15 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const dom = {
   boot: $("#boot-screen"), workstation: $("#workstation"), start: $("#start-app"), status: $("#system-status"), statusLight: $("#system-light"), toast: $("#toast"),
-  video: $("#camera-feed"), overlay: $("#hand-overlay"), cameraMessage: $("#camera-message"), cameraToggle: $("#camera-toggle"), hand: $("#handedness-select"),
+  video: $("#camera-feed"), overlay: $("#hand-overlay"), cameraStage: $("#camera-stage"), cameraHome: $("#camera-stage-home"), cameraMessage: $("#camera-message"), cameraToggle: $("#camera-toggle"), hand: $("#handedness-select"),
+  diagnostics: $("#hand-diagnostics"), diagnosticStatus: $("#hand-diagnostic-status"), diagnosticPose: $("#hand-diagnostic-pose"), diagnosticContact: $("#hand-diagnostic-contact"), diagnosticStroke: $("#hand-diagnostic-stroke"), diagnosticFrame: $("#hand-diagnostic-frame"),
   gestureDigit: $("#gesture-digit"), gestureState: $("#gesture-state"), gestureConfidence: $("#gesture-confidence"), latency: $("#latency-readout"),
   play: $("#transport-play"), stop: $("#transport-stop"), bpm: $("#bpm-input"), tap: $("#tap-tempo"), quantization: $("#quantization-select"), position: $("#transport-position"),
   collection: $("#collection-select"), instrument: $("#instrument-select"), root: $("#root-select"), gamma: $("#gamma-select"), harmony: $("#harmony-select"), gestureMap: $("#gesture-map"),
   master: $("#master-volume"), sub: $("#sub-boost"), grit: $("#distortion"), generate: $("#generate-loop"), lanes: $("#loop-lanes"), laneTemplate: $("#lane-template"),
   focusedPanel: $(".focused-editor-panel"), focusedSummary: $("#focused-lane-summary"), focusedRoll: $("#focused-lane-roll"), focusedEmpty: $("#focused-roll-empty"), focusedLength: $("#focused-roll-length"), focusedRecord: $("#focused-record"), focusedOverdub: $("#focused-overdub"), focusedMute: $("#focused-mute"), focusedSolo: $("#focused-solo"), focusedClear: $("#focused-clear"),
   export: $("#export-wav"), visualCanvas: $("#visualizer-canvas"), visualLabel: $("#visualizer-label"), fullVisual: $("#fullscreen-visualizer"), reduceMotion: $("#reduced-motion"),
-  calibrationButton: $("#calibrate-button"), calibrationDialog: $("#calibration-dialog"), calibrationHeading: $("#calibration-heading"), calibrationInstruction: $("#calibration-instruction"), calibrationOrientation: $("#calibration-orientation"), calibrationGlyph: $("#calibration-glyph"), calibrationStatus: $("#calibration-status"), calibrationCount: $("#calibration-count"), calibrationProgress: $("#calibration-progress"), calibrationChecklist: $("#calibration-checklist"), calibrationBack: $("#calibration-back"), calibrationReset: $("#calibration-reset"), calibrationNext: $("#calibration-next"),
+  calibrationButton: $("#calibrate-button"), calibrationDialog: $("#calibration-dialog"), calibrationCameraMount: $("#calibration-camera-mount"), calibrationDiagnosticMount: $("#calibration-diagnostic-mount"), calibrationHeading: $("#calibration-heading"), calibrationInstruction: $("#calibration-instruction"), calibrationOrientation: $("#calibration-orientation"), calibrationGlyph: $("#calibration-glyph"), calibrationStatus: $("#calibration-status"), calibrationCount: $("#calibration-count"), calibrationProgress: $("#calibration-progress"), calibrationChecklist: $("#calibration-checklist"), calibrationBack: $("#calibration-back"), calibrationReset: $("#calibration-reset"), calibrationNext: $("#calibration-next"),
 };
 
 let project = normalizeProject(await loadProject());
@@ -56,6 +57,7 @@ let analyser = null;
 let visualizer = null;
 let transport = null;
 let cameraStream = null;
+let cameraGeneration = 0;
 let visionWorker = null;
 let frameInFlight = false;
 let cameraLoopHandle = 0;
@@ -633,31 +635,42 @@ async function exportWav() {
 async function startCamera() {
   if (cameraStream) return stopCamera();
   if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera access is unavailable. Use HTTPS in Chrome or Edge.");
-  cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 960 }, height: { ideal: 720 }, frameRate: { ideal: 60, min: 24 } }, audio: false });
-  dom.video.srcObject = cameraStream;
+  const generation = ++cameraGeneration;
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 960 }, height: { ideal: 720 }, frameRate: { ideal: 60, min: 24 } }, audio: false });
+  if (generation !== cameraGeneration) { stream.getTracks().forEach((track) => track.stop()); return; }
+  cameraStream = stream;
+  dom.video.srcObject = stream;
   await dom.video.play();
+  if (generation !== cameraGeneration || cameraStream !== stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    return;
+  }
   dom.cameraMessage.hidden = true;
   dom.cameraToggle.textContent = "CAMERA ON";
   setStatus("INITIALIZING VISION", "busy");
   initVisionWorker();
-  queueCameraFrame();
+  queueCameraFrame(generation, stream);
 }
 
 function stopCamera() {
+  cameraGeneration += 1;
   cancelAnimationFrame(cameraLoopHandle);
+  frameInFlight = false;
   cameraStream?.getTracks().forEach((track) => track.stop());
   cameraStream = null;
   dom.video.srcObject = null;
   dom.cameraMessage.hidden = false;
   dom.cameraMessage.textContent = "Camera offline. Keyboard digits remain playable.";
   dom.cameraToggle.textContent = "CAMERA OFF";
+  resetHandDiagnostics();
+  clearHandOverlay();
   setStatus("CAMERA DORMANT", "idle");
 }
 
 function initVisionWorker() {
   if (visionWorker) return;
   try {
-    visionWorker = new Worker("js/vision/vision-worker.js?v=2", { type: "module" });
+    visionWorker = new Worker("js/vision/vision-worker.js?v=3", { type: "module" });
     visionWorker.addEventListener("message", handleVisionMessage);
     visionWorker.addEventListener("error", (event) => { frameInFlight = false; showToast(`VISION WORKER: ${event.message}`); });
     visionWorker.postMessage({
@@ -674,9 +687,10 @@ function initVisionWorker() {
   }
 }
 
-function queueCameraFrame() {
-  if (!cameraStream) return;
+function queueCameraFrame(generation = cameraGeneration, stream = cameraStream) {
+  if (!stream || generation !== cameraGeneration || cameraStream !== stream) return;
   const send = async (now) => {
+    if (generation !== cameraGeneration || cameraStream !== stream) return;
     if (!frameInFlight && visionWorker && dom.video.readyState >= 2) {
       frameInFlight = true;
       try {
@@ -684,7 +698,7 @@ function queueCameraFrame() {
         visionWorker.postMessage({ type: "frame", frame: bitmap, timestamp: now }, [bitmap]);
       } catch { frameInFlight = false; }
     }
-    queueCameraFrame();
+    if (generation === cameraGeneration && cameraStream === stream) queueCameraFrame(generation, stream);
   };
   if (dom.video.requestVideoFrameCallback) dom.video.requestVideoFrameCallback((now) => send(now));
   else cameraLoopHandle = requestAnimationFrame(send);
@@ -692,6 +706,10 @@ function queueCameraFrame() {
 
 function handleVisionMessage(event) {
   const message = event.data || {};
+  if (message.type === "diagnostic") {
+    updateHandDiagnostics(message.diagnostic);
+    return;
+  }
   if (message.type === "frame-ready" || message.type === "frame-dropped") { frameInFlight = false; return; }
   if (message.type === "ready") {
     if (calibrationDraft) visionWorker?.postMessage({ type: "calibration-import", draft: calibrationDraft });
@@ -706,7 +724,7 @@ function handleVisionMessage(event) {
   }
   if (message.type === "recognition") {
     const payload = message;
-    if (payload.landmarks) drawHand(payload.landmarks);
+    if (payload.landmarks) drawHand(payload.landmarks); else clearHandOverlay();
     const confidence = payload.confidence ?? payload.diagnostics?.pose?.confidence ?? 0;
     dom.gestureConfidence.value = clamp(confidence, 0, 1);
     dom.gestureState.textContent = payload.diagnostics?.reason || payload.diagnostics?.downstroke?.state || (payload.landmarks ? "TRACKING" : "NO HAND");
@@ -741,6 +759,69 @@ function drawHand(landmarks) {
   }
   context.fillStyle = "#efe6d0";
   for (const point of landmarks) { context.beginPath(); context.arc((1 - point.x) * rect.width, point.y * rect.height, 2.4, 0, Math.PI * 2); context.fill(); }
+}
+
+function clearHandOverlay() {
+  const context = dom.overlay.getContext("2d");
+  context?.setTransform(1, 0, 0, 1, 0, 0);
+  context?.clearRect(0, 0, dom.overlay.width, dom.overlay.height);
+}
+
+const DIAGNOSTIC_FINGERS = Object.freeze({ index: 9, middle: 8, ring: 7, pinky: 6 });
+
+function resetHandDiagnostics() {
+  if (!dom.diagnostics) return;
+  dom.diagnostics.dataset.state = "idle";
+  dom.diagnosticStatus.value = "NO SIGNAL";
+  dom.diagnosticPose.value = "--";
+  dom.diagnosticContact.value = "--";
+  dom.diagnosticStroke.value = "--";
+  dom.diagnosticFrame.value = "--";
+  for (const output of $$('[id^="tip-"]', dom.diagnostics)) output.value = "--";
+  for (const cell of $$(".finger-diagnostic", dom.diagnostics)) cell.dataset.state = "idle";
+}
+
+function updateHandDiagnostics(diagnostic) {
+  if (!dom.diagnostics || !diagnostic) return;
+  const detected = Boolean(diagnostic.hand?.detected);
+  if (!detected) {
+    resetHandDiagnostics();
+    dom.diagnosticStatus.value = "SCANNING / NO HAND";
+    dom.diagnosticFrame.value = Number.isFinite(diagnostic.latency?.totalMs) ? `${diagnostic.latency.totalMs.toFixed(1)}MS` : "--";
+    return;
+  }
+
+  const contacts = diagnostic.fingertips?.contacts || {};
+  const entries = Object.entries(contacts)
+    .map(([digit, state]) => ({ digit: Number(digit), ...state }))
+    .filter((state) => Number.isFinite(state.distance));
+  const nearest = entries.slice().sort((left, right) => left.distance - right.distance)[0] || null;
+  const touching = entries.filter((state) => state.latched || state.withinThreshold === true);
+  const activeContact = touching.slice().sort((left, right) => left.distance - right.distance)[0] || null;
+  const confidence = Math.round(clamp(diagnostic.hand?.confidence ?? 0, 0, 1) * 100);
+  dom.diagnostics.dataset.state = activeContact ? "contact" : "tracking";
+  dom.diagnosticStatus.value = activeContact ? `CONTACT / SIGN ${activeContact.digit}` : `HAND ACQUIRED / ${confidence}%`;
+
+  const pose = diagnostic.pose || {};
+  dom.diagnosticPose.value = pose.digit
+    ? `${pose.digit}${pose.accepted ? " OK" : " ?"} ${Math.round(clamp(pose.confidence ?? 0, 0, 1) * 100)}%`
+    : String(pose.reason || diagnostic.reason || "TRACKING").replaceAll("-", " ").toUpperCase();
+  dom.diagnosticContact.value = activeContact ? `${activeContact.digit} TOUCH Δ${activeContact.distance.toFixed(3)}`
+    : nearest ? `NEAR ${nearest.digit} Δ${nearest.distance.toFixed(3)}` : "NO TIP DATA";
+  const stroke = diagnostic.downstroke || {};
+  dom.diagnosticStroke.value = `${String(stroke.state || "UNAVAILABLE").replaceAll("-", " ").toUpperCase()} / V${Number(stroke.velocity || 0).toFixed(2)}`;
+  dom.diagnosticFrame.value = Number.isFinite(diagnostic.latency?.totalMs) ? `${diagnostic.latency.totalMs.toFixed(1)}MS` : "--";
+
+  const thumb = $("#tip-thumb", dom.diagnostics);
+  const facing = diagnostic.orientation?.cameraFacing;
+  thumb.value = Number.isFinite(facing) ? `VIEW ${facing >= 0 ? "+" : ""}${facing.toFixed(2)}` : "ANCHOR";
+  thumb.closest(".finger-diagnostic").dataset.state = "active";
+  for (const [finger, digit] of Object.entries(DIAGNOSTIC_FINGERS)) {
+    const output = $(`#tip-${finger}`, dom.diagnostics);
+    const state = contacts[digit] || {};
+    output.value = Number.isFinite(state.distance) ? `Δ ${state.distance.toFixed(3)}` : "--";
+    output.closest(".finger-diagnostic").dataset.state = activeContact?.digit === digit ? "contact" : "active";
+  }
 }
 
 const POSE_TEXT = Object.freeze({
@@ -783,10 +864,14 @@ function blankCalibrationStatuses() {
 function statusesFromDraft(draft) {
   const statuses = blankCalibrationStatuses();
   const data = draft?.data;
-  for (const digit of [1,2,3,4,5]) if ((data?.poseSamples?.[digit]?.length || 0) >= 5) statuses[`pose-${digit}`] = "passed";
+  for (const digit of [1,2,3,4,5]) {
+    const checked = data?.completed?.pose?.[digit];
+    if (checked === true || (checked == null && (data?.poseSamples?.[digit]?.length || 0) >= 5)) statuses[`pose-${digit}`] = "passed";
+  }
   for (const digit of [6,7,8,9]) {
-    if ((data?.contactSamples?.[digit]?.open?.length || 0) >= 5) statuses[`contact-${digit}-open`] = "passed";
-    if ((data?.contactSamples?.[digit]?.closed?.length || 0) >= 5) statuses[`contact-${digit}-closed`] = "passed";
+    const validated = data?.completed?.contactPhase?.[digit];
+    if (validated?.open === true || (validated?.open == null && (data?.contactSamples?.[digit]?.open?.length || 0) >= 5)) statuses[`contact-${digit}-open`] = "passed";
+    if (validated?.closed === true || (validated?.closed == null && (data?.contactSamples?.[digit]?.closed?.length || 0) >= 5)) statuses[`contact-${digit}-closed`] = "passed";
   }
   if (data?.completed?.downstroke) statuses.downstroke = "passed";
   const saved = draft?.uiStatuses;
@@ -809,6 +894,34 @@ function selectFirstIncompleteCalibrationStep(from = 0) {
   return true;
 }
 
+function mountCalibrationCamera() {
+  if (dom.cameraStage && dom.calibrationCameraMount && dom.cameraStage.parentElement !== dom.calibrationCameraMount) {
+    dom.calibrationCameraMount.append(dom.cameraStage);
+  }
+  if (dom.diagnostics && dom.calibrationDiagnosticMount && dom.diagnostics.parentElement !== dom.calibrationDiagnosticMount) {
+    dom.calibrationDiagnosticMount.append(dom.diagnostics);
+  }
+}
+
+function restoreCameraTerminal() {
+  if (dom.cameraStage && dom.cameraHome && dom.cameraStage.parentElement !== dom.cameraHome) dom.cameraHome.append(dom.cameraStage);
+  if (dom.diagnostics && dom.cameraHome && dom.diagnostics.parentElement !== dom.cameraHome.parentElement) dom.cameraHome.after(dom.diagnostics);
+}
+
+function closeCalibrationSession() {
+  if (calibrationSession?.capturing) {
+    clearTimeout(calibrationTimeout);
+    const step = CALIBRATION_STEPS[calibrationSession.step];
+    visionWorker?.postMessage({ type: "calibration-cancel", captureId: calibrationSession.captureId || null });
+    calibrationSession.capturing = false;
+    calibrationSession.statuses[step.id] = calibrationSession.capturePreviousState || "pending";
+    calibrationSession.captureId = null;
+    calibrationSession.capturePreviousState = null;
+    renderCalibrationStep();
+  }
+  restoreCameraTerminal();
+}
+
 function openCalibration() {
   const statuses = calibrationDraft ? statusesFromDraft(calibrationDraft)
     : calibrationProfile?.valid ? allPassedStatuses() : blankCalibrationStatuses();
@@ -818,7 +931,9 @@ function openCalibration() {
   if (!hasIncomplete && calibrationProfile?.valid) {
     dom.calibrationInstruction.textContent = "Your active profile is complete. Choose any saved section below if you want to recapture only that part.";
   }
+  mountCalibrationCamera();
   dom.calibrationDialog.showModal();
+  if (!cameraStream) startCamera().catch((error) => showToast(error.message, 5000));
 }
 
 function renderCalibrationChecklist() {
@@ -877,6 +992,8 @@ function captureCalibrationStep() {
   const step = CALIBRATION_STEPS[calibrationSession.step];
   clearTimeout(calibrationTimeout);
   calibrationSession.forceCapture = null;
+  calibrationSession.capturePreviousState = calibrationSession.statuses[step.id];
+  calibrationSession.captureId = `${step.id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   calibrationSession.capturing = true;
   calibrationSession.statuses[step.id] = "capturing";
   dom.calibrationStatus.textContent = "CAPTURING / HOLD STEADY";
@@ -890,6 +1007,7 @@ function captureCalibrationStep() {
   visionWorker.postMessage({
     type: "calibration-capture",
     step: step.id,
+    captureId: calibrationSession.captureId,
     glyph: step.glyph,
     phase: step.phase,
     durationMs: step.durationMs,
@@ -897,8 +1015,11 @@ function captureCalibrationStep() {
   });
   calibrationTimeout = setTimeout(() => {
     if (!calibrationSession?.capturing || calibrationSession.statuses[step.id] !== "capturing") return;
+    visionWorker?.postMessage({ type: "calibration-cancel", captureId: calibrationSession.captureId || null });
     calibrationSession.capturing = false;
     calibrationSession.statuses[step.id] = "failed";
+    calibrationSession.captureId = null;
+    calibrationSession.capturePreviousState = null;
     dom.calibrationInstruction.textContent = "No completed capture arrived. Check that the camera sees one full hand, then retry only this part.";
     renderCalibrationStep();
   }, step.durationMs + 4500);
@@ -911,6 +1032,7 @@ function stepPassed(summary, step) {
 
 function updateCalibrationProgress(message) {
   if (!calibrationSession?.capturing || !message.latest) return;
+  if (message.captureId && message.captureId !== calibrationSession.captureId) return;
   const step = CALIBRATION_STEPS[calibrationSession.step];
   const phaseSummary = step.phase ? message.latest.phases?.[step.phase] : message.latest;
   if (!phaseSummary) return;
@@ -918,19 +1040,24 @@ function updateCalibrationProgress(message) {
 }
 
 function finishCalibrationStep(message) {
-  if (!calibrationSession) return;
+  if (!calibrationSession?.capturing) return;
+  if (message.captureId && message.captureId !== calibrationSession.captureId) return;
   const index = CALIBRATION_STEPS.findIndex((step) => step.id === String(message.step));
   if (index < 0) return;
   clearTimeout(calibrationTimeout);
   const step = CALIBRATION_STEPS[index];
   const passed = stepPassed(message.summary, step);
   calibrationSession.capturing = false;
+  calibrationSession.captureId = null;
+  calibrationSession.capturePreviousState = null;
   calibrationSession.statuses[step.id] = passed ? "passed" : "failed";
   calibrationSession.step = index;
   if (!passed) {
     visionWorker?.postMessage({ type: "calibration-export" });
     renderCalibrationStep();
-    dom.calibrationInstruction.textContent = `This part needs more clean frames (${message.summary?.count || 0} captured). Everything already passed is still saved.`;
+    dom.calibrationInstruction.textContent = message.summary?.reason
+      ? `This part needs a focused retry: ${message.summary.reason}. Everything already passed is still saved.`
+      : `This part needs more clean frames (${message.summary?.count || 0} captured). Everything already passed is still saved.`;
     return;
   }
   const hasNext = selectFirstIncompleteCalibrationStep(index + 1);
@@ -1070,6 +1197,7 @@ function wireEvents() {
     showToast("CALIBRATION PROGRESS RESET FOR THE SELECTED HAND", 4200);
   });
   dom.calibrationButton.addEventListener("click", openCalibration);
+  dom.calibrationDialog.addEventListener("close", closeCalibrationSession);
   dom.calibrationNext.addEventListener("click", captureCalibrationStep);
   dom.calibrationBack.addEventListener("click", () => { if (calibrationSession?.step > 0) { calibrationSession.step -= 1; renderCalibrationStep(); } });
   dom.calibrationReset.addEventListener("click", resetCalibrationProgress);

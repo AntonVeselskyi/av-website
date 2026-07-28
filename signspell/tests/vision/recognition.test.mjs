@@ -150,6 +150,19 @@ test("contact landmark replay maps thumb contacts to 6–9", () => {
   assert.equal(event?.source, "contact");
 });
 
+test("recognizer exposes derived hand, contact, pose, and downstroke diagnostics before calibration", () => {
+  const recognizer = new SignSpellRecognizer();
+  const result = recognizer.process({ timestamp: 100, confidence: 0.81, landmarks: hand({ digit: 1 }) });
+  assert.equal(result.hit, null);
+  assert.equal(result.diagnostics.hand.detected, true);
+  assert.equal(result.diagnostics.hand.confidence, 0.81);
+  assert.ok(Number.isFinite(result.diagnostics.orientation.cameraFacing));
+  assert.ok(Number.isFinite(result.diagnostics.fingertips.distances[6]));
+  assert.equal(result.diagnostics.pose.reason, "calibration-required");
+  assert.equal(result.diagnostics.downstroke.state, "unavailable");
+  assert.equal(recognizer.process({ timestamp: 120, landmarks: null }).diagnostics.hand.detected, false);
+});
+
 test("worker controller replays landmark frames without a webcam or detector", async () => {
   const messages = [];
   const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
@@ -158,6 +171,11 @@ test("worker controller replays landmark frames without a webcam or detector", a
   await controller.handle({ type: "replay-frame", frame: { timestamp: 20, landmarks: hand({ digit: 1, contact: 8 }) } });
   assert.equal(messages.find((message) => message.type === "ready")?.detectorReady, false);
   assert.deepEqual(messages.find((message) => message.type === "hit")?.hit.digit, 8);
+  const diagnostic = messages.findLast((message) => message.type === "diagnostic")?.diagnostic;
+  assert.equal(diagnostic.hand.detected, true);
+  assert.ok(Number.isFinite(diagnostic.fingertips.contacts[8].distance));
+  assert.equal(Object.hasOwn(diagnostic, "landmarks"), false);
+  assert.ok(Number.isFinite(diagnostic.latency.recognitionMs));
 });
 
 test("profile reports completed gestures without discarding their usable samples", () => {
@@ -248,4 +266,97 @@ test("contact phases export, resume, and replace only the retried phase", async 
   const resumedDraft = resumedMessages.findLast((message) => message.type === "calibration-draft").draft;
   assert.equal(resumedDraft.data.contactSamples[6].open.length, 6);
   assert.equal(resumedDraft.data.contactSamples[6].closed.length, 6);
+});
+
+test("worker validates a pose checkpoint against the learned number-pose hand side", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: "pose-1", glyph: "1", durationMs: 900, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 400_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  await controller.handle({ type: "calibration-capture", step: "pose-2", glyph: "2", durationMs: 900, replace: true });
+  const oppositeSide = hand({ digit: 2 }).map((point) => ({ ...point, x: 1 - point.x }));
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 401_000 + index * 16, landmarks: oppositeSide } });
+  await controller.handle({ type: "calibration-export" });
+
+  const samples = messages.filter((message) => message.type === "calibration-sample");
+  assert.equal(samples.find((message) => message.step === "pose-1")?.summary.complete, true);
+  const second = samples.find((message) => message.step === "pose-2");
+  assert.equal(second?.summary.complete, false);
+  assert.match(second?.summary.reason || "", /same knuckles-facing side/);
+  const draft = messages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(draft.data.completed.pose[1], true);
+  assert.equal(draft.data.completed.pose[2], false);
+});
+
+test("worker rejects a touch checkpoint whose saved open and closed positions overlap", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: "contact-6-open", glyph: "6", phase: "open", durationMs: 900, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 500_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  await controller.handle({ type: "calibration-capture", step: "contact-6-closed", glyph: "6", phase: "closed", durationMs: 900, replace: true });
+  // Deliberately hold the same open shape during the touch pass.
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 501_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  await controller.handle({ type: "calibration-export" });
+
+  const close = messages.filter((message) => message.type === "calibration-sample").find((message) => message.step === "contact-6-closed");
+  assert.equal(close?.summary.phases.closed.complete, false);
+  assert.match(close?.summary.reason || "", /overlap/);
+  const draft = messages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(draft.data.completed.contactPhase[6].open, true);
+  assert.equal(draft.data.completed.contactPhase[6].closed, false);
+});
+
+test("worker finalizes a single checkpoint on its own timer without requiring another video frame", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: "pose-1", glyph: "1", durationMs: 500, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 600_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  await new Promise((resolve) => setTimeout(resolve, 560));
+  const sample = messages.findLast((message) => message.type === "calibration-sample");
+  assert.equal(sample?.step, "pose-1");
+  assert.equal(sample?.summary.complete, true);
+});
+
+test("cancelling a recapture restores saved checkpoint data and emits no late sample", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: "pose-1", captureId: "first", glyph: "1", durationMs: 900, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 700_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  await controller.handle({ type: "calibration-export" });
+  const completedSamples = messages.filter((message) => message.type === "calibration-sample").length;
+
+  await controller.handle({ type: "calibration-capture", step: "pose-1", captureId: "cancel-me", glyph: "1", durationMs: 900, replace: true });
+  await controller.handle({ type: "replay-frame", frame: { timestamp: 701_000, landmarks: hand({ digit: 2 }) } });
+  await controller.handle({ type: "calibration-cancel", captureId: "cancel-me" });
+  await controller.handle({ type: "calibration-export" });
+
+  assert.equal(messages.filter((message) => message.type === "calibration-sample").length, completedSamples);
+  const draft = messages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(draft.data.poseSamples[1].length, 6);
+  assert.equal(draft.data.completed.pose[1], true);
+});
+
+test("cancelling just after a recapture settles still restores saved checkpoint data", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: "pose-1", captureId: "saved", glyph: "1", durationMs: 900, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 800_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  await controller.handle({ type: "calibration-export" });
+
+  await controller.handle({ type: "calibration-capture", step: "pose-1", captureId: "settled-then-cancelled", glyph: "1", durationMs: 900, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 801_000 + index * 16, landmarks: hand({ digit: 2 }) } });
+  // Starting another operation settles the active capture synchronously, as
+  // the worker timer would, before the queued dialog-close cancellation lands.
+  await controller.handle({ type: "calibration-export" });
+  await controller.handle({ type: "calibration-cancel", captureId: "settled-then-cancelled" });
+  await controller.handle({ type: "calibration-export" });
+
+  const draft = messages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(draft.data.poseSamples[1].length, 6);
+  assert.equal(draft.data.completed.pose[1], true);
 });

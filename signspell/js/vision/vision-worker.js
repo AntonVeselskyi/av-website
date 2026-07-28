@@ -1,4 +1,4 @@
-import { SignSpellRecognizer } from "./recognizer.js?v=2";
+import { SignSpellRecognizer } from "./recognizer.js?v=3";
 import { buildCalibrationProfile } from "./calibration.js?v=2";
 import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.js?v=2";
 
@@ -13,11 +13,12 @@ import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.
  * - `replay-frame`: `{ frame: { timestamp, landmarks, handedness?, confidence? } }`
  * - `calibration-capture`: `{ step, glyph, durationMs, phase?, reset? }`,
  *   where `phase` is `open` or `closed` for deliberate 6–9 contact passes.
+ * - `calibration-cancel`: aborts only the active capture and restores its pre-capture data.
  * - `calibration-export` / `calibration-import`: JSON-only draft handoff.
  * - `reset` / `dispose`
  *
  * Worker -> main
- * - `ready`, `frame-ready`, `recognition`, `hit`, `calibration-sample`,
+ * - `ready`, `frame-ready`, `diagnostic`, `recognition`, `hit`, `calibration-sample`,
  *   `calibration-progress`, `calibration-draft`, or `error`.
  *
  * The externally supplied adapter module must export `createDetector(options)`
@@ -58,6 +59,8 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
   let selectedHandedness = "right";
   let calibrationCapture = null;
   let calibrationFrames = [];
+  let calibrationTimer = null;
+  let calibrationBackup = null;
   let calibrationData = freshCalibrationData();
 
   function freshCalibrationData() {
@@ -68,12 +71,59 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
         8: { values: [], open: [], closed: [] }, 9: { values: [], open: [], closed: [] },
       },
       strokeFrames: [],
-      completed: { pose: {}, contact: {}, downstroke: false },
+      completed: { pose: {}, contact: {}, contactPhase: {}, downstroke: false },
     };
   }
 
   const emit = (type, payload = {}, transfer = undefined) => postMessage({ type, ...payload }, transfer);
   const emitFrameReady = () => emit("frame-ready");
+  const median = (values) => {
+    const sorted = values.filter(Number.isFinite).slice().sort((left, right) => left - right);
+    if (!sorted.length) return null;
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  };
+  const percentile = (values, fraction) => {
+    const sorted = values.filter(Number.isFinite).slice().sort((left, right) => left - right);
+    if (!sorted.length) return null;
+    const position = Math.max(0, Math.min(sorted.length - 1, fraction * (sorted.length - 1)));
+    const low = Math.floor(position), high = Math.ceil(position);
+    return sorted[low] + (sorted[high] - sorted[low]) * (position - low);
+  };
+  const clearCalibrationTimer = () => {
+    if (calibrationTimer != null) clearTimeout(calibrationTimer);
+    calibrationTimer = null;
+  };
+  const cloneCalibrationData = (value) => typeof structuredClone === "function"
+    ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+  const viewReference = (entries) => median(entries.map((entry) => entry?.view));
+  const captureViewQuality = (entries, expectedView = null) => {
+    const values = entries.map((entry) => entry?.view).filter(Number.isFinite);
+    if (values.length < 5) return { valid: false, reason: "need five clear hand-view samples" };
+    const center = median(values);
+    const deviations = values.map((value) => Math.abs(value - center));
+    // Require a decisive, steady camera-facing direction. The sign itself is
+    // learned, so this works with mirrored front cameras and either hand.
+    if (Math.abs(center) < 0.12) return { valid: false, reason: "turn the hand more clearly toward the camera" };
+    if ((percentile(deviations, 0.9) ?? Infinity) > 0.34) return { valid: false, reason: "hold one hand-facing direction steadily" };
+    if (Number.isFinite(expectedView) && center * expectedView >= -0.02) {
+      return { valid: false, reason: "use the opposite hand-facing side for this checkpoint" };
+    }
+    return { valid: true, center };
+  };
+  const poseViewReference = (exceptGlyph = null) => {
+    const samples = [1, 2, 3, 4, 5]
+      .filter((digit) => String(digit) !== String(exceptGlyph))
+      .flatMap((digit) => calibrationData.poseSamples[digit] || []);
+    return viewReference(samples);
+  };
+  const contactViewReference = (exceptGlyph = null, exceptPhase = null) => {
+    const samples = [6, 7, 8, 9].flatMap((digit) => {
+      const source = calibrationData.contactSamples[digit] || {};
+      return ["open", "closed"].flatMap((phase) => String(digit) === String(exceptGlyph) && phase === exceptPhase ? [] : (source[phase] || []));
+    });
+    return viewReference(samples);
+  };
   const derivedStrokeTrials = () => {
     const trials = [];
     const frames = calibrationData.strokeFrames;
@@ -95,25 +145,59 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
     && draft.data?.poseSamples
     && draft.data?.contactSamples
     && Array.isArray(draft.data?.strokeFrames));
-  const summarizeCapture = (glyph) => {
+  const summarizeCapture = (glyph, phase = calibrationCapture?.phase ?? null) => {
     if (/^[1-5]$/.test(glyph)) {
-      const count = calibrationData.poseSamples[glyph].length;
-      calibrationData.completed.pose[glyph] = count >= 5;
-      return { kind: "pose", glyph, count, complete: count >= 5, minimum: 5 };
+      const entries = calibrationData.poseSamples[glyph];
+      const count = entries.length;
+      const reference = poseViewReference(glyph);
+      const quality = captureViewQuality(entries, null);
+      // Number poses are all taken with the same side of the hand facing the
+      // camera. For the first one we learn that side; later poses must agree.
+      const sameSide = !Number.isFinite(reference) || !Number.isFinite(quality.center)
+        || quality.center * reference > 0.02;
+      const valid = count >= 5 && quality.valid && sameSide;
+      const reason = !sameSide ? "keep the same knuckles-facing side used for the other number poses" : quality.reason || null;
+      calibrationData.completed.pose[glyph] = valid;
+      return { kind: "pose", glyph, count, complete: valid, valid, minimum: 5, reason, view: quality.center ?? null };
     }
     if (/^[6-9]$/.test(glyph)) {
       const samples = calibrationData.contactSamples[glyph];
       const open = samples.open.length;
       const closed = samples.closed.length;
       const count = samples.values.length;
+      const phaseEntries = phase === "open" || phase === "closed" ? samples[phase] : samples.values;
+      const poseReference = poseViewReference();
+      const otherContactReference = contactViewReference(glyph, phase);
+      // Contacts are deliberately learned from the opposite (palm-facing)
+      // hand side. This remains relative rather than hard-coding a camera
+      // sign, preserving mirrored-camera and left-hand support.
+      const quality = captureViewQuality(phaseEntries, Number.isFinite(poseReference) ? poseReference : null);
+      const samePalmSide = !Number.isFinite(otherContactReference) || !Number.isFinite(quality.center)
+        || quality.center * otherContactReference > 0.02;
+      const closedHigh = percentile(samples.closed.map((entry) => entry.value), 0.9);
+      const openLow = percentile(samples.open.map((entry) => entry.value), 0.1);
+      const hasGap = open >= 5 && closed >= 5 ? closedHigh < openLow : true;
       // When phases are provided, require both. The legacy single-pass mode
       // remains available for callers that show touch-and-release together.
       const phased = open > 0 || closed > 0;
-      const complete = phased ? open >= 5 && closed >= 5 : count >= 10;
+      const phaseValid = phase ? phaseEntries.length >= 5 && quality.valid && samePalmSide : count >= 10;
+      const complete = phased ? open >= 5 && closed >= 5 && hasGap : count >= 10;
+      calibrationData.completed.contactPhase ||= {};
+      if (phase === "open" || phase === "closed") {
+        calibrationData.completed.contactPhase[glyph] ||= {};
+        calibrationData.completed.contactPhase[glyph][phase] = phaseValid && (phase !== "closed" || hasGap);
+      }
       calibrationData.completed.contact[glyph] = complete;
       return {
         kind: "contact", glyph, count, complete, minimum: phased ? 5 : 10,
-        phases: { open: { count: open, complete: open >= 5 }, closed: { count: closed, complete: closed >= 5 } },
+        phases: {
+          open: { count: open, complete: open >= 5 && (phase !== "open" || phaseValid), minimum: 5 },
+          closed: { count: closed, complete: closed >= 5 && (phase !== "closed" || phaseValid) && hasGap, minimum: 5 },
+        },
+        valid: phaseValid && hasGap,
+        reason: !hasGap ? "open and touch positions overlap; separate them clearly"
+          : !samePalmSide ? "keep the same palm-facing side used for the other contact captures"
+            : quality.reason || null,
       };
     }
     if (glyph === "↓") {
@@ -126,10 +210,11 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
   const finishCalibrationCapture = () => {
     if (!calibrationCapture) return;
     const finished = calibrationCapture;
+    clearCalibrationTimer();
     calibrationCapture = null;
-    const summary = summarizeCapture(finished.glyph);
-    emit("calibration-sample", { step: finished.step, glyph: finished.glyph, frames: calibrationFrames.length, summary });
-    emit("calibration-progress", { completed: calibrationData.completed, latest: summary });
+    const summary = summarizeCapture(finished.glyph, finished.phase);
+    emit("calibration-sample", { step: finished.step, captureId: finished.captureId, glyph: finished.glyph, frames: calibrationFrames.length, summary });
+    emit("calibration-progress", { completed: calibrationData.completed, latest: summary, captureId: finished.captureId });
     calibrationFrames = [];
   };
   const collectCalibration = (frame) => {
@@ -152,12 +237,33 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
     }
     else if (glyph === "↓") calibrationData.strokeFrames.push({ timestamp: frame.timestamp, palmY: normalized.palmScreenY });
     calibrationFrames.push(frame.timestamp);
-    if (calibrationFrames.length % 12 === 0) emit("calibration-progress", { completed: calibrationData.completed, latest: summarizeCapture(glyph), capturing: true });
+    if (calibrationFrames.length % 12 === 0) emit("calibration-progress", { completed: calibrationData.completed, latest: summarizeCapture(glyph, calibrationCapture.phase), captureId: calibrationCapture.captureId, capturing: true });
   };
   const process = (frame, metrics = null) => {
+    const recognitionStarted = performance.now();
     collectCalibration(frame);
     const result = recognizer.process(frame);
-    emit("recognition", { timestamp: frame.timestamp, diagnostics: result.diagnostics, landmarks: frame.landmarks, confidence: frame.confidence, metrics });
+    const recognitionMs = performance.now() - recognitionStarted;
+    const frameAgeMs = Number.isFinite(frame.timestamp) ? performance.now() - frame.timestamp : null;
+    const latency = Object.freeze({
+      inferenceMs: Number.isFinite(metrics?.inferenceMs) ? metrics.inferenceMs : null,
+      recognitionMs,
+      // Only expose a frame age if the producer uses the performance clock.
+      // Replay and foreign media clocks are deliberately treated as unknown.
+      frameAgeMs: Number.isFinite(frameAgeMs) && frameAgeMs >= 0 && frameAgeMs <= 5000 ? frameAgeMs : null,
+      totalMs: (Number.isFinite(metrics?.inferenceMs) ? metrics.inferenceMs : 0) + recognitionMs,
+    });
+    const diagnostic = Object.freeze({
+      schemaVersion: 1,
+      timestamp: Number.isFinite(frame.timestamp) ? frame.timestamp : null,
+      ...result.diagnostics,
+      latency,
+    });
+    // This always emits, including no-hand and pre-calibration states. It has
+    // only derived scalar state — never frames or landmarks — and stays local
+    // to the page/worker message channel.
+    emit("diagnostic", { diagnostic });
+    emit("recognition", { timestamp: frame.timestamp, diagnostics: result.diagnostics, landmarks: frame.landmarks, confidence: frame.confidence, metrics: { ...metrics, recognitionMs } });
     if (result.hit) emit("hit", { hit: result.hit });
     return result;
   };
@@ -170,6 +276,7 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
           case "init": {
             recognizer = new SignSpellRecognizer(message.profile || null);
             selectedHandedness = String(message.handedness || message.profile?.handedness || "right").toLowerCase();
+            recognizer.setHandedness(selectedHandedness);
             detector = await loadDetector(message.detectorConfig);
             disposed = false;
             emit("ready", { detectorReady: Boolean(detector), calibrationReady: Boolean(recognizer.profile) });
@@ -183,9 +290,14 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
             break;
           case "handedness":
             selectedHandedness = String(message.handedness || "right").toLowerCase();
+            recognizer.setHandedness(selectedHandedness);
             break;
           case "calibration-capture":
             finishCalibrationCapture();
+            calibrationBackup = {
+              captureId: message.captureId || null,
+              data: cloneCalibrationData(calibrationData),
+            };
             if (message.replace === true) {
               const glyph = String(message.glyph);
               if (/^[1-5]$/.test(glyph)) calibrationData.poseSamples[glyph] = [];
@@ -200,19 +312,45 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
             }
             calibrationCapture = {
               step: message.step,
+              captureId: message.captureId || null,
               glyph: String(message.glyph),
               phase: message.phase === "open" || message.phase === "closed" ? message.phase : null,
               until: performance.now() + Math.max(500, Number(message.durationMs) || 1800),
             };
             calibrationFrames = [];
+            clearCalibrationTimer();
+            calibrationTimer = setTimeout(() => finishCalibrationCapture(), Math.max(500, Number(message.durationMs) || 1800));
+            calibrationTimer?.unref?.();
             // Do not throw away a clean capture just because a later gesture
             // needs another pass. A caller can explicitly request a reset.
             if (message.reset === true) calibrationData = freshCalibrationData();
-            emit("calibration-capture-started", { step: message.step, glyph: message.glyph });
+            emit("calibration-capture-started", { step: message.step, captureId: message.captureId || null, glyph: message.glyph });
+            break;
+          case "calibration-cancel":
+            if (message.captureId && calibrationCapture?.captureId && message.captureId !== calibrationCapture.captureId) {
+              emit("calibration-cancelled", { captureId: message.captureId, ignored: true });
+              break;
+            }
+            // A timer can settle the capture just before the dialog close
+            // message arrives. Keep the pre-capture snapshot until the next
+            // capture so that this late cancellation is still transactional.
+            if (!calibrationCapture && message.captureId && calibrationBackup?.captureId
+              && message.captureId !== calibrationBackup.captureId) {
+              emit("calibration-cancelled", { captureId: message.captureId, ignored: true });
+              break;
+            }
+            clearCalibrationTimer();
+            calibrationCapture = null;
+            calibrationFrames = [];
+            if (calibrationBackup) calibrationData = calibrationBackup.data;
+            calibrationBackup = null;
+            emit("calibration-cancelled", { captureId: message.captureId || null });
             break;
           case "calibration-reset":
             calibrationCapture = null;
             calibrationFrames = [];
+            clearCalibrationTimer();
+            calibrationBackup = null;
             calibrationData = freshCalibrationData();
             emit("calibration-progress", { completed: calibrationData.completed, reset: true });
             break;
@@ -224,10 +362,14 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
             if (!isDraft(message.draft)) throw new Error("Invalid calibration draft");
             calibrationCapture = null;
             calibrationFrames = [];
+            clearCalibrationTimer();
+            calibrationBackup = null;
             calibrationData = message.draft.data;
             selectedHandedness = String(message.draft.handedness || selectedHandedness).toLowerCase() === "left" ? "left" : "right";
+            recognizer.setHandedness(selectedHandedness);
             // Drafts from earlier versions did not record completion state.
-            calibrationData.completed ||= { pose: {}, contact: {}, downstroke: false };
+            calibrationData.completed ||= { pose: {}, contact: {}, contactPhase: {}, downstroke: false };
+            calibrationData.completed.contactPhase ||= {};
             emit("calibration-imported", { completed: calibrationData.completed });
             emit("calibration-progress", { completed: calibrationData.completed, imported: true });
             break;
@@ -293,6 +435,8 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
           }
           case "dispose":
             recognizer.reset();
+            clearCalibrationTimer();
+            calibrationBackup = null;
             await detector?.close?.();
             detector = null;
             disposed = true;

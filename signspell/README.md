@@ -28,6 +28,10 @@ MediaPipe Hand Landmarker runs in a module worker. The first camera use download
 
 Calibration is saved per pose and per contact phase. A failed section can be retried without repeating sections that already passed, and an unfinished draft resumes after reloading the page.
 
+The hand terminal continuously shows local-only diagnostics for hand presence, camera-facing orientation, thumb-to-fingertip distances, nearest contact, pose state, and vision latency—even before a calibration profile exists. During calibration the existing webcam view and diagnostic bus move into the dialog, then return to the hand terminal when it closes.
+
+Each calibration checkpoint completes on its own timer and is validated independently. Number poses require a steady, consistent knuckles-facing view; contact phases require the opposite palm-facing view and a measurable open/touch gap. Failure messages identify the specific condition to retry while keeping passed checkpoints.
+
 ## Tests
 
 With Node 22 or newer:
