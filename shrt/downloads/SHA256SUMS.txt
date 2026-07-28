@@ -1,0 +1,7 @@
+47b1e7d719e89bdd03c38b9cd9828bc46d6412fc17b2683947c20d538b69a10  shrt-0.1.2-linux-x64.tar.gz
+be841f870c03a194f47cf3d7dd84a2a91ccc398afddd66e4ec3b259e5f2b4d71  shrt-0.1.2-source.zip
+2fa45821754ea0ec005a7f78085832024a384fb3ed0a0830d0fa6b4368bf7b2e  shrt-0.1.2-windows-x64.zip
+07f8be474ff13e6036df1dc510f891eddcc8b4571ad44b34b3fd849ceecbdfcf  shrt-build-run-0.5.1.vsix
+4bcfc34d464d451e850b78860f67d0bd7a5c5fb7aa89faa2495cb3f128d36ca1  shrt-convert-1.0.0.vsix
+6fde9cc7885467bab1f3dbe05553f35eaa8ac33b40722d864f90f7ec5ad2f303  shrt-convert-visual-studio-1.0.1.vsix
+07aa4eda79994e53bf22bc81fe87ef7fcac6b3107c3aafcf887fd9770fe6e7c1  shrt-syntax-0.3.1.vsix

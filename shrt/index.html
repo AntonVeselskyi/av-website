@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Install SHRT on Windows or Linux, then add syntax, build, run, and in-place C++ conversion tools for VS Code and Visual Studio.">
+<meta name="theme-color" content="#0a0a0a">
+<title>Get SHRT — transpiler and editor tools</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Major+Mono+Display&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-alt: #111111;
+    --panel: #151412;
+    --panel-hot: #1b1916;
+    --ink: #e8e6e1;
+    --ink-dim: #8a8580;
+    --rule: #2a2722;
+    --accent: #c9a96e;
+    --accent-hot: #e4c98e;
+    --ok: #91b87b;
+    --vs-bg: #1e1e1e;
+    --vs-fg: #d4d4d4;
+    --vs-kw: #569cd6;
+    --vs-type: #4ec9b0;
+    --vs-str: #ce9178;
+    --vs-com: #6a9955;
+    --vs-fn: #dcdcaa;
+    --vs-var: #9cdcfe;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body {
+    margin: 0;
+    min-width: 300px;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 18% 7%, rgba(201,169,110,.07), transparent 25rem),
+      radial-gradient(circle at 84% 28%, rgba(201,169,110,.045), transparent 30rem),
+      var(--bg);
+    font-family: Metamorphous, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    opacity: .13;
+    background-image: repeating-linear-gradient(90deg, transparent 0 79px, rgba(201,169,110,.12) 79px 80px), repeating-linear-gradient(0deg, transparent 0 79px, rgba(201,169,110,.08) 79px 80px);
+    mask-image: linear-gradient(to bottom, #000, transparent 70%);
+  }
+  ::selection { color: #000; background: var(--accent); }
+  a { color: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+
+  .topbar {
+    position: relative;
+    z-index: 30;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    min-height: 62px;
+    padding: 12px clamp(18px, 4vw, 58px);
+    border-bottom: 1px solid var(--rule);
+    background: rgba(10,10,10,.92);
+    backdrop-filter: blur(12px);
+  }
+  .topbar a {
+    font: 700 11px/1.2 "Cinzel Decorative", serif;
+    letter-spacing: .16em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .topbar a:hover { color: var(--accent); }
+  .top-links { display: flex; gap: clamp(15px, 3vw, 34px); }
+  .av-mark {
+    display: inline-grid;
+    place-items: center;
+    color: var(--accent);
+    font: 27px/1 "Major Mono Display", monospace;
+    letter-spacing: 0;
+  }
+  .av-mark span { grid-area: 1 / 1; }
+
+  .hero {
+    position: relative;
+    isolation: isolate;
+    min-height: 64svh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(80px, 12vw, 150px) 22px;
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+  }
+  .hero::before,
+  .hero::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: min(680px, 82vw);
+    aspect-ratio: 1;
+    border: 1px solid rgba(201,169,110,.22);
+    border-radius: 50%;
+  }
+  .hero::before { transform: translate(-43%, -35%); }
+  .hero::after { transform: translate(43%, 35%); }
+  .eyebrow {
+    margin: 0 0 25px;
+    color: var(--accent);
+    font: 500 12px/1.2 "JetBrains Mono", monospace;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 0;
+    color: #f5f3ee;
+    font: 900 clamp(62px, 14vw, 190px)/.82 "Cinzel Decorative", serif;
+    letter-spacing: -.045em;
+  }
+  .hero-sub {
+    max-width: 690px;
+    margin: 32px auto 0;
+    color: var(--ink-dim);
+    font: clamp(17px, 2vw, 23px)/1.6 "Nova Script", serif;
+    letter-spacing: .06em;
+  }
+  .release-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 34px;
+  }
+  .hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 11px; margin-top: 24px; }
+  .tag {
+    padding: 7px 10px;
+    color: var(--ink-dim);
+    border: 1px solid var(--rule);
+    background: rgba(17,17,17,.75);
+    font: 10px/1 "JetBrains Mono", monospace;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .tag.live { color: var(--ok); border-color: rgba(145,184,123,.35); }
+
+  main { position: relative; z-index: 1; }
+  .section {
+    width: min(1180px, calc(100% - 36px));
+    margin: 0 auto;
+    padding: clamp(70px, 10vw, 125px) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 450px);
+    align-items: end;
+    gap: 36px;
+    margin-bottom: 46px;
+  }
+  .section-no {
+    display: block;
+    margin-bottom: 14px;
+    color: var(--accent);
+    font: 500 11px/1 "JetBrains Mono", monospace;
+    letter-spacing: .2em;
+  }
+  h2 {
+    margin: 0;
+    font: 700 clamp(35px, 5vw, 64px)/1 "Cinzel Decorative", serif;
+    letter-spacing: -.025em;
+  }
+  .section-intro {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+  .download-card {
+    min-height: 390px;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(24px, 3vw, 38px);
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: rgba(17,17,17,.68);
+    transition: background 180ms ease, transform 180ms ease;
+  }
+  .download-card:hover { background: var(--panel-hot); transform: translateY(-3px); }
+  .platform {
+    margin-bottom: 22px;
+    color: var(--accent);
+    font: 500 11px/1 "JetBrains Mono", monospace;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+  .download-card h3 {
+    margin: 0;
+    font: 700 clamp(24px, 2.7vw, 34px)/1.1 "Cinzel Decorative", serif;
+  }
+  .meta {
+    margin: 13px 0 22px;
+    color: var(--ink-dim);
+    font: 11px/1.5 "JetBrains Mono", monospace;
+  }
+  .download-card p { margin: 0; font-size: 14px; line-height: 1.75; }
+  .card-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: auto; padding-top: 30px; }
+  .button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 43px;
+    padding: 11px 15px;
+    color: #080808;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    font: 700 11px/1.15 "Cinzel Decorative", serif;
+    letter-spacing: .08em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background 160ms, color 160ms, border-color 160ms;
+  }
+  .button:hover { background: var(--accent-hot); border-color: var(--accent-hot); }
+  .button.secondary { color: var(--accent); background: transparent; }
+  .button.secondary:hover { color: #080808; background: var(--accent); }
+
+  .install-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+  .install-card { min-width: 0; border: 1px solid var(--rule); background: rgba(17,17,17,.68); }
+  .install-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .install-title h3 { margin: 0; font: 700 24px/1 "Cinzel Decorative", serif; }
+  .install-title span { color: var(--ink-dim); font: 10px/1 "JetBrains Mono", monospace; letter-spacing: .15em; }
+  .steps { margin: 0; padding: 28px 28px 30px 58px; }
+  .steps li { padding-left: 7px; font-size: 14px; line-height: 1.7; }
+  .steps li + li { margin-top: 22px; }
+  .steps li::marker { color: var(--accent); font: 700 12px "JetBrains Mono", monospace; }
+  code.inline {
+    padding: 2px 5px;
+    color: var(--accent-hot);
+    background: #090909;
+    border: 1px solid var(--rule);
+    font: 12px/1.5 "JetBrains Mono", monospace;
+    overflow-wrap: anywhere;
+  }
+  .command {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    margin-top: 10px;
+    background: #080808;
+    border: 1px solid var(--rule);
+  }
+  .command pre {
+    margin: 0;
+    padding: 16px 50px 16px 16px;
+    overflow-x: auto;
+    color: var(--ink);
+    font: 12px/1.65 "JetBrains Mono", monospace;
+    white-space: pre;
+  }
+  .copy {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 31px;
+    height: 31px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-dim);
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    cursor: pointer;
+    font: 13px/1 "JetBrains Mono", monospace;
+  }
+  .copy:hover, .copy.done { color: #000; background: var(--accent); border-color: var(--accent); }
+  .quick-label { margin: 0 0 10px; color: var(--accent); font: 700 10px/1.2 "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
+  .manual-install { margin: 0 28px 28px; background: rgba(8,8,8,.72); }
+  .manual-install summary { padding-inline: 16px; }
+  .manual-install .manual-body { padding: 0 16px 18px; color: var(--ink-dim); font-size: 12px; }
+  .manual-install .manual-body p { margin: 0 0 12px; }
+  .requirements { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 22px; border: 1px solid var(--rule); }
+  .requirement { padding: 20px 22px; border-right: 1px solid var(--rule); }
+  .requirement:last-child { border-right: 0; }
+  .requirement strong { display: block; margin-bottom: 6px; color: var(--accent); font: 700 11px/1.3 "JetBrains Mono", monospace; text-transform: uppercase; }
+  .requirement span { color: var(--ink-dim); font-size: 12px; }
+
+  .first-run {
+    display: grid;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    border: 1px solid var(--rule);
+    background: var(--panel);
+  }
+  .first-copy { padding: clamp(28px, 5vw, 56px); }
+  .first-copy h3 { margin: 0 0 18px; color: var(--accent); font: 700 27px/1.2 "Cinzel Decorative", serif; }
+  .first-copy p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+  .editor { min-width: 0; background: var(--vs-bg); border-left: 1px solid var(--rule); }
+  .editor-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 15px;
+    color: #999;
+    background: #181818;
+    border-bottom: 1px solid #292929;
+    font: 11px/1 "JetBrains Mono", monospace;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+  .editor-file { margin-left: 7px; }
+  .editor pre { margin: 0; padding: 25px; overflow-x: auto; color: var(--vs-fg); font: 13px/1.75 "JetBrains Mono", monospace; }
+  .kw { color: var(--vs-kw); } .type { color: var(--vs-type); } .str { color: var(--vs-str); }
+  .comment { color: var(--vs-com); font-style: italic; } .fn { color: var(--vs-fn); } .var { color: var(--vs-var); }
+
+  .compile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 22px; }
+  .compile-card { min-width: 0; padding: 25px 27px; border: 1px solid var(--rule); background: rgba(17,17,17,.68); }
+  .compile-card h4 { margin: 0 0 14px; color: var(--accent); font: 700 15px/1.2 "Cinzel Decorative", serif; }
+  .compile-card p { margin: 14px 0 0; color: var(--ink-dim); font-size: 12px; }
+
+  .extension-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+  .extension-card { display: flex; flex-direction: column; padding: clamp(26px, 4vw, 42px); border: 1px solid var(--rule); background: rgba(17,17,17,.7); }
+  .extension-icon { width: 54px; height: 54px; display: grid; place-items: center; margin-bottom: 25px; color: #000; background: var(--accent); font: 700 20px/1 "JetBrains Mono", monospace; }
+  .extension-card h3 { margin: 0; font: 700 clamp(23px, 3vw, 32px)/1.2 "Cinzel Decorative", serif; }
+  .extension-card .meta { margin-bottom: 18px; }
+  .extension-card p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+  .extension-card ol { margin: 22px 0 0; padding-left: 22px; }
+  .extension-card li { padding-left: 5px; font-size: 13px; line-height: 1.65; }
+  .extension-card li + li { margin-top: 8px; }
+  .extension-card .card-actions { margin-top: auto; }
+  .keys { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  kbd { padding: 5px 8px; color: var(--ink); background: #090909; border: 1px solid #3a3732; border-bottom-width: 3px; font: 11px/1 "JetBrains Mono", monospace; }
+
+  details { margin-top: 25px; border: 1px solid var(--rule); background: #080808; }
+  summary { padding: 15px 18px; color: var(--accent); cursor: pointer; font: 700 11px/1.4 "JetBrains Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .hashes { margin: 0; padding: 0 18px 18px; overflow-x: auto; color: var(--ink-dim); font: 10px/1.85 "JetBrains Mono", monospace; }
+  .fine-print { margin: 30px 0 0; color: var(--ink-dim); font-size: 12px; }
+  .fine-print a { color: var(--accent); text-underline-offset: 3px; }
+
+  footer { padding: 45px 20px 55px; color: var(--ink-dim); text-align: center; font: 10px/1.7 "Cinzel Decorative", serif; letter-spacing: .16em; text-transform: uppercase; }
+  footer a { color: var(--ink); text-decoration: none; } footer a:hover { color: var(--accent); }
+
+  :focus-visible { outline: 2px solid var(--accent-hot); outline-offset: 4px; }
+  @media (max-width: 1080px) {
+    .download-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 850px) {
+    .section-head { grid-template-columns: 1fr; align-items: start; }
+    .download-grid { grid-template-columns: 1fr; }
+    .download-card { min-height: 0; }
+    .install-grid, .extension-grid, .compile-grid, .requirements { grid-template-columns: 1fr; }
+    .requirement { border-right: 0; border-bottom: 1px solid var(--rule); }
+    .requirement:last-child { border-bottom: 0; }
+    .first-run { grid-template-columns: 1fr; }
+    .editor { border-left: 0; border-top: 1px solid var(--rule); }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 15px; }
+    .topbar { min-height: 56px; padding-inline: 15px; }
+    .top-links a:first-child { display: none; }
+    .hero { min-height: 58svh; padding: 76px 16px; }
+    h1 { font-size: clamp(52px, 18vw, 86px); }
+    .section { width: min(100% - 26px, 1180px); }
+    .install-title, .steps { padding-left: 20px; padding-right: 20px; }
+    .steps { padding-left: 48px; }
+    .editor pre { padding: 20px 16px; font-size: 11px; }
+    .button { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<nav class="topbar" aria-label="SHRT navigation">
+  <a href="../shrt.html" aria-label="Back to the SHRT landing page"><span aria-hidden="true">←</span> What is SHRT?</a>
+  <a class="av-mark" href="https://antonveselskyi.com/" aria-label="Anton Veselskyi home"><span>A</span><span>V</span></a>
+  <div class="top-links">
+    <a href="#editors">Editors</a>
+    <a href="../shrt-play.html">Try it live <span aria-hidden="true">↗</span></a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div>
+    <p class="eyebrow">The transpiler · the editor tools · the whole thing</p>
+    <h1>Get SHRT</h1>
+    <p class="hero-sub">Put a small language in front of a very large compiler.</p>
+    <div class="release-line" aria-label="Release information">
+      <span class="tag live">● Preview 0.1.2</span>
+      <span class="tag">Windows x64</span>
+      <span class="tag">Linux x64</span>
+      <span class="tag">MIT</span>
+    </div>
+    <div class="hero-actions">
+      <a class="button" href="#install">Install the CLI</a>
+      <a class="button secondary" href="#editors">Get editor tools</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="section" id="downloads" aria-labelledby="downloads-title">
+    <header class="section-head">
+      <div><span class="section-no">01 / DOWNLOADS</span><h2 id="downloads-title">Choose your artifact.</h2></div>
+      <p class="section-intro">The CLI only transpiles SHRT into C++. Keep using the C++20 compiler and build system you already trust.</p>
+    </header>
+
+    <div class="download-grid">
+      <article class="download-card">
+        <div class="platform">Windows · x86-64</div>
+        <h3>Native executable</h3>
+        <div class="meta">ZIP · 202 KB · STATIC MSVC RUNTIME</div>
+        <p>Includes <code class="inline">shrt.exe</code>, a PowerShell installer, the MIT license, and a compact command reference. No WSL required.</p>
+        <div class="card-actions"><a class="button" href="downloads/shrt-0.1.2-windows-x64.zip" download>Download Windows</a></div>
+      </article>
+
+      <article class="download-card">
+        <div class="platform">Linux · x86-64</div>
+        <h3>Static binary</h3>
+        <div class="meta">TAR.GZ · 865 KB · NO SHARED LIBS</div>
+        <p>Includes the portable <code class="inline">shrt</code> binary and an installer targeting <code class="inline">~/.local/bin</code> by default.</p>
+        <div class="card-actions"><a class="button" href="downloads/shrt-0.1.2-linux-x64.tar.gz" download>Download Linux</a></div>
+      </article>
+
+      <article class="download-card">
+        <div class="platform">Any platform</div>
+        <h3>Build from source</h3>
+        <div class="meta">ZIP · 40 KB · CMAKE + C++20</div>
+        <p>The lexer, rewriter, CLI, language specification, and examples. Use this for another architecture or to inspect every transformation.</p>
+        <div class="card-actions">
+          <a class="button" href="downloads/shrt-0.1.2-source.zip" download>Download source</a>
+          <a class="button secondary" href="downloads/SHA256SUMS.txt">Checksums</a>
+        </div>
+      </article>
+
+      <article class="download-card">
+        <div class="platform">VS Code · Visual Studio</div>
+        <h3>Editor extensions</h3>
+        <div class="meta">SYNTAX · BUILD &amp; RUN · CONVERT TO C++</div>
+        <p>Install only the editor tools you want. Syntax support, compilation commands, and in-place conversion remain separate extensions.</p>
+        <div class="card-actions"><a class="button" href="#editors">Choose extensions</a></div>
+      </article>
+    </div>
+
+    <details>
+      <summary>SHA-256 checksums</summary>
+      <pre class="hashes">47b1e7d719e89bdd03c38b9cd9828bc46d6412fc17b2683947c20d538b69a10  shrt-0.1.2-linux-x64.tar.gz
+be841f870c03a194f47cf3d7dd84a2a91ccc398afddd66e4ec3b259e5f2b4d71  shrt-0.1.2-source.zip
+2fa45821754ea0ec005a7f78085832024a384fb3ed0a0830d0fa6b4368bf7b2e  shrt-0.1.2-windows-x64.zip
+07f8be474ff13e6036df1dc510f891eddcc8b4571ad44b34b3fd849ceecbdfcf  shrt-build-run-0.5.1.vsix
+4bcfc34d464d451e850b78860f67d0bd7a5c5fb7aa89faa2495cb3f128d36ca1  shrt-convert-1.0.0.vsix
+6fde9cc7885467bab1f3dbe05553f35eaa8ac33b40722d864f90f7ec5ad2f303  shrt-convert-visual-studio-1.0.1.vsix
+07aa4eda79994e53bf22bc81fe87ef7fcac6b3107c3aafcf887fd9770fe6e7c1  shrt-syntax-0.3.1.vsix</pre>
+    </details>
+  </section>
+
+  <section class="section" id="install" aria-labelledby="install-title">
+    <header class="section-head">
+      <div><span class="section-no">02 / INSTALL</span><h2 id="install-title">One command. Then verify.</h2></div>
+      <p class="section-intro">The recommended installers download the signed-off release archive, place one binary in a user-local folder, and add it to PATH. No administrator account, package manager, WSL, or project changes.</p>
+    </header>
+
+    <div class="install-grid">
+      <article class="install-card">
+        <header class="install-title"><h3>Windows</h3><span>RECOMMENDED</span></header>
+        <ol class="steps">
+          <li>Open a normal PowerShell window. Administrator mode is not needed.</li>
+          <li><p class="quick-label">Install latest Windows x64 release</p>
+            <div class="command"><button class="copy" type="button" aria-label="Copy Windows quick install command">⧉</button><pre>irm https://antonveselskyi.com/shrt/install.ps1 | iex</pre></div>
+          </li>
+          <li>Open a new terminal—or restart your editor—then verify both the location and version.
+            <div class="command"><button class="copy" type="button" aria-label="Copy Windows verification commands">⧉</button><pre>where.exe shrt
+shrt --version</pre></div>
+          </li>
+        </ol>
+        <details class="manual-install">
+          <summary>Prefer a manual install?</summary>
+          <div class="manual-body">
+            <p>Download the Windows ZIP, extract it, and run its bundled installer:</p>
+            <div class="command"><button class="copy" type="button" aria-label="Copy manual Windows install commands">⧉</button><pre>Expand-Archive .\shrt-0.1.2-windows-x64.zip .\shrt
+powershell -ExecutionPolicy Bypass -File .\shrt\shrt-0.1.2-windows-x64\install.ps1</pre></div>
+            <p><a href="install.ps1">Inspect the quick-install script</a> before running it.</p>
+          </div>
+        </details>
+      </article>
+
+      <article class="install-card">
+        <header class="install-title"><h3>Linux</h3><span>RECOMMENDED</span></header>
+        <ol class="steps">
+          <li>Open a terminal. Root access is not needed for the default install.</li>
+          <li><p class="quick-label">Install latest Linux x64 release</p>
+            <div class="command"><button class="copy" type="button" aria-label="Copy Linux quick install command">⧉</button><pre>curl -fsSL https://antonveselskyi.com/shrt/install.sh | sh</pre></div>
+          </li>
+          <li>Open a new shell—or restart your editor—then verify both the location and version.
+            <div class="command"><button class="copy" type="button" aria-label="Copy Linux verification commands">⧉</button><pre>command -v shrt
+shrt --version</pre></div>
+          </li>
+        </ol>
+        <details class="manual-install">
+          <summary>Prefer a manual install?</summary>
+          <div class="manual-body">
+            <p>Download the tarball, extract it, and run its bundled installer:</p>
+            <div class="command"><button class="copy" type="button" aria-label="Copy manual Linux install commands">⧉</button><pre>tar -xzf shrt-0.1.2-linux-x64.tar.gz
+cd shrt-0.1.2-linux-x64
+./install.sh</pre></div>
+            <p>If needed, add <code class="inline">~/.local/bin</code> to your shell PATH. You can also <a href="install.sh">inspect the quick-install script</a>.</p>
+          </div>
+        </details>
+      </article>
+    </div>
+
+    <div class="requirements" aria-label="Installation facts">
+      <div class="requirement"><strong>Install location</strong><span>Windows: <code class="inline">%LOCALAPPDATA%\Programs\shrt\bin</code></span></div>
+      <div class="requirement"><strong>Install location</strong><span>Linux: <code class="inline">~/.local/bin</code></span></div>
+      <div class="requirement"><strong>Compiler</strong><span>Not bundled. Use your existing C++20 compiler; Build &amp; Run specifically expects <code class="inline">g++</code>.</span></div>
+    </div>
+    <p class="fine-print">Custom location: set <code class="inline">SHRT_INSTALL_DIR</code> before the Windows quick installer or <code class="inline">SHRT_PREFIX</code> before the Linux quick installer. The downloadable archives also work fully offline after download.</p>
+  </section>
+
+  <section class="section" id="first-build" aria-labelledby="first-title">
+    <header class="section-head">
+      <div><span class="section-no">03 / FIRST BUILD</span><h2 id="first-title">Transpile. Compile. Run.</h2></div>
+      <p class="section-intro">SHRT owns the front end. Your normal compiler remains the back end. Pass <code class="inline">-g</code> so diagnostics map to the original SHRT lines.</p>
+    </header>
+
+    <div class="first-run">
+      <div class="first-copy">
+        <h3>Hello, shorter world.</h3>
+        <p>Save this as <code class="inline">hello.shrt</code>. Any valid C++ also remains valid SHRT, so existing libraries and build knowledge carry over.</p>
+      </div>
+      <div class="editor" aria-label="SHRT hello world example">
+        <div class="editor-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="editor-file">hello.shrt</span></div>
+        <pre><span class="kw">i</span> iostream
+
+<span class="type">int</span> <span class="fn">main</span>()
+{
+    <span class="kw">a</span> who = <span class="var">$string</span>(<span class="str">"world"</span>);
+    <span class="kw">p</span> <span class="str">$"hello, {who}!"</span>;
+    <span class="kw">r</span> 0;
+}</pre>
+      </div>
+    </div>
+
+    <div class="compile-grid">
+      <article class="compile-card">
+        <h4>Linux / MinGW / Clang</h4>
+        <div class="command"><button class="copy" type="button" aria-label="Copy GCC build commands">⧉</button><pre>shrt hello.shrt -g -o hello.shrt.cpp
+g++ -std=c++20 hello.shrt.cpp -o hello
+./hello</pre></div>
+        <p>Use <code class="inline">clang++</code> in place of <code class="inline">g++</code> if that is your compiler.</p>
+      </article>
+      <article class="compile-card">
+        <h4>Visual Studio developer shell</h4>
+        <div class="command"><button class="copy" type="button" aria-label="Copy MSVC build commands">⧉</button><pre>shrt hello.shrt -g -o hello.shrt.cpp
+cl /std:c++20 /EHsc hello.shrt.cpp /Fe:hello.exe
+.\hello.exe</pre></div>
+        <p>Run from a Developer PowerShell or Developer Command Prompt so <code class="inline">cl</code> and the C++ headers are available.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="editors" aria-labelledby="editors-title">
+    <header class="section-head">
+      <div><span class="section-no">04 / EDITORS</span><h2 id="editors-title">Install only what you need.</h2></div>
+      <p class="section-intro">Syntax, build/run, and in-place conversion remain separate tools. Every command-line integration resolves <code class="inline">shrt</code> from PATH—there is no project-folder discovery.</p>
+    </header>
+
+    <div class="extension-grid">
+      <article class="extension-card">
+        <div class="extension-icon" aria-hidden="true">{ }</div>
+        <h3>SHRT Syntax</h3>
+        <div class="meta">VSIX · 0.3.1 · HIGHLIGHTING ONLY</div>
+        <p>Registers <code class="inline">.shrt</code>, highlights SHRT sugar, and falls back to VS Code's C++ TextMate grammar for ordinary C++.</p>
+        <ol>
+          <li>Download the VSIX.</li>
+          <li>Open Extensions in VS Code.</li>
+          <li>Choose <strong>Views and More Actions… → Install from VSIX…</strong>.</li>
+          <li>Select the file, then run <strong>Developer: Reload Window</strong>.</li>
+        </ol>
+        <div class="card-actions"><a class="button" href="downloads/shrt-syntax-0.3.1.vsix" download>Download Syntax VSIX</a></div>
+      </article>
+
+      <article class="extension-card">
+        <div class="extension-icon" aria-hidden="true">▶</div>
+        <h3>SHRT Build &amp; Run</h3>
+        <div class="meta">VSIX · 0.5.1 · PATH COMMANDS</div>
+        <p>Resolves <code class="inline">shrt</code> and <code class="inline">g++</code> from PATH, transpiles the active file, and compiles it. It runs an existing current binary without rebuilding.</p>
+        <ol>
+          <li>Install the SHRT CLI and <code class="inline">g++</code> first; both commands must be on PATH.</li>
+          <li>Install this VSIX using the same menu.</li>
+          <li>Open a <code class="inline">.shrt</code> file and use the shortcuts below.</li>
+        </ol>
+        <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>B</kbd><span>build</span></div>
+        <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>R</kbd><span>build if stale + run</span></div>
+        <div class="card-actions"><a class="button" href="downloads/shrt-build-run-0.5.1.vsix" download>Download Build &amp; Run VSIX</a></div>
+      </article>
+
+      <article class="extension-card">
+        <div class="extension-icon" aria-hidden="true">⇢</div>
+        <h3>VS Code · Convert to C++</h3>
+        <div class="meta">VSIX · 1.0.0 · IN-PLACE EDIT</div>
+        <p>Select any SHRT text and convert it directly to C++. With no selection, the command finds the function containing the caret—including concise <code class="inline">=&gt;</code> functions.</p>
+        <ol>
+          <li>Install the SHRT CLI and verify <code class="inline">shrt --version</code> in a new terminal.</li>
+          <li>Install this VSIX, then run <strong>Developer: Reload Window</strong>.</li>
+          <li>Select text or place the caret inside a function. Required includes and the defer runtime are added once.</li>
+        </ol>
+        <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd><span>convert in place</span></div>
+        <div class="card-actions"><a class="button" href="downloads/shrt-convert-1.0.0.vsix" download>Download VS Code Converter</a></div>
+      </article>
+
+      <article class="extension-card">
+        <div class="extension-icon" aria-hidden="true">VS</div>
+        <h3>Visual Studio · Convert to C++</h3>
+        <div class="meta">VSIX · 1.0.1 · VISUAL STUDIO 2022</div>
+        <p>The same selection-or-function conversion for full Visual Studio. The command appears under <strong>Edit</strong> and in the editor context menu; the whole operation is one Undo step.</p>
+        <ol>
+          <li>Install the SHRT CLI first, then restart Visual Studio so it receives the updated PATH.</li>
+          <li>Close Visual Studio and double-click the downloaded VSIX.</li>
+          <li>Select your VS 2022 installation, choose <strong>Install</strong>, then reopen the IDE.</li>
+        </ol>
+        <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd><span>convert in place</span></div>
+        <div class="card-actions"><a class="button" href="downloads/shrt-convert-visual-studio-1.0.1.vsix" download>Download Visual Studio Converter</a></div>
+      </article>
+    </div>
+
+    <p class="fine-print">VS Code CLI alternative: <code class="inline">code --install-extension .\package.vsix --force</code>. After installing SHRT or changing PATH, fully restart the editor before testing a command. The Visual Studio converter supports VS 2022 Community, Professional, and Enterprise on x64 Windows.</p>
+  </section>
+
+  <section class="section" id="troubleshooting" aria-labelledby="troubleshooting-title">
+    <header class="section-head">
+      <div><span class="section-no">05 / TROUBLESHOOTING</span><h2 id="troubleshooting-title">Make PATH boring.</h2></div>
+      <p class="section-intro">The editor tools intentionally use the same commands as a terminal. If those commands work in a newly opened terminal, the extensions work after the editor is restarted.</p>
+    </header>
+    <div class="compile-grid">
+      <article class="compile-card">
+        <h4>“shrt is not on PATH”</h4>
+        <p>Open a completely new terminal and run <code class="inline">shrt --version</code>. If it works there, fully exit and reopen VS Code or Visual Studio. Reloading only the file is not enough.</p>
+      </article>
+      <article class="compile-card">
+        <h4>Build &amp; Run cannot find g++</h4>
+        <p>The build extension deliberately requires <code class="inline">g++</code> on PATH. Syntax highlighting and both converters do not require a compiler.</p>
+      </article>
+      <article class="compile-card">
+        <h4>No text selected</h4>
+        <p>Place the caret anywhere inside a braced function or a concise <code class="inline">=&gt;</code> function. Inside nested loops and conditionals, the converter walks outward to the enclosing function.</p>
+      </article>
+      <article class="compile-card">
+        <h4>Undo or generated preamble</h4>
+        <p>Conversion is an editor edit, so ordinary Undo restores the SHRT source. Missing includes and the defer helper are inserted once at the top of the document.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="source" aria-labelledby="source-title">
+    <header class="section-head">
+      <div><span class="section-no">06 / SOURCE</span><h2 id="source-title">Build it yourself.</h2></div>
+      <p class="section-intro">The source package needs CMake 3.16+ and a C++20 compiler. It contains no third-party runtime dependencies.</p>
+    </header>
+    <div class="command"><button class="copy" type="button" aria-label="Copy source build commands">⧉</button><pre>cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release</pre></div>
+    <p class="fine-print">The executable is <code class="inline">build/shrt</code> on single-config Linux generators and commonly <code class="inline">build/Release/shrt.exe</code> with Visual Studio generators. See the bundled README and <code class="inline">spec.md</code> for CLI and language details.</p>
+  </section>
+</main>
+
+<footer>© 2026 · <a href="https://antonveselskyi.com/">Anton Veselskyi</a> · <a href="../shrt.html">SHRT language</a> · MIT</footer>
+
+<script>
+  document.querySelectorAll('.copy').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const text = button.nextElementSibling.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = '✓';
+        button.classList.add('done');
+        setTimeout(() => { button.textContent = '⧉'; button.classList.remove('done'); }, 1400);
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(button.nextElementSibling);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+  });
+</script>
+</body>
+</html>

@@ -394,13 +394,21 @@
   }
   .brand a:hover { color: var(--accent); }
 
-  /* ────────── TRY IT LIVE — playground CTA ────────── */
+  /* ────────── SHRT ACTIONS — playground + downloads ────────── */
   .try-it
   {
     text-align: center;
     padding: 2.2rem 1rem 2.6rem;
     background: var(--bg);
     border-bottom: 1px solid var(--rule);
+  }
+
+  .try-actions
+  {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.85rem;
   }
 
   .try-it a
@@ -423,6 +431,20 @@
     background: var(--accent);
     color: #000;
   }
+
+  .try-it a.get-it
+  {
+    color: #000;
+    background: var(--accent);
+  }
+
+  .try-it a.get-it:hover
+  {
+    color: var(--accent);
+    background: transparent;
+  }
+
+  @media (max-width: 520px) { .try-it a { width: min(100%, 310px); } }
 
   /* ────────── MANIFESTO LINE ────────── */
   .manifesto
@@ -512,7 +534,10 @@
 <div class="brand"><span class="av-name"><span class="av-mark left" aria-hidden="true"><span>A</span><span>V</span></span><a href="https://antonveselskyi.com">Anton Veselskyi</a><span class="av-mark right" aria-hidden="true"><span>A</span><span>V</span></span></span></div>
 
 <div class="try-it">
-  <a href="https://antonveselskyi.com/shrt-play.html">Try it live &rarr;</a>
+  <div class="try-actions">
+    <a href="https://antonveselskyi.com/shrt-play.html">Try it live &rarr;</a>
+    <a class="get-it" href="/shrt/">Get it &darr;</a>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════
