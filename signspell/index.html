@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070707">
+  <meta name="description" content="$IGN⸸$PELL — a webcam-controlled dark instrument and loop workstation.">
+  <title>$IGN⸸$PELL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/sign-spell.css">
+</head>
+<body class="sign-spell">
+  <div class="noise" aria-hidden="true"></div>
+  <div class="boot-screen" id="boot-screen">
+    <div class="boot-sigil" aria-hidden="true">⸸</div>
+    <p class="eyebrow">PERSONAL RITUAL INSTRUMENT // CAMERA STAYS LOCAL</p>
+    <h1 class="wordmark" aria-label="Sign Spell"><span class="wordmark-old">$IGN</span><span class="wordmark-dagger">⸸</span><span class="wordmark-stamp">$PELL</span></h1>
+    <p class="boot-copy">Hand-number poses become notes, drums and loops. Use headphones carefully: the low end is real.</p>
+    <button class="ritual-button" id="start-app" type="button">ENTER THE SIGNAL</button>
+    <p class="boot-requirement">Desktop Chrome or Edge · webcam · HTTPS</p>
+  </div>
+
+  <main class="workstation" id="workstation" hidden>
+    <header class="topbar window-chrome">
+      <a class="home-link" href="../index.html" aria-label="Return to home">← AV</a>
+      <h1 class="wordmark wordmark-small" aria-label="Sign Spell"><span class="wordmark-old">$IGN</span><span class="wordmark-dagger">⸸</span><span class="wordmark-stamp">$PELL</span></h1>
+      <div class="system-readout" aria-live="polite"><i id="system-light"></i><span id="system-status">DORMANT</span></div>
+      <div class="transport" aria-label="Transport controls">
+        <button id="transport-play" type="button" title="Play">▶</button>
+        <button id="transport-stop" type="button" title="Stop">■</button>
+        <label>BPM <input id="bpm-input" type="number" min="60" max="200" value="140" inputmode="numeric"></label>
+        <button id="tap-tempo" type="button">TAP</button>
+        <label>GRID
+          <select id="quantization-select">
+            <option value="off">OFF</option><option value="1/8">1/8</option><option value="1/16" selected>1/16</option><option value="1/32">1/32</option>
+          </select>
+        </label>
+        <output id="transport-position">001:01</output>
+      </div>
+    </header>
+
+    <section class="desktop-grid">
+      <article class="panel camera-panel" aria-labelledby="camera-title">
+        <header class="panel-title"><h2 id="camera-title">HAND TERMINAL</h2><span>CAM::01</span></header>
+        <div class="camera-stage" id="camera-stage">
+          <video id="camera-feed" playsinline muted></video>
+          <canvas id="hand-overlay" aria-hidden="true"></canvas>
+          <div class="camera-reticle" aria-hidden="true"></div>
+          <div class="gesture-hud">
+            <output id="gesture-digit" aria-label="Detected hand number">–</output>
+            <div><span id="gesture-state">NO HAND</span><meter id="gesture-confidence" min="0" max="1" value="0">0%</meter></div>
+          </div>
+          <p class="camera-message" id="camera-message">Camera offline.</p>
+        </div>
+        <footer class="panel-footer">
+          <label>HAND <select id="handedness-select"><option value="Right">RIGHT</option><option value="Left">LEFT</option></select></label>
+          <button id="calibrate-button" type="button">CALIBRATE</button>
+          <button id="camera-toggle" type="button">CAMERA OFF</button>
+        </footer>
+      </article>
+
+      <article class="panel visualizer-panel" aria-labelledby="visualizer-title">
+        <header class="panel-title"><h2 id="visualizer-title">THE WIRED / MASTER VISION</h2><span id="visualizer-label">WIRED TUNNEL</span></header>
+        <canvas id="visualizer-canvas" aria-label="Audio-reactive visualization"></canvas>
+        <div class="visualizer-typographics" aria-hidden="true">
+          <span>present day</span><span>present time</span><span id="floating-diagnostic">signal absent</span>
+        </div>
+        <footer class="panel-footer visualizer-controls">
+          <button class="visual-mode active" data-mode="wired" type="button">WIRED</button>
+          <button class="visual-mode" data-mode="fire" type="button">FIRE</button>
+          <button class="visual-mode" data-mode="cruciform" type="button">SCOPE</button>
+          <button class="visual-mode" data-mode="shrine" type="button">SHRINE</button>
+          <button id="fullscreen-visualizer" type="button">FULLSCREEN</button>
+        </footer>
+      </article>
+
+      <aside class="panel sound-panel" aria-labelledby="sound-title">
+        <header class="panel-title"><h2 id="sound-title">GRIMOIRE / SOUND</h2><span>UNOFFICIAL ORIGINAL SYNTHESIS</span></header>
+        <div class="control-stack">
+          <label>VIBE COLLECTION<select id="collection-select"></select></label>
+          <label>INSTRUMENT<select id="instrument-select"></select></label>
+          <div class="two-controls"><label>ROOT<select id="root-select"></select></label><label>GAMMA<select id="gamma-select"></select></label></div>
+          <label>HARMONY<select id="harmony-select"><option value="strictChord">HARMONY LOCK</option><option value="safeScale">SAFE SCALE</option><option value="freeScale">FREE GAMMA</option></select></label>
+          <div class="mapping-grid" id="gesture-map" aria-label="Gesture note mapping"></div>
+          <div class="fader"><label for="master-volume">MASTER</label><input id="master-volume" type="range" min="0" max="1" step="0.01" value="0.72"><output>72</output></div>
+          <div class="fader"><label for="sub-boost">SUB</label><input id="sub-boost" type="range" min="0" max="1" step="0.01" value="0.42"><output>42</output></div>
+          <div class="fader"><label for="distortion">GRIT</label><input id="distortion" type="range" min="0" max="1" step="0.01" value="0.34"><output>34</output></div>
+          <button id="generate-loop" class="secondary-button" type="button">CONJURE LOOP INTO ACTIVE LINE</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel looper-panel" aria-labelledby="looper-title">
+      <header class="panel-title"><h2 id="looper-title">LOOP CEMETERY</h2><span>8 BAR-SYNCHRONIZED LINES</span><button id="export-wav" type="button">EXPORT WAV</button></header>
+      <div class="timeline-ruler" id="timeline-ruler" aria-hidden="true"></div>
+      <div class="loop-lanes" id="loop-lanes"></div>
+    </section>
+
+    <footer class="status-strip">
+      <span id="latency-readout">VISION --ms / AUDIO --ms</span>
+      <span>VIDEO NEVER LEAVES THIS DEVICE</span>
+      <button id="reduced-motion" type="button" aria-pressed="false">REDUCE MOTION</button>
+    </footer>
+  </main>
+
+  <dialog id="calibration-dialog" class="calibration-dialog">
+    <form method="dialog" class="calibration-card">
+      <button class="dialog-close" value="cancel" aria-label="Close calibration">×</button>
+      <p class="eyebrow">PERSONAL RECOGNITION PROFILE</p>
+      <h2 id="calibration-heading">CALIBRATE THE SIGNAL</h2>
+      <p id="calibration-instruction">Choose a well-lit space. Only normalized hand landmarks are retained.</p>
+      <div class="calibration-glyph" id="calibration-glyph">⸸</div>
+      <progress id="calibration-progress" max="100" value="0">0%</progress>
+      <div class="calibration-actions">
+        <button id="calibration-back" type="button">BACK</button>
+        <button id="calibration-next" type="button">BEGIN</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="lane-template">
+    <article class="loop-lane">
+      <button class="lane-select" type="button"><span class="lane-number"></span><strong class="lane-name"></strong><small class="lane-instrument"></small></button>
+      <button class="lane-record" type="button" aria-label="Record lane">●</button>
+      <button class="lane-overdub" type="button" aria-label="Toggle overdub">OVR</button>
+      <button class="lane-mute" type="button">M</button>
+      <button class="lane-solo" type="button">S</button>
+      <label class="lane-length">LEN<select><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option></select></label>
+      <div class="lane-events" tabindex="0" aria-label="Editable loop events"><div class="lane-playhead"></div></div>
+      <input class="lane-gain" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Lane volume">
+      <button class="lane-undo" type="button" title="Undo last pass">↶</button>
+      <button class="lane-clear" type="button">CLR</button>
+    </article>
+  </template>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

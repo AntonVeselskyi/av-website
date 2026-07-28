@@ -96,6 +96,10 @@
       .proj-tab[data-theme="sandstorm"]{ --stripe:#111111; --tab-particle:#e8a038; }
       .proj-tab[data-theme="stonks"]   { --stripe:#061033; --tab-particle:#3d7bff; }
       .proj-tab[data-theme="cherry"]   { --stripe:#4c1327; --tab-particle:#f08baa; }
+      .proj-tab[data-theme="signspell"] { --stripe:#09070b; --tab-particle:#a5ff9d; width:260px; }
+      .proj-tab[data-theme="signspell"]:is(:hover, :focus-visible, .is-tapped) { border-color:#a5ff9d; box-shadow:0 0 28px rgba(165,255,157,.14), inset 0 0 24px rgba(177,140,255,.1); }
+      .proj-tab[data-theme="signspell"]:is(:hover, :focus-visible, .is-tapped) .proj-tab__label { color:#efe6d0; font-family:"Old English Text MT",Georgia,serif; font-size:31px; letter-spacing:1px; text-shadow:2px 2px #8f243d,-1px 0 #a5ff9d; }
+      .proj-tab[data-theme="signspell"] .signspell-dagger { color:#a5ff9d; font-family:Georgia,serif; margin:0 .12em; }
       .proj-tab[data-theme="stonks"] .proj-tab__label { font-size: 15px; letter-spacing: 3px; }
       .proj-tab[data-theme="wander"] {
         width: 252px;
@@ -432,6 +436,9 @@
           </svg>
         </span>
         <span class="proj-tab__label">stonks defied</span>
+      </a>
+      <a class="proj-tab" data-theme="signspell" href="signspell/index.html" aria-label="Sign Spell gesture instrument">
+        <span class="proj-tab__label">$IGN<span class="signspell-dagger">⸸</span>$PELL</span>
       </a>
       <a class="proj-tab" data-theme="game"     href="gamelist.html"><span class="proj-tab__label">game list</span></a>
       <a class="proj-tab" data-theme="show"     href="showlist.html"><span class="proj-tab__label">show list</span></a>

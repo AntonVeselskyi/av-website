@@ -1,0 +1,441 @@
+/*
+ * $IGN⸸$PELL visual system
+ *
+ * This stylesheet is deliberately self-contained: it uses no external images
+ * and no downloadable display fonts.  The dense, photocopied atmosphere is
+ * produced with gradients and pseudo-elements so controls retain real text,
+ * contrast, and focus outlines.
+ */
+
+:root {
+  --spell-void: #080709;
+  --spell-ink: #151117;
+  --spell-panel: rgba(23, 18, 24, 0.92);
+  --spell-panel-solid: #171218;
+  --spell-bone: #efe6d0;
+  --spell-muted: #a69d96;
+  --spell-dim: #676069;
+  --spell-wire: #a5ff9d;
+  --spell-wire-dim: rgba(165, 255, 157, 0.26);
+  --spell-violet: #b18cff;
+  --spell-blood: #e14858;
+  --spell-amber: #e9a85b;
+  --spell-line: rgba(239, 230, 208, 0.16);
+  --spell-shadow: rgba(0, 0, 0, 0.62);
+  --spell-display: "UnifrakturCook", "Old English Text MT", "Lucida Blackletter", Georgia, serif;
+  --spell-stamp: "Rubik Dirt", "Arial Black", Impact, system-ui, sans-serif;
+  --spell-mono: VT323, "Share Tech Mono", "Cascadia Mono", Consolas, monospace;
+  --spell-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --spell-radius: 2px;
+  --spell-gap: clamp(0.7rem, 1.25vw, 1.25rem);
+}
+
+.sign-spell {
+  color: var(--spell-bone);
+  background:
+    radial-gradient(circle at 86% 4%, rgba(177, 140, 255, 0.13), transparent 25rem),
+    radial-gradient(circle at 7% 100%, rgba(225, 72, 88, 0.09), transparent 28rem),
+    var(--spell-void);
+  font-family: var(--spell-ui);
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.sign-spell::before,
+.sign-spell::after {
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+}
+
+.sign-spell::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+  background-size: 4px 4px, 7px 7px;
+  mix-blend-mode: screen;
+  opacity: 0.6;
+}
+
+.sign-spell::after {
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.16) 4px 5px);
+  opacity: 0.24;
+}
+
+.spell-shell {
+  display: grid;
+  gap: var(--spell-gap);
+  grid-template-columns: minmax(15rem, 0.85fr) minmax(26rem, 1.65fr) minmax(16rem, 0.85fr);
+  margin-inline: auto;
+  max-width: 1800px;
+  min-height: 100dvh;
+  padding: clamp(0.75rem, 1.7vw, 1.75rem);
+  position: relative;
+}
+
+.spell-shell::before {
+  border: 1px solid var(--spell-wire-dim);
+  clip-path: polygon(0 0, 27% 0, 28% 7px, 72% 7px, 73% 0, 100% 0, 100% 100%, 73% 100%, 72% calc(100% - 7px), 28% calc(100% - 7px), 27% 100%, 0 100%);
+  content: "";
+  inset: clamp(0.35rem, 0.8vw, 0.8rem);
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+}
+
+.spell-titlebar,
+.spell-panel,
+.spell-deck,
+.spell-visualizer,
+.spell-lane,
+.spell-modal {
+  background: linear-gradient(138deg, rgba(45, 36, 47, 0.94), rgba(17, 14, 18, 0.96));
+  border: 1px solid var(--spell-line);
+  box-shadow: 0 0.75rem 2rem var(--spell-shadow), inset 0 1px rgba(255, 255, 255, 0.055);
+  position: relative;
+}
+
+.spell-titlebar {
+  align-items: center;
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+  min-height: 3.4rem;
+  overflow: hidden;
+  padding: 0.45rem 0.65rem 0.45rem 1rem;
+}
+
+.spell-titlebar::before {
+  background: linear-gradient(90deg, transparent, var(--spell-wire-dim), transparent);
+  content: "";
+  height: 1px;
+  left: 22rem;
+  position: absolute;
+  right: 4.5rem;
+  top: 50%;
+}
+
+.spell-wordmark {
+  color: var(--spell-bone);
+  font-family: var(--spell-display);
+  font-size: clamp(1.6rem, 3.4vw, 3.15rem);
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  line-height: 0.9;
+  margin: 0;
+  position: relative;
+  text-shadow: 2px 2px 0 rgba(225, 72, 88, 0.35), -1px 0 rgba(165, 255, 157, 0.25);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.spell-wordmark__stamp {
+  display: inline-block;
+  font-family: var(--spell-stamp);
+  font-size: 0.72em;
+  letter-spacing: -0.055em;
+  margin-left: 0.1em;
+  transform: rotate(-3deg);
+}
+
+.spell-wordmark__dagger {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.85em;
+  margin-inline: 0.08em;
+}
+
+.spell-window-actions {
+  display: flex;
+  gap: 0.3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.spell-window-actions button {
+  font-family: var(--spell-mono);
+  min-height: 2rem;
+  min-width: 2rem;
+  padding: 0.1rem;
+}
+
+.spell-side,
+.spell-stage,
+.spell-rack {
+  display: grid;
+  gap: var(--spell-gap);
+  min-width: 0;
+}
+
+.spell-side { grid-column: 1; grid-row: 2; align-content: start; }
+.spell-stage { grid-column: 2; grid-row: 2; grid-template-rows: auto minmax(16rem, 1fr) auto; }
+.spell-rack { grid-column: 3; grid-row: 2; align-content: start; }
+
+.spell-panel {
+  padding: 0.85rem;
+}
+
+.spell-panel::before,
+.spell-deck::before,
+.spell-lane::before {
+  color: var(--spell-wire);
+  content: attr(data-window);
+  display: block;
+  font: 1rem/1 var(--spell-mono);
+  letter-spacing: 0.06em;
+  margin: -0.12rem 0 0.65rem;
+  text-transform: uppercase;
+}
+
+.spell-status {
+  align-items: center;
+  border-bottom: 1px solid var(--spell-line);
+  display: flex;
+  font: clamp(0.9rem, 1.7vw, 1.18rem)/1 var(--spell-mono);
+  gap: 0.75rem;
+  letter-spacing: 0.035em;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.75rem;
+  text-transform: uppercase;
+}
+
+.spell-status::before {
+  background: var(--spell-wire);
+  border-radius: 50%;
+  box-shadow: 0 0 0.7rem var(--spell-wire);
+  content: "";
+  height: 0.52rem;
+  width: 0.52rem;
+}
+
+.spell-status[data-state="warning"]::before { background: var(--spell-amber); box-shadow: 0 0 0.7rem var(--spell-amber); }
+.spell-status[data-state="error"]::before { background: var(--spell-blood); box-shadow: 0 0 0.7rem var(--spell-blood); }
+.spell-status[data-state="idle"]::before { background: var(--spell-dim); box-shadow: none; }
+
+.spell-camera {
+  aspect-ratio: 4 / 3;
+  background: #050506;
+  border: 1px solid var(--spell-wire-dim);
+  overflow: hidden;
+  position: relative;
+}
+
+.spell-camera video,
+.spell-camera canvas {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.spell-camera::after {
+  border: 1px solid rgba(165, 255, 157, 0.62);
+  box-shadow: inset 0 0 1.8rem rgba(165, 255, 157, 0.15);
+  content: "";
+  inset: 0.6rem;
+  pointer-events: none;
+  position: absolute;
+}
+
+.spell-readout {
+  bottom: 0.75rem;
+  display: grid;
+  font: 1rem/1 var(--spell-mono);
+  gap: 0.18rem;
+  left: 0.75rem;
+  position: absolute;
+  text-shadow: 1px 1px #000;
+  z-index: 2;
+}
+
+.spell-readout b { color: var(--spell-wire); font-size: 2.4rem; font-weight: 400; }
+
+.spell-visualizer {
+  background: #050508;
+  min-height: min(43vw, 31rem);
+  overflow: hidden;
+}
+
+.spell-visualizer::before {
+  color: var(--spell-muted);
+  content: attr(data-mode-label);
+  font: 0.95rem/1 var(--spell-mono);
+  left: 0.65rem;
+  letter-spacing: 0.1em;
+  position: absolute;
+  text-transform: uppercase;
+  top: 0.6rem;
+  z-index: 2;
+}
+
+.spell-visualizer canvas {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.spell-visualizer__hud {
+  align-items: end;
+  bottom: 0.7rem;
+  display: flex;
+  font: 0.95rem/1 var(--spell-mono);
+  justify-content: space-between;
+  left: 0.7rem;
+  position: absolute;
+  right: 0.7rem;
+  z-index: 2;
+}
+
+.spell-deck { padding: 0.85rem; }
+
+.spell-grid,
+.spell-controls,
+.spell-lane__controls {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.spell-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.spell-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.spell-lane__controls { align-items: center; grid-template-columns: auto minmax(0, 1fr) auto auto; }
+
+.spell-lane {
+  overflow: hidden;
+  padding: 0.65rem;
+}
+
+.spell-lane[data-armed="true"] { border-color: var(--spell-blood); box-shadow: 0 0 1rem rgba(225, 72, 88, 0.19), inset 0 1px rgba(255, 255, 255, 0.055); }
+.spell-lane[data-muted="true"] { opacity: 0.55; }
+
+.spell-lane__number {
+  color: var(--spell-violet);
+  font: 1.45rem/1 var(--spell-mono);
+}
+
+.spell-loopline {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(12.5% - 1px), rgba(239, 230, 208, 0.18) calc(12.5% - 1px) 12.5%),
+    linear-gradient(90deg, rgba(165, 255, 157, 0.1), rgba(177, 140, 255, 0.06));
+  border: 1px solid var(--spell-line);
+  height: 2rem;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.spell-loopline__event {
+  background: var(--spell-wire);
+  box-shadow: 0 0 0.45rem var(--spell-wire);
+  height: 72%;
+  position: absolute;
+  top: 14%;
+  width: max(2px, 1.4%);
+}
+
+button,
+select,
+input {
+  accent-color: var(--spell-wire);
+  font: inherit;
+}
+
+button,
+.spell-button {
+  background: linear-gradient(#332a34, #1a151c);
+  border: 1px outset rgba(239, 230, 208, 0.22);
+  color: var(--spell-bone);
+  cursor: pointer;
+  font: 1.05rem/1 var(--spell-mono);
+  letter-spacing: 0.045em;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  text-transform: uppercase;
+}
+
+button:hover,
+.spell-button:hover { border-color: var(--spell-wire); color: var(--spell-wire); }
+button:active,
+.spell-button:active { border-style: inset; transform: translateY(1px); }
+button[aria-pressed="true"],
+button[data-active="true"] { background: rgba(165, 255, 157, 0.14); border-color: var(--spell-wire); color: var(--spell-wire); }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+:where(button, select, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--spell-amber);
+  outline-offset: 3px;
+}
+
+select,
+input[type="number"],
+input[type="text"] {
+  background: #0b090d;
+  border: 1px solid var(--spell-line);
+  color: var(--spell-bone);
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.spell-label {
+  color: var(--spell-muted);
+  display: grid;
+  font: 0.9rem/1.1 var(--spell-mono);
+  gap: 0.35rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.spell-spectrum {
+  display: flex;
+  gap: 2px;
+  height: 3.5rem;
+  margin-top: 0.75rem;
+}
+
+.spell-spectrum i {
+  background: linear-gradient(to top, var(--spell-wire), var(--spell-violet), var(--spell-blood));
+  flex: 1;
+  min-width: 2px;
+  opacity: 0.65;
+  transform-origin: bottom;
+}
+
+.spell-help,
+.spell-empty {
+  color: var(--spell-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 1050px) {
+  .spell-shell { grid-template-columns: minmax(15rem, 0.8fr) minmax(25rem, 1.45fr); }
+  .spell-rack { grid-column: 1 / -1; grid-row: 3; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .spell-visualizer { min-height: 25rem; }
+}
+
+@media (max-width: 720px) {
+  .spell-shell { display: flex; flex-direction: column; padding: 0.6rem; }
+  .spell-titlebar { min-height: 3rem; }
+  .spell-titlebar::before { left: 13rem; }
+  .spell-wordmark { font-size: clamp(1.45rem, 8vw, 2.2rem); }
+  .spell-side, .spell-stage, .spell-rack { display: grid; }
+  .spell-side { order: 2; }
+  .spell-stage { order: 1; }
+  .spell-rack { grid-template-columns: 1fr; order: 3; }
+  .spell-visualizer { min-height: 52vw; }
+  .spell-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  .sign-spell::after { display: none; }
+}
+
+@media (forced-colors: active) {
+  .sign-spell { background: Canvas; color: CanvasText; }
+  .spell-titlebar, .spell-panel, .spell-deck, .spell-visualizer, .spell-lane { background: Canvas; border-color: CanvasText; box-shadow: none; }
+  .spell-wordmark, .spell-panel::before, .spell-deck::before, .spell-lane::before, .spell-status, button { color: CanvasText; }
+}
