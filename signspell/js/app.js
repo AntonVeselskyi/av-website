@@ -11,7 +11,7 @@ import {
   renderOfflineProject,
   resolveInstrumentGesture,
 } from "./music/index.js?v=5";
-import { LoopTransport } from "./looper.js?v=6";
+import { LoopTransport, RECORD_PASSES } from "./looper.js?v=7";
 import { digitFromKeyEvent } from "./input.js?v=1";
 import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
 import {
@@ -424,7 +424,7 @@ function drawLanes() {
     $(".lane-number", row).textContent = String(index + 1).padStart(2, "0");
     $(".lane-name", row).textContent = lane.name;
     $(".lane-instrument", row).textContent = `${VIBE_COLLECTIONS[lane.collectionId]?.title || "CUSTOM"} / ${INSTRUMENTS[lane.instrumentFamily]?.label || lane.instrumentFamily}`;
-    const record = $(".lane-record", row); record.classList.toggle("active", lane.armed || lane.recording); record.textContent = lane.recording ? "REC" : lane.armed ? "WAIT" : "●"; record.setAttribute("aria-pressed", String(lane.armed || lane.recording)); record.setAttribute("aria-label", lane.recording ? "Stop recording" : lane.armed ? "Cancel queued recording" : "Record lane");
+    const record = $(".lane-record", row); record.classList.toggle("active", lane.armed || lane.recording); record.textContent = lane.recording ? recordingPassLabel(lane) : lane.armed ? "WAIT" : "●"; record.setAttribute("aria-pressed", String(lane.armed || lane.recording)); record.setAttribute("aria-label", lane.recording ? "Stop three-pass recording" : lane.armed ? "Cancel queued three-pass recording" : "Record lane for three passes");
     const overdub = $(".lane-overdub", row); overdub.classList.toggle("active", lane.overdub);
     const mute = $(".lane-mute", row); mute.classList.toggle("active", lane.muted);
     const solo = $(".lane-solo", row); solo.classList.toggle("active", lane.solo);
@@ -438,8 +438,8 @@ function drawLanes() {
       transport?.toggleRecord(lane.id);
       project.activeLaneId = lane.id;
       if ((lane.recording || lane.armed) && !lane.overdub) music?.stopGroup?.(lane.id);
-      if (lane.recording) showToast(`${lane.name} RECORDING NOW — GESTURE OR PRESS 1-9; ONE LOOP PASS`, 4800);
-      else if (lane.armed) showToast(`${lane.name} ARMED — GESTURE OR PRESS 1-9 WHEN REC APPEARS AT THE NEXT BAR`, 4800);
+      if (lane.recording) showToast(`${lane.name} RECORDING NOW — ${RECORD_PASSES} LOOP PASSES`, 4800);
+      else if (lane.armed) showToast(`${lane.name} ARMED — ${RECORD_PASSES} PASSES BEGIN WHEN REC APPEARS AT THE NEXT BAR`, 4800);
       else showToast(`${lane.name} RECORDING STOPPED`);
       drawLanes();
       syncControls();
@@ -506,11 +506,18 @@ function drawFocusedMapping(lane, bar = 0) {
   focusedMappingBar = bar;
 }
 
+function recordingPassLabel(lane, beat = transport?.currentBeat() ?? 0) {
+  if (!lane?.recording || !Number.isFinite(lane.recordStartedBeat)) return "REC";
+  const loopBeats = Math.max(1, Number(lane.lengthBars) || 1) * BEATS_PER_BAR;
+  const pass = clamp(Math.floor(Math.max(0, beat - lane.recordStartedBeat) / loopBeats) + 1, 1, RECORD_PASSES);
+  return `REC ${pass}/${RECORD_PASSES}`;
+}
+
 function updateFocusedControls(lane) {
   if (!lane || !dom.focusedRecord) return;
-  dom.focusedRecord.textContent = lane.recording ? "REC" : lane.armed ? "WAIT" : "●";
+  dom.focusedRecord.textContent = lane.recording ? recordingPassLabel(lane) : lane.armed ? "WAIT" : "●";
   dom.focusedRecord.setAttribute("aria-pressed", String(lane.recording || lane.armed));
-  dom.focusedRecord.setAttribute("aria-label", lane.recording ? "Stop selected line recording" : lane.armed ? "Cancel selected line recording" : "Record selected line");
+  dom.focusedRecord.setAttribute("aria-label", lane.recording ? `Stop selected line during ${recordingPassLabel(lane).replace("REC ", "pass ")}` : lane.armed ? "Cancel queued three-pass recording" : "Record selected line for three passes");
   dom.focusedOverdub.setAttribute("aria-pressed", String(lane.overdub));
   dom.focusedMute.setAttribute("aria-pressed", String(lane.muted));
   dom.focusedSolo.setAttribute("aria-pressed", String(lane.solo));
@@ -660,8 +667,8 @@ function updatePlayheads(beat = 0) {
     if (record) {
       record.classList.toggle("active", lane.armed || lane.recording);
       record.setAttribute("aria-pressed", String(lane.armed || lane.recording));
-      record.textContent = lane.recording ? "REC" : lane.armed ? "WAIT" : "●";
-      record.setAttribute("aria-label", lane.recording ? "Stop recording" : lane.armed ? "Cancel queued recording" : "Record lane");
+      record.textContent = lane.recording ? recordingPassLabel(lane, beat) : lane.armed ? "WAIT" : "●";
+      record.setAttribute("aria-label", lane.recording ? `Stop recording during ${recordingPassLabel(lane, beat).replace("REC ", "pass ")}` : lane.armed ? "Cancel queued three-pass recording" : "Record lane for three passes");
     }
   }
   const lane = activeLane();

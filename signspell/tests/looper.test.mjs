@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { LoopTransport } from "../js/looper.js";
+import { LoopTransport, RECORD_PASSES } from "../js/looper.js";
 import { createDefaultProject } from "../js/shared.js";
 
-test("recording starts immediately when stopped and ends after one loop pass", () => {
+test("recording starts immediately when stopped and ends after three loop passes", () => {
   const project = createDefaultProject();
   const lane = project.lanes[0];
   let audioTime = 2;
@@ -17,6 +17,8 @@ test("recording starts immediately when stopped and ends after one loop pass", (
   assert.equal(captured.digit, 4);
   assert.equal(lane.events.length, 1);
   transport.updateRecordStates(lane.lengthBars * 4);
+  assert.equal(lane.recording, true);
+  transport.updateRecordStates(lane.lengthBars * 4 * RECORD_PASSES);
   assert.equal(lane.recording, false);
   transport.stop();
 });
@@ -155,11 +157,25 @@ test("a hold crossing the recording boundary ends at that boundary", () => {
   lane.lengthBars = 1;
   lane.recording = true;
   lane.recordStartedBeat = 0;
-  let audioTime = 3.75;
+  let audioTime = 11.75;
   const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
   transport.playing = true;
   transport.startedAt = 0;
   const capture = transport.beginHeldCapture({ digit: 4 }, lane.id);
-  audioTime = 7;
+  audioTime = 15;
   assert.equal(transport.finishHeldCapture(capture).duration, 0.25);
+});
+
+test("hits from later recording passes fold onto the same loop grid", () => {
+  const project = createDefaultProject();
+  project.tonalScene.bpm = 60;
+  const lane = project.lanes[0];
+  lane.lengthBars = 1;
+  lane.recording = true;
+  lane.recordStartedBeat = 0;
+  let audioTime = 8.5;
+  const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
+  transport.playing = true;
+  transport.startedAt = 0;
+  assert.equal(transport.captureHit({ digit: 6 }, lane.id).beat, 0.5);
 });

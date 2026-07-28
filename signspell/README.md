@@ -11,7 +11,7 @@ Serve the repository over `localhost` or HTTPS, then open `/signspell/` in deskt
 - Keyboard 1–9 and the on-screen gesture cells provide a camera-free fallback.
 - Click a loop line to select it; the outlined line receives gestures, keyboard hits, pad clicks, and generated loops.
 - The selected line opens as a nine-row piano roll directly below the visualizer. Its keys preview all nine mapped notes, event blocks can be retimed, and the local controls operate that line.
-- Press its record button to capture one loop pass. Recording begins immediately when stopped, or at the next bar when already playing; gesture, click a pad, or press 1–9 to add notes.
+- Press its record button for a three-pass take. Recording begins immediately when stopped, or at the next bar when already playing; all three performances fold into the same editable loop grid.
 - Conjure Loop replaces the selected line and starts playback. Clear removes and immediately silences that line; Undo restores its previous events.
 - Hover any button for 1.5 seconds to see what it does. Use OVR, mute, solo, length, gain, and draggable event blocks for further editing.
 - Harmony Lock confines every gesture to the active chord. Safe Scale and Free Gamma expose wider note sets.

@@ -1,5 +1,10 @@
 import { BEATS_PER_BAR, MAX_LANES, clamp, createId, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
 
+export const RECORD_PASSES = 3;
+export function recordWindowBeats(lane) {
+  return Math.max(1, Number(lane?.lengthBars) || 1) * BEATS_PER_BAR * RECORD_PASSES;
+}
+
 export class LoopTransport extends EventTarget {
   constructor({ getAudioTime, scheduleEvent, project }) {
     super();
@@ -98,7 +103,7 @@ export class LoopTransport extends EventTarget {
         lane.recordStartedBeat = lane.armBeat;
       }
       if (lane.recording && Number.isFinite(lane.recordStartedBeat)
-        && beat >= lane.recordStartedBeat + lane.lengthBars * BEATS_PER_BAR) {
+        && beat >= lane.recordStartedBeat + recordWindowBeats(lane)) {
         lane.recording = false;
       }
     }
@@ -192,7 +197,7 @@ export class LoopTransport extends EventTarget {
     const startedBeat = this.currentBeat();
     const event = this.captureHit({ ...hit, duration: 0.05 }, laneId);
     const lane = this.project.lanes.find((item) => item.id === laneId);
-    const recordEndBeat = Number(lane?.recordStartedBeat) + Math.max(1, Number(lane?.lengthBars) || 1) * BEATS_PER_BAR;
+    const recordEndBeat = Number(lane?.recordStartedBeat) + recordWindowBeats(lane);
     return event ? { laneId, eventId: event.id, startedBeat, recordEndBeat } : null;
   }
 

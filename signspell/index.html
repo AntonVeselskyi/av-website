@@ -91,7 +91,7 @@
 
       <section class="panel focused-editor-panel" aria-labelledby="focused-editor-title">
         <header class="panel-title focused-editor-titlebar"><h2 id="focused-editor-title">ACTIVE LINE / PIANO ROLL</h2><span id="focused-lane-summary">SELECT A LINE BELOW</span></header>
-        <div class="focused-roll-legend" aria-hidden="true"><span>GESTURE / NOTE</span><span>ONE LOOP PASS — DRAG HITS TO RETIME</span></div>
+        <div class="focused-roll-legend" aria-hidden="true"><span>GESTURE / NOTE</span><span>LOOP GRID — 3 RECORD PASSES FOLD HERE</span></div>
         <div class="focused-roll" id="focused-lane-roll" aria-label="Selected loop line piano roll" aria-live="polite">
           <div class="focused-roll-row" data-digit="9"><button class="focused-roll-key" type="button" aria-label="Play gesture 9">9</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 9</span></div></div>
           <div class="focused-roll-row" data-digit="8"><button class="focused-roll-key" type="button" aria-label="Play gesture 8">8</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 8</span></div></div>
@@ -106,7 +106,7 @@
         <footer class="focused-editor-footer">
           <span id="focused-roll-empty">SELECT A LINE, THEN ARM ● TO RECORD GESTURES OR KEYS 1–9</span>
           <div class="focused-editor-controls">
-            <button id="focused-record" type="button" data-hint="Records one pass on the selected line.">●</button>
+            <button id="focused-record" type="button" data-hint="Records three passes on the selected line; each pass folds into this loop grid.">●</button>
             <button id="focused-overdub" type="button" data-hint="Adds a new pass without erasing existing hits.">OVR</button>
             <button id="focused-mute" type="button" data-hint="Mutes and immediately silences the selected line.">M</button>
             <button id="focused-solo" type="button" data-hint="Solos the selected line and silences the others.">S</button>
@@ -187,7 +187,7 @@
   </template>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/hints.js?v=2"></script>
-  <script type="module" src="js/app.js?v=7"></script>
+  <script type="module" src="js/hints.js?v=3"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
