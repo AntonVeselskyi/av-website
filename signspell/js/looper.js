@@ -1,4 +1,4 @@
-import { BEATS_PER_BAR, MAX_LANES, clamp, createId, quantizeBeat, sanitizeBpm } from "./shared.js";
+import { BEATS_PER_BAR, MAX_LANES, clamp, createId, quantizeBeat, sanitizeBpm } from "./shared.js?v=3";
 
 export class LoopTransport extends EventTarget {
   constructor({ getAudioTime, scheduleEvent, project }) {
@@ -71,6 +71,10 @@ export class LoopTransport extends EventTarget {
         lane.recording = true;
         lane.recordStartedBeat = lane.armBeat;
       }
+      if (lane.recording && Number.isFinite(lane.recordStartedBeat)
+        && beat >= lane.recordStartedBeat + lane.lengthBars * BEATS_PER_BAR) {
+        lane.recording = false;
+      }
     }
   }
 
@@ -100,9 +104,17 @@ export class LoopTransport extends EventTarget {
       item.armed = false;
       if (item.id !== laneId) item.recording = false;
     }
-    if (!this.playing) this.start();
+    const wasPlaying = this.playing;
+    if (!wasPlaying) this.start();
     lane.undoSnapshot = lane.events.map((event) => ({ ...event }));
     if (!lane.overdub) lane.events = [];
+    if (!wasPlaying) {
+      lane.armBeat = 0;
+      lane.armed = false;
+      lane.recording = true;
+      lane.recordStartedBeat = 0;
+      return lane.armBeat;
+    }
     const beat = this.currentBeat();
     const nextBar = Math.ceil((beat + 0.0001) / BEATS_PER_BAR) * BEATS_PER_BAR;
     lane.armBeat = nextBar + Math.max(0, countInBars - 1) * BEATS_PER_BAR;

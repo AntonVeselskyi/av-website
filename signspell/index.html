@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=2">
+  <link rel="stylesheet" href="css/sign-spell.css?v=3">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
@@ -28,8 +28,8 @@
       <h1 class="wordmark wordmark-small" aria-label="Sign Spell"><span class="wordmark-old">$IGN</span><span class="wordmark-dagger">⸸</span><span class="wordmark-stamp">$PELL</span></h1>
       <div class="system-readout" aria-live="polite"><i id="system-light"></i><span id="system-status">DORMANT</span></div>
       <div class="transport" aria-label="Transport controls">
-        <button id="transport-play" type="button" title="Play">▶</button>
-        <button id="transport-stop" type="button" title="Stop">■</button>
+        <button id="transport-play" type="button" aria-label="Play">▶</button>
+        <button id="transport-stop" type="button" aria-label="Stop">■</button>
         <label>BPM <input id="bpm-input" type="number" min="60" max="200" value="140" inputmode="numeric"></label>
         <button id="tap-tempo" type="button">TAP</button>
         <label>GRID
@@ -137,12 +137,13 @@
       <label class="lane-length">LEN<select><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option></select></label>
       <div class="lane-events" tabindex="0" aria-label="Editable loop events"><div class="lane-playhead"></div></div>
       <input class="lane-gain" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Lane volume">
-      <button class="lane-undo" type="button" title="Undo last pass">↶</button>
+      <button class="lane-undo" type="button" aria-label="Undo last pass">↶</button>
       <button class="lane-clear" type="button">CLR</button>
     </article>
   </template>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/app.js?v=2"></script>
+  <script type="module" src="js/hints.js?v=1"></script>
+  <script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

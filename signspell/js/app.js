@@ -10,9 +10,9 @@ import {
   noteName,
   renderOfflineProject,
   resolveInstrumentGesture,
-} from "./music/index.js";
-import { LoopTransport } from "./looper.js";
-import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js";
+} from "./music/index.js?v=3";
+import { LoopTransport } from "./looper.js?v=3";
+import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=3";
 import {
   clearCalibrationDraft,
   createAutosaver,
@@ -22,7 +22,7 @@ import {
   saveCalibration,
   saveCalibrationDraft,
   saveProject,
-} from "./storage.js?v=2";
+} from "./storage.js?v=3";
 import { createSpellVisualizer } from "./visual/visualizer.js";
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -71,7 +71,10 @@ if (calibrationDraft?.handedness === "left" || calibrationDraft?.handedness === 
 }
 
 const autosave = createAutosaver(async (next) => {
-  project = await saveProject(next);
+  // Keep the live object identity stable. The transport holds this reference;
+  // replacing it after every save left playback reading an old project until
+  // the next page load.
+  await saveProject(next);
   setStatus("AUTOSAVED", "ok", 900);
 });
 
@@ -97,6 +100,7 @@ function setStatus(text, state = "idle", resetAfter = 0) {
 }
 
 function markChanged({ renderLanes = false, renderMap = false } = {}) {
+  transport?.setProject(project);
   if (renderLanes) drawLanes();
   if (renderMap) drawGestureMap();
   autosave(project);
@@ -170,6 +174,7 @@ function scheduleLoopEvent(event, when) {
     music.triggerGesture({
       instrument: event.lane.instrumentFamily,
       collectionId: event.lane.collectionId,
+      groupId: event.lane.id,
       gesture: event.digit,
       scene: scene(),
       bar: Math.floor(event.eventBeat / BEATS_PER_BAR),
@@ -221,16 +226,16 @@ function triggerHit(hit) {
     const mapped = music.triggerGesture({
       instrument: lane.instrumentFamily,
       collectionId: lane.collectionId,
+      groupId: lane.id,
       gesture: Number(hit.digit),
       scene: scene(),
       bar: transport ? Math.floor(transport.currentBeat() / BEATS_PER_BAR) : 0,
       velocity: clamp(hit.velocity ?? 0.78, 0.05, 1),
       durationBeat: lane.instrumentFamily === "pad" ? 1.5 : lane.instrumentFamily === "808" ? 0.75 : 0.32,
     });
-    transport?.captureHit({ ...hit, digit: Number(hit.digit), velocity: mapped.velocity, duration: lane.instrumentFamily === "pad" ? 1.5 : 0.32 });
+    const captured = transport?.captureHit({ ...hit, digit: Number(hit.digit), velocity: mapped.velocity, duration: lane.instrumentFamily === "pad" ? 1.5 : 0.32 });
     flashGesture(hit);
-    drawLanes();
-    markChanged();
+    if (captured) markChanged({ renderLanes: true });
   } catch (error) {
     showToast(error.message);
   }
@@ -254,12 +259,13 @@ function drawLanes() {
     const row = $(".loop-lane", fragment);
     row.dataset.laneId = lane.id;
     row.classList.toggle("active", lane.id === project.activeLaneId);
+    row.setAttribute("aria-current", lane.id === project.activeLaneId ? "true" : "false");
     row.classList.toggle("recording", lane.recording);
     row.classList.toggle("armed", lane.armed);
     $(".lane-number", row).textContent = String(index + 1).padStart(2, "0");
     $(".lane-name", row).textContent = lane.name;
     $(".lane-instrument", row).textContent = `${VIBE_COLLECTIONS[lane.collectionId]?.title || "CUSTOM"} / ${INSTRUMENTS[lane.instrumentFamily]?.label || lane.instrumentFamily}`;
-    const record = $(".lane-record", row); record.classList.toggle("active", lane.armed || lane.recording); record.title = lane.recording ? "Stop recording" : "Arm for next bar";
+    const record = $(".lane-record", row); record.classList.toggle("active", lane.armed || lane.recording); record.textContent = lane.recording ? "REC" : lane.armed ? "WAIT" : "●"; record.setAttribute("aria-pressed", String(lane.armed || lane.recording)); record.setAttribute("aria-label", lane.recording ? "Stop recording" : lane.armed ? "Cancel queued recording" : "Record lane");
     const overdub = $(".lane-overdub", row); overdub.classList.toggle("active", lane.overdub);
     const mute = $(".lane-mute", row); mute.classList.toggle("active", lane.muted);
     const solo = $(".lane-solo", row); solo.classList.toggle("active", lane.solo);
@@ -268,14 +274,28 @@ function drawLanes() {
     const eventArea = $(".lane-events", row);
     drawLaneEvents(eventArea, lane);
     $(".lane-select", row).addEventListener("click", () => selectLane(lane.id));
-    record.addEventListener("click", () => { transport?.toggleRecord(lane.id); project.activeLaneId = lane.id; drawLanes(); syncControls(); markChanged(); });
+    record.addEventListener("click", () => {
+      transport?.toggleRecord(lane.id);
+      project.activeLaneId = lane.id;
+      if ((lane.recording || lane.armed) && !lane.overdub) music?.stopGroup?.(lane.id);
+      if (lane.recording) showToast(`${lane.name} RECORDING NOW — GESTURE OR PRESS 1-9; ONE LOOP PASS`, 4800);
+      else if (lane.armed) showToast(`${lane.name} ARMED — GESTURE OR PRESS 1-9 WHEN REC APPEARS AT THE NEXT BAR`, 4800);
+      else showToast(`${lane.name} RECORDING STOPPED`);
+      drawLanes();
+      syncControls();
+      markChanged();
+    });
     overdub.addEventListener("click", () => { lane.overdub = !lane.overdub; markChanged({ renderLanes: true }); });
-    mute.addEventListener("click", () => { lane.muted = !lane.muted; markChanged({ renderLanes: true }); });
-    solo.addEventListener("click", () => { lane.solo = !lane.solo; markChanged({ renderLanes: true }); });
+    mute.addEventListener("click", () => { lane.muted = !lane.muted; if (lane.muted) music?.stopGroup?.(lane.id); markChanged({ renderLanes: true }); });
+    solo.addEventListener("click", () => {
+      lane.solo = !lane.solo;
+      if (lane.solo) project.lanes.filter((item) => item.id !== lane.id).forEach((item) => music?.stopGroup?.(item.id));
+      markChanged({ renderLanes: true });
+    });
     length.addEventListener("change", () => { lane.lengthBars = Number(length.value); lane.events = lane.events.filter((item) => item.beat < lane.lengthBars * BEATS_PER_BAR); markChanged({ renderLanes: true }); });
     gain.addEventListener("input", () => { lane.gain = Number(gain.value); markChanged(); });
     $(".lane-undo", row).addEventListener("click", () => { if (Array.isArray(lane.undoSnapshot)) { lane.events = lane.undoSnapshot.map((event) => ({ ...event })); markChanged({ renderLanes: true }); } });
-    $(".lane-clear", row).addEventListener("click", () => { lane.undoSnapshot = lane.events.map((event) => ({ ...event })); lane.events = []; markChanged({ renderLanes: true }); });
+    $(".lane-clear", row).addEventListener("click", () => { lane.undoSnapshot = lane.events.map((event) => ({ ...event })); lane.events = []; music?.stopGroup?.(lane.id); showToast(`${lane.name} CLEARED AND SILENCED`); markChanged({ renderLanes: true }); });
     dom.lanes.append(fragment);
   });
 }
@@ -292,7 +312,7 @@ function drawLaneEvents(area, lane) {
     node.style.width = `${Math.max(1.2, (event.duration / lengthBeats) * 100)}%`;
     node.style.opacity = 0.42 + event.velocity * 0.58;
     node.textContent = event.digit;
-    node.title = `Sign ${event.digit} · beat ${event.beat.toFixed(2)} · velocity ${Math.round(event.velocity * 100)}`;
+    node.setAttribute("aria-label", `Sign ${event.digit}, beat ${event.beat.toFixed(2)}, velocity ${Math.round(event.velocity * 100)} percent`);
     node.addEventListener("pointerdown", (pointerEvent) => beginEventDrag(pointerEvent, area, lane, event));
     node.addEventListener("keydown", (keyboardEvent) => editEventWithKeyboard(keyboardEvent, lane, event));
     area.append(node);
@@ -357,6 +377,15 @@ function updatePlayheads(beat = 0) {
     const percent = ((beat % (lane.lengthBars * BEATS_PER_BAR)) / (lane.lengthBars * BEATS_PER_BAR)) * 100;
     const playhead = $(".lane-playhead", row);
     if (playhead) playhead.style.left = `${percent}%`;
+    row.classList.toggle("recording", lane.recording);
+    row.classList.toggle("armed", lane.armed);
+    const record = $(".lane-record", row);
+    if (record) {
+      record.classList.toggle("active", lane.armed || lane.recording);
+      record.setAttribute("aria-pressed", String(lane.armed || lane.recording));
+      record.textContent = lane.recording ? "REC" : lane.armed ? "WAIT" : "●";
+      record.setAttribute("aria-label", lane.recording ? "Stop recording" : lane.armed ? "Cancel queued recording" : "Record lane");
+    }
   }
 }
 
@@ -379,6 +408,7 @@ function applyCollection(collectionId) {
 
 function generateIntoActiveLane() {
   const lane = activeLane();
+  music?.stopGroup?.(lane.id);
   const recipeFamily = RECIPE_FAMILY[lane.instrumentFamily];
   const recipe = generateLoopRecipe({ collectionId: lane.collectionId, seed: Date.now(), bars: lane.lengthBars, include: [recipeFamily] });
   const source = recipe.lanes[0];
@@ -391,7 +421,21 @@ function generateIntoActiveLane() {
     duration: event.durationBeat,
     source: "generated",
   }));
-  showToast(`${lane.name}: ${source.events.length} ORIGINAL EVENTS CONJURED`);
+  if (transport && !transport.playing) transport.start();
+  else if (music && source.events.length) {
+    const first = lane.events[0];
+    music.triggerGesture({
+      instrument: lane.instrumentFamily,
+      collectionId: lane.collectionId,
+      groupId: lane.id,
+      gesture: first.digit,
+      scene: scene(),
+      bar: 0,
+      velocity: first.velocity,
+      durationBeat: first.duration,
+    });
+  }
+  showToast(`${lane.name}: ${source.events.length} EVENTS CONJURED — PLAYBACK ACTIVE`, 4200);
   markChanged({ renderLanes: true });
 }
 
@@ -788,6 +832,15 @@ async function completeCalibration(profile, completed = profile?.completed) {
   setStatus("SIGNAL CONNECTED", "ok");
 }
 
+function stopTransport() {
+  transport?.stop();
+  music?.stopAllGroups?.();
+  updateTransportPosition(0);
+  updatePlayheads(0);
+  drawLanes();
+  markChanged();
+}
+
 function wireEvents() {
   dom.start.addEventListener("click", async () => {
     dom.start.disabled = true;
@@ -803,7 +856,7 @@ function wireEvents() {
     }
   });
   dom.play.addEventListener("click", async () => { await initAudio(); transport.start(); });
-  dom.stop.addEventListener("click", () => { transport?.stop(); updateTransportPosition(0); updatePlayheads(0); drawLanes(); markChanged(); });
+  dom.stop.addEventListener("click", stopTransport);
   dom.bpm.addEventListener("change", () => { project.tonalScene.bpm = sanitizeBpm(dom.bpm.value); dom.bpm.value = project.tonalScene.bpm; transport?.setProject(project); markChanged(); });
   dom.tap.addEventListener("click", () => { const now = performance.now(); tapTimes = [...tapTimes.filter((time) => now - time < 2500), now].slice(-5); if (tapTimes.length > 1) { const intervals = tapTimes.slice(1).map((time, index) => time - tapTimes[index]); project.tonalScene.bpm = sanitizeBpm(60000 / (intervals.reduce((a,b) => a + b, 0) / intervals.length)); dom.bpm.value = project.tonalScene.bpm; markChanged(); } });
   dom.quantization.addEventListener("change", () => { project.quantization = dom.quantization.value; markChanged(); });
@@ -835,7 +888,12 @@ function wireEvents() {
   for (const button of $$(".visual-mode")) button.addEventListener("click", () => { $$(".visual-mode").forEach((item) => item.classList.remove("active")); button.classList.add("active"); visualizer?.setMode(button.dataset.mode); project.ui.visualizerMode = button.dataset.mode; markChanged(); });
   dom.fullVisual.addEventListener("click", () => $(".visualizer-panel")?.requestFullscreen?.());
   dom.reduceMotion.addEventListener("click", () => { project.ui.reducedMotion = !project.ui.reducedMotion; dom.reduceMotion.setAttribute("aria-pressed", String(project.ui.reducedMotion)); document.body.classList.toggle("reduced-motion", project.ui.reducedMotion); visualizer?.setReducedMotion(project.ui.reducedMotion); markChanged(); });
-  window.addEventListener("keydown", (event) => { if (event.repeat || event.target.matches("input,select,textarea,button")) return; const digit = Number(event.key); if (digit >= 1 && digit <= 9) triggerHit({ digit, velocity: 0.78, confidence: 1, source: "keyboard" }); if (event.code === "Space") { event.preventDefault(); transport?.playing ? transport.stop() : transport?.start(); } });
+  window.addEventListener("keydown", (event) => {
+    if (event.repeat || event.target.matches("input,select,textarea")) return;
+    const digit = Number(event.key);
+    if (digit >= 1 && digit <= 9) triggerHit({ digit, velocity: 0.78, confidence: 1, source: "keyboard" });
+    if (event.code === "Space" && !event.target.matches("button")) { event.preventDefault(); transport?.playing ? stopTransport() : transport?.start(); }
+  });
   window.addEventListener("beforeunload", () => { if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop()); });
   document.addEventListener("visibilitychange", () => { if (document.hidden) { frameInFlight = false; visionWorker?.postMessage({ type: "reset" }); } });
 }

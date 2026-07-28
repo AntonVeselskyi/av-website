@@ -20,9 +20,11 @@ test("default project exposes eight independent lanes", () => {
   assert.ok(Number.isFinite(hit.note.frequency));
 });
 
-test("normalizeProject migrates malformed or short lane arrays", () => {
-  const project = normalizeProject({ lanes: [{ id: "kept", events: null }], tonalScene: { bpm: 999 } });
+test("normalizeProject migrates malformed data without resuming live recording state", () => {
+  const project = normalizeProject({ lanes: [{ id: "kept", events: null, armed: true, recording: true }], tonalScene: { bpm: 999 } });
   assert.equal(project.lanes.length, 8);
   assert.deepEqual(project.lanes[0].events, []);
   assert.equal(project.activeLaneId, "kept");
+  assert.equal(project.lanes[0].armed, false);
+  assert.equal(project.lanes[0].recording, false);
 });

@@ -80,6 +80,9 @@ export function normalizeProject(input) {
         ...createLane(index),
         ...lane,
         events: Array.isArray(lane.events) ? lane.events : [],
+        // Arm/record are live transport states, never resumable project data.
+        armed: false,
+        recording: false,
       }))
     : base.lanes;
   while (lanes.length < MAX_LANES) lanes.push(createLane(lanes.length));

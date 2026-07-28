@@ -50,18 +50,71 @@ function playPad(context, output, hit, time, duration) {
   hit.notes.forEach((note, index) => { const osc = oscillator(context, cold && index === 1 ? 'sawtooth' : index % 2 ? 'triangle' : 'sine', note.frequency, time); const gain = context.createGain(); const filter = context.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(cold ? 540 : 850, time); envelope(gain, time, cold ? 0.4 : 0.22, Math.max(0.3, duration), 0.7, 0.07 * hit.velocity); connectVoice([osc, filter, gain], output); osc.start(time); osc.stop(time + duration + 1.2); });
 }
 
+function groupKey(groupId) { return groupId == null || groupId === '' ? null : String(groupId); }
+
+function fadeOutGain(gain, context, seconds) {
+  const time = context.currentTime;
+  const current = Math.max(0.0001, Number(gain.gain.value) || 1);
+  gain.gain.cancelScheduledValues?.(time);
+  gain.gain.setValueAtTime?.(current, time);
+  gain.gain.exponentialRampToValueAtTime?.(0.0001, time + seconds);
+}
+
 /** Browser-native, sample-free instrument engine. */
 export class MusicEngine {
-  constructor(context, options = {}) { if (!context?.createOscillator) throw new TypeError('A Web Audio context is required.'); this.context = context; this.master = createSafeMasterChain(context, options); }
-  trigger(mappedHit, when = this.context.currentTime, durationBeat = 0.25, bpm = 140) {
+  constructor(context, options = {}) {
+    if (!context?.createOscillator) throw new TypeError('A Web Audio context is required.');
+    this.context = context;
+    this.master = createSafeMasterChain(context, options);
+    this.groups = new Map();
+  }
+  outputForGroup(groupId) {
+    const key = groupKey(groupId);
+    if (!key) return this.master.input;
+    const existing = this.groups.get(key);
+    if (existing) return existing.input;
+    const input = this.context.createGain();
+    input.gain.value = 1;
+    input.connect(this.master.input);
+    this.groups.set(key, { input });
+    return input;
+  }
+  /**
+   * Fades a lane/group's live tails and drops its routing bus. A later trigger
+   * using the same id creates a fresh bus, so clears and mutes are reversible.
+   */
+  stopGroup(groupId, { fadeSeconds = 0.025 } = {}) {
+    const key = groupKey(groupId);
+    if (!key) return false;
+    const group = this.groups.get(key);
+    if (!group) return false;
+    this.groups.delete(key);
+    const seconds = Math.max(0.005, Number(fadeSeconds) || 0.025);
+    fadeOutGain(group.input, this.context, seconds);
+    const disconnect = () => { try { group.input.disconnect(); } catch { /* already disconnected */ } };
+    const timer = globalThis.setTimeout?.(disconnect, Math.ceil((seconds + 0.04) * 1000));
+    // Do not keep a Node/SSR process alive merely to dispose a browser audio bus.
+    timer?.unref?.();
+    return true;
+  }
+  stopAllGroups(options) {
+    const ids = [...this.groups.keys()];
+    ids.forEach((groupId) => this.stopGroup(groupId, options));
+    return ids.length;
+  }
+  trigger(mappedHit, when = this.context.currentTime, durationBeat = 0.25, bpm = 140, groupId = null) {
     const time = now(this.context, when); const duration = Math.max(0.03, durationBeat * 60 / bpm);
-    if (mappedHit.kind === 'percussion') playPercussion(this.context, this.master.input, mappedHit, time);
-    else if (mappedHit.instrument === '808') play808(this.context, this.master.input, mappedHit, time, duration);
-    else if (mappedHit.instrument === 'eerieLead') playLead(this.context, this.master.input, mappedHit, time, duration);
-    else if (mappedHit.instrument === 'piano') playPiano(this.context, this.master.input, mappedHit, time, duration);
-    else if (mappedHit.kind === 'chord') playPad(this.context, this.master.input, mappedHit, time, duration);
+    const output = this.outputForGroup(groupId);
+    if (mappedHit.kind === 'percussion') playPercussion(this.context, output, mappedHit, time);
+    else if (mappedHit.instrument === '808') play808(this.context, output, mappedHit, time, duration);
+    else if (mappedHit.instrument === 'eerieLead') playLead(this.context, output, mappedHit, time, duration);
+    else if (mappedHit.instrument === 'piano') playPiano(this.context, output, mappedHit, time, duration);
+    else if (mappedHit.kind === 'chord') playPad(this.context, output, mappedHit, time, duration);
     return mappedHit;
   }
-  triggerGesture(command, when = this.context.currentTime) { const hit = resolveInstrumentGesture(command); return this.trigger(hit, when, command.durationBeat, command.scene.bpm); }
-  dispose() { this.master.disconnect(); }
+  triggerGesture(command, when = this.context.currentTime) {
+    const hit = resolveInstrumentGesture(command);
+    return this.trigger(hit, when, command.durationBeat, command.scene.bpm, command.groupId);
+  }
+  dispose() { this.stopAllGroups({ fadeSeconds: 0.005 }); this.master.disconnect(); }
 }

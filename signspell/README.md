@@ -9,7 +9,10 @@ Serve the repository over `localhost` or HTTPS, then open `/signspell/` in deskt
 - Signs 1–5: show the back of the hand/knuckles to the camera, hold the calibrated number pose, then make a short downward strike. The guided poses are 1 index; 2 index + middle; 3 your consistent thumb + pointer/index shape; 4 four fingers without thumb; 5 all five.
 - Signs 6–9: rotate the palm toward the camera, then touch thumb to pinky, ring, middle, or index fingertip. A release is required before the next hit.
 - Keyboard 1–9 and the on-screen gesture cells provide a camera-free fallback.
-- Arm a loop line to record at the next bar; use OVR, undo, mute, solo, length, gain, clear, and draggable event blocks to edit it.
+- Click a loop line to select it; the outlined line receives gestures, keyboard hits, pad clicks, and generated loops.
+- Press its record button to capture one loop pass. Recording begins immediately when stopped, or at the next bar when already playing; gesture, click a pad, or press 1–9 to add notes.
+- Conjure Loop replaces the selected line and starts playback. Clear removes and immediately silences that line; Undo restores its previous events.
+- Hover any button for 1.5 seconds to see what it does. Use OVR, mute, solo, length, gain, and draggable event blocks for further editing.
 - Harmony Lock confines every gesture to the active chord. Safe Scale and Free Gamma expose wider note sets.
 - WAV export renders the current loops with the same native synthesizers used for live playback.
 
