@@ -2,7 +2,7 @@
   "name": "washed-away-cherry-theme",
   "displayName": "Washed Away Cherry",
   "description": "A focused light colorscheme: cherry syntax, blue variables, green functions, and quiet taupe comments.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "antonveselskyi",
   "license": "MIT",
   "engines": {

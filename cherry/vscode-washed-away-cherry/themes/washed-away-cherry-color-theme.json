@@ -103,55 +103,59 @@
   },
   "tokenColors": [
     {
+      "name": "All code — bold",
+      "settings": { "fontStyle": "bold" }
+    },
+    {
       "name": "Comments",
       "scope": ["comment", "punctuation.definition.comment"],
-      "settings": { "foreground": "#C2B2AD" }
+      "settings": { "foreground": "#C2B2AD", "fontStyle": "bold" }
     },
     {
       "name": "Variables and parameters",
       "scope": ["variable", "variable.other", "variable.parameter", "variable.other.member", "meta.definition.variable", "entity.other.attribute-name"],
-      "settings": { "foreground": "#6D8FA2" }
+      "settings": { "foreground": "#6D8FA2", "fontStyle": "bold" }
     },
     {
       "name": "Functions and methods",
       "scope": ["entity.name.function", "entity.name.function.member", "support.function", "meta.function-call"],
-      "settings": { "foreground": "#6F8F52" }
+      "settings": { "foreground": "#6F8F52", "fontStyle": "bold" }
     },
     {
       "name": "Core cherry syntax",
       "scope": ["keyword", "storage", "string", "constant", "entity.name.type", "entity.name.class", "entity.name.namespace", "entity.name.tag", "support.type", "support.class", "meta.preprocessor", "punctuation.definition.directive"],
-      "settings": { "foreground": "#8E163E" }
+      "settings": { "foreground": "#8E163E", "fontStyle": "bold" }
     },
     {
       "name": "Quiet operators and punctuation",
       "scope": ["keyword.operator", "punctuation", "meta.brace"],
-      "settings": { "foreground": "#7F1737" }
+      "settings": { "foreground": "#7F1737", "fontStyle": "bold" }
     },
     {
       "name": "Macros, special values, and escapes",
       "scope": ["entity.name.function.preprocessor", "entity.name.function.macro", "meta.preprocessor.macro", "entity.name.type.parameter", "constant.character.escape", "invalid", "invalid.illegal"],
-      "settings": { "foreground": "#A82143" }
+      "settings": { "foreground": "#A82143", "fontStyle": "bold" }
     }
   ],
   "semanticTokenColors": {
-    "variable": "#6D8FA2",
-    "parameter": "#6D8FA2",
-    "property": "#6D8FA2",
-    "function": "#6F8F52",
-    "method": "#6F8F52",
-    "comment": "#C2B2AD",
-    "class": "#8E163E",
-    "struct": "#8E163E",
-    "namespace": "#8E163E",
-    "type": "#8E163E",
-    "type.builtin": "#8E163E",
-    "typeParameter": "#A82143",
-    "interface": "#8E163E",
-    "enum": "#8E163E",
-    "enumMember": "#8E163E",
-    "macro": "#A82143",
-    "keyword": "#8E163E",
-    "string": "#8E163E",
-    "number": "#8E163E"
+    "variable": { "foreground": "#6D8FA2", "fontStyle": "bold" },
+    "parameter": { "foreground": "#6D8FA2", "fontStyle": "bold" },
+    "property": { "foreground": "#6D8FA2", "fontStyle": "bold" },
+    "function": { "foreground": "#6F8F52", "fontStyle": "bold" },
+    "method": { "foreground": "#6F8F52", "fontStyle": "bold" },
+    "comment": { "foreground": "#C2B2AD", "fontStyle": "bold" },
+    "class": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "struct": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "namespace": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "type": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "type.builtin": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "typeParameter": { "foreground": "#A82143", "fontStyle": "bold" },
+    "interface": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "enum": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "enumMember": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "macro": { "foreground": "#A82143", "fontStyle": "bold" },
+    "keyword": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "string": { "foreground": "#8E163E", "fontStyle": "bold" },
+    "number": { "foreground": "#8E163E", "fontStyle": "bold" }
   }
 }
