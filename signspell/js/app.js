@@ -10,8 +10,9 @@ import {
   noteName,
   renderOfflineProject,
   resolveInstrumentGesture,
-} from "./music/index.js?v=4";
-import { LoopTransport } from "./looper.js?v=5";
+} from "./music/index.js?v=5";
+import { LoopTransport } from "./looper.js?v=6";
+import { digitFromKeyEvent } from "./input.js?v=1";
 import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
 import {
   clearCalibrationDraft,
@@ -69,6 +70,8 @@ let lastHitAt = 0;
 let toastTimer = 0;
 let tapTimes = [];
 let focusedMappingBar = -1;
+const heldNotes = new Map();
+let visionGateWatchdog = 0;
 
 if (calibrationDraft?.handedness === "left" || calibrationDraft?.handedness === "right") {
   dom.hand.value = calibrationDraft.handedness;
@@ -240,6 +243,7 @@ function reflectLiveLaneSound(lane, label = "") {
     .find((event) => event.beat >= localBeat) || lane.events[0];
   const digit = Number(nextEvent?.digit) || 1;
 
+  releaseHeldNotes((held) => held.laneId === lane.id);
   music.stopGroup?.(lane.id);
   try {
     music.triggerGesture({
@@ -263,6 +267,7 @@ function setProjectBpm(value) {
   const nextBpm = sanitizeBpm(value);
   project.tonalScene.bpm = nextBpm;
   if (transport?.playing && nextBpm !== previousBpm) {
+    releaseHeldNotes();
     music?.stopAllGroups?.();
     transport.rebaseTempo(previousBpm);
   }
@@ -291,6 +296,108 @@ function triggerHit(hit) {
   } catch (error) {
     showToast(error.message);
   }
+}
+
+function setHeldVisual(digit, held) {
+  const anyHeld = [...heldNotes.values()].some((note) => note.digit === Number(digit));
+  if (held && !anyHeld) return;
+  const cell = dom.gestureMap.querySelector(`[data-digit="${digit}"]`);
+  cell?.classList.toggle("held", held ? true : anyHeld);
+  for (const row of $$(".focused-roll-row", dom.focusedRoll)) {
+    if (Number(row.dataset.digit) === Number(digit)) $(".focused-roll-key", row)?.classList.toggle("held", held ? true : anyHeld);
+  }
+}
+
+function beginHeldNote({ gateId, digit, velocity = 0.78, confidence = 1, source = "hold" }) {
+  if (!music || heldNotes.has(gateId)) return heldNotes.get(gateId) || null;
+  const lane = activeLane();
+  if (!lane) return null;
+  try {
+    const mapped = music.startGestureGate({
+      instrument: lane.instrumentFamily,
+      collectionId: lane.collectionId,
+      groupId: lane.id,
+      gesture: Number(digit),
+      scene: scene(),
+      bar: transport ? Math.floor(transport.currentBeat() / BEATS_PER_BAR) : 0,
+      velocity: clamp(velocity, 0.05, 1),
+    }, { gateId });
+    const capture = transport?.beginHeldCapture({ digit: Number(digit), velocity: mapped.velocity, source }, lane.id) || null;
+    const held = { gateId, digit: Number(digit), laneId: lane.id, source, capture };
+    heldNotes.set(gateId, held);
+    flashGesture({ digit, velocity: mapped.velocity, confidence, source });
+    setHeldVisual(digit, true);
+    dom.gestureState.textContent = `${source.replaceAll("-", " ").toUpperCase()} / HELD`;
+    if (capture) markChanged({ renderLanes: true });
+    return held;
+  } catch (error) {
+    showToast(error.message);
+    return null;
+  }
+}
+
+function endHeldNote(gateId, { render = true } = {}) {
+  const held = heldNotes.get(gateId);
+  if (!held) return false;
+  const endedBeat = transport?.currentBeat() ?? 0;
+  music?.releaseGate?.(gateId);
+  const captured = transport?.finishHeldCapture(held.capture, endedBeat) || null;
+  heldNotes.delete(gateId);
+  if (![...heldNotes.values()].some((note) => note.source.startsWith("vision-"))) {
+    clearTimeout(visionGateWatchdog);
+    visionGateWatchdog = 0;
+  }
+  setHeldVisual(held.digit, false);
+  dom.gestureState.textContent = `${held.source.replaceAll("-", " ").toUpperCase()} / RELEASED`;
+  if (captured && render) markChanged({ renderLanes: true });
+  return Boolean(captured);
+}
+
+function refreshVisionGateWatchdog() {
+  clearTimeout(visionGateWatchdog);
+  visionGateWatchdog = 0;
+  if (![...heldNotes.values()].some((held) => held.source.startsWith("vision-"))) return;
+  visionGateWatchdog = setTimeout(() => {
+    visionGateWatchdog = 0;
+    releaseHeldNotes((held) => held.source.startsWith("vision-"));
+  }, 350);
+}
+
+function releaseHeldNotes(predicate = () => true) {
+  let changed = false;
+  for (const [gateId, held] of [...heldNotes]) {
+    if (predicate(held)) changed = endHeldNote(gateId, { render: false }) || changed;
+  }
+  if (changed) markChanged({ renderLanes: true });
+}
+
+function syncVisionHeldNotes(diagnostic) {
+  if (!diagnostic?.hand?.detected) {
+    releaseHeldNotes((held) => held.source.startsWith("vision-"));
+    return;
+  }
+  const contacts = diagnostic.fingertips?.contacts || {};
+  for (const [gateId, held] of [...heldNotes]) {
+    if (held.source === "vision-contact" && !contacts[held.digit]?.latched) endHeldNote(gateId);
+    if (held.source === "vision-downstroke" && diagnostic.downstroke?.state !== "locked") endHeldNote(gateId);
+  }
+}
+
+function handleRecognizedHit(hit) {
+  if (dom.calibrationDialog.open) return;
+  if (hit?.source === "contact") {
+    releaseHeldNotes((held) => held.source === "vision-downstroke");
+    beginHeldNote({ gateId: `vision:contact:${hit.digit}`, ...hit, source: "vision-contact" });
+    refreshVisionGateWatchdog();
+    return;
+  }
+  if (hit?.source === "downstroke") {
+    if ([...heldNotes.values()].some((held) => held.source === "vision-contact")) return;
+    beginHeldNote({ gateId: "vision:downstroke", ...hit, source: "vision-downstroke" });
+    refreshVisionGateWatchdog();
+    return;
+  }
+  triggerHit(hit);
 }
 
 function flashGesture(hit) {
@@ -327,6 +434,7 @@ function drawLanes() {
     drawLaneEvents(eventArea, lane);
     $(".lane-select", row).addEventListener("click", () => selectLane(lane.id));
     record.addEventListener("click", () => {
+      releaseHeldNotes();
       transport?.toggleRecord(lane.id);
       project.activeLaneId = lane.id;
       if ((lane.recording || lane.armed) && !lane.overdub) music?.stopGroup?.(lane.id);
@@ -338,16 +446,16 @@ function drawLanes() {
       markChanged();
     });
     overdub.addEventListener("click", () => { lane.overdub = !lane.overdub; markChanged({ renderLanes: true }); });
-    mute.addEventListener("click", () => { lane.muted = !lane.muted; if (lane.muted) music?.stopGroup?.(lane.id); markChanged({ renderLanes: true }); });
+    mute.addEventListener("click", () => { lane.muted = !lane.muted; if (lane.muted) { releaseHeldNotes((held) => held.laneId === lane.id); music?.stopGroup?.(lane.id); } markChanged({ renderLanes: true }); });
     solo.addEventListener("click", () => {
       lane.solo = !lane.solo;
-      if (lane.solo) project.lanes.filter((item) => item.id !== lane.id).forEach((item) => music?.stopGroup?.(item.id));
+      if (lane.solo) project.lanes.filter((item) => item.id !== lane.id).forEach((item) => { releaseHeldNotes((held) => held.laneId === item.id); music?.stopGroup?.(item.id); });
       markChanged({ renderLanes: true });
     });
-    length.addEventListener("change", () => { lane.lengthBars = Number(length.value); lane.events = lane.events.filter((item) => item.beat < lane.lengthBars * BEATS_PER_BAR); markChanged({ renderLanes: true }); });
+    length.addEventListener("change", () => { releaseHeldNotes((held) => held.laneId === lane.id); lane.lengthBars = Number(length.value); lane.events = lane.events.filter((item) => item.beat < lane.lengthBars * BEATS_PER_BAR); markChanged({ renderLanes: true }); });
     gain.addEventListener("input", () => { lane.gain = Number(gain.value); markChanged(); });
-    $(".lane-undo", row).addEventListener("click", () => { if (Array.isArray(lane.undoSnapshot)) { lane.events = lane.undoSnapshot.map((event) => ({ ...event })); lane.loopOriginBeat = Number.isFinite(lane.undoLoopOriginBeat) ? lane.undoLoopOriginBeat : lane.loopOriginBeat; music?.stopGroup?.(lane.id); markChanged({ renderLanes: true }); } });
-    $(".lane-clear", row).addEventListener("click", () => { lane.undoSnapshot = lane.events.map((event) => ({ ...event })); lane.undoLoopOriginBeat = lane.loopOriginBeat; lane.events = []; music?.stopGroup?.(lane.id); showToast(`${lane.name} CLEARED AND SILENCED`); markChanged({ renderLanes: true }); });
+    $(".lane-undo", row).addEventListener("click", () => { if (Array.isArray(lane.undoSnapshot)) { releaseHeldNotes((held) => held.laneId === lane.id); lane.events = lane.undoSnapshot.map((event) => ({ ...event })); lane.loopOriginBeat = Number.isFinite(lane.undoLoopOriginBeat) ? lane.undoLoopOriginBeat : lane.loopOriginBeat; music?.stopGroup?.(lane.id); markChanged({ renderLanes: true }); } });
+    $(".lane-clear", row).addEventListener("click", () => { releaseHeldNotes((held) => held.laneId === lane.id); lane.undoSnapshot = lane.events.map((event) => ({ ...event })); lane.undoLoopOriginBeat = lane.loopOriginBeat; lane.events = []; music?.stopGroup?.(lane.id); showToast(`${lane.name} CLEARED AND SILENCED`); markChanged({ renderLanes: true }); });
     dom.lanes.append(fragment);
   });
 }
@@ -524,6 +632,7 @@ function editEventWithKeyboard(event, lane, loopEvent) {
 }
 
 function selectLane(laneId) {
+  releaseHeldNotes();
   project.activeLaneId = laneId;
   drawLanes();
   syncControls();
@@ -582,6 +691,7 @@ function applyCollection(collectionId) {
 
 function generateIntoActiveLane() {
   const lane = activeLane();
+  releaseHeldNotes((held) => held.laneId === lane.id);
   music?.stopGroup?.(lane.id);
   const recipeFamily = RECIPE_FAMILY[lane.instrumentFamily];
   const recipe = generateLoopRecipe({ collectionId: lane.collectionId, seed: Date.now(), bars: lane.lengthBars, include: [recipeFamily] });
@@ -655,6 +765,7 @@ async function startCamera() {
 }
 
 function stopCamera() {
+  releaseHeldNotes((held) => held.source.startsWith("vision-"));
   cameraGeneration += 1;
   cancelAnimationFrame(cameraLoopHandle);
   frameInFlight = false;
@@ -672,9 +783,9 @@ function stopCamera() {
 function initVisionWorker() {
   if (visionWorker) return;
   try {
-    visionWorker = new Worker("js/vision/vision-worker.js?v=3", { type: "module" });
+    visionWorker = new Worker("js/vision/vision-worker.js?v=4", { type: "module" });
     visionWorker.addEventListener("message", handleVisionMessage);
-    visionWorker.addEventListener("error", (event) => { frameInFlight = false; showToast(`VISION WORKER: ${event.message}`); });
+    visionWorker.addEventListener("error", (event) => { releaseHeldNotes((held) => held.source.startsWith("vision-")); frameInFlight = false; showToast(`VISION WORKER: ${event.message}`); });
     visionWorker.postMessage({
       type: "init",
       handedness: dom.hand.value,
@@ -709,6 +820,8 @@ function queueCameraFrame(generation = cameraGeneration, stream = cameraStream) 
 function handleVisionMessage(event) {
   const message = event.data || {};
   if (message.type === "diagnostic") {
+    syncVisionHeldNotes(message.diagnostic);
+    refreshVisionGateWatchdog();
     updateHandDiagnostics(message.diagnostic);
     return;
   }
@@ -719,6 +832,7 @@ function handleVisionMessage(event) {
     return;
   }
   if (message.type === "error") {
+    releaseHeldNotes((held) => held.source.startsWith("vision-"));
     frameInFlight = false;
     setStatus("VISION ERROR", "error");
     showToast(message.message || "Vision initialization failed", 5000);
@@ -730,10 +844,10 @@ function handleVisionMessage(event) {
     const confidence = payload.confidence ?? payload.diagnostics?.pose?.confidence ?? 0;
     dom.gestureConfidence.value = clamp(confidence, 0, 1);
     dom.gestureState.textContent = payload.diagnostics?.reason || payload.diagnostics?.downstroke?.state || (payload.landmarks ? "TRACKING" : "NO HAND");
-    if (payload.hit) triggerHit(payload.hit);
+    if (payload.hit) handleRecognizedHit(payload.hit);
     if (payload.metrics) dom.latency.textContent = `VISION ${Math.round(payload.metrics.inferenceMs || 0)}ms / AUDIO ${Math.round((audioContext?.baseLatency || 0) * 1000)}ms`;
   }
-  if (message.type === "hit") triggerHit(message.hit);
+  if (message.type === "hit") handleRecognizedHit(message.hit);
   if (message.type === "calibration-progress") updateCalibrationProgress(message);
   if (message.type === "calibration-sample") finishCalibrationStep(message);
   if (message.type === "calibration-draft") persistCalibrationDraft(message.draft);
@@ -925,6 +1039,7 @@ function closeCalibrationSession() {
 }
 
 function openCalibration() {
+  releaseHeldNotes();
   const statuses = calibrationDraft ? statusesFromDraft(calibrationDraft)
     : calibrationProfile?.valid ? allPassedStatuses() : blankCalibrationStatuses();
   calibrationSession = { step: 0, statuses, capturing: false };
@@ -1132,6 +1247,7 @@ async function completeCalibration(profile, completed = profile?.completed) {
 }
 
 function stopTransport() {
+  releaseHeldNotes();
   transport?.stop();
   music?.stopAllGroups?.();
   updateTransportPosition(0);
@@ -1143,6 +1259,10 @@ function stopTransport() {
 function clickActiveLaneControl(selector) {
   const row = $$(".loop-lane", dom.lanes).find((item) => item.dataset.laneId === activeLane()?.id);
   if (row) $(selector, row)?.click();
+}
+
+function isEditableTarget(target) {
+  return Boolean(target?.matches?.("input,select,textarea,[contenteditable='true']"));
 }
 
 function wireEvents() {
@@ -1207,13 +1327,23 @@ function wireEvents() {
   dom.fullVisual.addEventListener("click", () => $(".visualizer-panel")?.requestFullscreen?.());
   dom.reduceMotion.addEventListener("click", () => { project.ui.reducedMotion = !project.ui.reducedMotion; dom.reduceMotion.setAttribute("aria-pressed", String(project.ui.reducedMotion)); document.body.classList.toggle("reduced-motion", project.ui.reducedMotion); visualizer?.setReducedMotion(project.ui.reducedMotion); markChanged(); });
   window.addEventListener("keydown", (event) => {
-    if (event.repeat || event.target.matches("input,select,textarea")) return;
-    const digit = Number(event.key);
-    if (digit >= 1 && digit <= 9) triggerHit({ digit, velocity: 0.78, confidence: 1, source: "keyboard" });
-    if (event.code === "Space" && !event.target.matches("button")) { event.preventDefault(); transport?.playing ? stopTransport() : transport?.start(); }
+    if (event.defaultPrevented || event.repeat || isEditableTarget(event.target)) return;
+    if (event.ctrlKey || event.altKey || event.metaKey || dom.calibrationDialog.open || !dom.boot.hidden) return;
+    if (event.code === "Space" && !event.target?.matches?.("button")) { event.preventDefault(); transport?.playing ? stopTransport() : transport?.start(); return; }
+    const digit = digitFromKeyEvent(event);
+    if (!digit) return;
+    event.preventDefault();
+    beginHeldNote({ gateId: `keyboard:${event.code || event.key}`, digit, velocity: 0.78, confidence: 1, source: "keyboard" });
   });
-  window.addEventListener("beforeunload", () => { if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop()); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) { frameInFlight = false; visionWorker?.postMessage({ type: "reset" }); } });
+  window.addEventListener("keyup", (event) => {
+    const gateId = `keyboard:${event.code || event.key}`;
+    if (!heldNotes.has(gateId)) return;
+    event.preventDefault();
+    endHeldNote(gateId);
+  });
+  window.addEventListener("blur", () => releaseHeldNotes((held) => held.source === "keyboard"));
+  window.addEventListener("beforeunload", () => { releaseHeldNotes(); if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop()); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { releaseHeldNotes(); frameInFlight = false; visionWorker?.postMessage({ type: "reset" }); } });
 }
 
 populateControls();

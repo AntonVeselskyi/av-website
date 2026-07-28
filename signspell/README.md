@@ -32,6 +32,8 @@ The hand terminal continuously shows local-only diagnostics for hand presence, c
 
 Each calibration checkpoint completes on its own timer and is validated independently. Number poses require a steady, consistent knuckles-facing view; contact phases require the opposite palm-facing view and a measurable open/touch gap. Failure messages identify the specific condition to retry while keeping passed checkpoints.
 
+Live notes use press/release gates: keyboard digits and numpad keys sustain until key-up, signs 6–9 sustain while the calibrated thumb contact remains closed, and signs 1–5 sustain from a downward strike until the hand recovers upward. Recorded notes retain the measured held duration; tonal instruments release smoothly while percussion remains a deliberate one-shot.
+
 ## Tests
 
 With Node 22 or newer:

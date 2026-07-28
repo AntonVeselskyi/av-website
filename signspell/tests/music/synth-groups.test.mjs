@@ -26,7 +26,7 @@ function node(kind) {
     release: param(0),
     connect(target) { this.connectedTo = target; return target; },
     disconnect() { this.disconnected = true; },
-    start() {}, stop() {},
+    start(time) { this.startedAt = time; }, stop(time) { this.stoppedAt = time; },
   };
 }
 
@@ -65,4 +65,27 @@ test('stopAllGroups leaves direct/manual hits untouched', () => {
   engine.trigger(hit); // no group: live/manual main output
   assert.equal(engine.stopAllGroups(), 2);
   assert.equal(engine.groups.size, 0);
+});
+
+test('a held tonal gate sustains until its matching release', () => {
+  const audio = context();
+  const oscillators = [];
+  audio.createOscillator = () => { const oscillator = node('oscillator'); oscillators.push(oscillator); return oscillator; };
+  const engine = new MusicEngine(audio);
+  engine.startGate(hit, { gateId: 'keyboard:Numpad1', groupId: 'lane-1' });
+  assert.equal(engine.gates.size, 1);
+  assert.equal(oscillators.length, 1);
+  assert.equal(oscillators[0].stoppedAt, undefined);
+
+  assert.equal(engine.releaseGate('keyboard:Numpad1'), true);
+  assert.equal(engine.gates.size, 0);
+  assert.ok(oscillators[0].stoppedAt > audio.currentTime);
+});
+
+test('stopping a lane group also releases each held gate in that lane', () => {
+  const engine = new MusicEngine(context());
+  engine.startGate(hit, { gateId: 'one', groupId: 'lane-1' });
+  engine.startGate(hit, { gateId: 'two', groupId: 'lane-1' });
+  assert.equal(engine.stopGroup('lane-1'), true);
+  assert.equal(engine.gates.size, 0);
 });

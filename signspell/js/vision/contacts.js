@@ -98,8 +98,8 @@ export class ContactRecognizer {
       const settings = this.profile.contacts[digit];
       const value = distances[digit];
       if (!Number.isFinite(value)) continue;
-      if (!inView(digit)) continue;
       if (this.latched[digit] && value >= settings.release) this.latched[digit] = false;
+      if (!inView(digit)) continue;
       const wasOpen = !this.latched[digit];
       const closingSpeed = dt && previousDistances
         ? Math.max(0, (previousDistances[digit] - value) / dt)

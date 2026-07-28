@@ -1,7 +1,7 @@
 import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js?v=2";
 import { classifyPose } from "./pose-classifier.js?v=2";
 import { DownstrokeRecognizer } from "./downstroke.js";
-import { ContactRecognizer } from "./contacts.js?v=2";
+import { ContactRecognizer } from "./contacts.js?v=3";
 import { isCalibrationProfile } from "./calibration.js";
 
 /**

@@ -188,6 +188,27 @@ export class LoopTransport extends EventTarget {
     return event;
   }
 
+  beginHeldCapture(hit, laneId = this.project.activeLaneId) {
+    const startedBeat = this.currentBeat();
+    const event = this.captureHit({ ...hit, duration: 0.05 }, laneId);
+    const lane = this.project.lanes.find((item) => item.id === laneId);
+    const recordEndBeat = Number(lane?.recordStartedBeat) + Math.max(1, Number(lane?.lengthBars) || 1) * BEATS_PER_BAR;
+    return event ? { laneId, eventId: event.id, startedBeat, recordEndBeat } : null;
+  }
+
+  finishHeldCapture(capture, endedBeat = this.currentBeat()) {
+    if (!capture) return null;
+    const lane = this.project.lanes.find((item) => item.id === capture.laneId);
+    const event = lane?.events.find((item) => item.id === capture.eventId);
+    if (!lane || !event) return null;
+    const loopBeats = Math.max(1, Number(lane.lengthBars) || 1) * BEATS_PER_BAR;
+    const effectiveEndBeat = Number.isFinite(capture.recordEndBeat)
+      ? Math.min(Number(endedBeat), capture.recordEndBeat) : Number(endedBeat);
+    const heldBeats = effectiveEndBeat - Number(capture.startedBeat);
+    event.duration = clamp(heldBeats, 0.05, loopBeats);
+    return event;
+  }
+
   clearLane(laneId) {
     const lane = this.project.lanes.find((item) => item.id === laneId);
     if (lane) lane.events = [];

@@ -107,3 +107,59 @@ test("a new transport epoch clears live and undo loop origins", () => {
   assert.equal(lane.undoLoopOriginBeat, 0);
   transport.stop();
 });
+
+test("held capture records its release duration on the original lane", () => {
+  const project = createDefaultProject();
+  project.tonalScene.bpm = 60;
+  const first = project.lanes[0];
+  const second = project.lanes[1];
+  project.activeLaneId = first.id;
+  let audioTime = 0;
+  const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
+  transport.playing = true;
+  transport.startedAt = 0;
+  first.recording = true;
+  first.recordStartedBeat = 0;
+
+  audioTime = 0.25;
+  const capture = transport.beginHeldCapture({ digit: 7, velocity: 0.8 }, first.id);
+  project.activeLaneId = second.id;
+  audioTime = 1.75;
+  const event = transport.finishHeldCapture(capture);
+
+  assert.equal(event.duration, 1.5);
+  assert.equal(first.events[0].duration, 1.5);
+  assert.equal(second.events.length, 0);
+});
+
+test("held capture duration is clamped to one line", () => {
+  const project = createDefaultProject();
+  project.tonalScene.bpm = 60;
+  const lane = project.lanes[0];
+  lane.lengthBars = 1;
+  lane.recording = true;
+  lane.recordStartedBeat = 0;
+  let audioTime = 0;
+  const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
+  transport.playing = true;
+  transport.startedAt = 0;
+  const capture = transport.beginHeldCapture({ digit: 2 }, lane.id);
+  audioTime = 9;
+  assert.equal(transport.finishHeldCapture(capture).duration, 4);
+});
+
+test("a hold crossing the recording boundary ends at that boundary", () => {
+  const project = createDefaultProject();
+  project.tonalScene.bpm = 60;
+  const lane = project.lanes[0];
+  lane.lengthBars = 1;
+  lane.recording = true;
+  lane.recordStartedBeat = 0;
+  let audioTime = 3.75;
+  const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
+  transport.playing = true;
+  transport.startedAt = 0;
+  const capture = transport.beginHeldCapture({ digit: 4 }, lane.id);
+  audioTime = 7;
+  assert.equal(transport.finishHeldCapture(capture).duration, 0.25);
+});

@@ -50,6 +50,75 @@ function playPad(context, output, hit, time, duration) {
   hit.notes.forEach((note, index) => { const osc = oscillator(context, cold && index === 1 ? 'sawtooth' : index % 2 ? 'triangle' : 'sine', note.frequency, time); const gain = context.createGain(); const filter = context.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(cold ? 540 : 850, time); envelope(gain, time, cold ? 0.4 : 0.22, Math.max(0.3, duration), 0.7, 0.07 * hit.velocity); connectVoice([osc, filter, gain], output); osc.start(time); osc.stop(time + duration + 1.2); });
 }
 
+function heldEnvelope(gain, time, attack, peak, sustain = 0.72) {
+  const parameter = gain.gain;
+  parameter.cancelScheduledValues(time);
+  parameter.setValueAtTime(0.0001, time);
+  parameter.exponentialRampToValueAtTime(Math.max(0.0001, peak), time + attack);
+  parameter.exponentialRampToValueAtTime(Math.max(0.0001, peak * sustain), time + attack + 0.14);
+}
+
+function releaseHeldVoice(context, voice, when = context.currentTime, releaseSeconds = null) {
+  if (!voice || voice.released) return false;
+  voice.released = true;
+  const time = now(context, when);
+  const release = Math.max(0.025, Number(releaseSeconds) || voice.releaseSeconds || 0.12);
+  for (const gain of voice.gains) {
+    const parameter = gain.gain;
+    if (typeof parameter.cancelAndHoldAtTime === 'function') parameter.cancelAndHoldAtTime(time);
+    else {
+      parameter.cancelScheduledValues(time);
+      parameter.setValueAtTime(Math.max(0.0001, Number(parameter.value) || 0.0001), time);
+    }
+    parameter.exponentialRampToValueAtTime(0.0001, time + release);
+  }
+  for (const source of voice.sources) {
+    try { source.stop(time + release + 0.03); } catch { /* already stopped */ }
+  }
+  return true;
+}
+
+function startHeldVoice(context, output, hit, time) {
+  const sources = [];
+  const gains = [];
+  let releaseSeconds = 0.14;
+  if (hit.kind === 'percussion') {
+    playPercussion(context, output, hit, time);
+    return { sources, gains, releaseSeconds: 0.04, released: false };
+  }
+  if (hit.instrument === '808') {
+    const presets = { warmWound: [48, 210, 1.42], tapeGrave: [76, 250, 1.58], redline: [96, 310, 1.72], ironLung: [118, 185, 1.86] };
+    const [driveAmount, cutoff, pitchDrop] = presets[hit.presetId] || [70, 250, 1.55];
+    const osc = oscillator(context, hit.presetId === 'ironLung' ? 'triangle' : 'sine', hit.note.frequency * pitchDrop, time);
+    const drive = context.createWaveShaper(); const gain = context.createGain(); const filter = context.createBiquadFilter();
+    drive.curve = makeDistortionCurve(driveAmount); drive.oversample = '4x'; filter.type = 'lowpass'; filter.frequency.setValueAtTime(cutoff, time);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, hit.note.frequency), time + 0.085);
+    heldEnvelope(gain, time, 0.004, 0.48 * hit.velocity, 0.78); connectVoice([osc, filter, drive, gain], output); osc.start(time);
+    sources.push(osc); gains.push(gain); releaseSeconds = 0.16;
+  } else if (hit.instrument === 'eerieLead') {
+    const osc = oscillator(context, hit.presetId === 'razorMono' || hit.presetId === 'blownSpeaker' ? 'sawtooth' : 'triangle', hit.note.frequency, time);
+    const filter = context.createBiquadFilter(); const gain = context.createGain(); filter.type = 'bandpass'; filter.frequency.setValueAtTime(hit.note.frequency * (hit.presetId === 'graveBell' ? 3.4 : 2.2), time); filter.Q.value = hit.presetId === 'razorMono' ? 5.2 : 2.4;
+    heldEnvelope(gain, time, 0.008, 0.24 * hit.velocity, 0.62); connectVoice([osc, filter, gain], output); osc.start(time);
+    sources.push(osc); gains.push(gain); releaseSeconds = 0.2;
+  } else if (hit.instrument === 'piano') {
+    [1, 2.01, 3.02].forEach((ratio, index) => {
+      const osc = oscillator(context, 'sine', hit.note.frequency * ratio, time); const gain = context.createGain();
+      heldEnvelope(gain, time, 0.004, 0.16 * hit.velocity / ratio, Math.max(0.24, 0.48 - index * 0.08)); connectVoice([osc, gain], output); osc.start(time);
+      sources.push(osc); gains.push(gain);
+    });
+    releaseSeconds = 0.38;
+  } else if (hit.kind === 'chord') {
+    const cold = hit.presetId === 'coldChapel';
+    hit.notes.forEach((note, index) => {
+      const osc = oscillator(context, cold && index === 1 ? 'sawtooth' : index % 2 ? 'triangle' : 'sine', note.frequency, time); const gain = context.createGain(); const filter = context.createBiquadFilter();
+      filter.type = 'lowpass'; filter.frequency.setValueAtTime(cold ? 540 : 850, time); heldEnvelope(gain, time, cold ? 0.4 : 0.22, 0.07 * hit.velocity, 0.86); connectVoice([osc, filter, gain], output); osc.start(time);
+      sources.push(osc); gains.push(gain);
+    });
+    releaseSeconds = 0.8;
+  }
+  return { sources, gains, releaseSeconds, released: false };
+}
+
 function groupKey(groupId) { return groupId == null || groupId === '' ? null : String(groupId); }
 
 function fadeOutGain(gain, context, seconds) {
@@ -67,6 +136,7 @@ export class MusicEngine {
     this.context = context;
     this.master = createSafeMasterChain(context, options);
     this.groups = new Map();
+    this.gates = new Map();
   }
   outputForGroup(groupId) {
     const key = groupKey(groupId);
@@ -86,6 +156,7 @@ export class MusicEngine {
   stopGroup(groupId, { fadeSeconds = 0.025 } = {}) {
     const key = groupKey(groupId);
     if (!key) return false;
+    this.releaseGatesForGroup(key, { releaseSeconds: fadeSeconds });
     const group = this.groups.get(key);
     if (!group) return false;
     this.groups.delete(key);
@@ -102,6 +173,40 @@ export class MusicEngine {
     ids.forEach((groupId) => this.stopGroup(groupId, options));
     return ids.length;
   }
+  startGate(mappedHit, { gateId, when = this.context.currentTime, groupId = null } = {}) {
+    const key = String(gateId || '');
+    if (!key) throw new TypeError('A gate id is required');
+    if (this.gates.has(key)) return mappedHit;
+    const time = now(this.context, when);
+    const voice = startHeldVoice(this.context, this.outputForGroup(groupId), mappedHit, time);
+    this.gates.set(key, { groupId: groupKey(groupId), voice });
+    return mappedHit;
+  }
+  startGestureGate(command, options = {}) {
+    const hit = resolveInstrumentGesture(command);
+    return this.startGate(hit, { ...options, groupId: command.groupId ?? options.groupId });
+  }
+  releaseGate(gateId, { when = this.context.currentTime, releaseSeconds = null } = {}) {
+    const key = String(gateId || '');
+    const gate = this.gates.get(key);
+    if (!gate) return false;
+    this.gates.delete(key);
+    releaseHeldVoice(this.context, gate.voice, when, releaseSeconds);
+    return true;
+  }
+  releaseGatesForGroup(groupId, options = {}) {
+    const key = groupKey(groupId);
+    let count = 0;
+    for (const [gateId, gate] of [...this.gates]) {
+      if (gate.groupId === key && this.releaseGate(gateId, options)) count += 1;
+    }
+    return count;
+  }
+  releaseAllGates(options = {}) {
+    let count = 0;
+    for (const gateId of [...this.gates.keys()]) if (this.releaseGate(gateId, options)) count += 1;
+    return count;
+  }
   trigger(mappedHit, when = this.context.currentTime, durationBeat = 0.25, bpm = 140, groupId = null) {
     const time = now(this.context, when); const duration = Math.max(0.03, durationBeat * 60 / bpm);
     const output = this.outputForGroup(groupId);
@@ -116,5 +221,5 @@ export class MusicEngine {
     const hit = resolveInstrumentGesture(command);
     return this.trigger(hit, when, command.durationBeat, command.scene.bpm, command.groupId);
   }
-  dispose() { this.stopAllGroups({ fadeSeconds: 0.005 }); this.master.disconnect(); }
+  dispose() { this.releaseAllGates({ releaseSeconds: 0.005 }); this.stopAllGroups({ fadeSeconds: 0.005 }); this.master.disconnect(); }
 }

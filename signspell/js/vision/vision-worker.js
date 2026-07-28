@@ -1,4 +1,4 @@
-import { SignSpellRecognizer } from "./recognizer.js?v=3";
+import { SignSpellRecognizer } from "./recognizer.js?v=4";
 import { buildCalibrationProfile } from "./calibration.js?v=2";
 import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.js?v=2";
 
