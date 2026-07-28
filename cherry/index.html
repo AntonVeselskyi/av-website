@@ -557,6 +557,32 @@
   .fn { color: var(--apple); }
   .comment { color: var(--grey); font-style: italic; }
 
+  .shrt-callout {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    background: var(--dark);
+    transition: max-height .28s ease, opacity .22s ease, transform .28s ease;
+  }
+  .shrt-callout.visible {
+    max-height: 54px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .shrt-callout a {
+    display: block;
+    padding: 11px 16px 12px;
+    color: var(--pink);
+    font: 16px/1.25 Anton, Impact, sans-serif;
+    letter-spacing: .035em;
+    text-align: center;
+    text-decoration: none;
+    border-top: 3px solid var(--cherry);
+  }
+  .shrt-callout a:hover { color: var(--white); background: var(--cherry); }
+  .shrt-callout a:focus-visible { outline: 3px solid var(--white); outline-offset: -5px; }
+
   .code-tabs {
     display: flex;
     gap: 0;
@@ -870,6 +896,9 @@
             <span class="semantic" id="sample-name"></span>
           </div>
           <pre id="code-view" aria-live="polite"></pre>
+          <div class="shrt-callout" id="shrt-callout" aria-hidden="true">
+            <a href="https://antonveselskyi.com/shrt.html">What the hell is SHRT? Learn more <span aria-hidden="true">&#x1F440;</span></a>
+          </div>
           <div class="code-tabs" id="code-tabs" role="tablist" aria-label="Code samples"></div>
         </div>
       </div>

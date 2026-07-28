@@ -464,6 +464,19 @@ body.m-gallery #gallery { display:block; position:relative; overflow:hidden; tou
 /* the sample switcher only means anything where code is on screen */
 body.m-compare #code-bar, body.m-gallery #code-bar { display: flex; }
 #code-bar .cb-label { font-size:12px; color:#3f3f3f; letter-spacing:.08em; flex-shrink:0; }
+.shrt-callout {
+  flex: 1 0 100%; max-height:0; overflow:hidden; opacity:0;
+  transform:translateY(8px); margin-bottom:-12px;
+  transition:max-height .25s ease, opacity .2s ease, transform .25s ease, margin .25s ease;
+}
+.shrt-callout.visible { max-height:42px; opacity:1; transform:translateY(0); margin-bottom:0; }
+.shrt-callout a {
+  display:block; padding:7px 12px 8px; border-left:3px solid var(--sand);
+  color:var(--storm); background:#171717; text-align:center; text-decoration:none;
+  font:600 13px/1.35 var(--mono); letter-spacing:.015em;
+}
+.shrt-callout a:hover { color:#d8d0c0; background:#1d1d1d; }
+.shrt-callout a:focus-visible { outline:2px solid var(--storm); outline-offset:-2px; }
 
 /* ── Mobile ───────────────────────────────────────────────── */
 /* NOTE: .compare stays two columns at every width — the side-by-side,
@@ -564,6 +577,9 @@ body.m-compare #code-bar, body.m-gallery #code-bar { display: flex; }
 </main>
 
 <div id="code-bar">
+  <div class="shrt-callout" id="shrt-callout" aria-hidden="true">
+    <a href="https://antonveselskyi.com/shrt.html">What the hell is SHRT? Learn more <span aria-hidden="true">&#x1F440;</span></a>
+  </div>
   <span class="cb-label">SAMPLE</span>
   <div class="tab-row" id="code-tabs"></div>
 </div>
@@ -979,6 +995,10 @@ function buildCodeTabs() {
     Object.keys(CODES).map(k =>
       `<button class="tab-btn${k===activeCode?' active':''}" onclick="setCode('${k}')">${CODES[k].label}</button>`
     ).join('');
+  const shrtCallout = document.getElementById('shrt-callout');
+  const showShrtCallout = activeCode === 'shrt';
+  shrtCallout.classList.toggle('visible', showShrtCallout);
+  shrtCallout.setAttribute('aria-hidden', String(!showShrtCallout));
 }
 
 function renderCompare() {

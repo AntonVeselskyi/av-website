@@ -176,6 +176,7 @@ const TOKEN_CLASS = {
 
 const codeView = document.getElementById('code-view');
 const codeTabs = document.getElementById('code-tabs');
+const shrtCallout = document.getElementById('shrt-callout');
 const filename = document.getElementById('sample-file');
 const sampleName = document.getElementById('sample-name');
 const rangeToggle = document.getElementById('range-toggle');
@@ -199,6 +200,9 @@ function renderSample(key, focusTab = false) {
     return `<span class="line${index === sample.hl ? ' hot' : ''}"><span class="ln">${index + 1}</span>${tokens}</span>`;
   }).join('');
   codeView.scrollLeft = 0;
+  const showShrtCallout = key === 'shrt';
+  shrtCallout.classList.toggle('visible', showShrtCallout);
+  shrtCallout.setAttribute('aria-hidden', String(!showShrtCallout));
   codeTabs.querySelectorAll('[role="tab"]').forEach((tab) => {
     const selected = tab.dataset.sample === key;
     tab.classList.toggle('active', selected);
