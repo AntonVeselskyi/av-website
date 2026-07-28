@@ -1195,14 +1195,11 @@ const GET = [
     name: 'VS Code',
     sub: 'theme extension',
     steps: [
-      'Download both files, keeping the folder shape <code>sandstorm-theme/package.json</code> and <code>sandstorm-theme/themes/…</code>.',
-      'Drop the folder into <code>%USERPROFILE%\\.vscode\\extensions\\</code>.',
+      'Download and extract <code>sandstorm-vscode.zip</code>.',
+      'Drop the extracted <code>vscode-sandstorm</code> folder into <code>%USERPROFILE%\\.vscode\\extensions\\</code>.',
       'Restart VS Code, then <code>Ctrl+K Ctrl+T</code> ▸ <b>Sandstorm</b>.',
     ],
-    dl: [
-      ['package.json', 'vscode-sandstorm/package.json'],
-      ['sandstorm-color-theme.json', 'vscode-sandstorm/themes/sandstorm-color-theme.json'],
-    ],
+    dl: [['sandstorm-vscode.zip', 'sandstorm-vscode.zip']],
     note: 'Full workbench theming plus semantic token colours, so classes, methods and '
         + 'variables split the same way they do in VS.',
   },
