@@ -6,7 +6,7 @@
 <meta name="description" content="Install SHRT on Windows or Linux, then add syntax, build, run, and in-place C++ conversion tools for VS Code and Visual Studio.">
 <meta name="theme-color" content="#0a0a0a">
 <title>Get SHRT — transpiler and editor tools</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/shrt/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Major+Mono+Display&family=Metamorphous&family=Nova+Script&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -391,11 +391,11 @@
 </head>
 <body>
 <nav class="topbar" aria-label="SHRT navigation">
-  <a href="../shrt.html" aria-label="Back to the SHRT landing page"><span aria-hidden="true">←</span> What is SHRT?</a>
+  <a href="/shrt.html" aria-label="Back to the SHRT landing page"><span aria-hidden="true">←</span> What is SHRT?</a>
   <a class="av-mark" href="https://antonveselskyi.com/" aria-label="Anton Veselskyi home"><span>A</span><span>V</span></a>
   <div class="top-links">
     <a href="#editors">Editors</a>
-    <a href="../shrt-play.html">Try it live <span aria-hidden="true">↗</span></a>
+    <a href="/shrt-play.html">Try it live <span aria-hidden="true">↗</span></a>
   </div>
 </nav>
 
@@ -413,6 +413,7 @@
     <div class="hero-actions">
       <a class="button" href="#install">Install the CLI</a>
       <a class="button secondary" href="#editors">Get editor tools</a>
+      <a class="button secondary" href="/shrt.html"><span aria-hidden="true">←</span>&nbsp; Back to SHRT</a>
     </div>
   </div>
 </header>
@@ -430,7 +431,7 @@
         <h3>Native executable</h3>
         <div class="meta">ZIP · 202 KB · STATIC MSVC RUNTIME</div>
         <p>Includes <code class="inline">shrt.exe</code>, a PowerShell installer, the MIT license, and a compact command reference. No WSL required.</p>
-        <div class="card-actions"><a class="button" href="downloads/shrt-0.1.2-windows-x64.zip" download>Download Windows</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-0.1.2-windows-x64.zip" download>Download Windows</a></div>
       </article>
 
       <article class="download-card">
@@ -438,7 +439,7 @@
         <h3>Static binary</h3>
         <div class="meta">TAR.GZ · 865 KB · NO SHARED LIBS</div>
         <p>Includes the portable <code class="inline">shrt</code> binary and an installer targeting <code class="inline">~/.local/bin</code> by default.</p>
-        <div class="card-actions"><a class="button" href="downloads/shrt-0.1.2-linux-x64.tar.gz" download>Download Linux</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-0.1.2-linux-x64.tar.gz" download>Download Linux</a></div>
       </article>
 
       <article class="download-card">
@@ -447,8 +448,8 @@
         <div class="meta">ZIP · 40 KB · CMAKE + C++20</div>
         <p>The lexer, rewriter, CLI, language specification, and examples. Use this for another architecture or to inspect every transformation.</p>
         <div class="card-actions">
-          <a class="button" href="downloads/shrt-0.1.2-source.zip" download>Download source</a>
-          <a class="button secondary" href="downloads/SHA256SUMS.txt">Checksums</a>
+          <a class="button" href="/shrt/downloads/shrt-0.1.2-source.zip" download>Download source</a>
+          <a class="button secondary" href="/shrt/downloads/SHA256SUMS.txt">Checksums</a>
         </div>
       </article>
 
@@ -498,7 +499,7 @@ shrt --version</pre></div>
             <p>Download the Windows ZIP, extract it, and run its bundled installer:</p>
             <div class="command"><button class="copy" type="button" aria-label="Copy manual Windows install commands">⧉</button><pre>Expand-Archive .\shrt-0.1.2-windows-x64.zip .\shrt
 powershell -ExecutionPolicy Bypass -File .\shrt\shrt-0.1.2-windows-x64\install.ps1</pre></div>
-            <p><a href="install.ps1">Inspect the quick-install script</a> before running it.</p>
+            <p><a href="/shrt/install.ps1">Inspect the quick-install script</a> before running it.</p>
           </div>
         </details>
       </article>
@@ -522,7 +523,7 @@ shrt --version</pre></div>
             <div class="command"><button class="copy" type="button" aria-label="Copy manual Linux install commands">⧉</button><pre>tar -xzf shrt-0.1.2-linux-x64.tar.gz
 cd shrt-0.1.2-linux-x64
 ./install.sh</pre></div>
-            <p>If needed, add <code class="inline">~/.local/bin</code> to your shell PATH. You can also <a href="install.sh">inspect the quick-install script</a>.</p>
+            <p>If needed, add <code class="inline">~/.local/bin</code> to your shell PATH. You can also <a href="/shrt/install.sh">inspect the quick-install script</a>.</p>
           </div>
         </details>
       </article>
@@ -596,7 +597,7 @@ cl /std:c++20 /EHsc hello.shrt.cpp /Fe:hello.exe
           <li>Choose <strong>Views and More Actions… → Install from VSIX…</strong>.</li>
           <li>Select the file, then run <strong>Developer: Reload Window</strong>.</li>
         </ol>
-        <div class="card-actions"><a class="button" href="downloads/shrt-syntax-0.3.1.vsix" download>Download Syntax VSIX</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-syntax-0.3.1.vsix" download>Download Syntax VSIX</a></div>
       </article>
 
       <article class="extension-card">
@@ -611,7 +612,7 @@ cl /std:c++20 /EHsc hello.shrt.cpp /Fe:hello.exe
         </ol>
         <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>B</kbd><span>build</span></div>
         <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>R</kbd><span>build if stale + run</span></div>
-        <div class="card-actions"><a class="button" href="downloads/shrt-build-run-0.5.1.vsix" download>Download Build &amp; Run VSIX</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-build-run-0.5.1.vsix" download>Download Build &amp; Run VSIX</a></div>
       </article>
 
       <article class="extension-card">
@@ -625,7 +626,7 @@ cl /std:c++20 /EHsc hello.shrt.cpp /Fe:hello.exe
           <li>Select text or place the caret inside a function. Required includes and the defer runtime are added once.</li>
         </ol>
         <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd><span>convert in place</span></div>
-        <div class="card-actions"><a class="button" href="downloads/shrt-convert-1.0.0.vsix" download>Download VS Code Converter</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-convert-1.0.0.vsix" download>Download VS Code Converter</a></div>
       </article>
 
       <article class="extension-card">
@@ -639,7 +640,7 @@ cl /std:c++20 /EHsc hello.shrt.cpp /Fe:hello.exe
           <li>Select your VS 2022 installation, choose <strong>Install</strong>, then reopen the IDE.</li>
         </ol>
         <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd><span>convert in place</span></div>
-        <div class="card-actions"><a class="button" href="downloads/shrt-convert-visual-studio-1.0.1.vsix" download>Download Visual Studio Converter</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-convert-visual-studio-1.0.1.vsix" download>Download Visual Studio Converter</a></div>
       </article>
     </div>
 
@@ -682,7 +683,7 @@ cmake --build build --config Release</pre></div>
   </section>
 </main>
 
-<footer>© 2026 · <a href="https://antonveselskyi.com/">Anton Veselskyi</a> · <a href="../shrt.html">SHRT language</a> · MIT</footer>
+<footer>© 2026 · <a href="https://antonveselskyi.com/">Anton Veselskyi</a> · <a href="/shrt.html">SHRT language</a> · MIT</footer>
 
 <script>
   document.querySelectorAll('.copy').forEach((button) => {
