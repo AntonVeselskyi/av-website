@@ -125,6 +125,106 @@ body.content-ready .av-monogram { opacity: 1; visibility: visible; }
 
 .egg-hint { margin-top:10px; font-size:11px; color:#333; height:14px; letter-spacing:.08em; }
 
+.egg-hourglass-slot {
+  height:0;
+  margin:0;
+  overflow:hidden;
+  opacity:0;
+  transition:height .48s cubic-bezier(.16,1,.3,1), margin .48s cubic-bezier(.16,1,.3,1), opacity .28s ease;
+}
+.hero.egg-active .egg-hourglass-slot { height:72px; margin-top:10px; opacity:1; }
+.egg-hourglass {
+  --sand-top:1;
+  --sand-bottom:0;
+  position:relative;
+  width:50px;
+  height:64px;
+  margin:0 auto;
+  filter:drop-shadow(0 7px 12px rgba(0,0,0,.3));
+}
+.egg-outline {
+  position:absolute;
+  inset:0;
+  z-index:3;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  fill:none;
+  stroke-linecap:square;
+  stroke-linejoin:miter;
+}
+.egg-outline .egg-frame { stroke:var(--sand); stroke-width:2.4; }
+.egg-outline .egg-glass { stroke:var(--storm); stroke-width:1.35; opacity:.82; }
+.egg-sand-top,
+.egg-sand-bottom {
+  position:absolute;
+  left:14px;
+  z-index:1;
+  width:22px;
+  background:var(--sand);
+  transition:transform .52s cubic-bezier(.2,.75,.2,1);
+}
+.egg-sand-top {
+  top:12px;
+  height:20px;
+  clip-path:polygon(0 0, 100% 0, 50% 100%);
+  transform:scaleY(var(--sand-top));
+  transform-origin:50% 100%;
+}
+.egg-sand-bottom {
+  bottom:9px;
+  height:19px;
+  clip-path:polygon(50% 0, 100% 100%, 0 100%);
+  transform:scaleY(var(--sand-bottom));
+  transform-origin:50% 100%;
+}
+.egg-stream {
+  position:absolute;
+  left:24.5px;
+  top:29px;
+  z-index:2;
+  width:1px;
+  height:19px;
+  background:var(--sand);
+  opacity:0;
+}
+.egg-grain {
+  position:absolute;
+  left:24px;
+  top:29px;
+  z-index:4;
+  width:2px;
+  height:2px;
+  border-radius:50%;
+  background:var(--sand);
+  opacity:0;
+  box-shadow:0 0 5px rgba(232,160,56,.6);
+}
+.egg-hourglass.dropping .egg-stream { animation:egg-stream-drop .5s ease-out; }
+.egg-hourglass.dropping .egg-grain { animation:egg-grain-drop .54s cubic-bezier(.2,.7,.2,1); }
+.egg-hourglass.last-drop .egg-stream { animation-duration:.72s; }
+.egg-hourglass.last-drop .egg-grain {
+  width:3px;
+  height:3px;
+  animation-duration:.76s;
+  box-shadow:0 0 8px rgba(232,160,56,.85);
+}
+@keyframes egg-stream-drop {
+  0%, 100% { opacity:0; transform:scaleY(.08); transform-origin:50% 0; }
+  16%, 72% { opacity:.9; transform:scaleY(1); transform-origin:50% 0; }
+}
+@keyframes egg-grain-drop {
+  0% { opacity:0; transform:translateY(0); }
+  15% { opacity:1; }
+  88% { opacity:1; }
+  100% { opacity:0; transform:translateY(22px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-hourglass-slot, .egg-sand-top, .egg-sand-bottom { transition:none; }
+  .egg-hourglass.dropping .egg-stream,
+  .egg-hourglass.dropping .egg-grain { animation-duration:.01ms; }
+}
+
 /* default view: one short snippet holding every token colour.
    Any tab press hides it (body gets a .picked class). */
 .hero-snippet { margin:20px auto 0; max-width:640px; text-align:left; }
@@ -415,6 +515,19 @@ body.m-compare #code-bar, body.m-gallery #code-bar { display: flex; }
   </a>
 
   <h1 class="wordmark" id="wordmark" title="Sandstorm"><span class="sand">sand</span><span class="storm">storm</span></h1>
+
+  <div class="egg-hourglass-slot" id="egg-hourglass-slot" aria-hidden="true">
+    <div class="egg-hourglass" id="egg-hourglass">
+      <div class="egg-sand-top"></div>
+      <div class="egg-stream"></div>
+      <div class="egg-grain"></div>
+      <div class="egg-sand-bottom"></div>
+      <svg class="egg-outline" viewBox="0 0 50 64" aria-hidden="true">
+        <path class="egg-frame" d="M7 5H43M7 59H43"></path>
+        <path class="egg-glass" d="M11 8C11 21 16 27 25 32C16 37 11 43 11 56M39 8C39 21 34 27 25 32C34 37 39 43 39 56"></path>
+      </svg>
+    </div>
+  </div>
 
   <p class="tagline">Colorscheme inspired by <a class="tagline-link" href="#compare" onclick="setScheme('desert')">desert.vim</a></p>
 
@@ -1170,15 +1283,55 @@ function buildSwatches() {
   ).join('');
 }
 
-// ── Easter egg: 7 clicks on the wordmark ──────────────────────────────────
+// ── Easter egg: click two reveals the glass; click seven drops the last grain ──
 const EGG_URL = 'https://www.youtube.com/watch?v=y6120QOlsfU';
-let eggClicks = 0, eggTimer = null;
+const eggHero = document.querySelector('.hero');
+const eggHourglass = document.getElementById('egg-hourglass');
+const eggReducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let eggClicks = 0, eggTimer = null, eggDeparting = false;
+
+function resetEgg() {
+  if (eggDeparting) return;
+  eggClicks = 0;
+  eggHero.classList.remove('egg-active');
+  eggHourglass.classList.remove('dropping', 'last-drop');
+  eggHourglass.style.setProperty('--sand-top', '1');
+  eggHourglass.style.setProperty('--sand-bottom', '0');
+  setHint('');
+}
+
+function forceSandDrop(clickCount) {
+  const drop = Math.min(6, Math.max(1, clickCount - 1));
+  const spent = drop / 6;
+  eggHero.classList.add('egg-active');
+  eggHourglass.classList.remove('dropping', 'last-drop');
+  void eggHourglass.offsetWidth;
+  eggHourglass.style.setProperty('--sand-top', String(1 - spent));
+
+  if (drop === 6) {
+    eggHourglass.classList.add('last-drop');
+    setTimeout(() => eggHourglass.style.setProperty('--sand-bottom', '1'), eggReducedMotion.matches ? 0 : 480);
+  } else {
+    eggHourglass.style.setProperty('--sand-bottom', String(spent));
+  }
+  eggHourglass.classList.add('dropping');
+}
+
 document.getElementById('wordmark').addEventListener('click', () => {
+  if (eggDeparting) return;
   eggClicks++;
   clearTimeout(eggTimer);
-  eggTimer = setTimeout(() => { eggClicks = 0; setHint(''); }, 1600);
-  if (eggClicks >= 7) { setHint('🌪 here we go'); window.location.href = EGG_URL; return; }
-  if (eggClicks >= 3) setHint('· '.repeat(7 - eggClicks).trim());
+  if (eggClicks >= 2) forceSandDrop(eggClicks);
+
+  if (eggClicks >= 7) {
+    eggDeparting = true;
+    const finalPause = eggReducedMotion.matches ? 180 : 820;
+    setTimeout(() => setHint('🌪 here we go'), finalPause);
+    setTimeout(() => { window.location.href = EGG_URL; }, finalPause + (eggReducedMotion.matches ? 100 : 280));
+    return;
+  }
+
+  eggTimer = setTimeout(resetEgg, 2300);
 });
 function setHint(t) { document.getElementById('egg-hint').textContent = t; }
 
