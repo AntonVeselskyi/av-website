@@ -1,4 +1,4 @@
-import { resolveInstrumentGesture } from './collections.js';
+import { resolveInstrumentGesture } from './collections.js?v=4';
 
 function clamp(value, low = 0, high = 1) { return Math.max(low, Math.min(high, value)); }
 function now(context, when) { return Math.max(context.currentTime, when ?? context.currentTime); }

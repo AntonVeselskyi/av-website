@@ -43,6 +43,8 @@ function hintFor(target) {
   if (target.matches(".lane-clear")) return "Immediately silences this line and removes all its events. Undo restores the previous event pass.";
   if (target.matches(".lane-events")) return "Shows recorded hits. Drag a hit left or right to change its timing.";
   if (target.matches(".loop-event")) return "Recorded note. Drag it left or right to retime it, or press Delete to remove it.";
+  if (target.matches(".focused-roll-key")) return `Plays gesture ${target.closest(".focused-roll-row")?.dataset.digit || target.textContent.trim()} on the selected line.`;
+  if (target.matches(".focused-roll-event")) return "Selected-line note. Drag left or right to retime it; arrow keys change timing or note, and Delete removes it.";
   if (target.closest("#gesture-map")) return `Plays gesture ${target.dataset.digit || target.textContent.trim()} as a sound preview.`;
   if (target.closest("#calibration-checklist")) return "Jumps to this saved calibration checkpoint. Passed parts do not need to be repeated.";
   if (target.matches("button")) return `${target.textContent.trim() || "This"} control.`;

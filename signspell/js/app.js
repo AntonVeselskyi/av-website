@@ -10,8 +10,8 @@ import {
   noteName,
   renderOfflineProject,
   resolveInstrumentGesture,
-} from "./music/index.js?v=3";
-import { LoopTransport } from "./looper.js?v=3";
+} from "./music/index.js?v=4";
+import { LoopTransport } from "./looper.js?v=4";
 import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=3";
 import {
   clearCalibrationDraft,
@@ -44,6 +44,7 @@ const dom = {
   play: $("#transport-play"), stop: $("#transport-stop"), bpm: $("#bpm-input"), tap: $("#tap-tempo"), quantization: $("#quantization-select"), position: $("#transport-position"),
   collection: $("#collection-select"), instrument: $("#instrument-select"), root: $("#root-select"), gamma: $("#gamma-select"), harmony: $("#harmony-select"), gestureMap: $("#gesture-map"),
   master: $("#master-volume"), sub: $("#sub-boost"), grit: $("#distortion"), generate: $("#generate-loop"), lanes: $("#loop-lanes"), laneTemplate: $("#lane-template"),
+  focusedPanel: $(".focused-editor-panel"), focusedSummary: $("#focused-lane-summary"), focusedRoll: $("#focused-lane-roll"), focusedEmpty: $("#focused-roll-empty"), focusedLength: $("#focused-roll-length"), focusedRecord: $("#focused-record"), focusedOverdub: $("#focused-overdub"), focusedMute: $("#focused-mute"), focusedSolo: $("#focused-solo"), focusedClear: $("#focused-clear"),
   export: $("#export-wav"), visualCanvas: $("#visualizer-canvas"), visualLabel: $("#visualizer-label"), fullVisual: $("#fullscreen-visualizer"), reduceMotion: $("#reduced-motion"),
   calibrationButton: $("#calibrate-button"), calibrationDialog: $("#calibration-dialog"), calibrationHeading: $("#calibration-heading"), calibrationInstruction: $("#calibration-instruction"), calibrationOrientation: $("#calibration-orientation"), calibrationGlyph: $("#calibration-glyph"), calibrationStatus: $("#calibration-status"), calibrationCount: $("#calibration-count"), calibrationProgress: $("#calibration-progress"), calibrationChecklist: $("#calibration-checklist"), calibrationBack: $("#calibration-back"), calibrationReset: $("#calibration-reset"), calibrationNext: $("#calibration-next"),
 };
@@ -65,6 +66,7 @@ let calibrationTimeout = 0;
 let lastHitAt = 0;
 let toastTimer = 0;
 let tapTimes = [];
+let focusedMappingBar = -1;
 
 if (calibrationDraft?.handedness === "left" || calibrationDraft?.handedness === "right") {
   dom.hand.value = calibrationDraft.handedness;
@@ -103,6 +105,7 @@ function markChanged({ renderLanes = false, renderMap = false } = {}) {
   transport?.setProject(project);
   if (renderLanes) drawLanes();
   if (renderMap) drawGestureMap();
+  drawFocusedLane();
   autosave(project);
 }
 
@@ -217,6 +220,53 @@ function applyMasterSettings() {
   document.documentElement.style.setProperty("--live-grit", project.master.distortion);
 }
 
+// Loop events are made into AudioNodes slightly ahead of their beat.  When a
+// lane's instrument or collection changes while playing, that small lookahead
+// would otherwise leave the old voice ringing and make the new choice feel as
+// though it only took effect after a restart.  Replace just this lane's audio
+// group and audition its next event with the new mapping; the regular
+// scheduler will use the same updated lane object from the following tick.
+function reflectLiveLaneSound(lane, label = "") {
+  if (!music || !transport?.playing) return;
+  const soloed = project.lanes.some((item) => item.solo);
+  if (lane.muted || (soloed && !lane.solo)) return;
+
+  const loopBeats = Math.max(1, Number(lane.lengthBars) || 1) * BEATS_PER_BAR;
+  const localBeat = transport.currentBeat() % loopBeats;
+  const nextEvent = [...lane.events]
+    .sort((left, right) => left.beat - right.beat)
+    .find((event) => event.beat >= localBeat) || lane.events[0];
+  const digit = Number(nextEvent?.digit) || 1;
+
+  music.stopGroup?.(lane.id);
+  try {
+    music.triggerGesture({
+      instrument: lane.instrumentFamily,
+      collectionId: lane.collectionId,
+      groupId: lane.id,
+      gesture: digit,
+      scene: scene(),
+      bar: Math.floor(transport.currentBeat() / BEATS_PER_BAR),
+      velocity: clamp(nextEvent?.velocity ?? 0.72, 0.05, 1),
+      durationBeat: nextEvent?.duration ?? (lane.instrumentFamily === "pad" ? 1.5 : lane.instrumentFamily === "808" ? 0.75 : 0.32),
+    }, audioContext?.currentTime + 0.015);
+    if (label) showToast(`${lane.name}: ${label} LIVE`, 2200);
+  } catch (error) {
+    console.warn("Live lane reflection rejected", error);
+  }
+}
+
+function setProjectBpm(value) {
+  const previousBpm = sanitizeBpm(project.tonalScene.bpm);
+  const nextBpm = sanitizeBpm(value);
+  project.tonalScene.bpm = nextBpm;
+  if (transport?.playing && nextBpm !== previousBpm) {
+    music?.stopAllGroups?.();
+    transport.rebaseTempo(previousBpm);
+  }
+  return nextBpm;
+}
+
 function triggerHit(hit) {
   const now = performance.now();
   if (!music || now - lastHitAt < 28) return;
@@ -319,6 +369,117 @@ function drawLaneEvents(area, lane) {
   }
 }
 
+function focusedGestureLabel(lane, digit, bar) {
+  const command = resolveInstrumentGesture({
+    instrument: lane.instrumentFamily,
+    gesture: digit,
+    scene: scene(),
+    bar,
+    velocity: 0.8,
+    collectionId: lane.collectionId,
+  });
+  return command.kind === "percussion"
+    ? command.voice.replace(/([A-Z])/g, " $1").trim().toUpperCase()
+    : command.note.note.toUpperCase();
+}
+
+function drawFocusedMapping(lane, bar = 0) {
+  if (!dom.focusedRoll || !lane) return;
+  for (const row of $$(".focused-roll-row", dom.focusedRoll)) {
+    const digit = Number(row.dataset.digit);
+    let label = `GESTURE ${digit}`;
+    try { label = focusedGestureLabel(lane, digit, bar); } catch { /* keep fallback */ }
+    $(".focused-roll-note", row).textContent = label;
+    $(".focused-roll-key", row).setAttribute("aria-label", `Play gesture ${digit}, ${label}`);
+    row.classList.toggle("sharp", label.includes("#"));
+  }
+  focusedMappingBar = bar;
+}
+
+function updateFocusedControls(lane) {
+  if (!lane || !dom.focusedRecord) return;
+  dom.focusedRecord.textContent = lane.recording ? "REC" : lane.armed ? "WAIT" : "●";
+  dom.focusedRecord.setAttribute("aria-pressed", String(lane.recording || lane.armed));
+  dom.focusedRecord.setAttribute("aria-label", lane.recording ? "Stop selected line recording" : lane.armed ? "Cancel selected line recording" : "Record selected line");
+  dom.focusedOverdub.setAttribute("aria-pressed", String(lane.overdub));
+  dom.focusedMute.setAttribute("aria-pressed", String(lane.muted));
+  dom.focusedSolo.setAttribute("aria-pressed", String(lane.solo));
+}
+
+function drawFocusedLane() {
+  if (!dom.focusedRoll) return;
+  const lane = activeLane();
+  if (!lane) return;
+  const laneIndex = project.lanes.indexOf(lane) + 1;
+  const collection = VIBE_COLLECTIONS[lane.collectionId]?.title || "CUSTOM";
+  const instrument = INSTRUMENTS[lane.instrumentFamily]?.label || lane.instrumentFamily;
+  const lengthBeats = lane.lengthBars * BEATS_PER_BAR;
+  const bar = transport?.playing ? Math.floor(transport.currentBeat() / BEATS_PER_BAR) : 0;
+  dom.focusedSummary.textContent = `LINE ${String(laneIndex).padStart(2, "0")} / ${collection} / ${instrument}`;
+  dom.focusedLength.textContent = `${lane.lengthBars} BAR${lane.lengthBars === 1 ? "" : "S"}`;
+  dom.focusedEmpty.textContent = lane.events.length
+    ? `${lane.events.length} HIT${lane.events.length === 1 ? "" : "S"} — DRAG TO RETIME; ARROWS MOVE NOTES`
+    : "EMPTY — ARM ●, GESTURE, PRESS 1–9, OR CLICK A NOTE KEY";
+
+  for (const row of $$(".focused-roll-row", dom.focusedRoll)) {
+    const digit = Number(row.dataset.digit);
+    const track = $(".focused-roll-track", row);
+    track.querySelectorAll(".focused-roll-event,.focused-roll-playhead").forEach((node) => node.remove());
+    const playhead = document.createElement("i");
+    playhead.className = "focused-roll-playhead";
+    playhead.setAttribute("aria-hidden", "true");
+    track.append(playhead);
+    for (const loopEvent of lane.events.filter((event) => Number(event.digit) === digit)) {
+      const node = document.createElement("button");
+      node.type = "button";
+      node.className = "focused-roll-event";
+      node.dataset.eventId = loopEvent.id;
+      node.dataset.source = loopEvent.source || "manual";
+      node.style.left = `${(loopEvent.beat / lengthBeats) * 100}%`;
+      node.style.width = `${Math.max(1.4, (loopEvent.duration / lengthBeats) * 100)}%`;
+      node.style.opacity = 0.5 + loopEvent.velocity * 0.5;
+      node.textContent = digit;
+      node.setAttribute("aria-label", `Gesture ${digit}, beat ${loopEvent.beat.toFixed(2)}, velocity ${Math.round(loopEvent.velocity * 100)} percent`);
+      node.addEventListener("pointerdown", (pointerEvent) => beginFocusedEventDrag(pointerEvent, track, lane, loopEvent));
+      node.addEventListener("keydown", (keyboardEvent) => editEventWithKeyboard(keyboardEvent, lane, loopEvent));
+      track.append(node);
+    }
+  }
+  drawFocusedMapping(lane, bar);
+  updateFocusedControls(lane);
+  updateFocusedPlayhead(transport?.playing ? transport.currentBeat() : 0);
+}
+
+function beginFocusedEventDrag(pointerEvent, track, lane, loopEvent) {
+  pointerEvent.preventDefault();
+  const target = pointerEvent.currentTarget;
+  target.setPointerCapture(pointerEvent.pointerId);
+  const move = (moveEvent) => {
+    const rect = track.getBoundingClientRect();
+    const relativeX = clamp((moveEvent.clientX - rect.left) / rect.width, 0, 0.9999);
+    loopEvent.beat = quantizeBeat(relativeX * lane.lengthBars * BEATS_PER_BAR, project.quantization);
+    target.style.left = `${relativeX * 100}%`;
+  };
+  const end = () => {
+    target.removeEventListener("pointermove", move);
+    target.removeEventListener("pointerup", end);
+    target.removeEventListener("pointercancel", end);
+    lane.events.sort((left, right) => left.beat - right.beat);
+    reflectLiveLaneSound(lane);
+    markChanged({ renderLanes: true });
+  };
+  target.addEventListener("pointermove", move);
+  target.addEventListener("pointerup", end);
+  target.addEventListener("pointercancel", end);
+}
+
+function updateFocusedPlayhead(beat = 0) {
+  const lane = activeLane();
+  if (!lane || !dom.focusedRoll) return;
+  const percent = ((beat % (lane.lengthBars * BEATS_PER_BAR)) / (lane.lengthBars * BEATS_PER_BAR)) * 100;
+  for (const playhead of $$(".focused-roll-playhead", dom.focusedRoll)) playhead.style.left = `${percent}%`;
+}
+
 function beginEventDrag(pointerEvent, area, lane, event) {
   pointerEvent.preventDefault();
   const target = pointerEvent.currentTarget;
@@ -338,6 +499,7 @@ function beginEventDrag(pointerEvent, area, lane, event) {
     target.removeEventListener("pointerup", end);
     target.removeEventListener("pointercancel", end);
     lane.events.sort((a, b) => a.beat - b.beat);
+    reflectLiveLaneSound(lane);
     markChanged({ renderLanes: true });
   };
   target.addEventListener("pointermove", move);
@@ -354,6 +516,7 @@ function editEventWithKeyboard(event, lane, loopEvent) {
   else if (event.key === "ArrowDown") loopEvent.digit = Math.max(1, loopEvent.digit - 1);
   else return;
   event.preventDefault();
+  reflectLiveLaneSound(lane);
   markChanged({ renderLanes: true });
 }
 
@@ -362,6 +525,7 @@ function selectLane(laneId) {
   drawLanes();
   syncControls();
   markChanged();
+  requestAnimationFrame(() => dom.focusedPanel?.scrollIntoView({ behavior: project.ui.reducedMotion ? "auto" : "smooth", block: "center" }));
 }
 
 function updateTransportPosition(beat = 0) {
@@ -387,6 +551,11 @@ function updatePlayheads(beat = 0) {
       record.setAttribute("aria-label", lane.recording ? "Stop recording" : lane.armed ? "Cancel queued recording" : "Record lane");
     }
   }
+  const lane = activeLane();
+  const bar = Math.floor(beat / BEATS_PER_BAR);
+  updateFocusedPlayhead(beat);
+  updateFocusedControls(lane);
+  if (bar !== focusedMappingBar) drawFocusedMapping(lane, bar);
 }
 
 function applyCollection(collectionId) {
@@ -400,8 +569,9 @@ function applyCollection(collectionId) {
     gamma: collection.tonal.gamma,
     harmonyMode: HARMONY_MODES.STRICT_CHORD,
     progression: [...collection.tonal.progression],
-    bpm: collection.tonal.bpm,
   };
+  setProjectBpm(collection.tonal.bpm);
+  reflectLiveLaneSound(lane, `${collection.title} COLLECTION`);
   syncControls();
   markChanged({ renderLanes: true, renderMap: true });
 }
@@ -841,6 +1011,11 @@ function stopTransport() {
   markChanged();
 }
 
+function clickActiveLaneControl(selector) {
+  const row = $$(".loop-lane", dom.lanes).find((item) => item.dataset.laneId === activeLane()?.id);
+  if (row) $(selector, row)?.click();
+}
+
 function wireEvents() {
   dom.start.addEventListener("click", async () => {
     dom.start.disabled = true;
@@ -857,16 +1032,29 @@ function wireEvents() {
   });
   dom.play.addEventListener("click", async () => { await initAudio(); transport.start(); });
   dom.stop.addEventListener("click", stopTransport);
-  dom.bpm.addEventListener("change", () => { project.tonalScene.bpm = sanitizeBpm(dom.bpm.value); dom.bpm.value = project.tonalScene.bpm; transport?.setProject(project); markChanged(); });
-  dom.tap.addEventListener("click", () => { const now = performance.now(); tapTimes = [...tapTimes.filter((time) => now - time < 2500), now].slice(-5); if (tapTimes.length > 1) { const intervals = tapTimes.slice(1).map((time, index) => time - tapTimes[index]); project.tonalScene.bpm = sanitizeBpm(60000 / (intervals.reduce((a,b) => a + b, 0) / intervals.length)); dom.bpm.value = project.tonalScene.bpm; markChanged(); } });
+  dom.bpm.addEventListener("change", () => { dom.bpm.value = setProjectBpm(dom.bpm.value); markChanged(); });
+  dom.tap.addEventListener("click", () => { const now = performance.now(); tapTimes = [...tapTimes.filter((time) => now - time < 2500), now].slice(-5); if (tapTimes.length > 1) { const intervals = tapTimes.slice(1).map((time, index) => time - tapTimes[index]); dom.bpm.value = setProjectBpm(60000 / (intervals.reduce((a,b) => a + b, 0) / intervals.length)); markChanged(); } });
   dom.quantization.addEventListener("change", () => { project.quantization = dom.quantization.value; markChanged(); });
   dom.collection.addEventListener("change", () => applyCollection(dom.collection.value));
-  dom.instrument.addEventListener("change", () => { activeLane().instrumentFamily = dom.instrument.value; markChanged({ renderLanes: true, renderMap: true }); });
+  dom.instrument.addEventListener("change", () => {
+    const lane = activeLane();
+    lane.instrumentFamily = dom.instrument.value;
+    reflectLiveLaneSound(lane, `${INSTRUMENTS[lane.instrumentFamily]?.label || lane.instrumentFamily} INSTRUMENT`);
+    markChanged({ renderLanes: true, renderMap: true });
+  });
   dom.root.addEventListener("change", () => { project.tonalScene.root = dom.root.value; markChanged({ renderMap: true }); });
   dom.gamma.addEventListener("change", () => { project.tonalScene.gamma = dom.gamma.value; markChanged({ renderMap: true }); });
   dom.harmony.addEventListener("change", () => { project.tonalScene.harmonyMode = dom.harmony.value; markChanged({ renderMap: true }); });
   for (const input of [dom.master, dom.sub, dom.grit]) input.addEventListener("input", () => { project.master.volume = Number(dom.master.value); project.master.subBoost = Number(dom.sub.value); project.master.distortion = Number(dom.grit.value); updateFaderOutputs(); applyMasterSettings(); markChanged(); });
   dom.generate.addEventListener("click", generateIntoActiveLane);
+  for (const row of $$(".focused-roll-row", dom.focusedRoll)) {
+    $(".focused-roll-key", row).addEventListener("click", () => triggerHit({ digit: Number(row.dataset.digit), velocity: 0.78, confidence: 1, source: "piano-key" }));
+  }
+  dom.focusedRecord.addEventListener("click", () => clickActiveLaneControl(".lane-record"));
+  dom.focusedOverdub.addEventListener("click", () => clickActiveLaneControl(".lane-overdub"));
+  dom.focusedMute.addEventListener("click", () => clickActiveLaneControl(".lane-mute"));
+  dom.focusedSolo.addEventListener("click", () => clickActiveLaneControl(".lane-solo"));
+  dom.focusedClear.addEventListener("click", () => clickActiveLaneControl(".lane-clear"));
   dom.export.addEventListener("click", exportWav);
   dom.cameraToggle.addEventListener("click", () => startCamera().catch((error) => showToast(error.message, 5000)));
   dom.hand.addEventListener("change", async () => {
@@ -900,6 +1088,7 @@ function wireEvents() {
 
 populateControls();
 drawLanes();
+drawFocusedLane();
 wireEvents();
 document.body.classList.toggle("reduced-motion", project.ui.reducedMotion);
 dom.reduceMotion.setAttribute("aria-pressed", String(project.ui.reducedMotion));

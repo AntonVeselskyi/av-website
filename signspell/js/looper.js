@@ -18,6 +18,18 @@ export class LoopTransport extends EventTarget {
     this.project = project;
   }
 
+  rebaseTempo(previousBpm) {
+    if (!this.playing) return 0;
+    const now = this.getAudioTime();
+    const oldSecondsPerBeat = 60 / sanitizeBpm(previousBpm);
+    const beat = Math.max(0, (now - this.startedAt) / oldSecondsPerBeat);
+    this.startedAt = now - beat * this.secondsPerBeat();
+    // Audio scheduled under the previous tempo is invalidated by the caller.
+    // Restart lookahead at the preserved musical position.
+    this.lastScheduledBeat = beat - 0.00001;
+    return beat;
+  }
+
   get bpm() {
     return sanitizeBpm(this.project?.tonalScene?.bpm);
   }

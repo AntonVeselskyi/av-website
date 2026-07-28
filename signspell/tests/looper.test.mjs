@@ -34,3 +34,19 @@ test("recording arms for the next bar while transport is already playing", () =>
   transport.updateRecordStates(4);
   assert.equal(lane.recording, true);
 });
+
+test("tempo rebasing preserves the current beat while playback is running", () => {
+  const project = createDefaultProject();
+  project.tonalScene.bpm = 140;
+  let audioTime = 10;
+  const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
+  transport.playing = true;
+  transport.startedAt = 0;
+  const before = transport.currentBeat();
+  project.tonalScene.bpm = 100;
+  const rebased = transport.rebaseTempo(140);
+  assert.ok(Math.abs(rebased - before) < 1e-9);
+  assert.ok(Math.abs(transport.currentBeat() - before) < 1e-9);
+  audioTime += 0.6;
+  assert.ok(Math.abs(transport.currentBeat() - (before + 1)) < 1e-9);
+});

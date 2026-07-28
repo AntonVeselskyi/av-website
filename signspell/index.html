@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=3">
+  <link rel="stylesheet" href="css/sign-spell.css?v=4">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
@@ -75,6 +75,33 @@
           <button id="fullscreen-visualizer" type="button">FULLSCREEN</button>
         </footer>
       </article>
+
+      <section class="panel focused-editor-panel" aria-labelledby="focused-editor-title">
+        <header class="panel-title focused-editor-titlebar"><h2 id="focused-editor-title">ACTIVE LINE / PIANO ROLL</h2><span id="focused-lane-summary">SELECT A LINE BELOW</span></header>
+        <div class="focused-roll-legend" aria-hidden="true"><span>GESTURE / NOTE</span><span>ONE LOOP PASS — DRAG HITS TO RETIME</span></div>
+        <div class="focused-roll" id="focused-lane-roll" aria-label="Selected loop line piano roll" aria-live="polite">
+          <div class="focused-roll-row" data-digit="9"><button class="focused-roll-key" type="button" aria-label="Play gesture 9">9</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 9</span></div></div>
+          <div class="focused-roll-row" data-digit="8"><button class="focused-roll-key" type="button" aria-label="Play gesture 8">8</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 8</span></div></div>
+          <div class="focused-roll-row" data-digit="7"><button class="focused-roll-key" type="button" aria-label="Play gesture 7">7</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 7</span></div></div>
+          <div class="focused-roll-row" data-digit="6"><button class="focused-roll-key" type="button" aria-label="Play gesture 6">6</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 6</span></div></div>
+          <div class="focused-roll-row" data-digit="5"><button class="focused-roll-key" type="button" aria-label="Play gesture 5">5</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 5</span></div></div>
+          <div class="focused-roll-row" data-digit="4"><button class="focused-roll-key" type="button" aria-label="Play gesture 4">4</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 4</span></div></div>
+          <div class="focused-roll-row" data-digit="3"><button class="focused-roll-key" type="button" aria-label="Play gesture 3">3</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 3</span></div></div>
+          <div class="focused-roll-row" data-digit="2"><button class="focused-roll-key" type="button" aria-label="Play gesture 2">2</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 2</span></div></div>
+          <div class="focused-roll-row" data-digit="1"><button class="focused-roll-key" type="button" aria-label="Play gesture 1">1</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 1</span></div></div>
+        </div>
+        <footer class="focused-editor-footer">
+          <span id="focused-roll-empty">SELECT A LINE, THEN ARM ● TO RECORD GESTURES OR KEYS 1–9</span>
+          <div class="focused-editor-controls">
+            <button id="focused-record" type="button" data-hint="Records one pass on the selected line.">●</button>
+            <button id="focused-overdub" type="button" data-hint="Adds a new pass without erasing existing hits.">OVR</button>
+            <button id="focused-mute" type="button" data-hint="Mutes and immediately silences the selected line.">M</button>
+            <button id="focused-solo" type="button" data-hint="Solos the selected line and silences the others.">S</button>
+            <button id="focused-clear" type="button" data-hint="Clears and immediately silences the selected line. Undo remains available below.">CLR</button>
+          </div>
+          <span id="focused-roll-length">1 BAR</span>
+        </footer>
+      </section>
 
       <aside class="panel sound-panel" aria-labelledby="sound-title">
         <header class="panel-title"><h2 id="sound-title">GRIMOIRE / SOUND</h2><span>UNOFFICIAL ORIGINAL SYNTHESIS</span></header>
@@ -143,7 +170,7 @@
   </template>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/hints.js?v=1"></script>
-  <script type="module" src="js/app.js?v=3"></script>
+  <script type="module" src="js/hints.js?v=2"></script>
+  <script type="module" src="js/app.js?v=4"></script>
 </body>
 </html>

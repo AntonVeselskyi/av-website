@@ -70,6 +70,41 @@ export function chordForBar(scene, bar = 0) {
 
 function scaleIntervalAt(scale, index) { return scale[positiveModulo(index, scale.length)] + 12 * Math.floor(index / scale.length); }
 
+function lowBassSteps(scaleLength) {
+  // Seven-note gammas can climb through nine distinct scale positions. For a
+  // pentatonic gamma, turn back after its octave instead of sending 8/9 up
+  // another octave; every sign still has a deliberate, playable bass note.
+  if (scaleLength >= 7) return [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const peak = scaleLength;
+  return [0, 1, 2, 3, 4, 5, 4, 3, 2].map((step) => Math.min(step, peak));
+}
+
+/**
+ * Nine low-register, gamma-safe bass positions for an instrument such as an
+ * 808. The active progression chord supplies the tonal centre, while its
+ * octave is normalised to C1–F1 so gestures stay below G2 rather than climbing
+ * into the G3+ register of the generic nine-note layout.
+ */
+export function resolveLowBassGestureNote(gesture, scene, { bar = 0, baseMidi = 24 } = {}) {
+  assertGesture(gesture);
+  const scale = gammaIntervals(scene);
+  const chord = chordForBar(scene, bar);
+  const chordIndex = chord.degree - 1;
+  const steps = lowBassSteps(scale.length);
+  const rootScaleInterval = scaleIntervalAt(scale, chordIndex);
+  let rootMidi = Math.round(baseMidi + scene.root + rootScaleInterval);
+  while (rootMidi > 29) rootMidi -= 12;
+  while (rootMidi < 24) rootMidi += 12;
+  const scaleDegreeIndex = chordIndex + steps[gesture - 1];
+  const interval = scaleIntervalAt(scale, scaleDegreeIndex) - rootScaleInterval;
+  const midi = Math.round(rootMidi + interval);
+  return Object.freeze({
+    gesture, midi, note: noteName(midi), frequency: midiToFrequency(midi), interval,
+    scaleDegree: positiveModulo(scaleDegreeIndex, scale.length) + 1,
+    mode: HARMONY_MODES.SAFE_SCALE, chordDegree: chord.degree,
+  });
+}
+
 export function resolveGestureNote(gesture, scene, { bar = 0, mode = scene.harmonyMode, baseMidi = scene.baseMidi } = {}) {
   assertGesture(gesture);
   const chord = chordForBar(scene, bar);

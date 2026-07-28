@@ -1,7 +1,7 @@
-import { HARMONY_MODES, createTonalScene, resolveGestureNote } from './tonal.js';
+import { HARMONY_MODES, createTonalScene, resolveGestureNote, resolveLowBassGestureNote } from './tonal.js?v=4';
 
 export const INSTRUMENTS = Object.freeze({
-  '808': Object.freeze({ id: '808', label: '808', kind: 'pitched', preferredMode: HARMONY_MODES.STRICT_CHORD, baseMidi: 24, lowMidi: 24, highMidi: 60 }),
+  '808': Object.freeze({ id: '808', label: '808', kind: 'pitched', preferredMode: HARMONY_MODES.SAFE_SCALE, bassLayout: 'lowGamma', baseMidi: 24, lowMidi: 24, highMidi: 43 }),
   eerieLead: Object.freeze({ id: 'eerieLead', label: 'Eerie Lead', kind: 'pitched', preferredMode: HARMONY_MODES.SAFE_SCALE, baseMidi: 60, lowMidi: 55, highMidi: 100 }),
   piano: Object.freeze({ id: 'piano', label: 'Felt Piano', kind: 'pitched', preferredMode: HARMONY_MODES.SAFE_SCALE, baseMidi: 48, lowMidi: 48, highMidi: 91 }),
   percussion: Object.freeze({ id: 'percussion', label: 'Grit Percussion', kind: 'percussion' }),
@@ -45,7 +45,10 @@ export function resolveInstrumentGesture({ instrument, gesture, scene, bar = 0, 
     if (!Number.isInteger(gesture) || gesture < 1 || gesture > 9) throw new RangeError('Percussion gesture must be 1 through 9.');
     return Object.freeze({ instrument, kind: 'percussion', gesture, voice: PERCUSSION_CELLS[gesture - 1], velocity: safeVelocity, collectionId, presetId: collectionPreset });
   }
-  const note = transposeIntoRange(resolveGestureNote(gesture, scene, { bar, mode: definition.preferredMode, baseMidi: definition.baseMidi }), definition.lowMidi, definition.highMidi);
+  const rawNote = definition.bassLayout === 'lowGamma'
+    ? resolveLowBassGestureNote(gesture, scene, { bar, baseMidi: definition.baseMidi })
+    : resolveGestureNote(gesture, scene, { bar, mode: definition.preferredMode, baseMidi: definition.baseMidi });
+  const note = transposeIntoRange(rawNote, definition.lowMidi, definition.highMidi);
   if (definition.kind === 'chord') {
     const chord = [gesture, gesture + 2, gesture + 4].map((value) => resolveGestureNote(((value - 1) % 9) + 1, scene, { bar, mode: HARMONY_MODES.STRICT_CHORD, baseMidi: definition.baseMidi }));
     return Object.freeze({ instrument, kind: 'chord', gesture, note, notes: Object.freeze(chord.map((item) => transposeIntoRange(item, definition.lowMidi, definition.highMidi))), velocity: safeVelocity, collectionId, presetId: collectionPreset });

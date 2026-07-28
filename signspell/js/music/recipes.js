@@ -1,5 +1,5 @@
-import { getVibeCollection } from './collections.js';
-import { quantizeBeat } from './tonal.js';
+import { getVibeCollection } from './collections.js?v=4';
+import { quantizeBeat } from './tonal.js?v=4';
 
 export function seededRandom(seed = 1) {
   let state = (Number(seed) >>> 0) || 1;

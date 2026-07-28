@@ -1,6 +1,6 @@
-import { resolveInstrumentGesture } from './collections.js';
-import { MusicEngine } from './synth.js';
-import { occurrencesBetween, secondsPerBeat } from './transport.js';
+import { resolveInstrumentGesture } from './collections.js?v=4';
+import { MusicEngine } from './synth.js?v=4';
+import { occurrencesBetween, secondsPerBeat } from './transport.js?v=4';
 
 function writeString(view, offset, value) { for (let i = 0; i < value.length; i += 1) view.setUint8(offset + i, value.charCodeAt(i)); }
 

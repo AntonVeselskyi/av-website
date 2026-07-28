@@ -10,10 +10,12 @@ Serve the repository over `localhost` or HTTPS, then open `/signspell/` in deskt
 - Signs 6–9: rotate the palm toward the camera, then touch thumb to pinky, ring, middle, or index fingertip. A release is required before the next hit.
 - Keyboard 1–9 and the on-screen gesture cells provide a camera-free fallback.
 - Click a loop line to select it; the outlined line receives gestures, keyboard hits, pad clicks, and generated loops.
+- The selected line opens as a nine-row piano roll directly below the visualizer. Its keys preview all nine mapped notes, event blocks can be retimed, and the local controls operate that line.
 - Press its record button to capture one loop pass. Recording begins immediately when stopped, or at the next bar when already playing; gesture, click a pad, or press 1–9 to add notes.
 - Conjure Loop replaces the selected line and starts playback. Clear removes and immediately silences that line; Undo restores its previous events.
 - Hover any button for 1.5 seconds to see what it does. Use OVR, mute, solo, length, gain, and draggable event blocks for further editing.
 - Harmony Lock confines every gesture to the active chord. Safe Scale and Free Gamma expose wider note sets.
+- 808 gestures use a dedicated scale-safe sub layout between C1 and G2; they do not climb into G3. Changing a collection or instrument while playing immediately revoices the selected line.
 - WAV export renders the current loops with the same native synthesizers used for live playback.
 
 ## Sound collections
