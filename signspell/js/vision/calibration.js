@@ -1,8 +1,9 @@
-import { median, percentile } from "./landmarks.js";
-import { buildPoseProfile } from "./pose-classifier.js";
-import { buildContactProfile } from "./contacts.js";
+import { median, percentile } from "./landmarks.js?v=2";
+import { buildPoseProfile } from "./pose-classifier.js?v=2";
+import { buildContactProfile } from "./contacts.js?v=2";
 
-export const CALIBRATION_SCHEMA_VERSION = 1;
+export const CALIBRATION_SCHEMA_VERSION = 2;
+const LEGACY_SCHEMA_VERSION = 1;
 
 function thresholdProfile(strokeTrials = []) {
   const valid = strokeTrials.filter((trial) => Number.isFinite(trial?.strokeVelocity));
@@ -36,12 +37,20 @@ export function buildCalibrationProfile({ handedness, poseSamples, contactSample
   const downstroke = thresholdProfile(strokeTrials);
   const errors = [...pose.errors, ...contacts.errors];
   if (!downstroke.valid) errors.push(downstroke.error);
+  const completed = {
+    pose: Object.fromEntries([1, 2, 3, 4, 5].map((digit) => [digit, Boolean(pose.classes?.[digit])])),
+    contact: Object.fromEntries([6, 7, 8, 9].map((digit) => [digit, Boolean(contacts.contacts?.[digit])])),
+    downstroke: Boolean(downstroke.valid),
+  };
   return {
     schemaVersion: CALIBRATION_SCHEMA_VERSION,
     createdAt,
     handedness: String(handedness).toLowerCase() === "left" ? "left" : "right",
     valid: errors.length === 0,
     errors,
+    // This lets the UI retry only incomplete gestures. Successful entries
+    // remain usable calibration data even while the whole profile is pending.
+    completed,
     pose,
     contacts,
     downstroke: downstroke.valid ? downstroke : null,
@@ -50,7 +59,7 @@ export function buildCalibrationProfile({ handedness, poseSamples, contactSample
 
 export function isCalibrationProfile(value) {
   return Boolean(value
-    && value.schemaVersion === CALIBRATION_SCHEMA_VERSION
+    && (value.schemaVersion === CALIBRATION_SCHEMA_VERSION || value.schemaVersion === LEGACY_SCHEMA_VERSION)
     && (value.handedness === "left" || value.handedness === "right")
     && value.pose?.valid
     && value.contacts?.valid

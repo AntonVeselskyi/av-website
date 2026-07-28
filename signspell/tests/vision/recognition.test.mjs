@@ -73,6 +73,22 @@ function profile() {
   });
 }
 
+function descriptorProfile() {
+  const poseSamples = Object.fromEntries([1, 2, 3, 4, 5].map((digit) => [digit,
+    Array.from({ length: 6 }, (_, sample) => {
+      const normalized = normalizeLandmarks(hand({ digit, y: 0.6 + sample * 0.001 }));
+      return { features: poseFeatures(normalized), view: normalized.cameraFacing };
+    }),
+  ]));
+  const contactSamples = Object.fromEntries([6, 7, 8, 9].map((digit) => [digit, {
+    open: Array.from({ length: 6 }, () => ({ value: 0.75, view: 1 })),
+    closed: Array.from({ length: 6 }, () => ({ value: 0.03, view: 1 })),
+    closingSpeeds: [0.4, 0.5, 0.45, 0.42, 0.48],
+  }]));
+  return buildCalibrationProfile({ handedness: "right", poseSamples, contactSamples,
+    strokeTrials: Array.from({ length: 6 }, () => ({ restVelocity: 0.01, strokeVelocity: 1.5, displacement: 0.12 })) });
+}
+
 test("calibrated pose classes separate 1–5 and persist as JSON only", () => {
   const calibration = profile();
   assert.equal(calibration.valid, true, calibration.errors.join(", "));
@@ -142,4 +158,94 @@ test("worker controller replays landmark frames without a webcam or detector", a
   await controller.handle({ type: "replay-frame", frame: { timestamp: 20, landmarks: hand({ digit: 1, contact: 8 }) } });
   assert.equal(messages.find((message) => message.type === "ready")?.detectorReady, false);
   assert.deepEqual(messages.find((message) => message.type === "hit")?.hit.digit, 8);
+});
+
+test("profile reports completed gestures without discarding their usable samples", () => {
+  const partial = buildCalibrationProfile({
+    handedness: "right",
+    poseSamples: { 1: Array.from({ length: 6 }, () => poseFeatures(normalizeLandmarks(hand({ digit: 1 })))) },
+    contactSamples: {}, strokeTrials: [],
+  });
+  assert.equal(partial.valid, false);
+  assert.equal(partial.completed.pose[1], true);
+  assert.equal(partial.completed.pose[2], false);
+  assert.equal(partial.completed.contact[6], false);
+  assert.equal(partial.completed.downstroke, false);
+});
+
+test("orientation learned in calibration separates knuckles poses from palm-contact poses", () => {
+  const calibration = descriptorProfile();
+  const front = hand({ digit: 3 });
+  const back = front.map((point) => ({ ...point, x: 1 - point.x }));
+  const frontNormalized = normalizeLandmarks(front);
+  const backNormalized = normalizeLandmarks(back);
+  assert.equal(classifyPose(calibration.pose, poseFeatures(frontNormalized), frontNormalized.cameraFacing).accepted, true);
+  const rejected = classifyPose(calibration.pose, poseFeatures(backNormalized), backNormalized.cameraFacing);
+  assert.equal(rejected.accepted, false);
+  assert.equal(rejected.reason, "wrong-hand-side");
+});
+
+test("contacts can require the calibrated palm-facing view", () => {
+  const recognizer = new ContactRecognizer(descriptorProfile().contacts);
+  recognizer.update({ timestamp: 0, view: -1, distances: { 6: 0.8, 7: 0.8, 8: 0.8, 9: 0.8 } });
+  assert.equal(recognizer.update({ timestamp: 20, view: -1, distances: { 6: 0.1, 7: 0.8, 8: 0.8, 9: 0.8 } }).hit, null);
+  recognizer.update({ timestamp: 40, view: 1, distances: { 6: 0.8, 7: 0.8, 8: 0.8, 9: 0.8 } });
+  assert.equal(recognizer.update({ timestamp: 60, view: 1, distances: { 6: 0.1, 7: 0.8, 8: 0.8, 9: 0.8 } }).hit?.digit, 6);
+});
+
+test("worker retains a successful gesture while a later calibration pass is incomplete", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: 1, glyph: "1", durationMs: 800, reset: true });
+  // Video-frame timestamps belong to the page clock and can be far ahead of
+  // the worker clock. They must never expire a worker-owned capture window.
+  const first = performance.now() + 100_000;
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: first + index * 10, landmarks: hand({ digit: 1 }) } });
+  await controller.handle({ type: "calibration-capture", step: 2, glyph: "2", durationMs: 800 });
+  const second = performance.now() + 200_000;
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: second + index * 10, landmarks: hand({ digit: 2 }) } });
+  await controller.handle({ type: "calibration-build", handedness: "right" });
+  const result = messages.findLast((message) => message.type === "calibration-profile");
+  assert.equal(result.profile.completed.pose[1], true);
+  assert.equal(result.profile.completed.pose[2], true);
+  assert.equal(result.profile.completed.pose[3], false);
+  assert.equal(messages.some((message) => message.type === "calibration-progress" && message.latest?.glyph === "1"), true);
+});
+
+test("contact phases export, resume, and replace only the retried phase", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+  await controller.handle({ type: "init" });
+  await controller.handle({ type: "calibration-capture", step: "contact-6-open", glyph: "6", phase: "open", durationMs: 800, replace: true });
+  for (let index = 0; index < 6; index += 1) {
+    await controller.handle({ type: "replay-frame", frame: { timestamp: 300_000 + index * 16, landmarks: hand({ digit: 1 }) } });
+  }
+  await controller.handle({ type: "calibration-capture", step: "contact-6-closed", glyph: "6", phase: "closed", durationMs: 800, replace: true });
+  for (let index = 0; index < 6; index += 1) {
+    await controller.handle({ type: "replay-frame", frame: { timestamp: 301_000 + index * 16, landmarks: hand({ digit: 1, contact: 6 }) } });
+  }
+  await controller.handle({ type: "calibration-export" });
+  const firstDraft = messages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(firstDraft.data.contactSamples[6].open.length, 6);
+  assert.equal(firstDraft.data.contactSamples[6].closed.length, 6);
+  assert.equal(JSON.stringify(firstDraft).includes("landmarks"), false);
+
+  await controller.handle({ type: "calibration-capture", step: "contact-6-closed", glyph: "6", phase: "closed", durationMs: 800, replace: true });
+  for (let index = 0; index < 6; index += 1) {
+    await controller.handle({ type: "replay-frame", frame: { timestamp: 302_000 + index * 16, landmarks: hand({ digit: 1, contact: 6 }) } });
+  }
+  await controller.handle({ type: "calibration-export" });
+  const replacedDraft = messages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(replacedDraft.data.contactSamples[6].open.length, 6);
+  assert.equal(replacedDraft.data.contactSamples[6].closed.length, 6);
+
+  const resumedMessages = [];
+  const resumed = createVisionWorkerController({ postMessage: (message) => resumedMessages.push(message) });
+  await resumed.handle({ type: "init" });
+  await resumed.handle({ type: "calibration-import", draft: replacedDraft });
+  await resumed.handle({ type: "calibration-export" });
+  const resumedDraft = resumedMessages.findLast((message) => message.type === "calibration-draft").draft;
+  assert.equal(resumedDraft.data.contactSamples[6].open.length, 6);
+  assert.equal(resumedDraft.data.contactSamples[6].closed.length, 6);
 });

@@ -1,6 +1,22 @@
-import { CONTACT_DIGITS, percentile } from "./landmarks.js";
+import { CONTACT_DIGITS, percentile } from "./landmarks.js?v=2";
 
 const DIGITS = Object.keys(CONTACT_DIGITS).map(Number);
+const MIN_VIEW_SPREAD = 0.08;
+
+function contactValues(entries) {
+  return entries.map((entry) => Number.isFinite(entry) ? { value: entry, view: null } : entry)
+    .filter((entry) => Number.isFinite(entry?.value));
+}
+
+function orientationProfile(entries) {
+  const views = entries.map((entry) => entry.view).filter(Number.isFinite);
+  if (views.length < 5) return null;
+  const center = percentile(views, 0.5);
+  const deviations = views.map((value) => Math.abs(value - center));
+  const spread = Math.max(MIN_VIEW_SPREAD, (percentile(deviations, 0.5) || 0) * 1.4826);
+  const maxDistance = Math.max(...views.map((value) => Math.abs(value - center) / spread));
+  return { center, spread, threshold: Math.max(2.2, Math.min(4, maxDistance * 1.5 + 0.45)) };
+}
 
 /**
  * Builds per-finger contact/release thresholds. Sample values are normalized
@@ -12,8 +28,10 @@ export function buildContactProfile(samplesByDigit) {
   const errors = [];
   for (const digit of DIGITS) {
     const source = samplesByDigit?.[digit] || {};
-    const open = (source.open || []).filter(Number.isFinite);
-    const closed = (source.closed || []).filter(Number.isFinite);
+    const openEntries = contactValues(source.open || []);
+    const closedEntries = contactValues(source.closed || []);
+    const open = openEntries.map((entry) => entry.value);
+    const closed = closedEntries.map((entry) => entry.value);
     if (open.length < 5 || closed.length < 5) {
       errors.push(`contact ${digit} needs five open and five closed samples`);
       continue;
@@ -33,6 +51,7 @@ export function buildContactProfile(samplesByDigit) {
       // A low floor prevents a static accidental near-contact from sounding;
       // calibration may intentionally lower it for a gentle performer.
       minClosingSpeed: Math.max(0.03, Math.min(0.35, (percentile(closingSpeeds, 0.15) ?? 0.08) * 0.45)),
+      view: orientationProfile([...openEntries, ...closedEntries]),
     };
   }
   return { valid: errors.length === 0, errors, contacts };
@@ -51,7 +70,7 @@ export class ContactRecognizer {
     this.latched = Object.fromEntries(DIGITS.map((digit) => [digit, false]));
   }
 
-  update({ timestamp, distances, confidence = 1 }) {
+  update({ timestamp, distances, confidence = 1, view = null }) {
     if (!this.profile?.valid || !Number.isFinite(timestamp) || !distances) {
       this.reset();
       return { hit: null, reason: "profile-unavailable", states: this.latched };
@@ -66,7 +85,12 @@ export class ContactRecognizer {
       return { hit: null, reason: "sample-gap", states: this.latched };
     }
 
-    const closeDigits = DIGITS.filter((digit) => distances[digit] <= this.profile.contacts[digit].threshold);
+    const inView = (digit) => {
+      const orientation = this.profile.contacts[digit].view;
+      if (!orientation || !Number.isFinite(view)) return true;
+      return Math.abs(view - orientation.center) / Math.max(MIN_VIEW_SPREAD, orientation.spread) <= orientation.threshold;
+    };
+    const closeDigits = DIGITS.filter((digit) => inView(digit) && distances[digit] <= this.profile.contacts[digit].threshold);
     const ambiguous = closeDigits.length > 1;
     const candidates = [];
 
@@ -74,6 +98,7 @@ export class ContactRecognizer {
       const settings = this.profile.contacts[digit];
       const value = distances[digit];
       if (!Number.isFinite(value)) continue;
+      if (!inView(digit)) continue;
       if (this.latched[digit] && value >= settings.release) this.latched[digit] = false;
       const wasOpen = !this.latched[digit];
       const closingSpeed = dt && previousDistances

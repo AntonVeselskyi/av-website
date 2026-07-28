@@ -1,7 +1,7 @@
-import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js";
-import { classifyPose } from "./pose-classifier.js";
+import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js?v=2";
+import { classifyPose } from "./pose-classifier.js?v=2";
 import { DownstrokeRecognizer } from "./downstroke.js";
-import { ContactRecognizer } from "./contacts.js";
+import { ContactRecognizer } from "./contacts.js?v=2";
 import { isCalibrationProfile } from "./calibration.js";
 
 /**
@@ -33,10 +33,11 @@ export class SignSpellRecognizer {
       return { hit: null, diagnostics: { reason: "hand-unavailable" } };
     }
     const confidence = Number.isFinite(frame.confidence) ? frame.confidence : 1;
-    const pose = classifyPose(this.profile.pose, poseFeatures(normalized));
+    const pose = classifyPose(this.profile.pose, poseFeatures(normalized), normalized.cameraFacing);
     const contact = this.contacts.update({
       timestamp: frame.timestamp,
       distances: contactDistances(normalized),
+      view: normalized.cameraFacing,
       confidence,
     });
     const stroke = this.downstroke.update({

@@ -127,6 +127,12 @@ export function normalizeLandmarks(landmarks, selectedHandedness = "right") {
     points,
     raw,
     palmScale,
+    // The palm-local points below are deliberately rotation-normalized. Keep
+    // this one camera-space scalar alongside them so calibration can tell a
+    // knuckles-to-camera number pose from a palm-to-camera contact pose.
+    // Its sign is learned from the performer rather than interpreted as an
+    // absolute "palm" or "back" convention (front cameras are mirrored).
+    cameraFacing: normal[2],
     palmScreenY: [HAND.WRIST, HAND.INDEX_MCP, HAND.MIDDLE_MCP, HAND.RING_MCP, HAND.PINKY_MCP]
       .reduce((total, index) => total + raw[index][1], 0) / 5,
   };

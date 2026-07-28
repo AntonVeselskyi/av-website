@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css">
+  <link rel="stylesheet" href="css/sign-spell.css?v=2">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
@@ -111,10 +111,17 @@
       <p class="eyebrow">PERSONAL RECOGNITION PROFILE</p>
       <h2 id="calibration-heading">CALIBRATE THE SIGNAL</h2>
       <p id="calibration-instruction">Choose a well-lit space. Only normalized hand landmarks are retained.</p>
+      <p class="calibration-orientation" id="calibration-orientation">ORIENTATION CHECK</p>
       <div class="calibration-glyph" id="calibration-glyph">⸸</div>
+      <div class="calibration-readout" aria-live="polite">
+        <strong id="calibration-status">NOT CAPTURED</strong>
+        <span id="calibration-count">0 valid frames</span>
+      </div>
       <progress id="calibration-progress" max="100" value="0">0%</progress>
+      <ol class="calibration-checklist" id="calibration-checklist" aria-label="Calibration sections"></ol>
       <div class="calibration-actions">
         <button id="calibration-back" type="button">BACK</button>
+        <button id="calibration-reset" type="button">RESET ALL</button>
         <button id="calibration-next" type="button">BEGIN</button>
       </div>
     </form>
@@ -136,6 +143,6 @@
   </template>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=2"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ const DB_VERSION = 1;
 const STORE = "state";
 const PROJECT_KEY = "current-project";
 const CALIBRATION_KEY = "calibration-profile";
+const CALIBRATION_DRAFT_KEY = "calibration-draft";
 const FALLBACK_PREFIX = "sign-spell:";
 
 function requestToPromise(request) {
@@ -82,6 +83,22 @@ export async function saveCalibration(profile) {
   const safeProfile = { ...profile, savedAt: Date.now(), containsCameraFrames: false };
   await setValue(CALIBRATION_KEY, safeProfile);
   return safeProfile;
+}
+
+export async function loadCalibrationDraft() {
+  const draft = await getValue(CALIBRATION_DRAFT_KEY);
+  return draft && typeof draft === "object" ? draft : null;
+}
+
+export async function saveCalibrationDraft(draft) {
+  if (!draft || typeof draft !== "object") throw new TypeError("Calibration draft must be an object");
+  const safeDraft = { ...draft, savedAt: Date.now(), containsCameraFrames: false };
+  await setValue(CALIBRATION_DRAFT_KEY, safeDraft);
+  return safeDraft;
+}
+
+export async function clearCalibrationDraft() {
+  await setValue(CALIBRATION_DRAFT_KEY, null);
 }
 
 export function createAutosaver(save, delay = 450) {
