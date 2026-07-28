@@ -9,7 +9,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Metal+Mania&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Major+Mono+Display&family=Metal+Mania&display=swap" rel="stylesheet">
 <style>
   :root {
     --paper: #efd0d8;
@@ -72,50 +72,34 @@
     border-bottom: 8px solid var(--pink);
   }
 
-  .av-mark {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
+  /* The AV mark: Major Mono Display, both letters in ONE grid cell so the upward
+     A and downward V intersect into the hourglass. The font and the shared cell
+     are the mark — no skew, no offsets. Only the colour and the hard poster
+     shadow are local to this page. */
+  .av-monogram {
+    display: inline-grid;
+    place-items: center;
+    font-family: "Major Mono Display", monospace;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
     color: var(--white);
-    background: var(--blue);
-    border: 2px solid var(--white);
-    box-shadow: 6px 6px 0 var(--pink);
     text-decoration: none;
-    text-transform: uppercase;
-    transition: translate .15s ease, box-shadow .15s ease;
+    transition: color .3s ease, filter .3s ease, transform 1.3s ease-in-out;
   }
-  .av-mark:hover { translate: -2px -2px; box-shadow: 8px 8px 0 var(--pink); }
-  .av-mark:focus-visible { outline: 3px solid var(--white); outline-offset: 5px; }
+  .av-monogram span { grid-area: 1 / 1; text-align: center; }
+  .av-monogram:focus-visible { outline: 3px solid var(--white); outline-offset: 6px; }
+
   .av-mark-top {
-    position: absolute;
-    top: clamp(17px, 3vw, 34px);
-    left: clamp(17px, 3vw, 38px);
-    z-index: 4;
-    padding: 7px 11px 8px 9px;
+    margin-bottom: clamp(12px, 3vh, 30px);
+    font-size: clamp(84px, min(13vw, 17vh), 200px);
+    transform: rotate(-3deg);
+    /* the poster's double hard shadow, same pairing as the CHERRY block */
+    filter: drop-shadow(11px 12px 0 var(--blue)) drop-shadow(-9px -8px 0 var(--pink));
   }
-  .av-glyph {
-    position: relative;
-    display: block;
-    width: 49px;
-    height: 40px;
-    flex: 0 0 49px;
-  }
-  .av-glyph i {
-    position: absolute;
-    top: 0;
-    font: 40px/.95 Anton, Impact, sans-serif;
-    font-style: normal;
-    letter-spacing: -.08em;
-    -webkit-text-stroke: 1px var(--white);
-    paint-order: stroke fill;
-  }
-  .av-a { left: 0; color: var(--dark); transform: skewX(-7deg) rotate(-3deg); }
-  .av-v { right: 0; color: var(--pink); transform: skewX(7deg) rotate(3deg); }
-  .av-name {
-    padding-left: 10px;
-    border-left: 2px solid rgba(248,242,243,.72);
-    font: 10px/1.08 Anton, Impact, sans-serif;
-    letter-spacing: .15em;
+  .av-mark-top:hover {
+    transform: scale(1.06) rotate(-183deg);
+    filter: drop-shadow(-11px 12px 0 var(--pink)) drop-shadow(9px -8px 0 var(--blue));
   }
 
   .poster::before,
@@ -266,7 +250,7 @@
     letter-spacing: -.035em;
   }
   .cherry-wrap::before,
-  .cherry-wrap::after {
+  .charm-cherry {
     position: absolute;
     top: 50%;
     transform: translateY(-51%) rotate(var(--tilt));
@@ -275,7 +259,15 @@
     filter: drop-shadow(4px 4px 0 var(--blood));
   }
   .cherry-wrap::before { content: "🌸"; left: -.95em; --tilt: -14deg; }
-  .cherry-wrap::after { content: "🍒"; right: -.95em; --tilt: 12deg; }
+  /* A real element rather than ::after, so it can be clicked — see the easter
+     egg at the bottom of the page. Each click winds --tilt a little further. */
+  .charm-cherry {
+    right: -.95em;
+    --tilt: 12deg;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform .28s cubic-bezier(.16,1,.3,1);
+  }
 
   .strap {
     width: fit-content;
@@ -308,14 +300,69 @@
     inset: auto -4% -160px auto;
     width: 440px;
     aspect-ratio: 349 / 417;
-    background: var(--blue);
+    background: url("assets/tree-mask.png") center / contain no-repeat;
     opacity: .12;
+    filter: var(--tone-blue);
     transform: rotate(-13deg);
-    -webkit-mask: url("assets/tree.svg") center / contain no-repeat;
-    mask: url("assets/tree.svg") center / contain no-repeat;
   }
 
-  .scheme-inner { position: relative; width: min(1180px, 100%); margin: 0 auto; }
+  .scheme-decor {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .scheme-tree,
+  .scheme-flame {
+    position: absolute;
+    display: block;
+  }
+  .scheme-tree {
+    width: clamp(340px, 34vw, 590px);
+    aspect-ratio: 349 / 417;
+    object-fit: contain;
+    opacity: .14;
+    filter: var(--tone-blue) blur(.7px) drop-shadow(13px 14px 0 rgba(240,139,170,.3));
+  }
+  .scheme-tree-1 {
+    top: 10%;
+    left: clamp(-190px, calc(50% - 790px), 105px);
+    transform: rotate(8deg) scaleX(-1);
+  }
+  .scheme-tree-2 {
+    top: 51%;
+    right: clamp(-205px, calc(50% - 800px), 95px);
+    filter: var(--tone-blood) blur(.7px) drop-shadow(13px 14px 0 rgba(240,139,170,.3));
+    opacity: .11;
+    transform: rotate(-10deg);
+  }
+  .scheme-flame {
+    width: clamp(88px, 9vw, 155px);
+    aspect-ratio: 308 / 534;
+    object-fit: contain;
+    opacity: .2;
+    filter: var(--tone-pink) blur(.45px) drop-shadow(7px 8px 0 rgba(109,143,162,.24));
+  }
+  .scheme-flame-1 { top: 3%; left: 2%; transform: rotate(-24deg); }
+  .scheme-flame-2 { top: 19%; right: 2%; filter: var(--tone-blue) blur(.45px) drop-shadow(7px 8px 0 rgba(109,143,162,.24)); transform: rotate(25deg) scale(.82); }
+  .scheme-flame-3 { top: 42%; left: 1%; filter: var(--tone-blood) blur(.45px) drop-shadow(7px 8px 0 rgba(109,143,162,.24)); transform: rotate(16deg) scale(1.08); }
+  .scheme-flame-4 { top: 61%; right: 3%; transform: rotate(-18deg) scale(1.14); }
+  .scheme-flame-5 { bottom: 4%; left: 5%; filter: var(--tone-blue) blur(.45px) drop-shadow(7px 8px 0 rgba(109,143,162,.24)); transform: rotate(-10deg) scale(.92); }
+  .scheme-flame-6 { right: 1%; bottom: -1%; filter: var(--tone-blood) blur(.45px) drop-shadow(7px 8px 0 rgba(109,143,162,.24)); transform: rotate(13deg) scale(1.26); }
+  .scheme-sticker {
+    position: absolute;
+    display: block;
+    font: clamp(50px, 6vw, 88px)/1 sans-serif;
+    opacity: .27;
+    filter: blur(2.6px) saturate(.78) drop-shadow(7px 8px 0 rgba(109,143,162,.34));
+  }
+  .scheme-sticker-1 { top: 27%; left: 1%; transform: rotate(-16deg); }
+  .scheme-sticker-2 { top: 34%; right: 1%; transform: rotate(15deg) scale(.86); }
+  .scheme-sticker-3 { top: 68%; left: 2%; transform: rotate(13deg) scale(.9); }
+  .scheme-sticker-4 { top: 77%; right: 2%; transform: rotate(-12deg) scale(.82); }
+
+  .scheme-inner { position: relative; z-index: 1; width: min(1180px, 100%); margin: 0 auto; }
   .scheme-head {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -339,16 +386,16 @@
     letter-spacing: -.035em;
   }
   .rule {
-    min-width: 230px;
-    justify-content: center;
-    padding: 12px 18px;
-    border-color: var(--dark);
-    box-shadow: 7px 7px 0 var(--blood);
+    font-size: clamp(76px, 9vw, 146px);
+    color: var(--dark);
+    transform: rotate(-3deg);
+    filter: drop-shadow(9px 10px 0 var(--blood));
   }
-  .rule:hover { box-shadow: 9px 9px 0 var(--blood); }
-  .rule .av-glyph { width: 70px; height: 57px; flex-basis: 70px; }
-  .rule .av-glyph i { font-size: 57px; }
-  .rule .av-name { font-size: 12px; }
+  .rule:hover {
+    transform: scale(1.06) rotate(-183deg);
+    filter: drop-shadow(-9px 10px 0 var(--blue));
+  }
+  .rule:focus-visible { outline-color: var(--dark); }
 
   .palette {
     display: grid;
@@ -540,6 +587,122 @@
   }
   .code-tabs button:focus-visible { outline: 3px solid var(--white); outline-offset: -5px; }
 
+  .get-it {
+    position: relative;
+    isolation: isolate;
+    margin-top: clamp(54px, 8vw, 96px);
+    padding: clamp(24px, 4vw, 48px);
+    overflow: hidden;
+    color: var(--white);
+    background: var(--dark);
+    border: 3px solid var(--dark);
+    box-shadow: 14px 14px 0 var(--pink), -9px 9px 0 var(--blue);
+  }
+  .get-it::before {
+    content: "GET IT";
+    position: absolute;
+    z-index: -1;
+    top: -.18em;
+    right: -.04em;
+    color: rgba(248,242,243,.045);
+    font: clamp(118px, 22vw, 300px)/.8 Anton, Impact, sans-serif;
+    letter-spacing: -.06em;
+    white-space: nowrap;
+    transform: rotate(-3deg);
+  }
+  .get-head {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(280px, 1.1fr);
+    gap: clamp(20px, 4vw, 56px);
+    align-items: end;
+    margin-bottom: clamp(24px, 4vw, 42px);
+  }
+  .get-it h3 {
+    margin: 0;
+    color: var(--pink);
+    font: clamp(58px, 8vw, 104px)/.78 "Metal Mania", Impact, fantasy;
+    letter-spacing: -.035em;
+    text-transform: uppercase;
+    text-shadow: 7px 8px 0 var(--blue);
+  }
+  .get-intro {
+    margin: 0;
+    color: var(--paper-hot);
+    font: 15px/1.65 system-ui, sans-serif;
+  }
+  .font-promise {
+    display: block;
+    padding: 13px 18px;
+    color: var(--dark);
+    background: var(--blue-light);
+    border-left: 7px solid var(--pink);
+    font: 18px/1 Anton, Impact, sans-serif;
+    letter-spacing: .06em;
+    text-transform: lowercase;
+  }
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+  }
+  .download-card {
+    grid-column: span 2;
+    min-width: 0;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    color: var(--dark);
+    background: var(--paper-hot);
+    border: 2px solid var(--white);
+    box-shadow: 6px 6px 0 var(--blue);
+  }
+  .download-card:nth-child(4) { grid-column: 2 / span 2; }
+  .download-card h4 {
+    margin: 0;
+    color: var(--cherry);
+    font: 22px/1 Anton, Impact, sans-serif;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+  }
+  .download-card .edition {
+    min-height: 2.8em;
+    margin: 5px 0 13px;
+    color: var(--blue);
+    font: 11px/1.35 Anton, Impact, sans-serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .download-card ol {
+    margin: 0 0 18px 18px;
+    padding: 0;
+    font: 12px/1.6 system-ui, sans-serif;
+  }
+  .download-card li + li { margin-top: 5px; }
+  .download-card code {
+    padding: 1px 4px;
+    color: var(--cherry);
+    background: rgba(240,139,170,.19);
+    font: 11px/1.45 ui-monospace, "Cascadia Code", Consolas, monospace;
+    overflow-wrap: anywhere;
+  }
+  .download-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: auto;
+  }
+  .download-links a {
+    padding: 8px 10px;
+    color: var(--white);
+    background: var(--juice);
+    border: 2px solid var(--juice);
+    font: 12px/1 Anton, Impact, sans-serif;
+    letter-spacing: .04em;
+    text-decoration: none;
+  }
+  .download-links a:hover { color: var(--dark); background: var(--pink); border-color: var(--dark); }
+  .download-links a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+
   footer {
     position: relative;
     padding: 34px 20px 42px;
@@ -561,7 +724,7 @@
     .away { transform: translateX(-.02em) skewX(4deg) scaleX(.86); }
     .cherry-wrap { margin-top: clamp(22px, 5vh, 54px); font-size: clamp(48px, min(17vw, 13vh), 108px); }
     .cherry-wrap::before { left: -.55em; }
-    .cherry-wrap::after { right: -.55em; }
+    .charm-cherry { right: -.55em; }
     .tree.left-tree { left: -39%; bottom: -8%; }
     .tree.right-tree { right: -40%; bottom: -11%; }
     .f2, .f3, .f6, .f7 { display: none; }
@@ -569,6 +732,11 @@
     .landing-charm { font-size: clamp(28px, 11vw, 46px); }
     .landing-charm-1 { top: 20%; right: 4%; }
     .scheme { padding-inline: 12px; }
+    .scheme-tree { width: 290px; opacity: .075; }
+    .scheme-tree-1 { left: -205px; }
+    .scheme-tree-2 { right: -215px; }
+    .scheme-flame { width: 68px; opacity: .13; }
+    .scheme-sticker { font-size: 46px; opacity: .18; }
     .scheme-head { grid-template-columns: 1fr; }
     .rule { max-width: 100%; }
     .palette { grid-template-columns: repeat(2, 1fr); }
@@ -583,6 +751,13 @@
     .code-charm-2 { right: -18px; }
     .code-charm-3 { left: -20px; }
     .side-charm { display: none; }
+    .get-it { padding: 24px 17px 27px; }
+    .get-head { grid-template-columns: 1fr; }
+    .get-intro { font-size: 14px; }
+    .download-grid { grid-template-columns: 1fr; }
+    .download-card,
+    .download-card:nth-child(4) { grid-column: 1; }
+    .download-card .edition { min-height: 0; }
   }
 
   @media (max-height: 620px) {
@@ -602,10 +777,6 @@
 <body>
 <main>
   <section class="poster" aria-labelledby="title">
-    <a class="av-mark av-mark-top" href="/" aria-label="Anton Veselskyi home">
-      <span class="av-glyph" aria-hidden="true"><i class="av-a">A</i><i class="av-v">V</i></span>
-      <span class="av-name">Anton<br>Veselskyi</span>
-    </a>
     <img class="tree hero-tree" src="assets/tree-mask.png" alt="" aria-hidden="true">
     <img class="tree left-tree" src="assets/tree-mask.png" alt="" aria-hidden="true">
     <img class="tree right-tree" src="assets/tree-mask.png" alt="" aria-hidden="true">
@@ -623,26 +794,42 @@
     </div>
 
     <div class="masthead">
+      <a class="av-monogram av-mark-top" href="https://antonveselskyi.com/" aria-label="Anton Veselskyi home">
+        <span>A</span><span>V</span>
+      </a>
       <div class="kicker">a minimal colorscheme</div>
       <h1 id="title">
         <span class="washed">Washed</span>
         <span class="away">Away</span>
-        <span class="cherry-wrap">Cherry</span>
+        <span class="cherry-wrap">Cherry<b class="charm-cherry" aria-hidden="true">🍒</b></span>
       </h1>
       <p class="strap">powder · poison · dark fruit</p>
     </div>
   </section>
 
   <section class="scheme" id="preview" aria-labelledby="scheme-title">
+    <div class="scheme-decor" aria-hidden="true">
+      <img class="scheme-tree scheme-tree-1" src="assets/tree-mask.png" alt="">
+      <img class="scheme-tree scheme-tree-2" src="assets/tree-mask.png" alt="">
+      <img class="scheme-flame scheme-flame-1" src="assets/flame-mask.png" alt="">
+      <img class="scheme-flame scheme-flame-2" src="assets/flame-mask.png" alt="">
+      <img class="scheme-flame scheme-flame-3" src="assets/flame-mask.png" alt="">
+      <img class="scheme-flame scheme-flame-4" src="assets/flame-mask.png" alt="">
+      <img class="scheme-flame scheme-flame-5" src="assets/flame-mask.png" alt="">
+      <img class="scheme-flame scheme-flame-6" src="assets/flame-mask.png" alt="">
+      <span class="scheme-sticker scheme-sticker-1">🌸</span>
+      <span class="scheme-sticker scheme-sticker-2">🍒</span>
+      <span class="scheme-sticker scheme-sticker-3">🍒</span>
+      <span class="scheme-sticker scheme-sticker-4">🌸</span>
+    </div>
     <div class="scheme-inner">
       <header class="scheme-head">
         <div>
           <p class="small">Semantic color study / C++</p>
           <h2 id="scheme-title">Three voices.</h2>
         </div>
-        <a class="av-mark rule" href="/" aria-label="Anton Veselskyi home">
-          <span class="av-glyph" aria-hidden="true"><i class="av-a">A</i><i class="av-v">V</i></span>
-          <span class="av-name">Anton<br>Veselskyi</span>
+        <a class="av-monogram rule" href="https://antonveselskyi.com/" aria-label="Anton Veselskyi home">
+          <span>A</span><span>V</span>
         </a>
       </header>
 
@@ -685,6 +872,84 @@
           <div class="code-tabs" id="code-tabs" role="tablist" aria-label="Code samples"></div>
         </div>
       </div>
+
+      <section class="get-it" aria-labelledby="get-title">
+        <header class="get-head">
+          <div>
+            <h3 id="get-title">Get it.</h3>
+          </div>
+          <p class="get-intro">
+            <strong class="font-promise">you deserve it</strong>
+          </p>
+        </header>
+
+        <div class="download-grid">
+          <article class="download-card">
+            <h4>Visual Studio</h4>
+            <p class="edition">2022 + Visual Assist</p>
+            <ol>
+              <li>Download <code>washed-away-cherryVS.vssettings</code>.</li>
+              <li>Open <code>Tools &gt; Import and Export Settings...</code>.</li>
+              <li>Import <strong>Fonts and Colors</strong> from the downloaded file.</li>
+            </ol>
+            <div class="download-links">
+              <a href="washed-away-cherryVS.vssettings" download>Download VS + VA</a>
+            </div>
+          </article>
+
+          <article class="download-card">
+            <h4>Visual Studio</h4>
+            <p class="edition">2022 / stock colorizer</p>
+            <ol>
+              <li>Enable C++ <strong>Enhanced Colorization</strong>, then restart Visual Studio.</li>
+              <li>Download <code>washed-away-cherryVS-noVA.vssettings</code>.</li>
+              <li>Import <strong>Fonts and Colors</strong> as above.</li>
+            </ol>
+            <div class="download-links">
+              <a href="washed-away-cherryVS-noVA.vssettings" download>Download stock VS</a>
+            </div>
+          </article>
+
+          <article class="download-card">
+            <h4>VS Code</h4>
+            <p class="edition">Theme extension</p>
+            <ol>
+              <li>Download and extract <code>washed-away-cherry-vscode.zip</code>.</li>
+              <li>Put the extracted folder in <code>%USERPROFILE%\.vscode\extensions\</code>.</li>
+              <li>Restart VS Code and select <strong>Washed Away Cherry</strong> from Color Theme.</li>
+            </ol>
+            <div class="download-links">
+              <a href="washed-away-cherry-vscode.zip" download>Download VS Code ZIP</a>
+            </div>
+          </article>
+
+          <article class="download-card">
+            <h4>Vim / Neovim</h4>
+            <p class="edition">Colors directory</p>
+            <ol>
+              <li>Download <code>washed-away-cherry.vim</code>.</li>
+              <li>Put it in <code>~/.vim/colors/</code> or <code>~/.config/nvim/colors/</code>.</li>
+              <li>Enable true color, then run <code>colorscheme washed-away-cherry</code>.</li>
+            </ol>
+            <div class="download-links">
+              <a href="washed-away-cherry.vim" download>Download Vim theme</a>
+            </div>
+          </article>
+
+          <article class="download-card">
+            <h4>JetBrains</h4>
+            <p class="edition">IDE color scheme</p>
+            <ol>
+              <li>Download <code>washed-away-cherry.icls</code>.</li>
+              <li>Open <code>Settings &gt; Editor &gt; Color Scheme</code>.</li>
+              <li>Use the gear menu to <strong>Import Scheme</strong>, then choose the file.</li>
+            </ol>
+            <div class="download-links">
+              <a href="washed-away-cherry.icls" download>Download JetBrains</a>
+            </div>
+          </article>
+        </div>
+      </section>
     </div>
   </section>
 </main>
@@ -696,5 +961,23 @@
   Display faces: Metal Mania and Anton via Google Fonts
 </footer>
 <script src="examples.js"></script>
+<script>
+  /* Easter egg: seven clicks on the 🍒 beside the title and the poster gives up
+     its song. The cherry winds a little further round on every click, so you
+     can tell something is happening before it fires. */
+  (function () {
+    const cherry = document.querySelector('.charm-cherry');
+    if (!cherry) return;
+    const NEEDED = 7;
+    let hits = 0;
+    cherry.addEventListener('click', function () {
+      hits += 1;
+      cherry.style.setProperty('--tilt', (12 + hits * 47) + 'deg');
+      if (hits >= NEEDED) {
+        window.location.href = 'https://www.youtube.com/watch?v=eNvUS-6PTbs';
+      }
+    });
+  })();
+</script>
 </body>
 </html>

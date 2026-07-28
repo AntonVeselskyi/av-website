@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Washed Away Cherry — Visual Studio 2022 with Visual Assist.
+  Import with Tools > Import and Export Settings > Import selected environment settings.
+
+  Colors are Win32 COLORREF values (0x00BBGGRR). This file intentionally omits
+  all font family, font size, and font-style attributes, so importing it changes
+  colors only and preserves the user's editor typography.
+-->
+<UserSettings>
+  <ApplicationIdentity version="17.0"/>
+  <ToolsOptions>
+    <ToolsOptionsCategory name="Environment" RegisteredName="Environment">
+      <ToolsOptionsSubCategory name="Environment_FontsAndColors"
+                               Category="{1EDA5DD4-927A-43a7-810E-7FD247D0DA1D}"
+                               Package="{DA9FB551-C724-11d0-AE1F-00A0C90FFFC3}"
+                               RegisteredName="Environment_FontsAndColors"
+                               PackageName="Visual Studio Environment Package">
+        <PropertyValue name="Version">2</PropertyValue>
+        <FontsAndColors Version="2.0">
+          <Theme Id="{1DED0138-47CE-435E-84EF-9EC1F439B749}"/>
+          <Categories>
+            <Category GUID="{75A05685-00A8-4DED-BAE5-E7A50BFA929A}">
+              <Items>
+                <!-- Canvas: #8E163E on #EFD0D8 -->
+                <Item Name="Plain Text" Foreground="0x003E168E" Background="0x00D8D0EF"/>
+                <Item Name="Selected Text" Foreground="0x0027134C" Background="0x00AA8BF0"/>
+                <Item Name="Inactive Selected Text" Foreground="0x0027134C" Background="0x00C5BBE4"/>
+                <Item Name="Line Number" Foreground="0x008A79B7" Background="0x02000000"/>
+
+                <!-- Language syntax -->
+                <Item Name="Comment" Foreground="0x00ADB2C2" Background="0x02000000"/>
+                <Item Name="String" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="Character" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="Number" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="Keyword" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="Operator" Foreground="0x0037177F" Background="0x02000000"/>
+                <Item Name="C++ Types" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="Preprocessor Keyword" Foreground="0x004321A8" Background="0x02000000"/>
+                <Item Name="C/C++ User Keywords" Foreground="0x004321A8" Background="0x02000000"/>
+                <Item Name="User Defined Macro" Foreground="0x004321A8" Background="0x02000000"/>
+                <Item Name="User Types" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="User Types(Enums)" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="User Types(Interfaces and Delegates)" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="User Types(Value types)" Foreground="0x003E168E" Background="0x02000000"/>
+
+                <!-- Visual Assist semantic overrides -->
+                <Item Name="VA Current Line" Foreground="0x0027134C" Background="0x00E6E1F6"/>
+                <Item Name="VA Namespace" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="VA Class" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="VA Method" Foreground="0x00528F6F" Background="0x02000000"/>
+                <Item Name="VA Variable" Foreground="0x00A28F6D" Background="0x02000000"/>
+                <Item Name="VA Enumerator" Foreground="0x003E168E" Background="0x02000000"/>
+                <Item Name="VA Template Parameter" Foreground="0x004321A8" Background="0x02000000"/>
+                <Item Name="VA Reference" Foreground="0x02000000" Background="0x00E6E1F6"/>
+                <Item Name="VA Brace Matching" Foreground="0x00528F6F" Background="0x02000000"/>
+              </Items>
+            </Category>
+            <Category GUID="{E0187991-B458-4F7E-8CA9-42C9A573B56C}">
+              <Items>
+                <Item Name="Comment" Foreground="0x00ADB2C2" Background="0x02000000"/>
+              </Items>
+            </Category>
+          </Categories>
+        </FontsAndColors>
+      </ToolsOptionsSubCategory>
+    </ToolsOptionsCategory>
+  </ToolsOptions>
+</UserSettings>

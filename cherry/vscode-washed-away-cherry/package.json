@@ -1,0 +1,31 @@
+{
+  "name": "washed-away-cherry-theme",
+  "displayName": "Washed Away Cherry",
+  "description": "A focused light colorscheme: cherry syntax, blue variables, green functions, and quiet taupe comments.",
+  "version": "1.0.0",
+  "publisher": "antonveselskyi",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "keywords": [
+    "theme",
+    "light",
+    "cherry",
+    "minimal",
+    "cpp"
+  ],
+  "homepage": "https://antonveselskyi.com/cherry/",
+  "contributes": {
+    "themes": [
+      {
+        "label": "Washed Away Cherry",
+        "uiTheme": "vs",
+        "path": "./themes/washed-away-cherry-color-theme.json"
+      }
+    ]
+  }
+}
