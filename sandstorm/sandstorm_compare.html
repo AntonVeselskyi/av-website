@@ -1283,8 +1283,8 @@ function buildSwatches() {
   ).join('');
 }
 
-// ── Easter egg: click two reveals the glass; click seven drops the last grain ──
-const EGG_URL = 'https://www.youtube.com/watch?v=y6120QOlsfU';
+// ── Easter egg: click one reveals the glass; click seven drops the last grain ──
+const EGG_URL = 'https://www.youtube.com/watch?v=y6120QOlsfU&t=16s';
 const eggHero = document.querySelector('.hero');
 const eggHourglass = document.getElementById('egg-hourglass');
 const eggReducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -1321,6 +1321,7 @@ document.getElementById('wordmark').addEventListener('click', () => {
   if (eggDeparting) return;
   eggClicks++;
   clearTimeout(eggTimer);
+  if (eggClicks === 1) eggHero.classList.add('egg-active');
   if (eggClicks >= 2) forceSandDrop(eggClicks);
 
   if (eggClicks >= 7) {
