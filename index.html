@@ -150,26 +150,12 @@
       .proj-tab[data-theme="cherry"] .proj-tab__label--rest {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
         color: #4c1327;
         mix-blend-mode: normal;
         font-family: 'Major Mono Display', monospace;
         font-size: 17px;
         letter-spacing: .16em;
         transition: opacity .2s ease, transform .45s cubic-bezier(.16,1,.3,1);
-      }
-      .wac-sigil {
-        display: grid;
-        width: 24px;
-        height: 24px;
-        place-items: center;
-        color: #4c1327;
-        background: #efd0d8;
-        border: 1px solid #4c1327;
-        box-shadow: 3px 3px 0 #6d8fa2;
-        font: 14px/1 system-ui, sans-serif;
-        letter-spacing: 0;
-        transform: rotate(-5deg);
       }
       .proj-tab[data-theme="cherry"]:is(:hover, :focus-visible, .is-tapped) .proj-tab__label--rest {
         opacity: 0;
@@ -202,7 +188,10 @@
         text-shadow: 3px 3px 0 #6d8fa2;
       }
       .proj-tab__cherry-name .cherry-word {
-        display: block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
         min-width: 142px;
         padding: 5px 13px 6px;
         color: #4c1327;
@@ -212,14 +201,12 @@
         font: 400 27px/.78 Anton, Impact, sans-serif;
         letter-spacing: .075em;
       }
-      .proj-tab__cherry-name .cherry-charms {
-        position: absolute;
-        top: 1px;
-        right: 2px;
-        color: #efd0d8;
-        font: 13px/1 system-ui, sans-serif;
-        letter-spacing: 2px;
-        filter: saturate(.8) drop-shadow(2px 2px 0 #6d8fa2);
+      .proj-tab__cherry-name .cherry-word .sakura {
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+        font-size: .72em;
+        line-height: 1;
+        letter-spacing: 0;
+        transform: translateY(-1px) rotate(-7deg);
       }
 
       .proj-tab[data-theme="concerts"]:is(:hover, .is-tapped) { border-color: #15110d; }
@@ -451,11 +438,10 @@
       <a class="proj-tab" data-theme="shrt"     href="shrt.html"><span class="proj-tab__label">shrt</span></a>
       <a class="proj-tab" data-theme="sandstorm" href="sandstorm/sandstorm_compare.html"><span class="proj-tab__label"><span class="ss-sand">sand</span><span class="ss-storm">storm</span></span></a>
       <a class="proj-tab" data-theme="cherry" href="cherry/index.html" aria-label="Washed Away Cherry">
-        <span class="proj-tab__label proj-tab__label--rest" aria-hidden="true"><span class="wac-sigil">&#x1F338;</span>WAC</span>
+        <span class="proj-tab__label proj-tab__label--rest" aria-hidden="true">WAC</span>
         <span class="proj-tab__cherry-name" aria-hidden="true">
           <span class="cherry-overline">Washed Away</span>
-          <span class="cherry-word">Cherry</span>
-          <span class="cherry-charms">&#x1F338;&#x1F352;</span>
+          <span class="cherry-word">Cherry <span class="sakura">&#x1F338;</span></span>
         </span>
       </a>
       <a class="proj-tab" data-theme="concerts" href="concerts/index.html"><span class="proj-tab__label">concerts</span></a>
