@@ -24,6 +24,11 @@
     --juice: #8e163e;
     --blood: #a82143;
     --dark: #4c1327;
+    --tone-white: brightness(0) saturate(100%) invert(98%) sepia(2%) saturate(595%) hue-rotate(292deg) brightness(101%) contrast(94%);
+    --tone-blue-light: brightness(0) saturate(100%) invert(82%) sepia(13%) saturate(456%) hue-rotate(155deg) brightness(93%) contrast(88%);
+    --tone-blue: brightness(0) saturate(100%) invert(58%) sepia(12%) saturate(924%) hue-rotate(156deg) brightness(91%) contrast(86%);
+    --tone-pink: brightness(0) saturate(100%) invert(74%) sepia(30%) saturate(1048%) hue-rotate(296deg) brightness(98%) contrast(91%);
+    --tone-blood: brightness(0) saturate(100%) invert(23%) sepia(78%) saturate(2000%) hue-rotate(328deg) brightness(80%) contrast(95%);
   }
 
   * { box-sizing: border-box; }
@@ -133,11 +138,9 @@
     z-index: -2;
     width: clamp(330px, 38vw, 650px);
     aspect-ratio: 349 / 417;
-    background: var(--white);
+    object-fit: contain;
     opacity: .93;
-    filter: drop-shadow(12px 10px 0 rgba(109,143,162,.7));
-    -webkit-mask: url("assets/tree.svg") center / contain no-repeat;
-    mask: url("assets/tree.svg") center / contain no-repeat;
+    filter: var(--tone-white) drop-shadow(12px 10px 0 rgba(109,143,162,.7));
   }
   .tree.hero-tree {
     top: 3%;
@@ -150,24 +153,14 @@
     bottom: -19%;
     left: -8%;
     transform: rotate(8deg) scaleX(-1);
-    background:
-      radial-gradient(circle at 28% 18%, var(--white) 0 2.2%, transparent 2.7%),
-      radial-gradient(circle at 55% 25%, var(--pink) 0 2.4%, transparent 2.9%),
-      radial-gradient(circle at 70% 13%, var(--white) 0 1.8%, transparent 2.3%),
-      radial-gradient(circle at 38% 39%, var(--pink) 0 1.8%, transparent 2.3%),
-      var(--blue-light);
+    filter: var(--tone-blue-light) drop-shadow(12px 10px 0 rgba(109,143,162,.7));
     opacity: .47;
   }
   .tree.right-tree {
     right: -7%;
     bottom: -21%;
     transform: rotate(-7deg);
-    background:
-      radial-gradient(circle at 25% 20%, var(--white) 0 2.2%, transparent 2.7%),
-      radial-gradient(circle at 52% 15%, var(--blue-light) 0 2.4%, transparent 2.9%),
-      radial-gradient(circle at 72% 31%, var(--white) 0 1.8%, transparent 2.3%),
-      radial-gradient(circle at 43% 41%, var(--blue-light) 0 1.8%, transparent 2.3%),
-      var(--pink);
+    filter: var(--tone-pink) drop-shadow(12px 10px 0 rgba(109,143,162,.7));
     opacity: .41;
   }
 
@@ -176,20 +169,18 @@
     position: absolute;
     width: clamp(70px, 10vw, 155px);
     aspect-ratio: 308 / 534;
-    background: var(--pink);
-    -webkit-mask: url("assets/flame.svg") center / contain no-repeat;
-    mask: url("assets/flame.svg") center / contain no-repeat;
+    object-fit: contain;
     transform-origin: 50% 85%;
-    filter: drop-shadow(5px 5px 0 rgba(248,242,243,.12));
+    filter: var(--tone-pink) drop-shadow(5px 5px 0 rgba(248,242,243,.12));
   }
   .f1 { top: -3%; left: 5%; transform: rotate(-31deg); }
-  .f2 { top: 4%; left: 17%; background: var(--blue-light); transform: rotate(-12deg) scale(.73); }
-  .f3 { top: -5%; right: 17%; background: var(--blue); transform: rotate(15deg) scale(.85); }
+  .f2 { top: 4%; left: 17%; filter: var(--tone-blue-light) drop-shadow(5px 5px 0 rgba(248,242,243,.12)); transform: rotate(-12deg) scale(.73); }
+  .f3 { top: -5%; right: 17%; filter: var(--tone-blue) drop-shadow(5px 5px 0 rgba(248,242,243,.12)); transform: rotate(15deg) scale(.85); }
   .f4 { top: 1%; right: 4%; transform: rotate(31deg); }
-  .f5 { bottom: -11%; left: 3%; background: var(--blue); transform: rotate(11deg) scale(1.4); }
+  .f5 { bottom: -11%; left: 3%; filter: var(--tone-blue) drop-shadow(5px 5px 0 rgba(248,242,243,.12)); transform: rotate(11deg) scale(1.4); }
   .f6 { bottom: -8%; left: 27%; transform: rotate(-14deg) scale(1.08); }
-  .f7 { bottom: -10%; right: 26%; background: var(--white); transform: rotate(15deg) scale(.86); opacity: .82; }
-  .f8 { bottom: -12%; right: 4%; background: var(--pink); transform: rotate(-9deg) scale(1.42); }
+  .f7 { bottom: -10%; right: 26%; filter: var(--tone-white) drop-shadow(5px 5px 0 rgba(248,242,243,.12)); transform: rotate(15deg) scale(.86); opacity: .82; }
+  .f8 { bottom: -12%; right: 4%; transform: rotate(-9deg) scale(1.42); }
 
   .petals { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
   .petal {
@@ -615,13 +606,13 @@
       <span class="av-glyph" aria-hidden="true"><i class="av-a">A</i><i class="av-v">V</i></span>
       <span class="av-name">Anton<br>Veselskyi</span>
     </a>
-    <div class="tree hero-tree" aria-hidden="true"></div>
-    <div class="tree left-tree" aria-hidden="true"></div>
-    <div class="tree right-tree" aria-hidden="true"></div>
+    <img class="tree hero-tree" src="assets/tree-mask.png" alt="" aria-hidden="true">
+    <img class="tree left-tree" src="assets/tree-mask.png" alt="" aria-hidden="true">
+    <img class="tree right-tree" src="assets/tree-mask.png" alt="" aria-hidden="true">
 
     <div class="flame-field" aria-hidden="true">
-      <i class="flame f1"></i><i class="flame f2"></i><i class="flame f3"></i><i class="flame f4"></i>
-      <i class="flame f5"></i><i class="flame f6"></i><i class="flame f7"></i><i class="flame f8"></i>
+      <img class="flame f1" src="assets/flame-mask.png" alt=""><img class="flame f2" src="assets/flame-mask.png" alt=""><img class="flame f3" src="assets/flame-mask.png" alt=""><img class="flame f4" src="assets/flame-mask.png" alt="">
+      <img class="flame f5" src="assets/flame-mask.png" alt=""><img class="flame f6" src="assets/flame-mask.png" alt=""><img class="flame f7" src="assets/flame-mask.png" alt=""><img class="flame f8" src="assets/flame-mask.png" alt="">
     </div>
     <div class="petals" aria-hidden="true">
       <i class="petal p1"></i><i class="petal p2"></i><i class="petal p3"></i><i class="petal p4"></i>
