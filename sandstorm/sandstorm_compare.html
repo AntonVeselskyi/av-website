@@ -1204,6 +1204,19 @@ const GET = [
         + 'variables split the same way they do in VS.',
   },
   {
+    name: 'JetBrains / CLion',
+    sub: 'portable .icls colour scheme',
+    steps: [
+      'Download <code>sandstorm.icls</code>.',
+      'Open <code>Settings ▸ Editor ▸ Color Scheme</code>.',
+      'Open the gear menu, choose <b>Import Scheme</b>, then <b>IntelliJ IDEA color scheme (.icls)</b>.',
+      'Select the file, choose <b>Sandstorm</b>, then click <b>Apply</b>.',
+    ],
+    dl: [['sandstorm.icls', 'sandstorm.icls']],
+    note: 'Uses JetBrains language-default mappings, which CLion inherits for classes, functions, '
+        + 'variables, comments and literals. Font-neutral, so it keeps your editor font.',
+  },
+  {
     name: 'Vim / Neovim',
     sub: 'where the family started',
     steps: [
