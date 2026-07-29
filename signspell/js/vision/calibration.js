@@ -1,9 +1,10 @@
-import { median, percentile } from "./landmarks.js?v=2";
+import { median, percentile } from "./landmarks.js?v=3";
 import { buildPoseProfile } from "./pose-classifier.js?v=5";
 import { buildContactProfile } from "./contacts.js?v=5";
 
-export const CALIBRATION_SCHEMA_VERSION = 2;
+export const CALIBRATION_SCHEMA_VERSION = 3;
 const LEGACY_SCHEMA_VERSION = 1;
+const TRANSLATION_SCHEMA_VERSION = 2;
 
 function thresholdProfile(strokeTrials = []) {
   const valid = strokeTrials.filter((trial) => Number.isFinite(trial?.strokeVelocity));
@@ -16,12 +17,24 @@ function thresholdProfile(strokeTrials = []) {
   const neutralVelocity = Math.max(0.06, (percentile(rests, 0.95) ?? 0) * 1.35);
   const strokeVelocity = Math.max(neutralVelocity + 0.12, (percentile(strikes, 0.15) ?? 0.75) * 0.7);
   const minDisplacement = Math.max(0.018, (percentile(displacements, 0.15) ?? 0.04) * 0.5);
+  const readyVerticalities = valid.map((trial) => trial.readyVerticality).filter(Number.isFinite);
+  const hitVerticalities = valid.map((trial) => trial.hitVerticality).filter(Number.isFinite);
+  const tiltCalibrated = readyVerticalities.length >= 5 && hitVerticalities.length >= 5;
+  const readyVerticality = tiltCalibrated ? Math.max(0.45, percentile(readyVerticalities, 0.15) - 0.035) : null;
+  const hitVerticality = tiltCalibrated ? Math.min(0.62, percentile(hitVerticalities, 0.85) + 0.045) : null;
+  if (tiltCalibrated && readyVerticality - hitVerticality < 0.16) {
+    return { valid: false, error: "upright and sideways hand positions need more separation" };
+  }
   return {
     valid: true,
-    neutralVelocity,
-    strokeVelocity,
+    metric: tiltCalibrated ? "palm-tilt" : "screen-y",
+    neutralVelocity: tiltCalibrated ? Math.max(0.16, neutralVelocity) : neutralVelocity,
+    strokeVelocity: tiltCalibrated ? Math.max(0.55, strokeVelocity * 0.72) : strokeVelocity,
     minDisplacement,
     recoveryDisplacement: Math.max(0.015, minDisplacement * 0.8),
+    readyVerticality,
+    hitVerticality,
+    lockedMissingReleaseMs: tiltCalibrated ? 190 : 320,
     // retained for calibration diagnostics without becoming a runtime gate
     medianStrikeVelocity: median(strikes),
   };
@@ -59,7 +72,7 @@ export function buildCalibrationProfile({ handedness, poseSamples, contactSample
 
 export function isCalibrationProfile(value) {
   return Boolean(value
-    && (value.schemaVersion === CALIBRATION_SCHEMA_VERSION || value.schemaVersion === LEGACY_SCHEMA_VERSION)
+    && [CALIBRATION_SCHEMA_VERSION, TRANSLATION_SCHEMA_VERSION, LEGACY_SCHEMA_VERSION].includes(value.schemaVersion)
     && (value.handedness === "left" || value.handedness === "right")
     && value.pose?.valid
     && value.contacts?.valid

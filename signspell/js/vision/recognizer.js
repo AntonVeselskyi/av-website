@@ -1,9 +1,9 @@
-import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js?v=2";
+import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js?v=3";
 import { classifyPose } from "./pose-classifier.js?v=5";
 import { PoseStabilizer } from "./pose-stabilizer.js?v=3";
-import { DownstrokeRecognizer } from "./downstroke.js?v=8";
+import { DownstrokeRecognizer } from "./downstroke.js?v=9";
 import { ContactRecognizer } from "./contacts.js?v=5";
-import { isCalibrationProfile } from "./calibration.js?v=5";
+import { isCalibrationProfile } from "./calibration.js?v=6";
 
 /**
  * Browser-independent recognition core. Both the worker and test replays feed
@@ -71,6 +71,7 @@ export class SignSpellRecognizer {
     const stroke = this.downstroke.update({
       timestamp: frame.timestamp,
       palmY: normalized.palmScreenY,
+      palmTilt: normalized.palmScreenVerticality,
       pose,
       latencyMs: frame.latencyMs,
     });
@@ -102,6 +103,7 @@ function unavailableDiagnostics(reason, stroke = null) {
       state: stroke?.state || "unavailable",
       velocity: Number.isFinite(stroke?.velocity) ? stroke.velocity : 0,
       reason: stroke?.reason || reason,
+      missingMs: Number.isFinite(stroke?.missingMs) ? stroke.missingMs : null,
     }),
     palmScreenY: null,
   });
@@ -146,7 +148,11 @@ export function createDiagnostics({ reason, normalized, confidence, distances, p
     // This signed, camera-relative normal is intentionally not labelled
     // "palm" or "knuckles": front-camera mirroring differs by device. Its
     // comparison to calibration lives in pose.viewDistance/contact gating.
-    orientation: Object.freeze({ cameraFacing: normalized.cameraFacing }),
+    orientation: Object.freeze({
+      cameraFacing: normalized.cameraFacing,
+      palmVerticality: normalized.palmScreenVerticality,
+      motionMetric: strokeRecognizer?.thresholds?.metric || "screen-y",
+    }),
     fingertips: Object.freeze({ distances: Object.freeze({ ...distances }), contacts: Object.freeze(contacts) }),
     pose: Object.freeze({ ...pose }),
     contact: Object.freeze({ reason: contact?.reason || "profile-unavailable", states: Object.freeze({ ...states }) }),
@@ -180,6 +186,11 @@ export function createDiagnostics({ reason, normalized, confidence, distances, p
       strokeVelocityRequired: Number(strokeRecognizer?.thresholds?.strokeVelocity) || null,
       strokeDisplacementRequired: Number(strokeRecognizer?.thresholds?.minDisplacement) || null,
       strikeCandidate: Boolean(strokeRecognizer?.strikeCandidate),
+      palmVerticality: Number.isFinite(normalized?.palmScreenVerticality) ? normalized.palmScreenVerticality : null,
+      readyVerticality: strokeRecognizer?.thresholds?.metric === "palm-tilt"
+        ? strokeRecognizer.thresholds.readyVerticality : null,
+      hitVerticality: strokeRecognizer?.thresholds?.metric === "palm-tilt"
+        ? strokeRecognizer.thresholds.hitVerticality : null,
     }),
     palmScreenY: normalized.palmScreenY,
   });

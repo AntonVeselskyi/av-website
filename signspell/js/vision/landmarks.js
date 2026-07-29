@@ -116,6 +116,8 @@ export function normalizeLandmarks(landmarks, selectedHandedness = "right") {
   const normal = unit(cross(lateral, forward), [0, 0, 1]);
   const palmCenter = midpoint(indexMcp, pinkyMcp);
   const palmScale = Math.max(distance(wrist, palmCenter), EPSILON);
+  const screenPalmAxis = sub(middleMcp, wrist);
+  const screenPalmLength = Math.max(EPSILON, Math.hypot(screenPalmAxis[0], screenPalmAxis[1]));
   const mirror = String(selectedHandedness).toLowerCase() === "left" ? -1 : 1;
 
   const points = raw.map((value) => {
@@ -133,6 +135,10 @@ export function normalizeLandmarks(landmarks, selectedHandedness = "right") {
     // Its sign is learned from the performer rather than interpreted as an
     // absolute "palm" or "back" convention (front cameras are mirrored).
     cameraFacing: normal[2],
+    // 1 = wrist-to-knuckles axis is vertical on screen, 0 = horizontal.
+    // Absolute components make this independent of handedness and whether the
+    // performer dips left or right.
+    palmScreenVerticality: Math.abs(screenPalmAxis[1]) / screenPalmLength,
     palmScreenY: [HAND.WRIST, HAND.INDEX_MCP, HAND.MIDDLE_MCP, HAND.RING_MCP, HAND.PINKY_MCP]
       .reduce((total, index) => total + raw[index][1], 0) / 5,
   };

@@ -1,5 +1,5 @@
-import { resolveInstrumentGesture } from './collections.js?v=8';
-import { resolveInstrumentStyle } from './instrument-styles.js?v=1';
+import { resolveInstrumentGesture } from './collections.js?v=9';
+import { resolveInstrumentStyle } from './instrument-styles.js?v=2';
 
 function clamp(value, low = 0, high = 1) { return Math.max(low, Math.min(high, value)); }
 function now(context, when) { return Math.max(context.currentTime, when ?? context.currentTime); }
@@ -71,11 +71,11 @@ function play808(context, output, hit, time, duration) {
   envelope(gain, time, 0.004, Math.max(0.04, duration * style.hold), Math.max(0.08, duration * style.release), style.level * hit.velocity); osc.start(time); overtone.start(time); stopLater([osc, overtone], time + duration + 0.7);
 }
 function playBass(context, output, hit, time, duration) {
-  const style = resolveInstrumentStyle('bass', hit.presetId);
+  const style = resolveInstrumentStyle(hit.instrument === 'overdrivenBass' ? 'overdrivenBass' : 'bass', hit.presetId);
   const a = oscillator(context, style.waveA, hit.note.frequency, time); const b = oscillator(context, style.waveB, hit.note.frequency * style.ratioB, time); const bMix = context.createGain(); const filter = context.createBiquadFilter(); const drive = context.createWaveShaper(); const gain = context.createGain();
   setDetune(a, -style.detune * 0.35, time); setDetune(b, style.detune, time); bMix.gain.value = style.mixB; filter.type = 'lowpass'; filter.frequency.setValueAtTime(style.cutoff, time); filter.Q.value = style.resonance; drive.curve = makeDistortionCurve(style.drive); drive.oversample = '2x';
   a.connect(filter); b.connect(bMix).connect(filter); filter.connect(drive).connect(gain).connect(output);
-  envelope(gain, time, style.attack, Math.max(0.05, duration * style.sustain), Math.max(0.18, duration * style.release), 0.29 * hit.velocity);
+  envelope(gain, time, style.attack, Math.max(0.05, duration * style.sustain), Math.max(0.18, duration * style.release), (style.level ?? 0.29) * hit.velocity);
   a.start(time); b.start(time); stopLater([a, b], time + duration + style.release + 0.2);
 }
 function setDetune(osc, cents, time) { osc.detune?.setValueAtTime?.(cents, time); }
@@ -129,6 +129,20 @@ function playSteelGuitar(context, output, hit, time, duration) {
     envelope(pickGain, time, 0.001, 0.005, 0.035, style.pickNoise * hit.velocity); connectVoice([pick, pickFilter, pickGain], output); pick.start(time); pick.stop(time + 0.06);
   }
   stopLater(voices, time + duration + style.release);
+}
+
+function createDrivenGuitarVoice(context, output, hit, time) {
+  const style = resolveInstrumentStyle('overdrivenGuitar', hit.presetId);
+  const a = oscillator(context, style.waveA, hit.note.frequency, time); const b = oscillator(context, style.waveB, hit.note.frequency, time); const bMix = context.createGain(); const highpass = context.createBiquadFilter(); const drive = context.createWaveShaper(); const cab = context.createBiquadFilter(); const gain = context.createGain();
+  setDetune(a, -style.detune, time); setDetune(b, style.detune, time); bMix.gain.value = 0.44; highpass.type = 'highpass'; highpass.frequency.setValueAtTime(style.highpass, time); drive.curve = makeDistortionCurve(style.drive); drive.oversample = '4x'; cab.type = 'lowpass'; cab.frequency.setValueAtTime(style.cutoff, time); cab.Q.value = style.resonance;
+  a.connect(highpass); b.connect(bMix).connect(highpass); highpass.connect(drive).connect(cab).connect(gain).connect(output); a.start(time); b.start(time);
+  return { style, sources: [a, b], gain };
+}
+
+function playOverdrivenGuitar(context, output, hit, time, duration) {
+  const voice = createDrivenGuitarVoice(context, output, hit, time); const { style } = voice;
+  envelope(voice.gain, time, style.attack, Math.max(0.025, duration * style.sustain), Math.max(0.12, duration * style.release), style.level * hit.velocity);
+  stopLater(voice.sources, time + duration + style.release + 0.2);
 }
 
 function playViolin(context, output, hit, time, duration) {
@@ -216,10 +230,10 @@ function startHeldVoice(context, output, hit, time) {
     osc.frequency.exponentialRampToValueAtTime(Math.max(20, hit.note.frequency), time + style.pitchTime); osc.connect(filter); overtone.connect(overtoneMix).connect(filter); filter.connect(drive).connect(gain).connect(output);
     heldEnvelope(gain, time, 0.004, style.level * hit.velocity, 0.78); osc.start(time); overtone.start(time);
     sources.push(osc, overtone); gains.push(gain); releaseSeconds = Math.max(0.12, style.release * 0.4);
-  } else if (hit.instrument === 'bass') {
-    const style = resolveInstrumentStyle('bass', hit.presetId); const a = oscillator(context, style.waveA, hit.note.frequency, time); const b = oscillator(context, style.waveB, hit.note.frequency * style.ratioB, time); const bMix = context.createGain(); const filter = context.createBiquadFilter(); const drive = context.createWaveShaper(); const gain = context.createGain();
+  } else if (hit.instrument === 'bass' || hit.instrument === 'overdrivenBass') {
+    const style = resolveInstrumentStyle(hit.instrument, hit.presetId); const a = oscillator(context, style.waveA, hit.note.frequency, time); const b = oscillator(context, style.waveB, hit.note.frequency * style.ratioB, time); const bMix = context.createGain(); const filter = context.createBiquadFilter(); const drive = context.createWaveShaper(); const gain = context.createGain();
     setDetune(a, -style.detune * 0.35, time); setDetune(b, style.detune, time); bMix.gain.value = style.mixB; filter.type = 'lowpass'; filter.frequency.setValueAtTime(style.cutoff, time); filter.Q.value = style.resonance; drive.curve = makeDistortionCurve(style.drive); drive.oversample = '2x';
-    a.connect(filter); b.connect(bMix).connect(filter); filter.connect(drive).connect(gain).connect(output); heldEnvelope(gain, time, style.attack, 0.28 * hit.velocity, 0.72); a.start(time); b.start(time);
+    a.connect(filter); b.connect(bMix).connect(filter); filter.connect(drive).connect(gain).connect(output); heldEnvelope(gain, time, style.attack, (style.level ?? 0.28) * hit.velocity, 0.72); a.start(time); b.start(time);
     sources.push(a, b); gains.push(gain); releaseSeconds = Math.max(0.16, style.release * 0.45);
   } else if (hit.instrument === 'eerieLead') {
     const style = resolveInstrumentStyle('eerieLead', hit.presetId); const a = oscillator(context, style.waveA, hit.note.frequency, time); const b = oscillator(context, style.waveB, hit.note.frequency, time); const lfo = oscillator(context, 'sine', style.vibratoRate, time); const vibrato = context.createGain(); const aMix = context.createGain(); const bMix = context.createGain(); const filter = context.createBiquadFilter(); const gain = context.createGain();
@@ -234,6 +248,10 @@ function startHeldVoice(context, output, hit, time) {
   } else if (hit.instrument === 'steelGuitar') {
     const style = resolveInstrumentStyle('steelGuitar', hit.presetId); [1, 2, 3, 4].forEach((ratio, index) => { const osc = oscillator(context, index < 2 ? 'triangle' : 'sine', hit.note.frequency * ratio, time); const partial = context.createGain(); setDetune(osc, index % 2 ? style.detune : -style.detune * 0.65, time); heldEnvelope(partial, time, 0.002, 0.16 * style.brightness * hit.velocity / (ratio ** 1.1), 0.28 / (index + 1)); osc.connect(partial).connect(output); osc.start(time); sources.push(osc); gains.push(partial); });
     releaseSeconds = Math.max(0.3, style.release * 0.35);
+  } else if (hit.instrument === 'overdrivenGuitar') {
+    const voice = createDrivenGuitarVoice(context, output, hit, time);
+    heldEnvelope(voice.gain, time, voice.style.attack, voice.style.level * hit.velocity, Math.max(0.32, voice.style.sustain));
+    sources.push(...voice.sources); gains.push(voice.gain); releaseSeconds = Math.max(0.18, voice.style.release);
   } else if (hit.instrument === 'violin') {
     const style = resolveInstrumentStyle('violin', hit.presetId); const a = oscillator(context, 'sawtooth', hit.note.frequency, time); const b = oscillator(context, 'sawtooth', hit.note.frequency, time); const lfo = oscillator(context, 'sine', style.vibratoRate, time); const vibrato = context.createGain(); const aMix = context.createGain(); const bMix = context.createGain(); const body = context.createBiquadFilter(); const gain = context.createGain();
     setDetune(a, style.detuneA, time); setDetune(b, style.detuneB, time); vibrato.gain.value = style.vibratoDepth; lfo.connect(vibrato); vibrato.connect(a.detune); vibrato.connect(b.detune); aMix.gain.value = 0.58; bMix.gain.value = 0.42; body.type = 'lowpass'; body.frequency.setValueAtTime(style.cutoff, time); body.Q.value = style.resonance;
@@ -376,10 +394,11 @@ export class MusicEngine {
     const output = this.outputForGroup(groupId, options.reverb);
     if (mappedHit.kind === 'percussion') playPercussion(this.context, output, mappedHit, time);
     else if (mappedHit.instrument === '808') play808(this.context, output, mappedHit, time, duration);
-    else if (mappedHit.instrument === 'bass') playBass(this.context, output, mappedHit, time, duration);
+    else if (mappedHit.instrument === 'bass' || mappedHit.instrument === 'overdrivenBass') playBass(this.context, output, mappedHit, time, duration);
     else if (mappedHit.instrument === 'eerieLead') playVibySynth(this.context, output, mappedHit, time, duration);
     else if (mappedHit.instrument === 'organ') playOrgan(this.context, output, mappedHit, time, duration);
     else if (mappedHit.instrument === 'steelGuitar') playSteelGuitar(this.context, output, mappedHit, time, duration);
+    else if (mappedHit.instrument === 'overdrivenGuitar') playOverdrivenGuitar(this.context, output, mappedHit, time, duration);
     else if (mappedHit.instrument === 'violin') playViolin(this.context, output, mappedHit, time, duration);
     else if (mappedHit.instrument === 'piano') playPiano(this.context, output, mappedHit, time, duration);
     else if (mappedHit.kind === 'chord') playPad(this.context, output, mappedHit, time, duration);

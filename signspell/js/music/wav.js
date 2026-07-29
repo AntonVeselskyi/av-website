@@ -1,5 +1,5 @@
-import { resolveInstrumentGesture } from './collections.js?v=8';
-import { MusicEngine } from './synth.js?v=13';
+import { resolveInstrumentGesture } from './collections.js?v=9';
+import { MusicEngine } from './synth.js?v=14';
 import { occurrencesBetween, secondsPerBeat } from './transport.js?v=5';
 
 function writeString(view, offset, value) { for (let i = 0; i < value.length; i += 1) view.setUint8(offset + i, value.charCodeAt(i)); }
@@ -45,8 +45,10 @@ function voiceTailSeconds(hit, durationSeconds) {
   if (hit.kind === 'percussion') return hit.voice === 'openHat' ? 0.45 : hit.voice === 'kick' ? 0.76 : 0.16;
   if (hit.instrument === '808') return durationSeconds + 0.6;
   if (hit.instrument === 'bass') return durationSeconds + 0.55;
+  if (hit.instrument === 'overdrivenBass') return durationSeconds + 0.9;
   if (hit.instrument === 'eerieLead' || hit.instrument === 'organ' || hit.instrument === 'violin') return durationSeconds + 0.9;
   if (hit.instrument === 'steelGuitar') return durationSeconds + 1.4;
+  if (hit.instrument === 'overdrivenGuitar') return durationSeconds + 1.1;
   if (hit.instrument === 'piano' || hit.kind === 'chord') return durationSeconds + 1.2;
   return durationSeconds + 0.3;
 }

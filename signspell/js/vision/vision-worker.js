@@ -1,6 +1,6 @@
-import { SignSpellRecognizer } from "./recognizer.js?v=12";
-import { buildCalibrationProfile } from "./calibration.js?v=5";
-import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.js?v=2";
+import { SignSpellRecognizer } from "./recognizer.js?v=13";
+import { buildCalibrationProfile } from "./calibration.js?v=6";
+import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.js?v=3";
 
 /**
  * Worker protocol for app integration:
@@ -136,13 +136,46 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
     return viewReference(samples);
   };
   const derivedStrokeTrials = () => {
+    const frames = calibrationData.strokeFrames
+      .filter((frame) => Number.isFinite(frame?.palmVerticality) && Number.isFinite(frame?.timestamp))
+      .sort((left, right) => left.timestamp - right.timestamp);
+    if (frames.length < 12) return [];
+    const verticalities = frames.map((frame) => frame.palmVerticality);
+    const horizontal = percentile(verticalities, 0.12);
+    const vertical = percentile(verticalities, 0.88);
+    const range = vertical - horizontal;
+    if (!Number.isFinite(range) || range < 0.22) return [];
+    const readyLine = vertical - range * 0.24;
+    const hitLine = horizontal + range * 0.24;
     const trials = [];
-    const frames = calibrationData.strokeFrames;
-    for (let index = 3; index < frames.length; index += 1) {
-      const start = frames[index - 3], end = frames[index];
-      const dt = (end.timestamp - start.timestamp) / 1000;
-      const displacement = end.palmY - start.palmY;
-      if (dt > 0 && displacement > 0.012) trials.push({ strokeVelocity: displacement / dt, displacement, restVelocity: 0.02 });
+    let phase = "waiting-ready";
+    let start = null;
+    let lowest = null;
+    for (const frame of frames) {
+      if (phase === "waiting-ready") {
+        if (frame.palmVerticality >= readyLine) { start = frame; phase = "waiting-hit"; }
+        continue;
+      }
+      if (phase === "waiting-hit") {
+        if (frame.palmVerticality >= readyLine) start = frame;
+        if (frame.palmVerticality <= hitLine) { lowest = frame; phase = "waiting-return"; }
+        continue;
+      }
+      if (frame.palmVerticality < lowest.palmVerticality) lowest = frame;
+      if (frame.palmVerticality >= readyLine) {
+        const dt = (lowest.timestamp - start.timestamp) / 1000;
+        const displacement = start.palmVerticality - lowest.palmVerticality;
+        if (dt > 0.035 && dt < 1.4 && displacement >= range * 0.55) {
+          trials.push({
+            strokeVelocity: displacement / dt,
+            displacement,
+            restVelocity: 0.08,
+            readyVerticality: start.palmVerticality,
+            hitVerticality: lowest.palmVerticality,
+          });
+        }
+        start = frame; lowest = null; phase = "waiting-hit";
+      }
     }
     return trials;
   };
@@ -212,7 +245,17 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
     if (glyph === "↓") {
       const count = derivedStrokeTrials().length;
       calibrationData.completed.downstroke = count >= 5;
-      return { kind: "downstroke", glyph, count, complete: count >= 5, minimum: 5 };
+      const poseReference = poseViewReference();
+      const quality = captureViewQuality(calibrationData.strokeFrames, null);
+      const sameSide = handViewsMatch(quality.center, poseReference);
+      const valid = count >= 5 && quality.valid && sameSide;
+      calibrationData.completed.downstroke = valid;
+      return {
+        kind: "downstroke", glyph, count, complete: valid, valid, minimum: 5,
+        reason: !sameSide ? "keep the calibrated knuckles-facing side toward the camera"
+          : !quality.valid ? quality.reason
+            : count < 5 ? "complete five upright-to-sideways-to-upright rotations" : null,
+      };
     }
     return { kind: "rest", glyph, count: 0, complete: true, minimum: 0 };
   };
@@ -244,7 +287,11 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
       contact.values.push(sample);
       if (calibrationCapture.phase === "open" || calibrationCapture.phase === "closed") contact[calibrationCapture.phase].push(sample);
     }
-    else if (glyph === "↓") calibrationData.strokeFrames.push({ timestamp: frame.timestamp, palmY: normalized.palmScreenY });
+    else if (glyph === "↓") calibrationData.strokeFrames.push({
+      timestamp: frame.timestamp,
+      palmVerticality: normalized.palmScreenVerticality,
+      view: normalized.cameraFacing,
+    });
     calibrationFrames.push(frame.timestamp);
     if (calibrationFrames.length % 12 === 0) emit("calibration-progress", { completed: calibrationData.completed, latest: summarizeCapture(glyph, calibrationCapture.phase), captureId: calibrationCapture.captureId, capturing: true });
   };
@@ -381,11 +428,15 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
             clearCalibrationTimer();
             calibrationBackup = null;
             calibrationData = message.draft.data;
+            calibrationData.strokeFrames ||= [];
             selectedHandedness = String(message.draft.handedness || selectedHandedness).toLowerCase() === "left" ? "left" : "right";
             recognizer.setHandedness(selectedHandedness);
             // Drafts from earlier versions did not record completion state.
             calibrationData.completed ||= { pose: {}, contact: {}, contactPhase: {}, downstroke: false };
             calibrationData.completed.contactPhase ||= {};
+            if (!calibrationData.strokeFrames.some((frame) => Number.isFinite(frame?.palmVerticality))) {
+              calibrationData.completed.downstroke = false;
+            }
             emit("calibration-imported", { completed: calibrationData.completed });
             emit("calibration-progress", { completed: calibrationData.completed, imported: true });
             break;

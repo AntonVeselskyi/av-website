@@ -12,6 +12,7 @@ const STYLES = Object.freeze({
     ironLung: { wave: 'triangle', overtoneWave: 'square', overtoneMix: 0.07, drive: 128, cutoff: 175, resonance: 2.4, pitchDrop: 1.94, pitchTime: 0.09, hold: 0.86, release: 0.68, level: 0.45 },
     chamberSub: { wave: 'sine', overtoneWave: 'sine', overtoneMix: 0.025, drive: 18, cutoff: 155, resonance: 0.4, pitchDrop: 1.24, pitchTime: 0.12, hold: 0.68, release: 0.42, level: 0.43 },
     sunsetSub: { wave: 'sine', overtoneWave: 'triangle', overtoneMix: 0.09, drive: 36, cutoff: 285, resonance: 1.15, pitchDrop: 1.48, pitchTime: 0.075, hold: 0.73, release: 0.54, level: 0.46 },
+    voltageSub: { wave: 'triangle', overtoneWave: 'sawtooth', overtoneMix: 0.08, drive: 88, cutoff: 225, resonance: 1.6, pitchDrop: 1.7, pitchTime: 0.045, hold: 0.42, release: 0.38, level: 0.48 },
   }),
   bass: freezeProfiles({
     softPickBass: { waveA: 'triangle', waveB: 'sawtooth', ratioB: 2, mixB: 0.12, detune: 1.5, cutoff: 900, resonance: 0.8, drive: 14, attack: 0.009, sustain: 0.22, release: 0.62 },
@@ -20,6 +21,7 @@ const STYLES = Object.freeze({
     fuzzBass: { waveA: 'square', waveB: 'sawtooth', ratioB: 1, mixB: 0.24, detune: 11, cutoff: 510, resonance: 2.5, drive: 92, attack: 0.012, sustain: 0.18, release: 0.66 },
     uprightShadow: { waveA: 'triangle', waveB: 'sine', ratioB: 2, mixB: 0.065, detune: 0.8, cutoff: 690, resonance: 1.35, drive: 8, attack: 0.016, sustain: 0.3, release: 0.92 },
     sunsetCompressor: { waveA: 'sawtooth', waveB: 'triangle', ratioB: 1, mixB: 0.18, detune: 7, cutoff: 1480, resonance: 1.55, drive: 29, attack: 0.011, sustain: 0.26, release: 0.74 },
+    voltageBass: { waveA: 'sawtooth', waveB: 'square', ratioB: 0.5, mixB: 0.16, detune: 2.5, cutoff: 980, resonance: 1.2, drive: 54, attack: 0.002, sustain: 0.1, release: 0.34 },
   }),
   eerieLead: freezeProfiles({
     velvetChorus: { waveA: 'triangle', waveB: 'sawtooth', cents: 9, cutoff: 2050, resonance: 1.1, attack: 0.024, release: 0.78, mixB: 0.32, vibratoRate: 4.2, vibratoDepth: 3.5 },
@@ -28,6 +30,7 @@ const STYLES = Object.freeze({
     blackGlass: { waveA: 'sawtooth', waveB: 'sawtooth', cents: 17, cutoff: 840, resonance: 4.6, attack: 0.032, release: 0.9, mixB: 0.46, vibratoRate: 3.2, vibratoDepth: 9 },
     whistleGlass: { waveA: 'triangle', waveB: 'sine', cents: 4, cutoff: 3650, resonance: 5.2, attack: 0.045, release: 1.05, mixB: 0.2, vibratoRate: 5.9, vibratoDepth: 12 },
     liquidPhase: { waveA: 'sawtooth', waveB: 'triangle', cents: 19, cutoff: 1720, resonance: 2.2, attack: 0.038, release: 0.96, mixB: 0.42, vibratoRate: 0.72, vibratoDepth: 16 },
+    staticChoir: { waveA: 'square', waveB: 'sawtooth', cents: 7, cutoff: 1180, resonance: 3.8, attack: 0.012, release: 0.52, mixB: 0.34, vibratoRate: 7.1, vibratoDepth: 5 },
   }),
   organ: freezeProfiles({
     bedroomReed: { drawbars: [0.82, 1, 0.28, 0.1, 0.04], cutoff: 2150, resonance: 0.7, attack: 0.03, release: 0.5, tremoloRate: 3.4, tremoloDepth: 0.035 },
@@ -36,6 +39,7 @@ const STYLES = Object.freeze({
     ironDrawbar: { drawbars: [1, 0.4, 0.72, 0.36, 0.28], cutoff: 1480, resonance: 2.8, attack: 0.025, release: 0.58, tremoloRate: 6.4, tremoloDepth: 0.055 },
     reedChamber: { drawbars: [0.5, 1, 0.3, 0.1, 0.035], cutoff: 1850, resonance: 3.3, attack: 0.055, release: 0.72, tremoloRate: 4.7, tremoloDepth: 0.018 },
     rotarySun: { drawbars: [0.88, 1, 0.6, 0.25, 0.15], cutoff: 2700, resonance: 0.9, attack: 0.02, release: 0.64, tremoloRate: 6.8, tremoloDepth: 0.09 },
+    valveRitual: { drawbars: [1, 0.3, 0.82, 0.46, 0.34], cutoff: 1720, resonance: 2.1, attack: 0.009, release: 0.4, tremoloRate: 7.6, tremoloDepth: 0.045 },
   }),
   steelGuitar: freezeProfiles({
     oldBronze: { brightness: 0.78, damping: 4050, feedback: 0.978, bodyRatio: 4.2, bodyQ: 0.9, pickNoise: 0.045, detune: 1.8, release: 1.9 },
@@ -44,6 +48,25 @@ const STYLES = Object.freeze({
     rustString: { brightness: 0.48, damping: 2300, feedback: 0.969, bodyRatio: 2.8, bodyQ: 3.1, pickNoise: 0.065, detune: 5.5, release: 1.55 },
     clockworkPluck: { brightness: 0.92, damping: 4600, feedback: 0.958, bodyRatio: 6.2, bodyQ: 1.6, pickNoise: 0.025, detune: 0.5, release: 0.8 },
     tapeTwelve: { brightness: 0.88, damping: 4250, feedback: 0.983, bodyRatio: 4.8, bodyQ: 0.7, pickNoise: 0.055, detune: 7.2, release: 2.35 },
+    detunedWire: { brightness: 0.96, damping: 3300, feedback: 0.965, bodyRatio: 3.1, bodyQ: 2.6, pickNoise: 0.085, detune: 13, release: 1.05 },
+  }),
+  overdrivenGuitar: freezeProfiles({
+    frayedAmp: { waveA: 'sawtooth', waveB: 'triangle', detune: 8, drive: 52, highpass: 95, cutoff: 3300, resonance: 0.8, attack: 0.004, sustain: 0.34, release: 0.62, level: 0.2 },
+    graveAmp: { waveA: 'sawtooth', waveB: 'square', detune: 12, drive: 76, highpass: 110, cutoff: 2100, resonance: 1.8, attack: 0.006, sustain: 0.3, release: 0.78, level: 0.19 },
+    clippedAmp: { waveA: 'square', waveB: 'sawtooth', detune: 4, drive: 92, highpass: 125, cutoff: 4100, resonance: 0.55, attack: 0.002, sustain: 0.18, release: 0.32, level: 0.21 },
+    slagAmp: { waveA: 'square', waveB: 'square', detune: 17, drive: 118, highpass: 105, cutoff: 1650, resonance: 2.6, attack: 0.008, sustain: 0.42, release: 0.7, level: 0.18 },
+    chamberAmp: { waveA: 'triangle', waveB: 'sawtooth', detune: 3, drive: 34, highpass: 130, cutoff: 3600, resonance: 1.1, attack: 0.003, sustain: 0.2, release: 0.46, level: 0.18 },
+    sunFuzz: { waveA: 'sawtooth', waveB: 'triangle', detune: 21, drive: 68, highpass: 85, cutoff: 2800, resonance: 1.4, attack: 0.01, sustain: 0.48, release: 0.92, level: 0.19 },
+    toxicAmp: { waveA: 'square', waveB: 'sawtooth', detune: 6, drive: 104, highpass: 115, cutoff: 2450, resonance: 1.7, attack: 0.0015, sustain: 0.11, release: 0.24, level: 0.22 },
+  }),
+  overdrivenBass: freezeProfiles({
+    bruisedDriveBass: { waveA: 'triangle', waveB: 'sawtooth', ratioB: 2, mixB: 0.14, detune: 2, cutoff: 920, resonance: 0.8, drive: 32, attack: 0.006, sustain: 0.28, release: 0.62, level: 0.27 },
+    cryptDriveBass: { waveA: 'sawtooth', waveB: 'square', ratioB: 0.5, mixB: 0.12, detune: 5, cutoff: 620, resonance: 1.9, drive: 58, attack: 0.004, sustain: 0.22, release: 0.74, level: 0.27 },
+    redlineDriveBass: { waveA: 'square', waveB: 'sawtooth', ratioB: 2, mixB: 0.2, detune: 3, cutoff: 1450, resonance: 0.7, drive: 74, attack: 0.002, sustain: 0.12, release: 0.34, level: 0.29 },
+    furnaceBass: { waveA: 'square', waveB: 'square', ratioB: 1, mixB: 0.24, detune: 9, cutoff: 520, resonance: 2.8, drive: 98, attack: 0.008, sustain: 0.3, release: 0.68, level: 0.25 },
+    uprightDrive: { waveA: 'triangle', waveB: 'sine', ratioB: 2, mixB: 0.08, detune: 1, cutoff: 760, resonance: 1.3, drive: 24, attack: 0.014, sustain: 0.36, release: 0.86, level: 0.26 },
+    liquidDriveBass: { waveA: 'sawtooth', waveB: 'triangle', ratioB: 1, mixB: 0.18, detune: 11, cutoff: 1320, resonance: 1.6, drive: 44, attack: 0.01, sustain: 0.32, release: 0.8, level: 0.27 },
+    elasticBass: { waveA: 'sawtooth', waveB: 'square', ratioB: 0.5, mixB: 0.17, detune: 2, cutoff: 1120, resonance: 1.35, drive: 70, attack: 0.0015, sustain: 0.09, release: 0.3, level: 0.3 },
   }),
   violin: freezeProfiles({
     softRosin: { cutoff: 2550, resonance: 1.1, attack: 0.13, release: 0.72, detuneA: -2, detuneB: 3, vibratoRate: 5.1, vibratoDepth: 5 },
@@ -52,6 +75,7 @@ const STYLES = Object.freeze({
     razorBow: { cutoff: 1900, resonance: 4.2, attack: 0.075, release: 0.54, detuneA: -7, detuneB: 9, vibratoRate: 6.6, vibratoDepth: 11 },
     loopedBow: { cutoff: 2350, resonance: 1.7, attack: 0.22, release: 1.25, detuneA: -3, detuneB: 4, vibratoRate: 5.3, vibratoDepth: 7 },
     mellotronBow: { cutoff: 1420, resonance: 0.8, attack: 0.16, release: 1.4, detuneA: -9, detuneB: 8, vibratoRate: 3.6, vibratoDepth: 14 },
+    feverBow: { cutoff: 2250, resonance: 3.1, attack: 0.045, release: 0.46, detuneA: -6, detuneB: 7, vibratoRate: 7.3, vibratoDepth: 10 },
   }),
   piano: freezeProfiles({
     feltTape: { ratios: [1, 2.005, 3.01], levels: [1, 0.32, 0.14], attack: 0.006, hold: 0.055, release: 1.35, cutoff: 2450, detune: 2.5 },
@@ -60,6 +84,7 @@ const STYLES = Object.freeze({
     brokenOrgan: { ratios: [0.5, 1, 2.015], levels: [0.48, 1, 0.36], attack: 0.018, hold: 0.09, release: 1.1, cutoff: 1150, detune: 12 },
     woodRoom: { ratios: [1, 2.003, 3.98], levels: [1, 0.2, 0.09], attack: 0.004, hold: 0.045, release: 0.92, cutoff: 2850, detune: 1.2 },
     warpedKeys: { ratios: [1, 2.018, 3.03], levels: [1, 0.35, 0.12], attack: 0.009, hold: 0.07, release: 1.55, cutoff: 2050, detune: 15 },
+    hammerKeys: { ratios: [1, 2.014, 4.01], levels: [1, 0.46, 0.22], attack: 0.0015, hold: 0.018, release: 0.62, cutoff: 3150, detune: 4 },
   }),
   percussion: freezeProfiles({
     softRust: { brightness: 0.68, decay: 0.72, level: 0.72, bodyPitch: 176, bodyLevel: 0.07, metalQ: 8 },
@@ -68,6 +93,7 @@ const STYLES = Object.freeze({
     ironDust: { brightness: 0.76, decay: 1.34, level: 1.12, bodyPitch: 122, bodyLevel: 0.17, metalQ: 18 },
     handMachine: { brightness: 0.54, decay: 0.88, level: 0.66, bodyPitch: 238, bodyLevel: 0.055, metalQ: 6 },
     tapeDust: { brightness: 0.82, decay: 1.08, level: 0.82, bodyPitch: 184, bodyLevel: 0.09, metalQ: 10 },
+    boltDust: { brightness: 1.18, decay: 0.72, level: 1.15, bodyPitch: 132, bodyLevel: 0.18, metalQ: 17 },
   }),
   drumKit: freezeProfiles({
     bedroomKit: { brightness: 0.74, decay: 0.78, level: 0.78, bodyPitch: 178, bodyLevel: 0.08, metalQ: 7, kickStart: 118, kickEnd: 50, kickPitchTime: 0.058, kickRelease: 0.32, kickLevel: 0.52 },
@@ -76,6 +102,7 @@ const STYLES = Object.freeze({
     ironKit: { brightness: 0.7, decay: 1.32, level: 1.16, bodyPitch: 118, bodyLevel: 0.19, metalQ: 19, kickStart: 138, kickEnd: 40, kickPitchTime: 0.102, kickRelease: 0.5, kickLevel: 0.78 },
     brushKit: { brightness: 0.48, decay: 1.46, level: 0.62, bodyPitch: 226, bodyLevel: 0.045, metalQ: 5, kickStart: 88, kickEnd: 55, kickPitchTime: 0.045, kickRelease: 0.23, kickLevel: 0.39 },
     sunroomKit: { brightness: 0.86, decay: 1.12, level: 0.88, bodyPitch: 166, bodyLevel: 0.1, metalQ: 9, kickStart: 108, kickEnd: 51, kickPitchTime: 0.074, kickRelease: 0.38, kickLevel: 0.59 },
+    voltageKit: { brightness: 1.14, decay: 0.7, level: 1.18, bodyPitch: 204, bodyLevel: 0.19, metalQ: 14, kickStart: 192, kickEnd: 46, kickPitchTime: 0.044, kickRelease: 0.25, kickLevel: 0.76 },
   }),
   pad: freezeProfiles({
     sleepingHall: { waves: ['sine', 'triangle', 'sine'], cutoff: 760, resonance: 0.8, attack: 0.34, release: 1.25, detune: 5 },
@@ -84,12 +111,13 @@ const STYLES = Object.freeze({
     coldChapel: { waves: ['sawtooth', 'triangle', 'sawtooth'], cutoff: 490, resonance: 4.2, attack: 0.46, release: 1.4, detune: 17 },
     chamberAir: { waves: ['sine', 'sine', 'triangle'], cutoff: 1220, resonance: 1.8, attack: 0.62, release: 1.9, detune: 3 },
     analogCloud: { waves: ['sawtooth', 'triangle', 'sine'], cutoff: 880, resonance: 1.15, attack: 0.28, release: 1.75, detune: 14 },
+    blackoutPad: { waves: ['square', 'sawtooth', 'triangle'], cutoff: 560, resonance: 3.4, attack: 0.16, release: 0.88, detune: 9 },
   }),
 });
 
 const DEFAULT_IDS = Object.freeze({
   '808': 'warmWound', bass: 'softPickBass', eerieLead: 'velvetChorus', organ: 'bedroomReed',
-  steelGuitar: 'oldBronze', violin: 'softRosin', piano: 'feltTape', percussion: 'softRust',
+  steelGuitar: 'oldBronze', overdrivenGuitar: 'frayedAmp', overdrivenBass: 'bruisedDriveBass', violin: 'softRosin', piano: 'feltTape', percussion: 'softRust',
   drumKit: 'bedroomKit', pad: 'sleepingHall',
 });
 

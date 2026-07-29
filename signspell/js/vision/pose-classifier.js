@@ -1,4 +1,4 @@
-import { median, medianAbsoluteDeviation } from "./landmarks.js?v=2";
+import { median, medianAbsoluteDeviation } from "./landmarks.js?v=3";
 
 const ANGLE_MIN_SPREAD = 0.055;
 const TIP_MIN_SPREAD = 0.10;

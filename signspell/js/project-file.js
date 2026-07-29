@@ -1,5 +1,5 @@
 import { GAMMAS, HARMONY_MODES, NOTE_ORDERS } from "./music/tonal.js?v=6";
-import { INSTRUMENTS, VIBE_COLLECTIONS } from "./music/collections.js?v=8";
+import { INSTRUMENTS, VIBE_COLLECTIONS } from "./music/collections.js?v=9";
 import {
   APP_SCHEMA_VERSION,
   BEATS_PER_BAR,

@@ -50,8 +50,12 @@ test('every track preset exposes independent bass and drum-kit voices', () => {
   for (const collection of Object.values(VIBE_COLLECTIONS)) {
     const bass = resolveInstrumentGesture({ instrument: 'bass', gesture: 4, scene: collection.tonal, collectionId: collection.id });
     const drum = resolveInstrumentGesture({ instrument: 'drumKit', gesture: 1, scene: collection.tonal, collectionId: collection.id });
+    const guitar = resolveInstrumentGesture({ instrument: 'overdrivenGuitar', gesture: 5, scene: collection.tonal, collectionId: collection.id });
+    const drivenBass = resolveInstrumentGesture({ instrument: 'overdrivenBass', gesture: 5, scene: collection.tonal, collectionId: collection.id });
     assert.equal(typeof bass.presetId, 'string', `${collection.id} bass preset missing`);
     assert.equal(typeof drum.presetId, 'string', `${collection.id} drum kit preset missing`);
+    assert.equal(typeof guitar.presetId, 'string', `${collection.id} overdriven guitar preset missing`);
+    assert.equal(typeof drivenBass.presetId, 'string', `${collection.id} overdriven bass preset missing`);
     assert.equal(drum.voice, 'kick');
   }
 });

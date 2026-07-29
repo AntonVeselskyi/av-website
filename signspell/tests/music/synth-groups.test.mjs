@@ -134,7 +134,7 @@ test('viby synth, organ, steel string, and violin all create playable voices', (
   const oscillators = [];
   audio.createOscillator = () => { const voice = node('oscillator'); oscillators.push(voice); return voice; };
   const engine = new MusicEngine(audio);
-  for (const instrument of ['bass', 'eerieLead', 'organ', 'steelGuitar', 'violin']) {
+  for (const instrument of ['bass', 'overdrivenBass', 'eerieLead', 'organ', 'steelGuitar', 'overdrivenGuitar', 'violin']) {
     const before = oscillators.length;
     engine.trigger({ instrument, kind: 'pitched', note: { frequency: 220 }, velocity: 0.8, presetId: null }, 4, 0.5, 140, `lane-${instrument}`);
     assert.ok(oscillators.length > before, `${instrument} produced no oscillator voices`);

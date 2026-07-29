@@ -1,4 +1,4 @@
-import { CONTACT_DIGITS, percentile } from "./landmarks.js?v=2";
+import { CONTACT_DIGITS, percentile } from "./landmarks.js?v=3";
 import { TemporalScalarPredictor, predictionHorizonMs } from "./temporal-predictor.js?v=1";
 
 const DIGITS = Object.keys(CONTACT_DIGITS).map(Number);

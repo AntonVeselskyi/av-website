@@ -16,7 +16,7 @@ test('every collection instrument resolves to its own explicit sound profile', (
   }
 });
 
-test('the six vibe collections have distinct profiles in every instrument family', () => {
+test('all vibe collections have distinct profiles in every instrument family', () => {
   for (const instrument of Object.keys(Object.values(VIBE_COLLECTIONS)[0].instruments)) {
     const profiles = Object.values(VIBE_COLLECTIONS).map((collection) => (
       resolveInstrumentStyle(instrument, collection.instruments[instrument])
@@ -32,4 +32,6 @@ test('representative acoustic and electronic presets change meaningful timbre co
   assert.notEqual(resolveInstrumentStyle('violin', 'softRosin').vibratoDepth, resolveInstrumentStyle('violin', 'razorBow').vibratoDepth);
   assert.notDeepEqual(resolveInstrumentStyle('organ', 'bedroomReed').drawbars, resolveInstrumentStyle('organ', 'smallChurch').drawbars);
   assert.notEqual(resolveInstrumentStyle('drumKit', 'brushKit').metalQ, resolveInstrumentStyle('drumKit', 'ironKit').metalQ);
+  assert.ok(resolveInstrumentStyle('overdrivenGuitar', 'toxicAmp').drive > resolveInstrumentStyle('overdrivenGuitar', 'chamberAmp').drive);
+  assert.ok(resolveInstrumentStyle('overdrivenBass', 'elasticBass').cutoff > resolveInstrumentStyle('overdrivenBass', 'furnaceBass').cutoff);
 });

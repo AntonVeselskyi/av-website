@@ -11,10 +11,10 @@ import {
   prepareOfflineLanes,
   renderOfflineProject,
   resolveInstrumentGesture,
-} from "./music/index.js?v=13";
+} from "./music/index.js?v=14";
 import { LoopTransport } from "./looper.js?v=10";
 import { LOOP_PEDAL_CLEAR_HOLD_MS, digitFromKeyEvent, loopPedalActionFromKeyEvent } from "./input.js?v=2";
-import { MAX_SSPELL_FILE_BYTES, parseProjectFile, projectFileName, serializeProjectFile } from "./project-file.js?v=1";
+import { MAX_SSPELL_FILE_BYTES, parseProjectFile, projectFileName, serializeProjectFile } from "./project-file.js?v=2";
 import { DiagnosticLog } from "./diagnostic-log.js?v=1";
 import { createDetector } from "./vision/mediapipe-adapter.js?v=3";
 import { resolveLiveGestureDebugState } from "./vision/debug-state.js?v=2";
@@ -41,8 +41,9 @@ const COLLECTION_REFERENCES = Object.freeze({
   ironChapel: "ZILLAKAMI-INSPIRED",
   avianChamber: "ANDREW BIRD-INSPIRED",
   psychedelicSun: "TAME IMPALA-INSPIRED",
+  hollowVoltage: "SOAD-INSPIRED / ORIGINAL",
 });
-const RECIPE_FAMILY = Object.freeze({ "808": "bass", bass: "bass", piano: "piano", eerieLead: "melody", organ: "melody", steelGuitar: "melody", violin: "melody", percussion: "drums", drumKit: "drums", pad: "melody" });
+const RECIPE_FAMILY = Object.freeze({ "808": "bass", bass: "bass", overdrivenBass: "bass", piano: "piano", eerieLead: "melody", organ: "melody", steelGuitar: "melody", overdrivenGuitar: "riff", violin: "melody", percussion: "drums", drumKit: "drums", pad: "melody" });
 const WAV_EXPORT_REPEATS = 3;
 const CONNECTIONS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
@@ -1164,7 +1165,7 @@ async function initVisionWorker() {
   if (visionWorker) return;
   try {
     diagnosticLog.add("worker", "starting vision worker");
-    const worker = new Worker("js/vision/vision-worker.js?v=15", { type: "module" });
+    const worker = new Worker("js/vision/vision-worker.js?v=16", { type: "module" });
     visionWorker = worker;
     visionReady = false;
     worker.addEventListener("message", (event) => handleVisionMessage(event, worker));
@@ -1327,7 +1328,8 @@ function diagnosticNumber(value, digits = 2) {
 function logGestureDiagnostics(diagnostic) {
   if (!diagnostic?.hand?.detected) {
     diagnosticLog.state("pose", "no hand", { key: "gesture:pose" });
-    diagnosticLog.state("stroke", "state=unavailable", { key: "gesture:stroke" });
+    const missingStroke = diagnostic?.downstroke || {};
+    diagnosticLog.state("stroke", `state=${missingStroke.state || "unavailable"}; reason=${missingStroke.reason || "no-hand"}; gap=${Math.round(missingStroke.missingMs || 0)}ms`, { key: "gesture:stroke" });
     return;
   }
   const pose = diagnostic.pose || {};
@@ -1336,7 +1338,7 @@ function logGestureDiagnostics(diagnostic) {
   diagnosticLog.state("pose", `digit=${pose.digit ?? "-"}; gate=${pose.accepted ? "ready" : "wait"}; mode=${poseMode}; reason=${pose.rawReason || pose.reason || "unknown"}`, { key: "gesture:pose" });
   diagnosticLog.state("stroke", `state=${stroke.state || "unknown"}; digit=${stroke.lockedDigit ?? stroke.stableDigit ?? "-"}; candidate=${stroke.strikeCandidate ? 1 : 0}`, { key: "gesture:stroke" });
   if (!serialLogExpanded) return;
-  diagnosticLog.add("motion", `pose=${diagnosticNumber(pose.distance)}/${diagnosticNumber(pose.effectiveThreshold)} r=${diagnosticNumber(pose.thresholdRatio)} sep=${diagnosticNumber(pose.separation)} view=${diagnosticNumber(pose.viewDistance)}; y=${diagnosticNumber(diagnostic.palmScreenY, 3)} fy=${diagnosticNumber(stroke.filteredY, 3)} v=${diagnosticNumber(stroke.velocity)} dy=${diagnosticNumber(stroke.displacement, 3)}; recover=${diagnosticNumber(stroke.recovery, 3)}/${diagnosticNumber(stroke.recoveryThreshold, 3)} frames=${stroke.recoveryFrames || 0}/${stroke.recoveryFramesRequired || "-"} ms=${Math.round(stroke.recoveryMs || 0)}/${stroke.recoveryMsRequired || "-"}; reason=${stroke.reason || "unknown"}`, { key: "gesture:motion", throttleMs: 350 });
+  diagnosticLog.add("motion", `pose=${diagnosticNumber(pose.distance)}/${diagnosticNumber(pose.effectiveThreshold)} r=${diagnosticNumber(pose.thresholdRatio)} sep=${diagnosticNumber(pose.separation)} view=${diagnosticNumber(pose.viewDistance)}; tilt=${diagnosticNumber(stroke.palmVerticality, 3)} ready≥${diagnosticNumber(stroke.readyVerticality, 2)} hit≤${diagnosticNumber(stroke.hitVerticality, 2)}; y=${diagnosticNumber(diagnostic.palmScreenY, 3)} m=${diagnosticNumber(stroke.filteredY, 3)} v=${diagnosticNumber(stroke.velocity)} d=${diagnosticNumber(stroke.displacement, 3)}; recover=${diagnosticNumber(stroke.recovery, 3)}/${diagnosticNumber(stroke.recoveryThreshold, 3)} frames=${stroke.recoveryFrames || 0}/${stroke.recoveryFramesRequired || "-"} ms=${Math.round(stroke.recoveryMs || 0)}/${stroke.recoveryMsRequired || "-"}; reason=${stroke.reason || "unknown"}`, { key: "gesture:motion", throttleMs: 350 });
 }
 
 function updateLiveGestureReadout(diagnostic) {
@@ -1438,9 +1440,9 @@ const CALIBRATION_STEPS = Object.freeze([
     },
   ])),
   {
-    id: "downstroke", label: "DOWN HITS", glyph: "↓", kind: "downstroke",
-    orientation: "KNUCKLES TOWARD CAMERA / SHORT DOWNWARD HITS",
-    text: "Hold any calibrated 1-5 pose and make at least five clear downward strikes, returning upward between hits.", durationMs: 8000,
+    id: "downstroke", label: "SIDE DIPS", glyph: "↓", kind: "downstroke",
+    orientation: "KNUCKLES TOWARD CAMERA / UPRIGHT → SIDEWAYS",
+    text: "Hold any calibrated 1-5 pose upright, rotate the whole hand sideways, hold briefly, then return upright. Complete at least five full rotations.", durationMs: 10000,
   },
 ]);
 
@@ -1460,16 +1462,25 @@ function statusesFromDraft(draft) {
     if (validated?.open === true || (validated?.open == null && (data?.contactSamples?.[digit]?.open?.length || 0) >= 5)) statuses[`contact-${digit}-open`] = "passed";
     if (validated?.closed === true || (validated?.closed == null && (data?.contactSamples?.[digit]?.closed?.length || 0) >= 5)) statuses[`contact-${digit}-closed`] = "passed";
   }
-  if (data?.completed?.downstroke) statuses.downstroke = "passed";
+  if (data?.completed?.downstroke && data?.strokeFrames?.some((frame) => Number.isFinite(frame?.palmVerticality))) statuses.downstroke = "passed";
   const saved = draft?.uiStatuses;
   if (saved && typeof saved === "object") {
-    for (const step of CALIBRATION_STEPS) if (["passed", "failed"].includes(saved[step.id])) statuses[step.id] = saved[step.id];
+    for (const step of CALIBRATION_STEPS) {
+      if (step.id === "downstroke" && !data?.strokeFrames?.some((frame) => Number.isFinite(frame?.palmVerticality))) continue;
+      if (["passed", "failed"].includes(saved[step.id])) statuses[step.id] = saved[step.id];
+    }
   }
   return statuses;
 }
 
 function allPassedStatuses() {
   return Object.fromEntries(CALIBRATION_STEPS.map((step) => [step.id, "passed"]));
+}
+
+function statusesFromProfile(profile) {
+  const statuses = allPassedStatuses();
+  if (profile?.downstroke?.metric !== "palm-tilt") statuses.downstroke = "pending";
+  return statuses;
 }
 
 function selectFirstIncompleteCalibrationStep(from = 0) {
@@ -1514,7 +1525,7 @@ function openCalibration() {
   releaseHeldNotes();
   diagnosticLog.add("cal", "calibration opened");
   const statuses = calibrationDraft ? statusesFromDraft(calibrationDraft)
-    : calibrationProfile?.valid ? allPassedStatuses() : blankCalibrationStatuses();
+    : calibrationProfile?.valid ? statusesFromProfile(calibrationProfile) : blankCalibrationStatuses();
   calibrationSession = { step: 0, statuses, capturing: false };
   const hasIncomplete = selectFirstIncompleteCalibrationStep();
   renderCalibrationStep();

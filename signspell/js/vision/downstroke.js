@@ -25,6 +25,10 @@ export class DownstrokeRecognizer {
       candidateFlowConfidence: thresholds.candidateFlowConfidence ?? 0.18,
       recoveryFrames: thresholds.recoveryFrames ?? 3,
       recoveryMs: thresholds.recoveryMs ?? 70,
+      metric: thresholds.metric === "palm-tilt" ? "palm-tilt" : "screen-y",
+      readyVerticality: thresholds.readyVerticality ?? 0.68,
+      hitVerticality: thresholds.hitVerticality ?? 0.42,
+      lockedMissingReleaseMs: thresholds.lockedMissingReleaseMs ?? 190,
     };
     this.reset();
   }
@@ -55,6 +59,7 @@ export class DownstrokeRecognizer {
     this.missingY = null;
     this.missingDigit = null;
     this.missingReady = false;
+    this.palmVerticality = null;
     this.motion = new TemporalScalarPredictor({ minCutoff: 2.8, beta: 0.35, windowMs: 95, maxGapMs: this.thresholds.maxGapMs });
   }
 
@@ -82,6 +87,14 @@ export class DownstrokeRecognizer {
         && this.lastTimestamp - this.stableSince >= 16;
       this.missingReady = this.state === "armed" || stableLongEnough || fastCandidateReady;
     }
+    const missingDuration = timestamp - this.missingSince;
+    // An already-playing note gets only a short detector grace. Armed hands
+    // retain the longer impact-reacquisition window, but taking the hand away
+    // must not leave a synth gate hanging.
+    if (this.state === "locked" && missingDuration > this.thresholds.lockedMissingReleaseMs) {
+      this.reset();
+      return { state: this.state, velocity: 0, reason: "held-hand-removed", missingMs: missingDuration };
+    }
     if (timestamp - this.missingSince > this.thresholds.maxReacquireMs) {
       this.reset();
       return { state: this.state, velocity: 0, reason: "hand-gap-timeout" };
@@ -91,14 +104,26 @@ export class DownstrokeRecognizer {
       velocity: this.velocity,
       reason: this.missingReady ? "armed-hand-gap" : "hand-unavailable",
       missingSince: this.missingSince,
+      missingMs: missingDuration,
     };
   }
 
-  update({ timestamp, palmY, pose, latencyMs = null }) {
+  update({ timestamp, palmY, palmTilt = null, pose, latencyMs = null }) {
     if (!Number.isFinite(timestamp) || !Number.isFinite(palmY)) {
       this.reset();
       return { hit: null, state: this.state, velocity: 0, reason: "unarmed" };
     }
+    const tiltMode = this.thresholds.metric === "palm-tilt";
+    if (tiltMode && !Number.isFinite(palmTilt)) {
+      this.reset();
+      return { hit: null, state: this.state, velocity: 0, reason: "tilt-unavailable" };
+    }
+    this.palmVerticality = Number.isFinite(palmTilt) ? palmTilt : null;
+    const readyOrientation = !tiltMode || palmTilt >= this.thresholds.readyVerticality;
+    const hitOrientation = !tiltMode || palmTilt <= this.thresholds.hitVerticality;
+    // The existing temporal decoder expects a scalar that grows through a
+    // strike. Horizontalness (1 - verticality) has exactly that property.
+    palmY = tiltMode ? 1 - palmTilt : palmY;
     const candidateDigit = Number(pose?.digit);
     const candidateReason = String(pose?.reason || "");
     const candidateRatio = Number.isFinite(pose?.thresholdRatio)
@@ -147,7 +172,8 @@ export class DownstrokeRecognizer {
       && missingDuration >= 0
       && missingDuration <= this.thresholds.maxReacquireMs
       && reacquireDisplacement >= this.thresholds.reacquireDisplacement
-      && pose.confidence >= 0.35;
+      && pose.confidence >= 0.35
+      && hitOrientation;
     if (reacquiredStroke) {
       const strikeSeconds = Math.max(0.016, (timestamp - this.lastTimestamp) / 1000);
       const strikeVelocity = reacquireDisplacement / strikeSeconds;
@@ -236,7 +262,7 @@ export class DownstrokeRecognizer {
       const returnLine = Number.isFinite(this.armY)
         ? Math.min(this.hitY - recoveryThreshold, this.armY + this.thresholds.minDisplacement * 0.35)
         : this.hitY - recoveryThreshold;
-      if (palmY <= returnLine) {
+      if (palmY <= returnLine && readyOrientation) {
         this.recoveryFrames += 1;
         if (this.recoverySince == null) this.recoverySince = timestamp;
       } else {
@@ -298,7 +324,8 @@ export class DownstrokeRecognizer {
       && this.stableFrames >= 2
       && timestamp - this.stableSince >= 16
       && this.velocity >= this.thresholds.strokeVelocity
-      && fastStartDisplacement >= this.thresholds.minDisplacement;
+      && fastStartDisplacement >= this.thresholds.minDisplacement
+      && hitOrientation;
     if (fastStartHit) {
       this.state = "locked";
       this.armY = this.stableStartY;
@@ -333,6 +360,9 @@ export class DownstrokeRecognizer {
       if (!stable || Math.abs(this.velocity) > this.thresholds.neutralVelocity) {
         return { hit: null, state: this.state, velocity: this.velocity, reason: stable ? "awaiting-rest" : "stabilizing" };
       }
+      if (!readyOrientation) {
+        return { hit: null, state: this.state, velocity: this.velocity, reason: "awaiting-upright" };
+      }
       this.state = "armed";
       this.armY = this.filteredY;
       return { hit: null, state: this.state, velocity: this.velocity, reason: "armed" };
@@ -344,15 +374,18 @@ export class DownstrokeRecognizer {
     const predictedDisplacement = predictedY - this.armY;
     const horizonSeconds = horizonMs / 1000;
     const predictedVelocity = trajectory.velocity + trajectory.acceleration * horizonSeconds;
+    const predictedOrientationHit = !tiltMode || predictedY >= 1 - this.thresholds.hitVerticality;
     const observedHit = this.velocity >= this.thresholds.strokeVelocity
-      && displacement >= this.thresholds.minDisplacement;
+      && displacement >= this.thresholds.minDisplacement
+      && hitOrientation;
     const predictedHit = trajectory.ready
       && trajectory.consistency >= 0.66
       && displacement >= this.thresholds.minDisplacement * 0.28
       && predictedDisplacement >= this.thresholds.minDisplacement
       && Math.max(this.velocity, trajectory.velocity) >= this.thresholds.strokeVelocity * 0.58
       && predictedVelocity >= this.thresholds.strokeVelocity * 0.72
-      && pose.confidence >= 0.5;
+      && pose.confidence >= 0.5
+      && predictedOrientationHit;
     if (observedHit || predictedHit) {
       this.state = "locked";
       // Forecasts decide when to trigger, but the observed position owns the

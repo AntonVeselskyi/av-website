@@ -70,6 +70,15 @@ function hand({ digit = 1, y = 0.6, contact = null, facing = "knuckles" } = {}) 
   return facing === "palm" ? points.map((point) => ({ ...point, x: 1 - point.x })) : points;
 }
 
+function rotateHandOnScreen(points, radians) {
+  const origin = points[0];
+  const cosine = Math.cos(radians), sine = Math.sin(radians);
+  return points.map((value) => {
+    const x = value.x - origin.x, y = value.y - origin.y;
+    return { ...value, x: origin.x + x * cosine - y * sine, y: origin.y + x * sine + y * cosine };
+  });
+}
+
 function profile() {
   const poseSamples = Object.fromEntries([1, 2, 3, 4, 5].map((digit) => [digit,
     Array.from({ length: 6 }, (_, sample) => poseFeatures(normalizeLandmarks(hand({ digit, y: 0.6 + sample * 0.001 })))),
@@ -341,7 +350,62 @@ test("a missing locked hand expires after the reacquisition window", () => {
   assert.equal(stroke.markMissing(140).state, "locked");
   const expired = stroke.markMissing(620);
   assert.equal(expired.state, "neutral");
-  assert.equal(expired.reason, "hand-gap-timeout");
+  assert.equal(expired.reason, "held-hand-removed");
+});
+
+test("a calibrated upright-to-sideways rotation strikes once, holds, and releases upright", () => {
+  const stroke = new DownstrokeRecognizer({
+    metric: "palm-tilt",
+    readyVerticality: 0.76,
+    hitVerticality: 0.34,
+    neutralVelocity: 0.2,
+    strokeVelocity: 0.5,
+    minDisplacement: 0.24,
+    recoveryDisplacement: 0.2,
+    stableFrames: 3,
+    stableMs: 40,
+    recoveryFrames: 3,
+    recoveryMs: 60,
+  });
+  const pose = { digit: 4, accepted: true, confidence: 0.92 };
+  for (const timestamp of [0, 20, 40, 60, 80]) {
+    assert.equal(stroke.update({ timestamp, palmY: 0.5, palmTilt: 0.9, pose }).hit, null);
+  }
+  assert.equal(stroke.state, "armed");
+  assert.equal(stroke.update({ timestamp: 100, palmY: 0.5, palmTilt: 0.68, pose }).hit, null);
+  const hit = stroke.update({ timestamp: 125, palmY: 0.5, palmTilt: 0.27, pose });
+  assert.equal(hit.hit?.digit, 4);
+  assert.equal(hit.state, "locked");
+  for (const timestamp of [145, 170, 200]) {
+    assert.equal(stroke.update({ timestamp, palmY: 0.5, palmTilt: 0.24, pose }).state, "locked");
+  }
+  assert.equal(stroke.update({ timestamp: 225, palmY: 0.5, palmTilt: 0.88, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 260, palmY: 0.5, palmTilt: 0.9, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 295, palmY: 0.5, palmTilt: 0.91, pose }).state, "neutral");
+});
+
+test("tilt calibration learns separated upright and sideways endpoints", () => {
+  const base = profile();
+  const calibrated = buildCalibrationProfile({
+    handedness: "right",
+    poseSamples: Object.fromEntries(Object.entries(base.pose.classes).map(([digit, value]) => [digit, Array.from({ length: 6 }, () => value.center)])),
+    contactSamples: Object.fromEntries(Object.keys(base.contacts.contacts).map((digit) => [digit, {
+      open: Array.from({ length: 6 }, () => 0.75),
+      closed: Array.from({ length: 6 }, () => 0.03),
+      closingSpeeds: [0.4, 0.45, 0.5, 0.42, 0.48],
+    }])),
+    strokeTrials: Array.from({ length: 6 }, (_, index) => ({
+      restVelocity: 0.05,
+      strokeVelocity: 1.2 + index * 0.03,
+      displacement: 0.62,
+      readyVerticality: 0.88 + index * 0.002,
+      hitVerticality: 0.22 + index * 0.002,
+    })),
+  });
+  assert.equal(calibrated.valid, true, calibrated.errors.join(", "));
+  assert.equal(calibrated.downstroke.metric, "palm-tilt");
+  assert.ok(calibrated.downstroke.readyVerticality > calibrated.downstroke.hitVerticality + 0.5);
+  assert.equal(calibrated.downstroke.lockedMissingReleaseMs, 190);
 });
 
 test("one missing detector frame does not disarm a downstroke", () => {
@@ -517,6 +581,31 @@ test("worker controller replays landmark frames without a webcam or detector", a
   assert.ok(Number.isFinite(diagnostic.fingertips.contacts[8].distance));
   assert.equal(Object.hasOwn(diagnostic, "landmarks"), false);
   assert.ok(Number.isFinite(diagnostic.latency.recognitionMs));
+});
+
+test("side-dip calibration counts full upright-sideways-upright cycles, not frame windows", async () => {
+  const capture = async (cycles) => {
+    const messages = [];
+    const controller = createVisionWorkerController({ postMessage: (message) => messages.push(message) });
+    await controller.handle({ type: "init" });
+    await controller.handle({ type: "calibration-capture", step: "downstroke", glyph: "↓", durationMs: 1200, replace: true });
+    let timestamp = 500_000;
+    const angles = [0, 0.25, 0.65, 1.1, Math.PI / 2, 1.1, 0.65, 0.25, 0];
+    for (let cycle = 0; cycle < cycles; cycle += 1) {
+      for (const angle of angles) {
+        await controller.handle({ type: "replay-frame", frame: { timestamp, landmarks: rotateHandOnScreen(hand({ digit: 2 }), angle) } });
+        timestamp += 42;
+      }
+    }
+    await controller.handle({ type: "calibration-export" });
+    return messages.findLast((message) => message.type === "calibration-sample")?.summary;
+  };
+  const one = await capture(1);
+  assert.equal(one.complete, false);
+  assert.ok(one.count <= 1);
+  const five = await capture(5);
+  assert.equal(five.complete, true, five.reason);
+  assert.ok(five.count >= 5);
 });
 
 test("recognition-only worker initialization never loads a MediaPipe detector", async () => {
