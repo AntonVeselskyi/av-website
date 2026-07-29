@@ -459,7 +459,7 @@
       <article class="download-card">
         <div class="platform">VS Code · Visual Studio</div>
         <h3>Editor extensions</h3>
-        <div class="meta">SYNTAX · BUILD &amp; RUN · CONVERT TO C++</div>
+        <div class="meta">SYNTAX · BUILD &amp; RUN · CONVERT · C++ LENS</div>
         <p>Install only the editor tools you want. Syntax support, compilation commands, and in-place conversion remain separate extensions.</p>
         <div class="card-actions"><a class="button" href="#editors">Choose extensions</a></div>
       </article>
@@ -472,7 +472,7 @@ be841f870c03a194f47cf3d7dd84a2a91ccc398afddd66e4ec3b259e5f2b4d71  shrt-0.1.2-sou
 2fa45821754ea0ec005a7f78085832024a384fb3ed0a0830d0fa6b4368bf7b2e  shrt-0.1.2-windows-x64.zip
 07f8be474ff13e6036df1dc510f891eddcc8b4571ad44b34b3fd849ceecbdfcf  shrt-build-run-0.5.1.vsix
 4bcfc34d464d451e850b78860f67d0bd7a5c5fb7aa89faa2495cb3f128d36ca1  shrt-convert-1.0.0.vsix
-6fde9cc7885467bab1f3dbe05553f35eaa8ac33b40722d864f90f7ec5ad2f303  shrt-convert-visual-studio-1.0.1.vsix
+82c1e2a40f53ff39e110fc155fc897f3cb2acea5a4f9fa61fe5ad53445937a22  shrt-tools-visual-studio-1.1.0.vsix
 07aa4eda79994e53bf22bc81fe87ef7fcac6b3107c3aafcf887fd9770fe6e7c1  shrt-syntax-0.3.1.vsix</pre>
     </details>
   </section>
@@ -634,20 +634,22 @@ cl /std:c++20 /EHsc hello.shrt.cpp /Fe:hello.exe
 
       <article class="extension-card">
         <div class="extension-icon" aria-hidden="true">VS</div>
-        <h3>Visual Studio · Convert to C++</h3>
-        <div class="meta">VSIX · 1.0.1 · VISUAL STUDIO 2022</div>
-        <p>The same selection-or-function conversion for full Visual Studio. The command appears under <strong>Edit</strong> and in the editor context menu; the whole operation is one Undo step.</p>
+        <h3>Visual Studio · SHRT Lens + Convert</h3>
+        <div class="meta">VSIX · 1.1.0 · VISUAL STUDIO 2022</div>
+        <p>Open ordinary C++ through an editable SHRT Lens. Saving applies only changed, reversible SHRT regions to the backing C++ file as one Undo step; the project never gains a <code class="inline">.shrt</code> source file. Selection-or-function conversion remains included.</p>
         <ol>
           <li>Install the SHRT CLI first, then restart Visual Studio so it receives the updated PATH.</li>
           <li>Close Visual Studio and double-click the downloaded VSIX.</li>
           <li>Select your VS 2022 installation, choose <strong>Install</strong>, then reopen the IDE.</li>
+          <li>Open C++ and toggle the lens. Save to patch C++; toggle again to return to the canonical file.</li>
         </ol>
+        <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>L</kbd><span>toggle SHRT Lens</span></div>
         <div class="keys"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd><span>convert in place</span></div>
-        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-convert-visual-studio-1.0.1.vsix" download>Download Visual Studio Converter</a></div>
+        <div class="card-actions"><a class="button" href="/shrt/downloads/shrt-tools-visual-studio-1.1.0.vsix" download>Download Visual Studio Tools</a></div>
       </article>
     </div>
 
-    <p class="fine-print">VS Code CLI alternative: <code class="inline">code --install-extension .\package.vsix --force</code>. After installing SHRT or changing PATH, fully restart the editor before testing a command. The Visual Studio converter supports VS 2022 Community, Professional, and Enterprise on x64 Windows.</p>
+    <p class="fine-print">VS Code CLI alternative: <code class="inline">code --install-extension .\package.vsix --force</code>. After installing SHRT or changing PATH, fully restart the editor before testing a command. SHRT Tools supports VS 2022 Community, Professional, and Enterprise on x64 Windows. Lens mode rejects generated-code features such as <code class="inline">defer</code> so the C++ view always round-trips safely.</p>
   </section>
 
   <section class="section" id="troubleshooting" aria-labelledby="troubleshooting-title">
