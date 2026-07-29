@@ -13,6 +13,8 @@ import {
 } from "./music/index.js?v=5";
 import { LoopTransport, RECORD_PASSES } from "./looper.js?v=7";
 import { digitFromKeyEvent } from "./input.js?v=1";
+import { DiagnosticLog } from "./diagnostic-log.js?v=1";
+import { bitmapFailureSummary, canSendVisionFrame, visionPipelineSummary } from "./vision/pipeline-state.js?v=1";
 import { BEATS_PER_BAR, clamp, normalizeProject, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
 import {
   clearCalibrationDraft,
@@ -42,6 +44,7 @@ const dom = {
   boot: $("#boot-screen"), workstation: $("#workstation"), start: $("#start-app"), status: $("#system-status"), statusLight: $("#system-light"), toast: $("#toast"),
   video: $("#camera-feed"), overlay: $("#hand-overlay"), cameraStage: $("#camera-stage"), cameraHome: $("#camera-stage-home"), cameraMessage: $("#camera-message"), cameraToggle: $("#camera-toggle"), hand: $("#handedness-select"),
   diagnostics: $("#hand-diagnostics"), diagnosticStatus: $("#hand-diagnostic-status"), diagnosticPose: $("#hand-diagnostic-pose"), diagnosticContact: $("#hand-diagnostic-contact"), diagnosticStroke: $("#hand-diagnostic-stroke"), diagnosticFrame: $("#hand-diagnostic-frame"),
+  serialLog: $("#serial-diagnostic-log"), serialLogCopy: $("#serial-log-copy"), serialLogClear: $("#serial-log-clear"),
   gestureDigit: $("#gesture-digit"), gestureState: $("#gesture-state"), gestureConfidence: $("#gesture-confidence"), latency: $("#latency-readout"),
   play: $("#transport-play"), stop: $("#transport-stop"), bpm: $("#bpm-input"), tap: $("#tap-tempo"), quantization: $("#quantization-select"), position: $("#transport-position"),
   collection: $("#collection-select"), instrument: $("#instrument-select"), root: $("#root-select"), gamma: $("#gamma-select"), harmony: $("#harmony-select"), gestureMap: $("#gesture-map"),
@@ -60,8 +63,10 @@ let transport = null;
 let cameraStream = null;
 let cameraGeneration = 0;
 let visionWorker = null;
+let visionReady = false;
 let frameInFlight = false;
 let cameraLoopHandle = 0;
+let lastBitmapFailureAt = -Infinity;
 let calibrationProfile = await loadCalibration();
 let calibrationDraft = await loadCalibrationDraft();
 let calibrationSession = null;
@@ -72,6 +77,10 @@ let tapTimes = [];
 let focusedMappingBar = -1;
 const heldNotes = new Map();
 let visionGateWatchdog = 0;
+const diagnosticLog = new DiagnosticLog({
+  onChange: (text) => { if (dom.serialLog) dom.serialLog.textContent = text || "[--:--:--] SYSTEM  log cleared"; },
+});
+diagnosticLog.add("system", "local summary log initialized; no media or landmarks retained");
 
 if (calibrationDraft?.handedness === "left" || calibrationDraft?.handedness === "right") {
   dom.hand.value = calibrationDraft.handedness;
@@ -755,7 +764,14 @@ async function startCamera() {
   if (cameraStream) return stopCamera();
   if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera access is unavailable. Use HTTPS in Chrome or Edge.");
   const generation = ++cameraGeneration;
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 960 }, height: { ideal: 720 }, frameRate: { ideal: 60, min: 24 } }, audio: false });
+  let stream;
+  try {
+    diagnosticLog.add("camera", "access requested (video only)");
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 960 }, height: { ideal: 720 }, frameRate: { ideal: 60, min: 24 } }, audio: false });
+  } catch (error) {
+    diagnosticLog.add("camera", `access failed: ${error?.message || "unknown error"}`);
+    throw error;
+  }
   if (generation !== cameraGeneration) { stream.getTracks().forEach((track) => track.stop()); return; }
   cameraStream = stream;
   dom.video.srcObject = stream;
@@ -766,6 +782,7 @@ async function startCamera() {
   }
   dom.cameraMessage.hidden = true;
   dom.cameraToggle.textContent = "CAMERA ON";
+  diagnosticLog.state("camera", "stream active");
   setStatus("INITIALIZING VISION", "busy");
   initVisionWorker();
   queueCameraFrame(generation, stream);
@@ -776,24 +793,73 @@ function stopCamera() {
   cameraGeneration += 1;
   cancelAnimationFrame(cameraLoopHandle);
   frameInFlight = false;
+  disposeVisionWorker("camera stopped");
   cameraStream?.getTracks().forEach((track) => track.stop());
   cameraStream = null;
   dom.video.srcObject = null;
   dom.cameraMessage.hidden = false;
   dom.cameraMessage.textContent = "Camera offline. Keyboard digits remain playable.";
   dom.cameraToggle.textContent = "CAMERA OFF";
+  diagnosticLog.state("camera", "stream stopped");
+  diagnosticLog.state("hand", "count=0");
   resetHandDiagnostics();
   clearHandOverlay();
   setStatus("CAMERA DORMANT", "idle");
 }
 
+function logVisionPipeline() {
+  diagnosticLog.state("pipeline", visionPipelineSummary({
+    worker: visionWorker,
+    ready: visionReady,
+    inFlight: frameInFlight,
+    videoReadyState: dom.video?.readyState ?? 0,
+  }));
+}
+
+function disposeVisionWorker(reason = "reset") {
+  const worker = visionWorker;
+  visionWorker = null;
+  visionReady = false;
+  frameInFlight = false;
+  if (worker) {
+    try { worker.terminate(); } catch { /* already closed */ }
+  }
+  diagnosticLog.state("worker", `offline (${reason})`);
+  logVisionPipeline();
+}
+
+function reportBitmapFailure(error) {
+  frameInFlight = false;
+  const summary = bitmapFailureSummary(error);
+  diagnosticLog.add("camera", summary, { key: "camera:bitmap-failure", throttleMs: 5000 });
+  logVisionPipeline();
+  const now = performance.now();
+  if (now - lastBitmapFailureAt >= 5000) {
+    lastBitmapFailureAt = now;
+    setStatus("VISION FRAME ERROR", "error", 5000);
+    showToast("CAMERA FRAME CAPTURE FAILED — CHECK BROWSER SUPPORT", 5000);
+  }
+}
+
 function initVisionWorker() {
   if (visionWorker) return;
   try {
-    visionWorker = new Worker("js/vision/vision-worker.js?v=4", { type: "module" });
-    visionWorker.addEventListener("message", handleVisionMessage);
-    visionWorker.addEventListener("error", (event) => { releaseHeldNotes((held) => held.source.startsWith("vision-")); frameInFlight = false; showToast(`VISION WORKER: ${event.message}`); });
-    visionWorker.postMessage({
+    diagnosticLog.add("worker", "starting vision worker");
+    const worker = new Worker("js/vision/vision-worker.js?v=5", { type: "module" });
+    visionWorker = worker;
+    visionReady = false;
+    worker.addEventListener("message", (event) => handleVisionMessage(event, worker));
+    worker.addEventListener("error", (event) => {
+      if (visionWorker !== worker) return;
+      releaseHeldNotes((held) => held.source.startsWith("vision-"));
+      diagnosticLog.add("worker", `error: ${event.message || "unknown error"}`);
+      disposeVisionWorker("worker error");
+      setStatus("VISION ERROR", "error");
+      showToast(`VISION WORKER: ${event.message || "unknown error"}`);
+    });
+    diagnosticLog.add("detector", "initializing; GPU delegate requested");
+    logVisionPipeline();
+    worker.postMessage({
       type: "init",
       handedness: dom.hand.value,
       profile: calibrationProfile,
@@ -803,6 +869,8 @@ function initVisionWorker() {
       },
     });
   } catch (error) {
+    diagnosticLog.add("worker", `startup failed: ${error?.message || "unknown error"}`);
+    disposeVisionWorker("startup failed");
     showToast(`Vision unavailable: ${error.message}`);
   }
 }
@@ -811,12 +879,17 @@ function queueCameraFrame(generation = cameraGeneration, stream = cameraStream) 
   if (!stream || generation !== cameraGeneration || cameraStream !== stream) return;
   const send = async (now) => {
     if (generation !== cameraGeneration || cameraStream !== stream) return;
-    if (!frameInFlight && visionWorker && dom.video.readyState >= 2) {
+    if (canSendVisionFrame({ worker: visionWorker, ready: visionReady, inFlight: frameInFlight, videoReadyState: dom.video.readyState })) {
       frameInFlight = true;
+      logVisionPipeline();
       try {
         const bitmap = await createImageBitmap(dom.video);
-        visionWorker.postMessage({ type: "frame", frame: bitmap, timestamp: now }, [bitmap]);
-      } catch { frameInFlight = false; }
+        if (generation !== cameraGeneration || cameraStream !== stream || !visionReady || !visionWorker) {
+          bitmap.close?.();
+          frameInFlight = false;
+          logVisionPipeline();
+        } else visionWorker.postMessage({ type: "frame", frame: bitmap, timestamp: now }, [bitmap]);
+      } catch (error) { reportBitmapFailure(error); }
     }
     if (generation === cameraGeneration && cameraStream === stream) queueCameraFrame(generation, stream);
   };
@@ -824,29 +897,44 @@ function queueCameraFrame(generation = cameraGeneration, stream = cameraStream) 
   else cameraLoopHandle = requestAnimationFrame(send);
 }
 
-function handleVisionMessage(event) {
+function handleVisionMessage(event, sourceWorker = visionWorker) {
+  if (sourceWorker !== visionWorker) return;
   const message = event.data || {};
   if (message.type === "diagnostic") {
+    diagnosticLog.state("hand", `count=${message.diagnostic?.hand?.detected ? 1 : 0}`);
     syncVisionHeldNotes(message.diagnostic);
     refreshVisionGateWatchdog();
     updateHandDiagnostics(message.diagnostic);
     return;
   }
-  if (message.type === "frame-ready" || message.type === "frame-dropped") { frameInFlight = false; return; }
+  if (message.type === "frame-ready" || message.type === "frame-dropped") { frameInFlight = false; logVisionPipeline(); return; }
   if (message.type === "ready") {
+    visionReady = message.detectorReady === true;
+    diagnosticLog.state("worker", "ready");
+    diagnosticLog.state("detector", visionReady ? "ready" : "unavailable");
+    logVisionPipeline();
+    if (!visionReady) {
+      releaseHeldNotes((held) => held.source.startsWith("vision-"));
+      disposeVisionWorker("detector unavailable");
+      setStatus("VISION ERROR", "error");
+      showToast("VISION DETECTOR UNAVAILABLE — RETRY CAMERA", 5000);
+      return;
+    }
     if (calibrationDraft) visionWorker?.postMessage({ type: "calibration-import", draft: calibrationDraft });
     setStatus(calibrationProfile ? "SIGNAL CONNECTED" : "CALIBRATION REQUIRED", calibrationProfile ? "ok" : "busy");
     return;
   }
   if (message.type === "error") {
     releaseHeldNotes((held) => held.source.startsWith("vision-"));
-    frameInFlight = false;
+    diagnosticLog.add("detector", `error: ${message.message || "initialization failed"}`);
+    disposeVisionWorker(`detector error: ${message.code || "unknown"}`);
     setStatus("VISION ERROR", "error");
     showToast(message.message || "Vision initialization failed", 5000);
     return;
   }
   if (message.type === "recognition") {
     const payload = message;
+    diagnosticLog.add("frame", `inference=${Math.round(payload.metrics?.inferenceMs || 0)}ms; hand=${payload.landmarks ? 1 : 0}`, { key: "frame:summary", throttleMs: 2000 });
     if (payload.landmarks) drawHand(payload.landmarks); else clearHandOverlay();
     const confidence = payload.confidence ?? payload.diagnostics?.pose?.confidence ?? 0;
     dom.gestureConfidence.value = clamp(confidence, 0, 1);
@@ -1036,6 +1124,7 @@ function closeCalibrationSession() {
     clearTimeout(calibrationTimeout);
     const step = CALIBRATION_STEPS[calibrationSession.step];
     visionWorker?.postMessage({ type: "calibration-cancel", captureId: calibrationSession.captureId || null });
+    diagnosticLog.add("cal", `capture cancelled: ${step.id}`);
     calibrationSession.capturing = false;
     calibrationSession.statuses[step.id] = calibrationSession.capturePreviousState || "pending";
     calibrationSession.captureId = null;
@@ -1047,6 +1136,7 @@ function closeCalibrationSession() {
 
 function openCalibration() {
   releaseHeldNotes();
+  diagnosticLog.add("cal", "calibration opened");
   const statuses = calibrationDraft ? statusesFromDraft(calibrationDraft)
     : calibrationProfile?.valid ? allPassedStatuses() : blankCalibrationStatuses();
   calibrationSession = { step: 0, statuses, capturing: false };
@@ -1109,6 +1199,7 @@ function captureCalibrationStep() {
     if (!visionWorker) { showToast("START THE CAMERA ONCE TO LOAD THE VISION WORKER"); return; }
     dom.calibrationNext.disabled = true;
     dom.calibrationInstruction.textContent = "Building your private recognition profile from the saved sections…";
+    diagnosticLog.add("cal", "building recognition profile from saved summaries");
     visionWorker.postMessage({ type: "calibration-build", handedness: dom.hand.value });
     return;
   }
@@ -1119,6 +1210,7 @@ function captureCalibrationStep() {
   calibrationSession.capturePreviousState = calibrationSession.statuses[step.id];
   calibrationSession.captureId = `${step.id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   calibrationSession.capturing = true;
+  diagnosticLog.add("cal", `capture started: ${step.id}`);
   calibrationSession.statuses[step.id] = "capturing";
   dom.calibrationStatus.textContent = "CAPTURING / HOLD STEADY";
   dom.calibrationStatus.dataset.state = "capturing";
@@ -1144,6 +1236,7 @@ function captureCalibrationStep() {
     calibrationSession.statuses[step.id] = "failed";
     calibrationSession.captureId = null;
     calibrationSession.capturePreviousState = null;
+    diagnosticLog.add("cal", `capture timed out: ${step.id}`);
     dom.calibrationInstruction.textContent = "No completed capture arrived. Check that the camera sees one full hand, then retry only this part.";
     renderCalibrationStep();
   }, step.durationMs + 4500);
@@ -1160,7 +1253,10 @@ function updateCalibrationProgress(message) {
   const step = CALIBRATION_STEPS[calibrationSession.step];
   const phaseSummary = step.phase ? message.latest.phases?.[step.phase] : message.latest;
   if (!phaseSummary) return;
-  dom.calibrationCount.textContent = `${phaseSummary.count || 0} valid / ${phaseSummary.minimum || message.latest.minimum || 5} minimum`;
+  const count = phaseSummary.count || 0;
+  const minimum = phaseSummary.minimum || message.latest.minimum || 5;
+  dom.calibrationCount.textContent = `${count} valid / ${minimum} minimum`;
+  diagnosticLog.add("cal", `${step.id}: ${count}/${minimum} valid frames`, { key: `cal-progress:${step.id}`, throttleMs: 1250 });
 }
 
 function finishCalibrationStep(message) {
@@ -1175,6 +1271,7 @@ function finishCalibrationStep(message) {
   calibrationSession.captureId = null;
   calibrationSession.capturePreviousState = null;
   calibrationSession.statuses[step.id] = passed ? "passed" : "failed";
+  diagnosticLog.add("cal", `${step.id}: ${passed ? "passed" : "retry required"}`);
   calibrationSession.step = index;
   if (!passed) {
     visionWorker?.postMessage({ type: "calibration-export" });
@@ -1202,6 +1299,7 @@ async function persistCalibrationDraft(draft) {
   try {
     calibrationDraft = await saveCalibrationDraft({ ...draft, uiStatuses: calibrationSession?.statuses || calibrationDraft?.uiStatuses });
   } catch (error) {
+    diagnosticLog.add("cal", `draft save failed: ${error?.message || "unknown error"}`);
     showToast(`CALIBRATION PROGRESS COULD NOT BE SAVED: ${error.message}`, 5000);
   } finally {
     if (calibrationSession?.buildAfterDraft) {
@@ -1217,6 +1315,7 @@ async function resetCalibrationProgress() {
   visionWorker?.postMessage({ type: "calibration-reset" });
   await clearCalibrationDraft();
   calibrationDraft = null;
+  diagnosticLog.add("cal", "unfinished calibration cleared");
   calibrationSession = { step: 0, statuses: blankCalibrationStatuses(), capturing: false };
   renderCalibrationStep();
   dom.calibrationInstruction.textContent = "Progress cleared. Start again from pose 1; the old active profile is unchanged until a replacement succeeds.";
@@ -1231,6 +1330,7 @@ async function completeCalibration(profile, completed = profile?.completed) {
     selectFirstIncompleteCalibrationStep();
     renderCalibrationStep();
     const failed = Object.values(calibrationSession.statuses).filter((value) => value === "failed").length;
+    diagnosticLog.add("cal", `profile rejected; ${failed || 1} section${failed === 1 ? "" : "s"} need retry${profile?.errors?.length ? `: ${profile.errors.join("; ")}` : ""}`);
     dom.calibrationInstruction.textContent = `Profile needs ${failed || 1} focused retry. Passed sections remain saved. ${(profile?.errors || []).join("; ")}`;
     visionWorker?.postMessage({ type: "calibration-export" });
     return;
@@ -1250,6 +1350,7 @@ async function completeCalibration(profile, completed = profile?.completed) {
   dom.calibrationNext.textContent = "DONE";
   dom.calibrationNext.dataset.action = "done";
   renderCalibrationChecklist();
+  diagnosticLog.add("cal", "profile sealed; no images or video stored");
   setStatus("SIGNAL CONNECTED", "ok");
 }
 
@@ -1270,6 +1371,24 @@ function clickActiveLaneControl(selector) {
 
 function isEditableTarget(target) {
   return Boolean(target?.matches?.("input,select,textarea,[contenteditable='true']"));
+}
+
+async function copyDiagnosticLog() {
+  const text = diagnosticLog.text();
+  if (!text) { showToast("DIAGNOSTIC LOG IS EMPTY"); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const copyField = document.createElement("textarea");
+    copyField.value = text;
+    copyField.style.cssText = "left:-9999px;position:fixed;top:0;";
+    document.body.append(copyField);
+    copyField.select();
+    const copied = document.execCommand("copy");
+    copyField.remove();
+    if (!copied) { showToast("COPY FAILED — SELECT THE LOG MANUALLY", 4200); return; }
+  }
+  showToast("LOCAL DIAGNOSTIC LOG COPIED");
 }
 
 function wireEvents() {
@@ -1313,8 +1432,11 @@ function wireEvents() {
   dom.focusedClear.addEventListener("click", () => clickActiveLaneControl(".lane-clear"));
   dom.export.addEventListener("click", exportWav);
   dom.cameraToggle.addEventListener("click", () => startCamera().catch((error) => showToast(error.message, 5000)));
+  dom.serialLogCopy?.addEventListener("click", copyDiagnosticLog);
+  dom.serialLogClear?.addEventListener("click", () => { diagnosticLog.clear(); showToast("DIAGNOSTIC LOG CLEARED"); });
   dom.hand.addEventListener("change", async () => {
     visionWorker?.postMessage({ type: "handedness", handedness: dom.hand.value });
+    diagnosticLog.add("detector", `preferred hand set to ${dom.hand.value.toUpperCase()}`);
     if (!calibrationDraft) return;
     visionWorker?.postMessage({ type: "calibration-reset" });
     await clearCalibrationDraft();

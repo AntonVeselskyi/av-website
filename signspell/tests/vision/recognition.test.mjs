@@ -14,7 +14,7 @@ import {
   createVisionWorkerController,
 } from "../../js/vision/index.js";
 
-function hand({ digit = 1, y = 0.6, contact = null } = {}) {
+function hand({ digit = 1, y = 0.6, contact = null, facing = "knuckles" } = {}) {
   const points = Array.from({ length: 21 }, () => ({ x: 0.5, y, z: 0 }));
   points[0] = { x: 0.5, y, z: 0 };
   points[1] = { x: 0.43, y: y - 0.035, z: 0 };
@@ -52,7 +52,11 @@ function hand({ digit = 1, y = 0.6, contact = null } = {}) {
     const tips = { 6: 20, 7: 16, 8: 12, 9: 8 };
     points[4] = { ...points[tips[contact]] };
   }
-  return points;
+  // A horizontal camera-space reflection flips the signed palm normal while
+  // retaining the same finger geometry. The recognizer deliberately learns
+  // which sign is the user's knuckles/palm-facing side at calibration time,
+  // rather than assuming an absolute sign that breaks on mirrored cameras.
+  return facing === "palm" ? points.map((point) => ({ ...point, x: 1 - point.x })) : points;
 }
 
 function profile() {
@@ -87,6 +91,32 @@ function descriptorProfile() {
   }]));
   return buildCalibrationProfile({ handedness: "right", poseSamples, contactSamples,
     strokeTrials: Array.from({ length: 6 }, () => ({ restVelocity: 0.01, strokeVelocity: 1.5, displacement: 0.12 })) });
+}
+
+function conventionProfile() {
+  const poseSamples = Object.fromEntries([1, 2, 3, 4, 5].map((digit) => [digit,
+    Array.from({ length: 6 }, (_, sample) => {
+      const normalized = normalizeLandmarks(hand({ digit, y: 0.6 + sample * 0.001, facing: "knuckles" }));
+      return { features: poseFeatures(normalized), view: normalized.cameraFacing };
+    }),
+  ]));
+  const contactSamples = Object.fromEntries([6, 7, 8, 9].map((digit) => [digit, {
+    open: Array.from({ length: 6 }, (_, sample) => {
+      const normalized = normalizeLandmarks(hand({ digit: 1, y: 0.6 + sample * 0.001, facing: "palm" }));
+      return { value: contactDistances(normalized)[digit], view: normalized.cameraFacing };
+    }),
+    closed: Array.from({ length: 6 }, (_, sample) => {
+      const normalized = normalizeLandmarks(hand({ digit: 1, contact: digit, y: 0.6 + sample * 0.001, facing: "palm" }));
+      return { value: contactDistances(normalized)[digit], view: normalized.cameraFacing };
+    }),
+    closingSpeeds: [0.4, 0.5, 0.45, 0.42, 0.48],
+  }]));
+  return buildCalibrationProfile({
+    handedness: "right",
+    poseSamples,
+    contactSamples,
+    strokeTrials: Array.from({ length: 6 }, () => ({ restVelocity: 0.01, strokeVelocity: 1.5, displacement: 0.12 })),
+  });
 }
 
 test("calibrated pose classes separate 1–5 and persist as JSON only", () => {
@@ -210,6 +240,49 @@ test("contacts can require the calibrated palm-facing view", () => {
   assert.equal(recognizer.update({ timestamp: 20, view: -1, distances: { 6: 0.1, 7: 0.8, 8: 0.8, 9: 0.8 } }).hit, null);
   recognizer.update({ timestamp: 40, view: 1, distances: { 6: 0.8, 7: 0.8, 8: 0.8, 9: 0.8 } });
   assert.equal(recognizer.update({ timestamp: 60, view: 1, distances: { 6: 0.1, 7: 0.8, 8: 0.8, 9: 0.8 } }).hit?.digit, 6);
+});
+
+test("ASL 1–5 knuckles poses and 6–9 palm contacts reject the opposite facing", () => {
+  const calibration = conventionProfile();
+  assert.equal(calibration.valid, true, calibration.errors.join(", "));
+
+  // The fixture encodes the requested shapes: 3 = thumb + index + middle,
+  // 4 = all fingertips but thumb, and 5 = all five fingertips. They must
+  // only classify on the learned knuckles-facing side.
+  for (const digit of [1, 2, 3, 4, 5]) {
+    const knuckles = normalizeLandmarks(hand({ digit, facing: "knuckles" }));
+    const palm = normalizeLandmarks(hand({ digit, facing: "palm" }));
+    assert.equal(classifyPose(calibration.pose, poseFeatures(knuckles), knuckles.cameraFacing).digit, digit);
+    assert.equal(classifyPose(calibration.pose, poseFeatures(knuckles), knuckles.cameraFacing).accepted, true);
+    assert.equal(classifyPose(calibration.pose, poseFeatures(palm), palm.cameraFacing).accepted, false);
+  }
+
+  for (const digit of [6, 7, 8, 9]) {
+    const palmOpen = normalizeLandmarks(hand({ digit: 1, facing: "palm" }));
+    const palmClosed = normalizeLandmarks(hand({ digit: 1, contact: digit, facing: "palm" }));
+    const knucklesOpen = normalizeLandmarks(hand({ digit: 1, facing: "knuckles" }));
+    const knucklesClosed = normalizeLandmarks(hand({ digit: 1, contact: digit, facing: "knuckles" }));
+
+    // Use narrow per-contact thresholds here so the synthetic thumb-to-pinky
+    // shape does not also look like a ring contact. This isolates the view
+    // gate, which is what this regression protects.
+    const contactProfile = {
+      valid: true,
+      contacts: Object.fromEntries([6, 7, 8, 9].map((candidate) => [candidate, {
+        threshold: 0.2,
+        release: 0.4,
+        minClosingSpeed: 0.05,
+        view: { center: palmOpen.cameraFacing, spread: 0.08, threshold: 2.2 },
+      }])),
+    };
+    const correct = new ContactRecognizer(contactProfile);
+    correct.update({ timestamp: 0, view: palmOpen.cameraFacing, distances: contactDistances(palmOpen) });
+    assert.equal(correct.update({ timestamp: 20, view: palmClosed.cameraFacing, distances: contactDistances(palmClosed) }).hit?.digit, digit);
+
+    const wrongFacing = new ContactRecognizer(contactProfile);
+    wrongFacing.update({ timestamp: 0, view: knucklesOpen.cameraFacing, distances: contactDistances(knucklesOpen) });
+    assert.equal(wrongFacing.update({ timestamp: 20, view: knucklesClosed.cameraFacing, distances: contactDistances(knucklesClosed) }).hit, null);
+  }
 });
 
 test("worker retains a successful gesture while a later calibration pass is incomplete", async () => {

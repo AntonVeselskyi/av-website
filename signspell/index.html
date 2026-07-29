@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=6">
+  <link rel="stylesheet" href="css/sign-spell.css?v=7">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
@@ -66,6 +66,17 @@
             <div class="finger-diagnostic" data-finger="pinky" role="listitem"><i aria-hidden="true"></i><span>T5 / PINKY</span><output id="tip-pinky">--</output></div>
           </div>
           <footer><span>POSE <output id="hand-diagnostic-pose">--</output></span><span>CONTACT <output id="hand-diagnostic-contact">--</output></span><span>STROKE <output id="hand-diagnostic-stroke">--</output></span><span>FRAME <output id="hand-diagnostic-frame">--</output></span></footer>
+        </section>
+        <section class="serial-diagnostics" aria-labelledby="serial-diagnostics-title">
+          <header><h3 id="serial-diagnostics-title">LOCAL SERIAL / SAFE EVENT LOG</h3><span>NO MEDIA OR LANDMARKS</span></header>
+          <pre id="serial-diagnostic-log" tabindex="0" aria-label="Local diagnostic event log">[--:--:--] SYSTEM  awaiting signal</pre>
+          <footer>
+            <span>LOCAL ONLY · LAST 140 EVENTS</span>
+            <div>
+              <button id="serial-log-copy" type="button" data-hint="Copies the local diagnostic event summaries. No frames or hand coordinates are included.">COPY</button>
+              <button id="serial-log-clear" type="button" data-hint="Clears the on-page diagnostic log. This does not affect camera or calibration.">CLEAR</button>
+            </div>
+          </footer>
         </section>
         <footer class="panel-footer">
           <label>HAND <select id="handedness-select"><option value="Right">RIGHT</option><option value="Left">LEFT</option></select></label>
@@ -188,6 +199,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script type="module" src="js/hints.js?v=3"></script>
-  <script type="module" src="js/app.js?v=8"></script>
+  <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>
