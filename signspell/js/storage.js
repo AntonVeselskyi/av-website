@@ -1,4 +1,4 @@
-import { normalizeProject } from "./shared.js?v=4";
+import { normalizeProject } from "./shared.js?v=7";
 
 const DB_NAME = "sign-spell";
 const DB_VERSION = 1;
@@ -104,9 +104,15 @@ export async function clearCalibrationDraft() {
 export function createAutosaver(save, delay = 450) {
   let timeout = 0;
   let pending;
-  return (value) => {
+  const schedule = (value) => {
     pending = value;
     clearTimeout(timeout);
     timeout = setTimeout(() => save(pending), delay);
   };
+  schedule.cancel = () => {
+    clearTimeout(timeout);
+    timeout = 0;
+    pending = undefined;
+  };
+  return schedule;
 }

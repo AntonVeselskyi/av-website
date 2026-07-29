@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GAMMAS, HARMONY_MODES, createTonalScene, pitchClass, resolveGestureNote, resolveLowBassGestureNote } from '../../js/music/tonal.js';
+import { GAMMAS, HARMONY_MODES, NOTE_ORDERS, createTonalScene, pitchClass, resolveGestureNote, resolveLowBassGestureNote } from '../../js/music/tonal.js';
 import { VIBE_COLLECTIONS, resolveInstrumentGesture } from '../../js/music/collections.js';
 
 test('strict harmony maps all nine signs to only the active chord tones', () => {
@@ -44,4 +44,38 @@ test('every collection maps every 808 gesture to its gamma inside the sub range'
       }
     }
   }
+});
+
+test('every track preset exposes independent bass and drum-kit voices', () => {
+  for (const collection of Object.values(VIBE_COLLECTIONS)) {
+    const bass = resolveInstrumentGesture({ instrument: 'bass', gesture: 4, scene: collection.tonal, collectionId: collection.id });
+    const drum = resolveInstrumentGesture({ instrument: 'drumKit', gesture: 1, scene: collection.tonal, collectionId: collection.id });
+    assert.equal(typeof bass.presetId, 'string', `${collection.id} bass preset missing`);
+    assert.equal(typeof drum.presetId, 'string', `${collection.id} drum kit preset missing`);
+    assert.equal(drum.voice, 'kick');
+  }
+});
+
+test('descending note order makes 9 the lowest pitched note without relabeling the input', () => {
+  const ascending = createTonalScene({ root: 'E', gamma: 'aeolian', harmonyMode: HARMONY_MODES.FREE_SCALE });
+  const descending = createTonalScene({ root: 'E', gamma: 'aeolian', harmonyMode: HARMONY_MODES.FREE_SCALE, noteOrder: NOTE_ORDERS.DESCENDING });
+  const ascendingLow = resolveInstrumentGesture({ instrument: 'piano', gesture: 1, scene: ascending });
+  const descendingNine = resolveInstrumentGesture({ instrument: 'piano', gesture: 9, scene: descending });
+  const ascendingHigh = resolveInstrumentGesture({ instrument: 'piano', gesture: 9, scene: ascending });
+  const descendingOne = resolveInstrumentGesture({ instrument: 'piano', gesture: 1, scene: descending });
+
+  assert.equal(descendingNine.gesture, 9);
+  assert.equal(descendingNine.mappedGesture, 1);
+  assert.equal(descendingNine.note.midi, ascendingLow.note.midi);
+  assert.equal(descendingOne.note.midi, ascendingHigh.note.midi);
+});
+
+test('note order does not scramble drum voices', () => {
+  const scene = createTonalScene({ noteOrder: NOTE_ORDERS.DESCENDING });
+  assert.equal(resolveInstrumentGesture({ instrument: 'drumKit', gesture: 1, scene }).voice, 'kick');
+  assert.equal(resolveInstrumentGesture({ instrument: 'drumKit', gesture: 9, scene }).voice, 'reverse');
+});
+
+test('tonal scenes reject unknown note orders', () => {
+  assert.throws(() => createTonalScene({ noteOrder: 'insideOut' }), /Unknown note order/);
 });

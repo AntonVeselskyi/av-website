@@ -1,6 +1,6 @@
 import { median, percentile } from "./landmarks.js?v=2";
-import { buildPoseProfile } from "./pose-classifier.js?v=2";
-import { buildContactProfile } from "./contacts.js?v=2";
+import { buildPoseProfile } from "./pose-classifier.js?v=3";
+import { buildContactProfile } from "./contacts.js?v=5";
 
 export const CALIBRATION_SCHEMA_VERSION = 2;
 const LEGACY_SCHEMA_VERSION = 1;

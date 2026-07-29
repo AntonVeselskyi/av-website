@@ -4,7 +4,7 @@ import test from "node:test";
 import { LoopTransport, RECORD_PASSES } from "../js/looper.js";
 import { createDefaultProject } from "../js/shared.js";
 
-test("recording starts immediately when stopped and ends after three loop passes", () => {
+test("recording starts immediately when stopped and ends after one loop pass", () => {
   const project = createDefaultProject();
   const lane = project.lanes[0];
   let audioTime = 2;
@@ -16,10 +16,25 @@ test("recording starts immediately when stopped and ends after three loop passes
   const captured = transport.captureHit({ digit: 4, velocity: 0.7, source: "keyboard" }, lane.id);
   assert.equal(captured.digit, 4);
   assert.equal(lane.events.length, 1);
-  transport.updateRecordStates(lane.lengthBars * 4);
+  assert.equal(RECORD_PASSES, 1);
+  transport.updateRecordStates(lane.lengthBars * 4 - 0.001);
   assert.equal(lane.recording, true);
-  transport.updateRecordStates(lane.lengthBars * 4 * RECORD_PASSES);
+  transport.updateRecordStates(lane.lengthBars * 4);
   assert.equal(lane.recording, false);
+  transport.stop();
+});
+
+test("a 16-bar line records and wraps at exactly 64 beats", () => {
+  const project = createDefaultProject();
+  const lane = project.lanes[0];
+  lane.lengthBars = 16;
+  const transport = new LoopTransport({ getAudioTime: () => 2, scheduleEvent: () => {}, project });
+  transport.armLane(lane.id);
+  transport.updateRecordStates(63.999);
+  assert.equal(lane.recording, true);
+  transport.updateRecordStates(64);
+  assert.equal(lane.recording, false);
+  assert.equal(transport.localBeatForLane(lane, 64.25), 0.25);
   transport.stop();
 });
 
@@ -157,7 +172,7 @@ test("a hold crossing the recording boundary ends at that boundary", () => {
   lane.lengthBars = 1;
   lane.recording = true;
   lane.recordStartedBeat = 0;
-  let audioTime = 11.75;
+  let audioTime = 3.75;
   const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
   transport.playing = true;
   transport.startedAt = 0;
@@ -166,16 +181,26 @@ test("a hold crossing the recording boundary ends at that boundary", () => {
   assert.equal(transport.finishHeldCapture(capture).duration, 0.25);
 });
 
-test("hits from later recording passes fold onto the same loop grid", () => {
+test("hits are folded onto the active loop grid", () => {
   const project = createDefaultProject();
   project.tonalScene.bpm = 60;
   const lane = project.lanes[0];
   lane.lengthBars = 1;
   lane.recording = true;
   lane.recordStartedBeat = 0;
-  let audioTime = 8.5;
+  let audioTime = 0.5;
   const transport = new LoopTransport({ getAudioTime: () => audioTime, scheduleEvent: () => {}, project });
   transport.playing = true;
   transport.startedAt = 0;
   assert.equal(transport.captureHit({ digit: 6 }, lane.id).beat, 0.5);
+});
+
+test("tracks can be spawned dynamically up to the workstation limit", () => {
+  const project = createDefaultProject();
+  const transport = new LoopTransport({ getAudioTime: () => 0, scheduleEvent: () => {}, project });
+  assert.equal(project.lanes.length, 3);
+  assert.ok(transport.addLane()?.id);
+  while (transport.addLane()) { /* fill remaining slots */ }
+  assert.equal(project.lanes.length, 8);
+  assert.equal(transport.addLane(), null);
 });

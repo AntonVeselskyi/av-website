@@ -1,5 +1,5 @@
-import { getVibeCollection } from './collections.js?v=4';
-import { quantizeBeat } from './tonal.js?v=4';
+import { getVibeCollection } from './collections.js?v=7';
+import { quantizeBeat } from './tonal.js?v=5';
 
 export function seededRandom(seed = 1) {
   let state = (Number(seed) >>> 0) || 1;
@@ -35,13 +35,45 @@ function makePiano(random, bars, laneId = 'piano') {
   return events;
 }
 
-function makePercussion(random, bars, laneId = 'drums') {
+function makePercussion(random, bars, laneId = 'drums', collection = { id: 'wiltedBedroom' }) {
   const events = [];
+  const add = (startBeat, gesture, velocity, durationBeat = 0.125) => events.push(createLoopEvent({ laneId, instrument: 'percussion', startBeat, gesture, velocity, durationBeat }));
+  const human = (base, spread = 0.12) => Math.max(0.08, Math.min(1, base + (random() - 0.5) * spread));
   for (let bar = 0; bar < bars; bar += 1) {
     const start = bar * 4;
-    [0, 2].forEach((offset) => events.push(createLoopEvent({ laneId, instrument: 'percussion', startBeat: start + offset, gesture: 1, velocity: 0.76 + random() * 0.18 })));
-    [1, 3].forEach((offset) => events.push(createLoopEvent({ laneId, instrument: 'percussion', startBeat: start + offset, gesture: random() > 0.45 ? 2 : 3, velocity: 0.58 + random() * 0.2 })));
-    for (let step = 0; step < 16; step += 1) if (step % 2 === 0 || random() > 0.72) events.push(createLoopEvent({ laneId, instrument: 'percussion', startBeat: start + step / 4, gesture: step % 8 === 7 ? 5 : 4, velocity: 0.22 + random() * 0.22, durationBeat: 0.125 }));
+    if (collection.id === 'wiltedBedroom') {
+      add(start, 1, human(0.86)); add(start + 2, 2, human(0.67));
+      if (random() > 0.42) add(start + 2.75, 1, human(0.66));
+      for (let step = 0; step < 8; step += 1) if (step % 2 === 0 || random() > 0.24) add(start + step * 0.5, step === 7 ? 5 : 4, human(step % 2 ? 0.24 : 0.34, 0.09));
+      if (bar % 2 === 1) add(start + 3.75, 6, human(0.28));
+    } else if (collection.id === 'cemeteryTape') {
+      [0, 1.75, 3.25].forEach((offset, index) => { if (index === 0 || random() > 0.2) add(start + offset, 1, human(0.88 - index * 0.08)); });
+      add(start + 2, random() > 0.52 ? 2 : 3, human(0.78));
+      for (let step = 0; step < 16; step += 1) if (step % 2 === 0 || random() > 0.38) add(start + step * 0.25, step === 14 ? 5 : 4, human(step % 4 === 0 ? 0.42 : 0.27, 0.12));
+      add(start + (bar % 2 ? 3.5 : 0.75), 7, human(0.38));
+      if (bar === bars - 1) add(start + 3.75, 9, human(0.35));
+    } else if (collection.id === 'redlineWound') {
+      [0, 1.5, 2.75].forEach((offset, index) => { if (index !== 1 || random() > 0.32) add(start + offset, 1, human(index === 0 ? 0.96 : 0.79)); });
+      add(start + 2, 3, human(0.9)); add(start + 2, 2, human(0.52));
+      [0, 0.75, 1.5, 2.25, 3, 3.5, 3.75].forEach((offset, index) => add(start + offset, index === 6 ? 5 : 4, human(index > 4 ? 0.46 : 0.31, 0.1)));
+      if (bar % 2 === 0) add(start + 3.25, 8, human(0.34));
+    } else if (collection.id === 'ironChapel') {
+      [0, 1.5, 3].forEach((offset, index) => add(start + offset, 1, human(index === 0 ? 0.95 : 0.78)));
+      add(start + 2, 2, human(0.82));
+      [0.75, 2.75].forEach((offset) => add(start + offset, 7, human(0.57)));
+      for (let step = 0; step < 8; step += 1) if (step % 2 === 0 || random() > 0.55) add(start + step * 0.5, 4, human(0.3));
+      add(start + 3.5, bar % 2 ? 9 : 8, human(0.4));
+    } else if (collection.id === 'avianChamber') {
+      add(start, 1, human(0.58)); add(start + 2.5, 1, human(0.46));
+      [1, 3].forEach((offset) => add(start + offset, 2, human(0.48)));
+      [0.75, 1.75, 2.75, 3.75].forEach((offset, index) => add(start + offset, 6, human(index % 2 ? 0.34 : 0.43)));
+      [0.5, 1.5, 2.5, 3.5].forEach((offset) => { if (random() > 0.28) add(start + offset, 8, human(0.2)); });
+    } else {
+      [0, 1.5, 2.5, 3.5].forEach((offset, index) => { if (index < 2 || random() > 0.18) add(start + offset, 1, human(index === 0 ? 0.88 : 0.68, 0.16)); });
+      [1, 3].forEach((offset) => add(start + offset, 2, human(0.74, 0.14)));
+      for (let step = 0; step < 8; step += 1) add(start + step * 0.5, step % 2 ? 5 : 4, human(step % 2 ? 0.34 : 0.29, 0.13));
+      if (bar % 2 === 1) { add(start + 2.75, 6, human(0.42)); add(start + 3.75, 7, human(0.3)); }
+    }
   }
   return events;
 }
@@ -62,6 +94,6 @@ export function generateLoopRecipe({ collectionId = 'wiltedBedroom', seed = 1, b
   const collection = getVibeCollection(collectionId);
   const random = seededRandom(seed);
   const factories = { bass: makeBass, piano: makePiano, melody: makeMelody, drums: makePercussion };
-  const lanes = include.map((id) => ({ id, instrument: id === 'bass' ? '808' : id === 'drums' ? 'percussion' : id === 'melody' ? 'eerieLead' : 'piano', lengthBars: bars, events: Object.freeze((factories[id] ? factories[id](random, bars, id) : []).sort((a, b) => a.startBeat - b.startBeat)) }));
+  const lanes = include.map((id) => ({ id, instrument: id === 'bass' ? '808' : id === 'drums' ? 'percussion' : id === 'melody' ? 'eerieLead' : 'piano', lengthBars: bars, events: Object.freeze((factories[id] ? factories[id](random, bars, id, collection) : []).sort((a, b) => a.startBeat - b.startBeat)) }));
   return Object.freeze({ schemaVersion: 1, collectionId: collection.id, seed: Number(seed) >>> 0, scene: collection.tonal, lengthBars: bars, lanes: Object.freeze(lanes.map(Object.freeze)) });
 }

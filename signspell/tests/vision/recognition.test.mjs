@@ -8,11 +8,22 @@ import {
   classifyPose,
   ContactRecognizer,
   contactDistances,
+  DownstrokeRecognizer,
   normalizeLandmarks,
   poseFeatures,
+  PoseStabilizer,
   SignSpellRecognizer,
   createVisionWorkerController,
+  handViewsMatch,
+  handViewsOppose,
 } from "../../js/vision/index.js";
+
+test("calibration accepts decisive hand-facing signs without a contradictory magnitude gate", () => {
+  assert.equal(handViewsMatch(0.13, 0.13), true);
+  assert.equal(handViewsMatch(0.13, -0.13), false);
+  assert.equal(handViewsOppose(0.13, -0.13), true);
+  assert.equal(handViewsOppose(0.13, 0.13), false);
+});
 
 function hand({ digit = 1, y = 0.6, contact = null, facing = "knuckles" } = {}) {
   const points = Array.from({ length: 21 }, () => ({ x: 0.5, y, z: 0 }));
@@ -133,6 +144,39 @@ test("calibrated pose classes separate 1–5 and persist as JSON only", () => {
   assert.equal(calibrationFromStorage("not json"), null);
 });
 
+test("legacy tight pose spreads tolerate realistic occlusion noise for sign 2", () => {
+  const calibration = profile();
+  for (const prototype of Object.values(calibration.pose.classes)) {
+    prototype.spread = prototype.spread.map(() => 0.035);
+    prototype.threshold = 1.35;
+  }
+  const base = poseFeatures(normalizeLandmarks(hand({ digit: 2 })));
+  const varied = base.map((value, index) => {
+    if (index % 3 === 2) return value + 0.18;
+    if ([3, 4, 6, 7].includes(index)) return value + 0.08;
+    return value;
+  });
+  const result = classifyPose(calibration.pose, varied);
+  assert.equal(result.digit, 2);
+  assert.equal(result.accepted, true, `${result.reason}: ${result.distance} / ${result.effectiveThreshold}`);
+});
+
+test("stable nearest pose removes threshold flicker without accepting far or wrong-view candidates", () => {
+  const stabilizer = new PoseStabilizer({ enterFrames: 5, enterMs: 90 });
+  const near = { digit: 2, accepted: false, confidence: 0.22, reason: "outside-calibration", distance: 1.2, effectiveThreshold: 1, thresholdRatio: 1.2, separation: 0.22 };
+  for (const timestamp of [0, 25, 50, 75]) assert.equal(stabilizer.update(near, timestamp).accepted, false);
+  const entered = stabilizer.update(near, 100);
+  assert.equal(entered.accepted, true);
+  assert.equal(entered.reason, "stable-nearest");
+
+  const boundary = { ...near, distance: 1.5, thresholdRatio: 1.5, separation: 0.08 };
+  assert.equal(stabilizer.update(boundary, 125).accepted, true);
+  const far = { ...near, distance: 1.8, thresholdRatio: 1.8, separation: 0.4 };
+  assert.equal(stabilizer.update(far, 150).accepted, false);
+  const wrongView = { ...near, reason: "wrong-hand-side", distance: 0.8, thresholdRatio: 0.8 };
+  assert.equal(stabilizer.update(wrongView, 175).accepted, false);
+});
+
 test("contact recognizer fires once, requires release, and rejects ambiguity", () => {
   // Use a direct, deterministic profile here to test the state machine alone.
   const recognizer = new ContactRecognizer({
@@ -170,6 +214,126 @@ test("replay triggers a calibrated downstroke once and requires upward recovery"
   assert.equal(recognizer.process({ timestamp: 276, landmarks: hand({ digit: 1, y: 0.82 }) }).hit?.digit, 1);
 });
 
+test("downstroke survives a brief rejected pose while the hand is moving", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, maxGapMs: 220, poseGraceMs: 180 });
+  const accepted = { digit: 4, accepted: true, confidence: 0.9 };
+  const rejected = { digit: 4, accepted: false, confidence: 0 };
+  for (const timestamp of [0, 20, 40, 60, 80]) {
+    assert.equal(stroke.update({ timestamp, palmY: 0.5, pose: accepted }).hit, null);
+  }
+  assert.equal(stroke.update({ timestamp: 100, palmY: 0.5, pose: rejected }).state, "armed");
+  const result = stroke.update({ timestamp: 116, palmY: 0.82, pose: accepted });
+  assert.equal(result.hit?.digit, 4);
+  assert.equal(result.reason, "hit");
+});
+
+test("changing a stable finger pose while dipped flows to the new note", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, flowFrames: 2, flowMs: 28 });
+  const pose = (digit) => ({ digit, accepted: true, confidence: 0.9 });
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose: pose(1) });
+  assert.equal(stroke.update({ timestamp: 116, palmY: 0.82, pose: pose(1) }).hit?.digit, 1);
+  assert.equal(stroke.update({ timestamp: 132, palmY: 0.82, pose: pose(2) }).hit, null);
+  const flowed = stroke.update({ timestamp: 164, palmY: 0.82, pose: pose(2) });
+  assert.equal(flowed.hit?.digit, 2);
+  assert.equal(flowed.hit?.flow, true);
+  assert.equal(flowed.reason, "flow-note");
+});
+
+test("a dipped note survives shape mismatch and flows after a persistent closest-sign candidate", () => {
+  const stroke = new DownstrokeRecognizer({
+    stableFrames: 3, stableMs: 40, candidateFlowFrames: 6, candidateFlowMs: 110,
+  });
+  const accepted = (digit) => ({ digit, accepted: true, confidence: 0.9, reason: "accepted" });
+  const closest = { digit: 2, accepted: false, confidence: 0.31, reason: "outside-calibration", thresholdRatio: 1.2, separation: 0.18 };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose: accepted(1) });
+  assert.equal(stroke.update({ timestamp: 116, palmY: 0.82, pose: accepted(1) }).hit?.digit, 1);
+  for (const timestamp of [140, 165, 190, 215, 240]) {
+    const transition = stroke.update({ timestamp, palmY: 0.82, pose: closest });
+    assert.equal(transition.hit, null);
+    assert.equal(transition.state, "locked");
+  }
+  const flowed = stroke.update({ timestamp: 265, palmY: 0.82, pose: closest });
+  assert.equal(flowed.hit?.digit, 2);
+  assert.equal(flowed.hit?.flow, true);
+  assert.equal(flowed.state, "locked");
+});
+
+test("a far closest candidate cannot flow a dipped note from separation confidence alone", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, candidateFlowFrames: 6, candidateFlowMs: 110 });
+  const accepted = { digit: 1, accepted: true, confidence: 0.9, reason: "accepted" };
+  const far = { digit: 2, accepted: false, confidence: 0.4, reason: "outside-calibration", thresholdRatio: 2.1, separation: 0.35 };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose: accepted });
+  assert.equal(stroke.update({ timestamp: 116, palmY: 0.82, pose: accepted }).hit?.digit, 1);
+  for (const timestamp of [140, 165, 190, 215, 240, 265, 290]) {
+    const result = stroke.update({ timestamp, palmY: 0.82, pose: far });
+    assert.equal(result.hit, null);
+    assert.equal(result.state, "locked");
+  }
+});
+
+test("pose ambiguity cannot release a dipped note, but upward recovery still does", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, poseGraceMs: 80 });
+  const accepted = { digit: 1, accepted: true, confidence: 0.9 };
+  const rejected = { digit: null, accepted: false, confidence: 0, reason: "ambiguous-pose" };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose: accepted });
+  assert.equal(stroke.update({ timestamp: 116, palmY: 0.82, pose: accepted }).state, "locked");
+  for (const timestamp of [180, 260, 340]) {
+    assert.equal(stroke.update({ timestamp, palmY: 0.82, pose: rejected }).state, "locked");
+  }
+  assert.equal(stroke.update({ timestamp: 420, palmY: 0.45, pose: rejected }).state, "neutral");
+});
+
+test("a missing locked hand expires after the reacquisition window", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, maxReacquireMs: 460 });
+  const pose = { digit: 1, accepted: true, confidence: 0.9 };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose });
+  stroke.update({ timestamp: 116, palmY: 0.82, pose });
+  assert.equal(stroke.markMissing(140).state, "locked");
+  const expired = stroke.markMissing(620);
+  assert.equal(expired.state, "neutral");
+  assert.equal(expired.reason, "hand-gap-timeout");
+});
+
+test("one missing detector frame does not disarm a downstroke", () => {
+  const recognizer = new SignSpellRecognizer(profile());
+  for (const timestamp of [0, 20, 40, 80, 100]) {
+    recognizer.process({ timestamp, landmarks: hand({ digit: 2 }) });
+  }
+  assert.equal(recognizer.process({ timestamp: 108, landmarks: null }).hit, null);
+  const reacquired = recognizer.process({ timestamp: 116, landmarks: hand({ digit: 2, y: 0.9 }) }).hit;
+  assert.equal(reacquired?.digit, 2);
+  assert.equal(reacquired?.reacquired, true);
+  assert.equal(reacquired?.source, "downstroke");
+});
+
+test("armed palm position survives a longer detector dropout and commits lower on reacquisition", () => {
+  const stroke = new DownstrokeRecognizer({
+    stableFrames: 3,
+    stableMs: 40,
+    minDisplacement: 0.08,
+    maxGapMs: 100,
+    maxReacquireMs: 460,
+  });
+  const pose = { digit: 5, accepted: true, confidence: 0.9 };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose });
+  assert.equal(stroke.markMissing(105).reason, "armed-hand-gap");
+  stroke.markMissing(180);
+  const result = stroke.update({ timestamp: 280, palmY: 0.68, pose });
+  assert.equal(result.reason, "reacquired-stroke");
+  assert.equal(result.hit?.digit, 5);
+  assert.equal(result.hit?.reacquired, true);
+});
+
+test("reacquisition does not invent a stroke when the armed hand returns level or higher", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, minDisplacement: 0.08 });
+  const pose = { digit: 3, accepted: true, confidence: 0.9 };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose });
+  stroke.markMissing(100);
+  const result = stroke.update({ timestamp: 150, palmY: 0.48, pose });
+  assert.equal(result.hit, null);
+  assert.notEqual(result.reason, "reacquired-stroke");
+});
+
 test("contact landmark replay maps thumb contacts to 6–9", () => {
   const calibration = profile();
   const recognizer = new SignSpellRecognizer(calibration);
@@ -179,6 +343,89 @@ test("contact landmark replay maps thumb contacts to 6–9", () => {
   const event = recognizer.process({ timestamp: 20, landmarks: hand({ digit: 1, contact: 6 }) }).hit;
   assert.equal(event?.digit, 6);
   assert.equal(event?.source, "contact");
+});
+
+test("rapid contacts release early and flow directly between fingertips", () => {
+  const recognizer = new ContactRecognizer({
+    valid: true,
+    contacts: Object.fromEntries([6, 7, 8, 9].map((digit) => [digit, { threshold: 0.2, release: 0.4, minClosingSpeed: 0.05 }])),
+  });
+  recognizer.update({ timestamp: 0, distances: { 6: 0.8, 7: 0.8, 8: 0.8, 9: 0.8 } });
+  assert.equal(recognizer.update({ timestamp: 20, distances: { 6: 0.1, 7: 0.8, 8: 0.8, 9: 0.8 } }).hit?.digit, 6);
+  recognizer.update({ timestamp: 35, distances: { 6: 0.34, 7: 0.8, 8: 0.8, 9: 0.8 } });
+  assert.equal(recognizer.update({ timestamp: 50, distances: { 6: 0.5, 7: 0.1, 8: 0.8, 9: 0.8 } }).hit?.digit, 7);
+  recognizer.update({ timestamp: 65, distances: { 6: 0.8, 7: 0.32, 8: 0.8, 9: 0.8 } });
+  assert.equal(recognizer.update({ timestamp: 80, distances: { 6: 0.8, 7: 0.1, 8: 0.8, 9: 0.8 } }).hit?.digit, 7);
+});
+
+test("contact trajectory predicts a committed fingertip tap before threshold crossing", () => {
+  const recognizer = new ContactRecognizer({
+    valid: true,
+    contacts: Object.fromEntries([6, 7, 8, 9].map((digit) => [digit, { threshold: 0.2, release: 0.5, minClosingSpeed: 0.05 }])),
+  });
+  let predicted = null;
+  for (const [timestamp, distance] of [[0, 0.7], [16, 0.62], [32, 0.48], [48, 0.34]]) {
+    const distances = { 6: distance, 7: 0.8, 8: 0.8, 9: 0.8 };
+    const result = recognizer.update({ timestamp, distances, confidence: 0.95, latencyMs: 35 });
+    predicted ||= result.hit;
+  }
+  assert.equal(predicted?.digit, 6);
+  assert.equal(predicted?.predicted, true);
+  assert.ok(predicted.leadMs > 0 && predicted.leadMs <= 55);
+});
+
+test("contact predictor rejects hover jitter and an aborted approach", () => {
+  const recognizer = new ContactRecognizer({
+    valid: true,
+    contacts: Object.fromEntries([6, 7, 8, 9].map((digit) => [digit, { threshold: 0.2, release: 0.5, minClosingSpeed: 0.05 }])),
+  });
+  const hits = [];
+  for (const [timestamp, distance] of [[0, 0.7], [16, 0.61], [32, 0.49], [48, 0.38], [64, 0.41], [80, 0.39], [96, 0.42]]) {
+    const result = recognizer.update({
+      timestamp,
+      distances: { 6: distance, 7: 0.8, 8: 0.8, 9: 0.8 },
+      confidence: 0.95,
+      latencyMs: 35,
+    });
+    if (result.hit) hits.push(result.hit);
+  }
+  assert.deepEqual(hits, []);
+});
+
+test("downstroke trajectory can commit on a forecast crossing", () => {
+  const recognizer = new DownstrokeRecognizer({
+    stableFrames: 3,
+    stableMs: 40,
+    neutralVelocity: 0.12,
+    strokeVelocity: 0.75,
+    minDisplacement: 0.08,
+  });
+  const pose = { digit: 3, accepted: true, confidence: 0.9 };
+  let predicted = null;
+  for (const [timestamp, palmY] of [[0, 0.5], [20, 0.5], [40, 0.5], [60, 0.5], [80, 0.5], [100, 0.515], [116, 0.54], [132, 0.575], [148, 0.62]]) {
+    const result = recognizer.update({ timestamp, palmY, pose, latencyMs: 35 });
+    predicted ||= result.hit;
+  }
+  assert.equal(predicted?.digit, 3);
+  assert.equal(predicted?.predicted, true);
+  assert.ok(predicted.leadMs > 0 && predicted.leadMs <= 55);
+});
+
+test("downstroke predictor does not fire on drift or a shallow aborted dip", () => {
+  const recognizer = new DownstrokeRecognizer({
+    stableFrames: 3,
+    stableMs: 40,
+    neutralVelocity: 0.12,
+    strokeVelocity: 0.75,
+    minDisplacement: 0.08,
+  });
+  const pose = { digit: 2, accepted: true, confidence: 0.9 };
+  const hits = [];
+  for (const [timestamp, palmY] of [[0, 0.5], [20, 0.5], [40, 0.5], [60, 0.5], [80, 0.5], [100, 0.506], [120, 0.513], [140, 0.519], [160, 0.516], [180, 0.51]]) {
+    const result = recognizer.update({ timestamp, palmY, pose, latencyMs: 35 });
+    if (result.hit) hits.push(result.hit);
+  }
+  assert.deepEqual(hits, []);
 });
 
 test("recognizer exposes derived hand, contact, pose, and downstroke diagnostics before calibration", () => {
@@ -209,6 +456,19 @@ test("worker controller replays landmark frames without a webcam or detector", a
   assert.ok(Number.isFinite(diagnostic.latency.recognitionMs));
 });
 
+test("recognition-only worker initialization never loads a MediaPipe detector", async () => {
+  const messages = [];
+  const controller = createVisionWorkerController({
+    postMessage: (message) => messages.push(message),
+    loadDetector: async () => { throw new Error("detector should remain on the page thread"); },
+  });
+  await controller.handle({ type: "init", recognitionOnly: true, profile: profile() });
+  await controller.handle({ type: "replay-frame", frame: { timestamp: 0, landmarks: hand({ digit: 1 }) } });
+  assert.equal(messages.find((message) => message.type === "ready")?.detectorReady, true);
+  assert.equal(messages.some((message) => message.type === "error"), false);
+  assert.equal(messages.some((message) => message.type === "recognition"), true);
+});
+
 test("profile reports completed gestures without discarding their usable samples", () => {
   const partial = buildCalibrationProfile({
     handedness: "right",
@@ -232,6 +492,16 @@ test("orientation learned in calibration separates knuckles poses from palm-cont
   const rejected = classifyPose(calibration.pose, poseFeatures(backNormalized), backNormalized.cameraFacing);
   assert.equal(rejected.accepted, false);
   assert.equal(rejected.reason, "wrong-hand-side");
+});
+
+test("straight-finger angles outweigh noisy hidden fingertip positions", () => {
+  const calibration = profile();
+  const noisy = poseFeatures(normalizeLandmarks(hand({ digit: 4 }))).map((value, index) => (
+    index % 3 === 2 ? value + 0.1 : value
+  ));
+  const result = classifyPose(calibration.pose, noisy);
+  assert.equal(result.digit, 4);
+  assert.equal(result.accepted, true, result.reason);
 });
 
 test("contacts can require the calibrated palm-facing view", () => {
@@ -351,6 +621,8 @@ test("worker validates a pose checkpoint against the learned number-pose hand si
   await controller.handle({ type: "calibration-capture", step: "pose-2", glyph: "2", durationMs: 900, replace: true });
   const oppositeSide = hand({ digit: 2 }).map((point) => ({ ...point, x: 1 - point.x }));
   for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 401_000 + index * 16, landmarks: oppositeSide } });
+  await controller.handle({ type: "calibration-capture", step: "pose-3", glyph: "3", durationMs: 900, replace: true });
+  for (let index = 0; index < 6; index += 1) await controller.handle({ type: "replay-frame", frame: { timestamp: 402_000 + index * 16, landmarks: hand({ digit: 3 }) } });
   await controller.handle({ type: "calibration-export" });
 
   const samples = messages.filter((message) => message.type === "calibration-sample");
@@ -358,9 +630,11 @@ test("worker validates a pose checkpoint against the learned number-pose hand si
   const second = samples.find((message) => message.step === "pose-2");
   assert.equal(second?.summary.complete, false);
   assert.match(second?.summary.reason || "", /same knuckles-facing side/);
+  assert.equal(samples.find((message) => message.step === "pose-3")?.summary.complete, true);
   const draft = messages.findLast((message) => message.type === "calibration-draft").draft;
   assert.equal(draft.data.completed.pose[1], true);
   assert.equal(draft.data.completed.pose[2], false);
+  assert.equal(draft.data.completed.pose[3], true);
 });
 
 test("worker rejects a touch checkpoint whose saved open and closed positions overlap", async () => {

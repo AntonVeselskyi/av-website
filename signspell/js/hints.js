@@ -35,12 +35,14 @@ function hintFor(target) {
   if (target.matches(".visual-mode")) return `Switches the visualizer to ${target.textContent.trim().toLowerCase()} mode.`;
   if (target.matches(".dialog-close")) return "Closes this dialog without discarding already saved calibration sections.";
   if (target.matches(".lane-select")) return "Selects and outlines this line. Gestures, keyboard digits, and Conjure Loop target the selected line.";
-  if (target.matches(".lane-record")) return "Records three loop passes: immediately if stopped, or from the next bar if playing. Each pass folds into the same editable loop; press again to stop early.";
+  if (target.matches(".lane-record")) return "Records one loop pass: immediately if stopped, or from the next bar if playing. Gesture, click pads, or press 1-9; press again to stop.";
   if (target.matches(".lane-overdub")) return "Keeps existing events and adds a new recording pass on top.";
   if (target.matches(".lane-mute")) return "Silences this line during playback without deleting its events.";
   if (target.matches(".lane-solo")) return "Plays only this line while solo is active.";
   if (target.matches(".lane-undo")) return "Restores this line to the state before its latest record or clear pass.";
   if (target.matches(".lane-clear")) return "Immediately silences this line and removes all its events. Undo restores the previous event pass.";
+  if (target.matches(".lane-ring")) return "LET RING: allows this line's tails to overlap. Turn it off to choke the previous voice on every new note.";
+  if (target.matches(".lane-reverb")) return "Saved reverb send for this line only.";
   if (target.matches(".lane-events")) return "Shows recorded hits. Drag a hit left or right to change its timing.";
   if (target.matches(".loop-event")) return "Recorded note. Drag it left or right to retime it, or press Delete to remove it.";
   if (target.matches(".focused-roll-key")) return `Plays gesture ${target.closest(".focused-roll-row")?.dataset.digit || target.textContent.trim()} on the selected line.`;

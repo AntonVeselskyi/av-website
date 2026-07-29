@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { canSendVisionFrame, bitmapFailureSummary, visionPipelineSummary } from "../../js/vision/pipeline-state.js";
+import { canSendVisionFrame, bitmapFailureSummary, visionDetectorFailureMessage, visionPipelineSummary } from "../../js/vision/pipeline-state.js";
 
 test("vision frames wait for a ready detector and decoded video", () => {
   const worker = {};
@@ -16,4 +16,9 @@ test("pipeline snapshot is media-free and bitmap failures are bounded summaries"
   const failure = bitmapFailureSummary(new Error(`bad frame\n${"x".repeat(200)}`));
   assert.match(failure, /^camera frame capture failed: bad frame x+/);
   assert.ok(failure.length <= 150);
+});
+
+test("detector failures keep the camera state distinct and actionable", () => {
+  assert.equal(visionDetectorFailureMessage("ModuleFactory not set"), "Camera is live. Vision detector failed: ModuleFactory not set. Press CAMERA RETRY.");
+  assert.match(visionDetectorFailureMessage(new Error("bad\nworker")), /bad worker/);
 });

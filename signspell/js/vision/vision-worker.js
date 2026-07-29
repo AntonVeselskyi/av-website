@@ -1,5 +1,5 @@
-import { SignSpellRecognizer } from "./recognizer.js?v=4";
-import { buildCalibrationProfile } from "./calibration.js?v=2";
+import { SignSpellRecognizer } from "./recognizer.js?v=11";
+import { buildCalibrationProfile } from "./calibration.js?v=4";
 import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.js?v=2";
 
 /**
@@ -40,6 +40,14 @@ function firstHand(result) {
     handedness: handednessEntry?.categoryName || handednessEntry?.displayName || handednessEntry?.label || null,
     confidence: Number.isFinite(handednessEntry?.score) ? handednessEntry.score : 1,
   };
+}
+
+export function handViewsMatch(first, second) {
+  return !Number.isFinite(first) || !Number.isFinite(second) || first * second > 0;
+}
+
+export function handViewsOppose(first, second) {
+  return !Number.isFinite(first) || !Number.isFinite(second) || first * second < 0;
 }
 
 async function defaultLoadDetector(config) {
@@ -106,21 +114,24 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
     // learned, so this works with mirrored front cameras and either hand.
     if (Math.abs(center) < 0.12) return { valid: false, reason: "turn the hand more clearly toward the camera" };
     if ((percentile(deviations, 0.9) ?? Infinity) > 0.34) return { valid: false, reason: "hold one hand-facing direction steadily" };
-    if (Number.isFinite(expectedView) && center * expectedView >= -0.02) {
+    if (!handViewsOppose(center, expectedView)) {
       return { valid: false, reason: "use the opposite hand-facing side for this checkpoint" };
     }
     return { valid: true, center };
   };
   const poseViewReference = (exceptGlyph = null) => {
     const samples = [1, 2, 3, 4, 5]
-      .filter((digit) => String(digit) !== String(exceptGlyph))
+      .filter((digit) => String(digit) !== String(exceptGlyph) && calibrationData.completed.pose?.[digit] === true)
       .flatMap((digit) => calibrationData.poseSamples[digit] || []);
     return viewReference(samples);
   };
   const contactViewReference = (exceptGlyph = null, exceptPhase = null) => {
     const samples = [6, 7, 8, 9].flatMap((digit) => {
       const source = calibrationData.contactSamples[digit] || {};
-      return ["open", "closed"].flatMap((phase) => String(digit) === String(exceptGlyph) && phase === exceptPhase ? [] : (source[phase] || []));
+      return ["open", "closed"].flatMap((phase) => {
+        if (String(digit) === String(exceptGlyph) && phase === exceptPhase) return [];
+        return calibrationData.completed.contactPhase?.[digit]?.[phase] === true ? (source[phase] || []) : [];
+      });
     });
     return viewReference(samples);
   };
@@ -153,8 +164,7 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
       const quality = captureViewQuality(entries, null);
       // Number poses are all taken with the same side of the hand facing the
       // camera. For the first one we learn that side; later poses must agree.
-      const sameSide = !Number.isFinite(reference) || !Number.isFinite(quality.center)
-        || quality.center * reference > 0.02;
+      const sameSide = handViewsMatch(quality.center, reference);
       const valid = count >= 5 && quality.valid && sameSide;
       const reason = !sameSide ? "keep the same knuckles-facing side used for the other number poses" : quality.reason || null;
       calibrationData.completed.pose[glyph] = valid;
@@ -172,8 +182,7 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
       // hand side. This remains relative rather than hard-coding a camera
       // sign, preserving mirrored-camera and left-hand support.
       const quality = captureViewQuality(phaseEntries, Number.isFinite(poseReference) ? poseReference : null);
-      const samePalmSide = !Number.isFinite(otherContactReference) || !Number.isFinite(quality.center)
-        || quality.center * otherContactReference > 0.02;
+      const samePalmSide = handViewsMatch(quality.center, otherContactReference);
       const closedHigh = percentile(samples.closed.map((entry) => entry.value), 0.9);
       const openLow = percentile(samples.open.map((entry) => entry.value), 0.1);
       const hasGap = open >= 5 && closed >= 5 ? closedHigh < openLow : true;
@@ -242,7 +251,12 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
   const process = (frame, metrics = null) => {
     const recognitionStarted = performance.now();
     collectCalibration(frame);
-    const result = recognizer.process(frame);
+    const result = recognizer.process({
+      ...frame,
+      // Detection happens before this worker sees the landmarks. The temporal
+      // decoder adds a bounded Web Audio allowance to this measured delay.
+      latencyMs: Number.isFinite(metrics?.inferenceMs) ? metrics.inferenceMs : frame.latencyMs,
+    });
     const recognitionMs = performance.now() - recognitionStarted;
     const frameAgeMs = Number.isFinite(frame.timestamp) ? performance.now() - frame.timestamp : null;
     const latency = Object.freeze({
@@ -277,9 +291,11 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
             recognizer = new SignSpellRecognizer(message.profile || null);
             selectedHandedness = String(message.handedness || message.profile?.handedness || "right").toLowerCase();
             recognizer.setHandedness(selectedHandedness);
-            detector = await loadDetector(message.detectorConfig);
+            // MediaPipe's WASM loader relies on a classic-script global and is
+            // incompatible with module workers. Production sends landmarks.
+            detector = message.recognitionOnly === true ? null : await loadDetector(message.detectorConfig);
             disposed = false;
-            emit("ready", { detectorReady: Boolean(detector), calibrationReady: Boolean(recognizer.profile) });
+            emit("ready", { detectorReady: message.recognitionOnly === true || Boolean(detector), calibrationReady: Boolean(recognizer.profile) });
             emitFrameReady();
             break;
           }
@@ -402,7 +418,8 @@ export function createVisionWorkerController({ postMessage, loadDetector = defau
             emit("reset");
             break;
           case "replay-frame":
-            process(message.frame || message);
+            try { process(message.frame || message, message.metrics || null); }
+            finally { emitFrameReady(); }
             break;
           case "frame": {
             if (busy) {

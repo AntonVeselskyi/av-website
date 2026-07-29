@@ -20,3 +20,13 @@ export function bitmapFailureSummary(error) {
     .slice(0, 120);
   return `camera frame capture failed: ${detail || "unknown capture error"}`;
 }
+
+/** A persistent, actionable message for a healthy camera with a failed detector. */
+export function visionDetectorFailureMessage(error) {
+  const detail = String(error?.message || error || "unknown detector error")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 140);
+  return `Camera is live. Vision detector failed: ${detail || "unknown detector error"}. Press CAMERA RETRY.`;
+}

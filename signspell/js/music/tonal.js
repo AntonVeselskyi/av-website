@@ -5,12 +5,18 @@ export const GAMMAS = Object.freeze({
   aeolian: Object.freeze({ id: 'aeolian', label: 'Aeolian / Natural Minor', intervals: [0, 2, 3, 5, 7, 8, 10] }),
   phrygian: Object.freeze({ id: 'phrygian', label: 'Phrygian', intervals: [0, 1, 3, 5, 7, 8, 10] }),
   harmonicMinor: Object.freeze({ id: 'harmonicMinor', label: 'Harmonic Minor', intervals: [0, 2, 3, 5, 7, 8, 11] }),
+  dorian: Object.freeze({ id: 'dorian', label: 'Dorian', intervals: [0, 2, 3, 5, 7, 9, 10] }),
 });
 
 export const HARMONY_MODES = Object.freeze({
   STRICT_CHORD: 'strictChord',
   SAFE_SCALE: 'safeScale',
   FREE_SCALE: 'freeScale',
+});
+
+export const NOTE_ORDERS = Object.freeze({
+  ASCENDING: 'ascending',
+  DESCENDING: 'descending',
 });
 
 const PITCH_CLASSES = Object.freeze({ C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 });
@@ -40,6 +46,8 @@ export function createTonalScene(overrides = {}) {
   if (!GAMMAS[gammaId]) throw new RangeError(`Unknown gamma: ${gammaId}`);
   const harmonyMode = overrides.harmonyMode ?? HARMONY_MODES.STRICT_CHORD;
   if (!Object.values(HARMONY_MODES).includes(harmonyMode)) throw new RangeError(`Unknown harmony mode: ${harmonyMode}`);
+  const noteOrder = overrides.noteOrder ?? NOTE_ORDERS.ASCENDING;
+  if (!Object.values(NOTE_ORDERS).includes(noteOrder)) throw new RangeError(`Unknown note order: ${noteOrder}`);
   const progression = overrides.progression ?? DEFAULT_PROGRESSION;
   if (!Array.isArray(progression) || !progression.length || progression.some((degree) => !Number.isInteger(degree) || degree < 1)) {
     throw new TypeError('Progression must contain one-based positive scale degrees.');
@@ -48,7 +56,7 @@ export function createTonalScene(overrides = {}) {
   const requestedBaseMidi = Number(overrides.baseMidi ?? 36);
   if (!Number.isFinite(requestedBpm) || !Number.isFinite(requestedBaseMidi)) throw new TypeError('BPM and base MIDI must be finite numbers.');
   return Object.freeze({
-    root: pitchClass(overrides.root ?? 'E'), gamma: gammaId, harmonyMode, progression: Object.freeze([...progression]),
+    root: pitchClass(overrides.root ?? 'E'), gamma: gammaId, harmonyMode, noteOrder, progression: Object.freeze([...progression]),
     bpm: Math.min(200, Math.max(60, requestedBpm)), baseMidi: Math.round(requestedBaseMidi),
   });
 }

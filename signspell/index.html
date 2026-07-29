@@ -9,10 +9,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=7">
+  <link rel="stylesheet" href="css/sign-spell.css?v=14">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
+  <div class="site-backdrop" aria-hidden="true">
+    <div class="backdrop-breakout"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="backdrop-serial"><span>001101 // SELF NULL // CHANNEL 06</span><span>NO GOD IN THE BUFFER // 808:140</span><span>HAND BUS // LOCAL SIGNAL // 0009</span></div>
+    <div class="backdrop-pantheon"><b></b><b></b><b></b><b></b><b></b><i class="sigil-a"></i><i class="sigil-b"></i></div>
+    <div class="backdrop-terminal">NO CARRIER<br>MEMORY IS A LOOP<br>PALM // WIRE // RITUAL</div>
+  </div>
   <div class="boot-screen" id="boot-screen">
     <div class="boot-sigil" aria-hidden="true">⸸</div>
     <p class="eyebrow">PERSONAL RITUAL INSTRUMENT // CAMERA STAYS LOCAL</p>
@@ -48,6 +54,7 @@
         <div class="camera-stage" id="camera-stage">
           <video id="camera-feed" playsinline muted></video>
           <canvas id="hand-overlay" aria-hidden="true"></canvas>
+          <div class="serial-number-filter" aria-hidden="true"><span>01 0011 101 0001 11</span><span>7 3 9 2 5 8 1 4 6</span><span>110010 / PSY-NET / 001011</span></div>
           <div class="camera-reticle" aria-hidden="true"></div>
           <div class="gesture-hud">
             <output id="gesture-digit" aria-label="Detected hand number">–</output>
@@ -67,8 +74,8 @@
           </div>
           <footer><span>POSE <output id="hand-diagnostic-pose">--</output></span><span>CONTACT <output id="hand-diagnostic-contact">--</output></span><span>STROKE <output id="hand-diagnostic-stroke">--</output></span><span>FRAME <output id="hand-diagnostic-frame">--</output></span></footer>
         </section>
-        <section class="serial-diagnostics" aria-labelledby="serial-diagnostics-title">
-          <header><h3 id="serial-diagnostics-title">LOCAL SERIAL / SAFE EVENT LOG</h3><span>NO MEDIA OR LANDMARKS</span></header>
+        <section class="serial-diagnostics" id="serial-diagnostics" aria-labelledby="serial-diagnostics-title" data-expanded="false">
+          <header><h3 id="serial-diagnostics-title">LOCAL SERIAL / SAFE EVENT LOG</h3><button id="serial-log-toggle" type="button" aria-controls="serial-diagnostic-log" aria-expanded="false">SHOW LOG</button></header>
           <pre id="serial-diagnostic-log" tabindex="0" aria-label="Local diagnostic event log">[--:--:--] SYSTEM  awaiting signal</pre>
           <footer>
             <span>LOCAL ONLY · LAST 140 EVENTS</span>
@@ -85,6 +92,25 @@
         </footer>
       </article>
 
+      <section class="panel loop-pedal-panel" id="loop-pedal" aria-labelledby="loop-pedal-title">
+        <header class="panel-title"><h2 id="loop-pedal-title">LOOP PEDAL / ACTIVE LINE</h2><span>A // S // D</span></header>
+        <div class="loop-pedal-display" aria-live="polite">
+          <span id="pedal-line">LINE 01 / 0 HITS</span>
+          <strong id="pedal-state">EMPTY / READY</strong>
+        </div>
+        <div class="loop-pedal-bank">
+          <button class="pedal-switch pedal-record" id="pedal-record" type="button" aria-pressed="false" data-hint="A: starts or stops recording on the selected line. If it already has notes, the new pass overdubs them.">
+            <span class="pedal-key">A</span><i aria-hidden="true"></i><strong>RECORD</strong><small>REC / OVERDUB</small>
+          </button>
+          <button class="pedal-switch pedal-transport" id="pedal-transport" type="button" aria-pressed="false" data-hint="S: starts or stops every saved loop while keeping the selected line intact.">
+            <span class="pedal-key">S</span><i aria-hidden="true"></i><strong>PLAY</strong><small>PLAY / STOP</small>
+          </button>
+          <button class="pedal-switch pedal-undo" id="pedal-undo" type="button" aria-pressed="false" data-hint="D: tap to undo the selected line's last recording pass. Hold for 0.8 seconds to clear and silence it; the clear can still be undone.">
+            <span class="pedal-key">D</span><i aria-hidden="true"></i><strong>UNDO</strong><small>HOLD: CLEAR</small>
+          </button>
+        </div>
+      </section>
+
       <article class="panel visualizer-panel" aria-labelledby="visualizer-title">
         <header class="panel-title"><h2 id="visualizer-title">THE WIRED / MASTER VISION</h2><span id="visualizer-label">WIRED TUNNEL</span></header>
         <canvas id="visualizer-canvas" aria-label="Audio-reactive visualization"></canvas>
@@ -92,17 +118,18 @@
           <span>present day</span><span>present time</span><span id="floating-diagnostic">signal absent</span>
         </div>
         <footer class="panel-footer visualizer-controls">
-          <button class="visual-mode active" data-mode="wired" type="button">WIRED</button>
+          <button class="visual-mode active" data-mode="wired" type="button">WIRED 3D</button>
           <button class="visual-mode" data-mode="fire" type="button">FIRE</button>
           <button class="visual-mode" data-mode="cruciform" type="button">SCOPE</button>
           <button class="visual-mode" data-mode="shrine" type="button">SHRINE</button>
+          <button class="visual-mode" data-mode="orbit" type="button">ORBIT</button>
           <button id="fullscreen-visualizer" type="button">FULLSCREEN</button>
         </footer>
       </article>
 
       <section class="panel focused-editor-panel" aria-labelledby="focused-editor-title">
         <header class="panel-title focused-editor-titlebar"><h2 id="focused-editor-title">ACTIVE LINE / PIANO ROLL</h2><span id="focused-lane-summary">SELECT A LINE BELOW</span></header>
-        <div class="focused-roll-legend" aria-hidden="true"><span>GESTURE / NOTE</span><span>LOOP GRID — 3 RECORD PASSES FOLD HERE</span></div>
+        <div class="focused-roll-legend" aria-hidden="true"><span>GESTURE / NOTE</span><span>ONE LOOP PASS — DRAG HITS TO RETIME</span></div>
         <div class="focused-roll" id="focused-lane-roll" aria-label="Selected loop line piano roll" aria-live="polite">
           <div class="focused-roll-row" data-digit="9"><button class="focused-roll-key" type="button" aria-label="Play gesture 9">9</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 9</span></div></div>
           <div class="focused-roll-row" data-digit="8"><button class="focused-roll-key" type="button" aria-label="Play gesture 8">8</button><div class="focused-roll-track"><span class="focused-roll-note">GESTURE 8</span></div></div>
@@ -117,7 +144,9 @@
         <footer class="focused-editor-footer">
           <span id="focused-roll-empty">SELECT A LINE, THEN ARM ● TO RECORD GESTURES OR KEYS 1–9</span>
           <div class="focused-editor-controls">
-            <button id="focused-record" type="button" data-hint="Records three passes on the selected line; each pass folds into this loop grid.">●</button>
+            <button id="focused-record" type="button" data-hint="Records one loop pass on the selected line.">●</button>
+            <button id="step-input" type="button" aria-pressed="false" data-hint="STEP mode: every recognized hand sign writes the next grid note without live recording.">STEP</button>
+            <button id="record-next" type="button" data-hint="Shortcut N: record one loop on this line, then spawn and select a matching new line.">REC→NEW</button>
             <button id="focused-overdub" type="button" data-hint="Adds a new pass without erasing existing hits.">OVR</button>
             <button id="focused-mute" type="button" data-hint="Mutes and immediately silences the selected line.">M</button>
             <button id="focused-solo" type="button" data-hint="Solos the selected line and silences the others.">S</button>
@@ -130,21 +159,23 @@
       <aside class="panel sound-panel" aria-labelledby="sound-title">
         <header class="panel-title"><h2 id="sound-title">GRIMOIRE / SOUND</h2><span>UNOFFICIAL ORIGINAL SYNTHESIS</span></header>
         <div class="control-stack">
-          <label>VIBE COLLECTION<select id="collection-select"></select></label>
+          <label>TRACK PRESET<select id="collection-select"></select></label>
           <label>INSTRUMENT<select id="instrument-select"></select></label>
           <div class="two-controls"><label>ROOT<select id="root-select"></select></label><label>GAMMA<select id="gamma-select"></select></label></div>
           <label>HARMONY<select id="harmony-select"><option value="strictChord">HARMONY LOCK</option><option value="safeScale">SAFE SCALE</option><option value="freeScale">FREE GAMMA</option></select></label>
+          <label>NOTE ORDER<select id="note-order-select" data-hint="Changes pitch direction for number keys and hand signs. Drum voices keep their normal layout."><option value="ascending">1 LOW → 9 HIGH</option><option value="descending">9 LOW → 1 HIGH</option></select></label>
           <div class="mapping-grid" id="gesture-map" aria-label="Gesture note mapping"></div>
           <div class="fader"><label for="master-volume">MASTER</label><input id="master-volume" type="range" min="0" max="1" step="0.01" value="0.72"><output>72</output></div>
           <div class="fader"><label for="sub-boost">SUB</label><input id="sub-boost" type="range" min="0" max="1" step="0.01" value="0.42"><output>42</output></div>
           <div class="fader"><label for="distortion">GRIT</label><input id="distortion" type="range" min="0" max="1" step="0.01" value="0.34"><output>34</output></div>
+          <div class="fader"><label for="master-reverb">REVERB</label><input id="master-reverb" type="range" min="0" max="1" step="0.01" value="0.34" data-hint="Global reverb return. Each line sends its own saved amount into this space."><output>34</output></div>
           <button id="generate-loop" class="secondary-button" type="button">CONJURE LOOP INTO ACTIVE LINE</button>
         </div>
       </aside>
     </section>
 
     <section class="panel looper-panel" aria-labelledby="looper-title">
-      <header class="panel-title"><h2 id="looper-title">LOOP CEMETERY</h2><span>8 BAR-SYNCHRONIZED LINES</span><button id="export-wav" type="button">EXPORT WAV</button></header>
+      <header class="panel-title"><h2 id="looper-title">LOOP CEMETERY</h2><span id="lane-count">3 DYNAMIC LINES</span><div class="project-file-actions"><button id="export-project" type="button" data-hint="Downloads every line, note, instrument, mix setting, and vibe as a portable .sspell project.">SAVE .SSPELL</button><button id="restore-project" type="button" data-hint="Restores a saved .sspell project after validating it. Your webcam calibration stays on this device.">RESTORE</button><button id="export-wav" type="button">EXPORT WAV</button></div><input id="restore-project-file" type="file" accept=".sspell,application/json,application/vnd.signspell+json" hidden></header>
       <div class="timeline-ruler" id="timeline-ruler" aria-hidden="true"></div>
       <div class="loop-lanes" id="loop-lanes"></div>
     </section>
@@ -189,16 +220,20 @@
       <button class="lane-overdub" type="button" aria-label="Toggle overdub">OVR</button>
       <button class="lane-mute" type="button">M</button>
       <button class="lane-solo" type="button">S</button>
-      <label class="lane-length">LEN<select><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option></select></label>
+      <label class="lane-length">LEN<select><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="8">8</option><option value="16">16</option></select></label>
       <div class="lane-events" tabindex="0" aria-label="Editable loop events"><div class="lane-playhead"></div></div>
-      <input class="lane-gain" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Lane volume">
+      <div class="lane-mix">
+        <label>VOL<input class="lane-gain" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Lane volume"><output>82</output></label>
+        <label>REV<input class="lane-reverb" type="range" min="0" max="1" step="0.01" value="0.24" aria-label="Lane reverb send" data-hint="Saved reverb send for this line only."><output>24</output></label>
+      </div>
+      <button class="lane-ring" type="button" aria-pressed="true" data-hint="LET RING: allows this line's tails to overlap. Turn it off to choke the previous voice on every new note.">RING</button>
       <button class="lane-undo" type="button" aria-label="Undo last pass">↶</button>
       <button class="lane-clear" type="button">CLR</button>
     </article>
   </template>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/hints.js?v=3"></script>
-  <script type="module" src="js/app.js?v=9"></script>
+  <script type="module" src="js/hints.js?v=5"></script>
+  <script type="module" src="js/app.js?v=28"></script>
 </body>
 </html>

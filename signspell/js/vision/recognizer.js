@@ -1,8 +1,9 @@
 import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js?v=2";
-import { classifyPose } from "./pose-classifier.js?v=2";
-import { DownstrokeRecognizer } from "./downstroke.js";
-import { ContactRecognizer } from "./contacts.js?v=3";
-import { isCalibrationProfile } from "./calibration.js";
+import { classifyPose } from "./pose-classifier.js?v=4";
+import { PoseStabilizer } from "./pose-stabilizer.js?v=2";
+import { DownstrokeRecognizer } from "./downstroke.js?v=7";
+import { ContactRecognizer } from "./contacts.js?v=5";
+import { isCalibrationProfile } from "./calibration.js?v=4";
 
 /**
  * Browser-independent recognition core. Both the worker and test replays feed
@@ -20,6 +21,7 @@ export class SignSpellRecognizer {
     if (this.profile) this.handedness = this.profile.handedness;
     this.downstroke = this.profile ? new DownstrokeRecognizer(this.profile.downstroke) : null;
     this.contacts = this.profile ? new ContactRecognizer(this.profile.contacts) : null;
+    this.poseStabilizer = new PoseStabilizer();
   }
 
   setHandedness(handedness) {
@@ -29,6 +31,7 @@ export class SignSpellRecognizer {
   }
 
   reset() {
+    this.poseStabilizer?.reset();
     this.downstroke?.reset();
     this.contacts?.reset();
   }
@@ -36,8 +39,12 @@ export class SignSpellRecognizer {
   process(frame) {
     const normalized = normalizeLandmarks(frame?.landmarks, this.handedness);
     if (!normalized) {
-      this.reset();
-      return { hit: null, diagnostics: unavailableDiagnostics("hand-unavailable") };
+      // Release thumb contacts immediately. Downstrokes retain the last armed
+      // palm position so a hand that disappears at impact can commit when it
+      // reappears lower in the frame.
+      this.contacts?.reset();
+      const stroke = this.downstroke?.markMissing(frame?.timestamp) || null;
+      return { hit: null, diagnostics: unavailableDiagnostics("hand-unavailable", stroke) };
     }
     const confidence = Number.isFinite(frame.confidence) ? frame.confidence : 1;
     const distances = contactDistances(normalized);
@@ -50,17 +57,22 @@ export class SignSpellRecognizer {
         }),
       };
     }
-    const pose = classifyPose(this.profile.pose, poseFeatures(normalized), normalized.cameraFacing);
+    const pose = this.poseStabilizer.update(
+      classifyPose(this.profile.pose, poseFeatures(normalized), normalized.cameraFacing),
+      frame.timestamp,
+    );
     const contact = this.contacts.update({
       timestamp: frame.timestamp,
       distances,
       view: normalized.cameraFacing,
       confidence,
+      latencyMs: frame.latencyMs,
     });
     const stroke = this.downstroke.update({
       timestamp: frame.timestamp,
       palmY: normalized.palmScreenY,
       pose,
+      latencyMs: frame.latencyMs,
     });
     // Contacts take precedence; a thumb-contact pose must never also strike a
     // 1–5 note from incidental downward movement in the same video frame.
@@ -78,7 +90,7 @@ export class SignSpellRecognizer {
 
 function unavailablePose(reason) { return { digit: null, accepted: false, confidence: 0, reason }; }
 
-function unavailableDiagnostics(reason) {
+function unavailableDiagnostics(reason, stroke = null) {
   return Object.freeze({
     reason,
     hand: Object.freeze({ detected: false, confidence: 0 }),
@@ -86,7 +98,11 @@ function unavailableDiagnostics(reason) {
     fingertips: Object.freeze({ distances: null, contacts: Object.freeze({}) }),
     pose: Object.freeze(unavailablePose(reason)),
     contact: Object.freeze({ reason, states: Object.freeze({}) }),
-    downstroke: Object.freeze({ state: "unavailable", velocity: 0, reason }),
+    downstroke: Object.freeze({
+      state: stroke?.state || "unavailable",
+      velocity: Number.isFinite(stroke?.velocity) ? stroke.velocity : 0,
+      reason: stroke?.reason || reason,
+    }),
     palmScreenY: null,
   });
 }
@@ -107,6 +123,13 @@ export function createDiagnostics({ reason, normalized, confidence, distances, p
       release: Number.isFinite(settings?.release) ? settings.release : null,
       latched: Boolean(states[digit]),
       withinThreshold: settings && distance != null ? distance <= settings.threshold : null,
+      phase: contact?.predictions?.[digit]?.phase || (states[digit] ? "contact" : "open"),
+      predictedDistance: Number.isFinite(contact?.predictions?.[digit]?.predictedDistance)
+        ? contact.predictions[digit].predictedDistance : null,
+      timeToContact: Number.isFinite(contact?.predictions?.[digit]?.timeToContact)
+        ? contact.predictions[digit].timeToContact : null,
+      intentConfidence: Number.isFinite(contact?.predictions?.[digit]?.confidence)
+        ? contact.predictions[digit].confidence : 0,
     })];
   }));
   return Object.freeze({
@@ -122,6 +145,9 @@ export function createDiagnostics({ reason, normalized, confidence, distances, p
     downstroke: Object.freeze({
       state: stroke?.state || "unavailable",
       velocity: Number.isFinite(stroke?.velocity) ? stroke.velocity : 0,
+      predictedY: Number.isFinite(stroke?.predictedY) ? stroke.predictedY : null,
+      predictedVelocity: Number.isFinite(stroke?.predictedVelocity) ? stroke.predictedVelocity : null,
+      horizonMs: Number.isFinite(stroke?.horizonMs) ? stroke.horizonMs : null,
       reason: stroke?.reason || "profile-unavailable",
     }),
     palmScreenY: normalized.palmScreenY,

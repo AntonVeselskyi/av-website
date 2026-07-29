@@ -1,4 +1,4 @@
-import { barAtBeat, beatsPerBar, quantizeBeat } from './tonal.js?v=4';
+import { barAtBeat, beatsPerBar, quantizeBeat } from './tonal.js?v=5';
 
 export function secondsPerBeat(bpm) { return 60 / bpm; }
 export function loopLengthBeats(lane) { return Math.max(1, Math.round(lane.lengthBars ?? 1)) * beatsPerBar(); }

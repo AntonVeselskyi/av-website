@@ -1,21 +1,32 @@
 import { median, medianAbsoluteDeviation } from "./landmarks.js?v=2";
 
-const MIN_SPREAD = 0.035;
+const ANGLE_MIN_SPREAD = 0.055;
+const TIP_MIN_SPREAD = 0.10;
 const MIN_VIEW_SPREAD = 0.08;
+const ANGLE_WEIGHT = 1.55;
+const TIP_POSITION_WEIGHT = 0.22;
 
 function vectorDistance(vector, prototype, spread) {
+  let totalWeight = 0;
   const squares = vector.map((value, index) => {
-    const normalized = (value - prototype[index]) / Math.max(MIN_SPREAD, spread[index]);
-    return normalized * normalized;
+    // Every finger contributes two joint angles followed by a fingertip
+    // position. The angles remain trustworthy when a curled fingertip is
+    // partly hidden by the knuckles; MediaPipe's guessed tip position does
+    // not. Bias recognition toward which fingers are actually straight.
+    const weight = index % 3 === 2 ? TIP_POSITION_WEIGHT : ANGLE_WEIGHT;
+    totalWeight += weight;
+    const spreadFloor = index % 3 === 2 ? TIP_MIN_SPREAD : ANGLE_MIN_SPREAD;
+    const normalized = (value - prototype[index]) / Math.max(spreadFloor, Number(spread[index]) || 0);
+    return normalized * normalized * weight;
   });
-  return Math.sqrt(squares.reduce((total, value) => total + value, 0) / squares.length);
+  return Math.sqrt(squares.reduce((total, value) => total + value, 0) / totalWeight);
 }
 
 function vectorStats(samples) {
   const width = samples[0].length;
   const center = Array.from({ length: width }, (_, index) => median(samples.map((sample) => sample[index])));
   const spread = Array.from({ length: width }, (_, index) => Math.max(
-    MIN_SPREAD,
+    index % 3 === 2 ? TIP_MIN_SPREAD : ANGLE_MIN_SPREAD,
     1.4826 * (medianAbsoluteDeviation(samples.map((sample) => sample[index]), center[index]) || 0),
   ));
   return { center, spread };
@@ -73,7 +84,7 @@ export function buildPoseProfile(samplesByDigit) {
   return {
     valid: errors.length === 0,
     errors,
-    minSeparation: 0.16,
+    minSeparation: 0.11,
     classes,
   };
 }
@@ -99,11 +110,14 @@ export function classifyPose(profile, featureVector, view = null) {
   const viewDistance = viewProfile && Number.isFinite(view)
     ? Math.abs(view - viewProfile.center) / Math.max(MIN_VIEW_SPREAD, viewProfile.spread)
     : null;
-  const viewAccepted = viewDistance == null || viewDistance <= viewProfile.threshold;
-  const inClass = best.distance <= best.threshold;
-  const separated = separation >= (profile.minSeparation ?? 0.16);
+  const viewAccepted = viewDistance == null || viewDistance <= viewProfile.threshold * 1.35;
+  // Also relax profiles already saved with the previous, fingertip-heavy
+  // classifier so people do not have to repeat calibration.
+  const effectiveThreshold = best.threshold * 1.22;
+  const inClass = best.distance <= effectiveThreshold;
+  const separated = separation >= Math.min(profile.minSeparation ?? 0.11, 0.11);
   const confidence = Math.max(0, Math.min(1,
-    (1 - best.distance / Math.max(best.threshold, 0.001)) * 0.6 + Math.min(1, separation / 0.35) * 0.4,
+    (1 - best.distance / Math.max(effectiveThreshold, 0.001)) * 0.6 + Math.min(1, separation / 0.35) * 0.4,
   ));
 
   return {
@@ -113,6 +127,12 @@ export function classifyPose(profile, featureVector, view = null) {
     distance: best.distance,
     separation,
     viewDistance,
+    threshold: best.threshold,
+    effectiveThreshold,
+    thresholdRatio: best.distance / Math.max(effectiveThreshold, 0.001),
+    inClass,
+    separated,
+    viewAccepted,
     candidates,
     reason: !inClass ? "outside-calibration" : !separated ? "ambiguous-pose" : !viewAccepted ? "wrong-hand-side" : "accepted",
   };

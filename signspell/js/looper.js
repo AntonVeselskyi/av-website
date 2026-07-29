@@ -1,6 +1,8 @@
-import { BEATS_PER_BAR, MAX_LANES, clamp, createId, quantizeBeat, sanitizeBpm } from "./shared.js?v=4";
+import { BEATS_PER_BAR, MAX_LANES, clamp, createId, createLane, quantizeBeat, sanitizeBpm } from "./shared.js?v=6";
 
-export const RECORD_PASSES = 3;
+// Recording captures one editable loop. Export repeat count is deliberately
+// separate so rendering a longer WAV never changes live record behavior.
+export const RECORD_PASSES = 1;
 export function recordWindowBeats(lane) {
   return Math.max(1, Number(lane?.lengthBars) || 1) * BEATS_PER_BAR * RECORD_PASSES;
 }
@@ -221,6 +223,8 @@ export class LoopTransport extends EventTarget {
 
   addLane() {
     if (this.project.lanes.length >= MAX_LANES) return null;
-    return null;
+    const lane = createLane(this.project.lanes.length);
+    this.project.lanes.push(lane);
+    return lane;
   }
 }
