@@ -1,9 +1,9 @@
 import { normalizeLandmarks, poseFeatures, contactDistances } from "./landmarks.js?v=2";
-import { classifyPose } from "./pose-classifier.js?v=4";
-import { PoseStabilizer } from "./pose-stabilizer.js?v=2";
-import { DownstrokeRecognizer } from "./downstroke.js?v=7";
+import { classifyPose } from "./pose-classifier.js?v=5";
+import { PoseStabilizer } from "./pose-stabilizer.js?v=3";
+import { DownstrokeRecognizer } from "./downstroke.js?v=8";
 import { ContactRecognizer } from "./contacts.js?v=5";
-import { isCalibrationProfile } from "./calibration.js?v=4";
+import { isCalibrationProfile } from "./calibration.js?v=5";
 
 /**
  * Browser-independent recognition core. Both the worker and test replays feed
@@ -82,7 +82,7 @@ export class SignSpellRecognizer {
       diagnostics: createDiagnostics({
         reason: hit ? "hit" : pose.reason,
         normalized, confidence, distances, pose, contact, stroke,
-        profile: this.profile,
+        profile: this.profile, strokeRecognizer: this.downstroke,
       }),
     };
   }
@@ -112,8 +112,16 @@ function unavailableDiagnostics(reason, stroke = null) {
  * image-free so the app may render a live inspector without retaining webcam
  * content or sending it anywhere.
  */
-export function createDiagnostics({ reason, normalized, confidence, distances, pose, contact, stroke, profile = null }) {
+export function createDiagnostics({ reason, normalized, confidence, distances, pose, contact, stroke, profile = null, strokeRecognizer = null }) {
   const states = contact?.states || {};
+  const recoveryThreshold = strokeRecognizer
+    ? Math.max(0.025, Number(strokeRecognizer.thresholds?.recoveryDisplacement) || 0)
+    : null;
+  const returnLine = strokeRecognizer && Number.isFinite(strokeRecognizer.hitY)
+    ? Number.isFinite(strokeRecognizer.armY)
+      ? Math.min(strokeRecognizer.hitY - recoveryThreshold, strokeRecognizer.armY + strokeRecognizer.thresholds.minDisplacement * 0.35)
+      : strokeRecognizer.hitY - recoveryThreshold
+    : null;
   const contacts = Object.fromEntries([6, 7, 8, 9].map((digit) => {
     const settings = profile?.contacts?.contacts?.[digit] || null;
     const distance = Number.isFinite(distances?.[digit]) ? distances[digit] : null;
@@ -149,6 +157,29 @@ export function createDiagnostics({ reason, normalized, confidence, distances, p
       predictedVelocity: Number.isFinite(stroke?.predictedVelocity) ? stroke.predictedVelocity : null,
       horizonMs: Number.isFinite(stroke?.horizonMs) ? stroke.horizonMs : null,
       reason: stroke?.reason || "profile-unavailable",
+      stableDigit: Number.isInteger(strokeRecognizer?.stableDigit) ? strokeRecognizer.stableDigit : null,
+      lockedDigit: Number.isInteger(strokeRecognizer?.lockedDigit) ? strokeRecognizer.lockedDigit : null,
+      stableFrames: Number(strokeRecognizer?.stableFrames) || 0,
+      stableMs: Number.isFinite(strokeRecognizer?.stableSince) && Number.isFinite(strokeRecognizer?.lastTimestamp)
+        ? Math.max(0, strokeRecognizer.lastTimestamp - strokeRecognizer.stableSince) : 0,
+      filteredY: Number.isFinite(strokeRecognizer?.filteredY) ? strokeRecognizer.filteredY : null,
+      stableStartY: Number.isFinite(strokeRecognizer?.stableStartY) ? strokeRecognizer.stableStartY : null,
+      armY: Number.isFinite(strokeRecognizer?.armY) ? strokeRecognizer.armY : null,
+      hitY: Number.isFinite(strokeRecognizer?.hitY) ? strokeRecognizer.hitY : null,
+      displacement: Number.isFinite(strokeRecognizer?.armY) && Number.isFinite(normalized?.palmScreenY)
+        ? normalized.palmScreenY - strokeRecognizer.armY : null,
+      recovery: Number.isFinite(strokeRecognizer?.hitY) && Number.isFinite(normalized?.palmScreenY)
+        ? strokeRecognizer.hitY - normalized.palmScreenY : null,
+      recoveryThreshold,
+      recoveryFrames: Number(strokeRecognizer?.recoveryFrames) || 0,
+      recoveryFramesRequired: Number(strokeRecognizer?.thresholds?.recoveryFrames) || null,
+      recoveryMs: Number.isFinite(strokeRecognizer?.recoverySince) && Number.isFinite(strokeRecognizer?.lastTimestamp)
+        ? Math.max(0, strokeRecognizer.lastTimestamp - strokeRecognizer.recoverySince) : 0,
+      recoveryMsRequired: Number(strokeRecognizer?.thresholds?.recoveryMs) || null,
+      returnLine,
+      strokeVelocityRequired: Number(strokeRecognizer?.thresholds?.strokeVelocity) || null,
+      strokeDisplacementRequired: Number(strokeRecognizer?.thresholds?.minDisplacement) || null,
+      strikeCandidate: Boolean(strokeRecognizer?.strikeCandidate),
     }),
     palmScreenY: normalized.palmScreenY,
   });

@@ -21,7 +21,7 @@ function promotable(pose, ratio, separation) {
     && separation >= ENTER_SEPARATION;
 }
 
-function promotedPose(pose, ratio, phase) {
+function promotedPose(pose, ratio, phase, evidence = {}) {
   const separation = Number(pose.separation) || 0;
   return {
     ...pose,
@@ -31,6 +31,8 @@ function promotedPose(pose, ratio, phase) {
     reason: "stable-nearest",
     stabilized: true,
     stabilizationPhase: phase,
+    stabilizationEvidenceFrames: evidence.frames ?? null,
+    stabilizationEvidenceMs: evidence.ms ?? null,
     thresholdRatio: ratio,
   };
 }
@@ -102,10 +104,11 @@ export class PoseStabilizer {
         thresholdRatio: ratio,
       };
     }
+    const evidenceFrames = this.candidateFrames;
     this.acceptedDigit = pose.digit;
     this.candidateDigit = null;
     this.candidateFrames = 0;
     this.candidateSince = null;
-    return promotedPose(pose, ratio, "enter");
+    return promotedPose(pose, ratio, "enter", { frames: evidenceFrames, ms: elapsed });
   }
 }

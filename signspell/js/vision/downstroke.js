@@ -23,6 +23,8 @@ export class DownstrokeRecognizer {
       candidateFlowFrames: thresholds.candidateFlowFrames ?? 6,
       candidateFlowMs: thresholds.candidateFlowMs ?? 110,
       candidateFlowConfidence: thresholds.candidateFlowConfidence ?? 0.18,
+      recoveryFrames: thresholds.recoveryFrames ?? 3,
+      recoveryMs: thresholds.recoveryMs ?? 70,
     };
     this.reset();
   }
@@ -36,6 +38,7 @@ export class DownstrokeRecognizer {
     this.stableDigit = null;
     this.stableFrames = 0;
     this.stableSince = null;
+    this.stableStartY = null;
     this.armY = null;
     this.hitY = null;
     this.lastAcceptedPose = null;
@@ -44,6 +47,9 @@ export class DownstrokeRecognizer {
     this.flowDigit = null;
     this.flowFrames = 0;
     this.flowSince = null;
+    this.recoveryFrames = 0;
+    this.recoverySince = null;
+    this.strikeCandidate = false;
     this.lastObservedPalmY = null;
     this.missingSince = null;
     this.missingY = null;
@@ -59,13 +65,22 @@ export class DownstrokeRecognizer {
     }
     if (this.missingSince == null) {
       this.missingSince = timestamp;
-      this.missingY = Number.isFinite(this.lastObservedPalmY) ? this.lastObservedPalmY : this.filteredY;
+      this.missingY = Math.min(
+        Number.isFinite(this.stableStartY) ? this.stableStartY : Infinity,
+        Number.isFinite(this.lastObservedPalmY) ? this.lastObservedPalmY : Infinity,
+        Number.isFinite(this.filteredY) ? this.filteredY : Infinity,
+      );
+      if (!Number.isFinite(this.missingY)) this.missingY = null;
       this.missingDigit = this.stableDigit || this.lastAcceptedPose?.digit || null;
       const stableLongEnough = this.stableDigit != null
         && this.stableFrames >= this.thresholds.stableFrames
         && Number.isFinite(this.stableSince)
         && this.lastTimestamp - this.stableSince >= this.thresholds.stableMs;
-      this.missingReady = this.state === "armed" || stableLongEnough;
+      const fastCandidateReady = this.strikeCandidate
+        && this.stableFrames >= 2
+        && Number.isFinite(this.stableSince)
+        && this.lastTimestamp - this.stableSince >= 16;
+      this.missingReady = this.state === "armed" || stableLongEnough || fastCandidateReady;
     }
     if (timestamp - this.missingSince > this.thresholds.maxReacquireMs) {
       this.reset();
@@ -93,8 +108,15 @@ export class DownstrokeRecognizer {
       && Number.isInteger(candidateDigit) && candidateDigit >= 1 && candidateDigit <= 5
       && ["outside-calibration", "ambiguous-pose"].includes(candidateReason)
       && Number(pose?.confidence || 0) >= this.thresholds.candidateFlowConfidence
-      && Number.isFinite(candidateRatio) && candidateRatio <= 1.45
+      && Number.isFinite(candidateRatio) && candidateRatio <= 1.35
       && Number(pose?.separation || 0) >= 0.07;
+    const strongStrikeCandidate = this.state !== "locked"
+      && !pose?.accepted
+      && Number.isInteger(candidateDigit) && candidateDigit >= 1 && candidateDigit <= 5
+      && candidateReason === "outside-calibration"
+      && Number.isFinite(candidateRatio) && candidateRatio <= 1.35
+      && Number(pose?.separation || 0) >= 0.14
+      && pose?.viewAccepted !== false;
     if (pose?.accepted) {
       this.lastAcceptedPose = pose;
       this.lastAcceptedPoseAt = timestamp;
@@ -103,6 +125,10 @@ export class DownstrokeRecognizer {
       // finger unfolding between signs. It gets a much stricter temporal gate
       // than a calibrated pose, but it must not kill the held note immediately.
       pose = { ...pose, transitionCandidate: true };
+    } else if (strongStrikeCandidate) {
+      // Downward motion supplies the final evidence for a fast clear nearest
+      // sign. This state is deliberately unable to arm while stationary.
+      pose = { ...pose, strikeCandidate: true, confidence: Math.max(Number(pose.confidence) || 0, 0.45) };
     } else if (this.state === "locked" && this.lastAcceptedPose) {
       // Physical upward recovery owns note-off. Shape ambiguity while fingers
       // change cannot reset a note that is still held at the dipped position.
@@ -113,6 +139,7 @@ export class DownstrokeRecognizer {
       this.reset();
       return { hit: null, state: this.state, velocity: 0, reason: "pose-lost" };
     }
+    this.strikeCandidate = Boolean(pose.strikeCandidate);
 
     const missingDuration = this.missingSince == null ? null : timestamp - this.missingSince;
     const reacquireDisplacement = Number.isFinite(this.missingY) ? palmY - this.missingY : 0;
@@ -125,8 +152,12 @@ export class DownstrokeRecognizer {
       const strikeSeconds = Math.max(0.016, (timestamp - this.lastTimestamp) / 1000);
       const strikeVelocity = reacquireDisplacement / strikeSeconds;
       this.state = "locked";
+      this.armY = this.missingY;
       this.hitY = palmY;
       this.lockedDigit = pose.digit;
+      this.recoveryFrames = 0;
+      this.recoverySince = null;
+      this.strikeCandidate = false;
       this.filteredY = palmY;
       this.lastY = palmY;
       this.lastObservedPalmY = palmY;
@@ -168,9 +199,15 @@ export class DownstrokeRecognizer {
       this.lastY = palmY;
       this.filteredY = palmY;
       this.lastObservedPalmY = palmY;
-      this.lastAcceptedPose = pose;
-      this.lastAcceptedPoseAt = timestamp;
+      if (pose.accepted) {
+        this.lastAcceptedPose = pose;
+        this.lastAcceptedPoseAt = timestamp;
+      }
       this.motion.update(timestamp, palmY);
+      this.stableDigit = pose.digit;
+      this.stableFrames = 1;
+      this.stableSince = timestamp;
+      this.stableStartY = palmY;
       return { hit: null, state: this.state, velocity: 0, reason: "sample-gap" };
     }
 
@@ -185,13 +222,29 @@ export class DownstrokeRecognizer {
       this.stableDigit = pose.digit;
       this.stableFrames = 1;
       this.stableSince = timestamp;
+      this.stableStartY = palmY;
       if (this.state !== "locked") this.state = "neutral";
     } else {
       this.stableFrames += 1;
     }
 
     if (this.state === "locked") {
-      if (this.filteredY <= this.hitY - this.thresholds.recoveryDisplacement || this.velocity < -this.thresholds.neutralVelocity) {
+      // Recovery is measured from the deepest observed dipped position, not
+      // from velocity or a forecast. Small upward bounces remain held.
+      this.hitY = Math.max(this.hitY, palmY);
+      const recoveryThreshold = Math.max(0.025, this.thresholds.recoveryDisplacement);
+      const returnLine = Number.isFinite(this.armY)
+        ? Math.min(this.hitY - recoveryThreshold, this.armY + this.thresholds.minDisplacement * 0.35)
+        : this.hitY - recoveryThreshold;
+      if (palmY <= returnLine) {
+        this.recoveryFrames += 1;
+        if (this.recoverySince == null) this.recoverySince = timestamp;
+      } else {
+        this.recoveryFrames = 0;
+        this.recoverySince = null;
+      }
+      const recoveryMs = this.recoverySince == null ? 0 : timestamp - this.recoverySince;
+      if (this.recoveryFrames >= this.thresholds.recoveryFrames && recoveryMs >= this.thresholds.recoveryMs) {
         this.state = "neutral";
         // The recovery swipe is intentionally abrupt. Rebase the smoother on
         // the recovered hand position so its residual velocity cannot prevent
@@ -203,10 +256,13 @@ export class DownstrokeRecognizer {
         this.motion.update(timestamp, palmY);
         this.stableFrames = 1;
         this.stableSince = timestamp;
+        this.stableStartY = palmY;
         this.lockedDigit = null;
         this.flowDigit = null;
         this.flowFrames = 0;
         this.flowSince = null;
+        this.recoveryFrames = 0;
+        this.recoverySince = null;
       } else if (pose.digit !== this.lockedDigit) {
         if (pose.digit !== this.flowDigit) {
           this.flowDigit = pose.digit;
@@ -237,6 +293,40 @@ export class DownstrokeRecognizer {
       return { hit: null, state: this.state, velocity: this.velocity, reason: "awaiting-recovery" };
     }
 
+    const fastStartDisplacement = Number.isFinite(this.stableStartY) ? palmY - this.stableStartY : 0;
+    const fastStartHit = this.state === "neutral"
+      && this.stableFrames >= 2
+      && timestamp - this.stableSince >= 16
+      && this.velocity >= this.thresholds.strokeVelocity
+      && fastStartDisplacement >= this.thresholds.minDisplacement;
+    if (fastStartHit) {
+      this.state = "locked";
+      this.armY = this.stableStartY;
+      this.hitY = this.filteredY;
+      this.lockedDigit = pose.digit;
+      this.recoveryFrames = 0;
+      this.recoverySince = null;
+      this.strikeCandidate = false;
+      const velocity = Math.max(0, Math.min(1, (this.velocity - this.thresholds.strokeVelocity) / (3 - this.thresholds.strokeVelocity)));
+      return {
+        hit: {
+          digit: pose.digit,
+          source: "downstroke",
+          velocity: 0.4 + velocity * 0.6,
+          confidence: pose.confidence,
+          fastStart: true,
+          leadMs: 0,
+        },
+        state: this.state,
+        velocity: this.velocity,
+        reason: "fast-start-hit",
+      };
+    }
+
+    if (this.strikeCandidate) {
+      return { hit: null, state: this.state, velocity: this.velocity, reason: "tracking-fast-candidate" };
+    }
+
     if (this.state === "neutral") {
       const stable = this.stableFrames >= this.thresholds.stableFrames
         && timestamp - this.stableSince >= this.thresholds.stableMs;
@@ -265,8 +355,14 @@ export class DownstrokeRecognizer {
       && pose.confidence >= 0.5;
     if (observedHit || predictedHit) {
       this.state = "locked";
-      this.hitY = predictedHit && !observedHit ? predictedY : this.filteredY;
+      // Forecasts decide when to trigger, but the observed position owns the
+      // hold baseline. Using a future predicted Y made the next real frame
+      // look like an upward recovery and cut sustained notes immediately.
+      this.hitY = this.filteredY;
       this.lockedDigit = pose.digit;
+      this.recoveryFrames = 0;
+      this.recoverySince = null;
+      this.strikeCandidate = false;
       const strikeVelocity = Math.max(this.velocity, predictedVelocity);
       const velocity = Math.max(0, Math.min(1, (strikeVelocity - this.thresholds.strokeVelocity) / (3 - this.thresholds.strokeVelocity)));
       return {

@@ -161,6 +161,24 @@ test("legacy tight pose spreads tolerate realistic occlusion noise for sign 2", 
   assert.equal(result.accepted, true, `${result.reason}: ${result.distance} / ${result.effectiveThreshold}`);
 });
 
+test("sign 3 survives a visible-thumb geometry change without becoming sign 2", () => {
+  const calibration = profile();
+  for (const prototype of Object.values(calibration.pose.classes)) {
+    prototype.spread = prototype.spread.map(() => 0.035);
+    prototype.threshold = 1.35;
+  }
+  const base = poseFeatures(normalizeLandmarks(hand({ digit: 3 })));
+  const varied = base.map((value, index) => {
+    if (index === 0 || index === 1) return value + 0.13;
+    if (index === 2) return value + 0.2;
+    if ([11, 14].includes(index)) return value + 0.16;
+    return value;
+  });
+  const result = classifyPose(calibration.pose, varied);
+  assert.equal(result.digit, 3);
+  assert.equal(result.accepted, true, `${result.reason}: ${result.distance} / ${result.effectiveThreshold}`);
+});
+
 test("stable nearest pose removes threshold flicker without accepting far or wrong-view candidates", () => {
   const stabilizer = new PoseStabilizer({ enterFrames: 5, enterMs: 90 });
   const near = { digit: 2, accepted: false, confidence: 0.22, reason: "outside-calibration", distance: 1.2, effectiveThreshold: 1, thresholdRatio: 1.2, separation: 0.22 };
@@ -227,6 +245,36 @@ test("downstroke survives a brief rejected pose while the hand is moving", () =>
   assert.equal(result.reason, "hit");
 });
 
+test("a strong nearest sign can trigger a fast downstroke but cannot arm while stationary", () => {
+  const candidate = { digit: 2, accepted: false, confidence: 0.25, reason: "outside-calibration", thresholdRatio: 1.2, separation: 0.22, viewAccepted: true };
+  const fast = new DownstrokeRecognizer({ strokeVelocity: 0.75, minDisplacement: 0.035 });
+  assert.equal(fast.update({ timestamp: 0, palmY: 0.5, pose: candidate }).hit, null);
+  const hit = fast.update({ timestamp: 20, palmY: 0.57, pose: candidate });
+  assert.equal(hit.hit?.digit, 2);
+  assert.equal(hit.hit?.fastStart, true);
+  assert.equal(hit.reason, "fast-start-hit");
+
+  const still = new DownstrokeRecognizer();
+  for (const timestamp of [0, 20, 40, 80, 120, 180]) {
+    const result = still.update({ timestamp, palmY: 0.5, pose: candidate });
+    assert.equal(result.hit, null);
+    assert.notEqual(result.state, "armed");
+  }
+});
+
+test("a dipped hold ignores micro upward bounce and releases only after a deliberate return", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, recoveryFrames: 3, recoveryMs: 70 });
+  const pose = { digit: 4, accepted: true, confidence: 0.9 };
+  for (const timestamp of [0, 20, 40, 60, 80]) stroke.update({ timestamp, palmY: 0.5, pose });
+  assert.equal(stroke.update({ timestamp: 116, palmY: 0.82, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 136, palmY: 0.84, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 156, palmY: 0.835, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 176, palmY: 0.83, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 210, palmY: 0.49, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 250, palmY: 0.49, pose }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 290, palmY: 0.49, pose }).state, "neutral");
+});
+
 test("changing a stable finger pose while dipped flows to the new note", () => {
   const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 40, flowFrames: 2, flowMs: 28 });
   const pose = (digit) => ({ digit, accepted: true, confidence: 0.9 });
@@ -280,7 +328,9 @@ test("pose ambiguity cannot release a dipped note, but upward recovery still doe
   for (const timestamp of [180, 260, 340]) {
     assert.equal(stroke.update({ timestamp, palmY: 0.82, pose: rejected }).state, "locked");
   }
-  assert.equal(stroke.update({ timestamp: 420, palmY: 0.45, pose: rejected }).state, "neutral");
+  assert.equal(stroke.update({ timestamp: 420, palmY: 0.45, pose: rejected }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 455, palmY: 0.45, pose: rejected }).state, "locked");
+  assert.equal(stroke.update({ timestamp: 490, palmY: 0.45, pose: rejected }).state, "neutral");
 });
 
 test("a missing locked hand expires after the reacquisition window", () => {
@@ -439,6 +489,19 @@ test("recognizer exposes derived hand, contact, pose, and downstroke diagnostics
   assert.equal(result.diagnostics.pose.reason, "calibration-required");
   assert.equal(result.diagnostics.downstroke.state, "unavailable");
   assert.equal(recognizer.process({ timestamp: 120, landmarks: null }).diagnostics.hand.detected, false);
+});
+
+test("gesture diagnostics expose pose ratios and downstroke motion without landmarks", () => {
+  const recognizer = new SignSpellRecognizer(profile());
+  const result = recognizer.process({ timestamp: 100, confidence: 0.92, landmarks: hand({ digit: 3 }) });
+  const { pose, downstroke } = result.diagnostics;
+  assert.ok(Number.isFinite(pose.distance));
+  assert.ok(Number.isFinite(pose.effectiveThreshold));
+  assert.ok(Number.isFinite(pose.thresholdRatio));
+  assert.equal(downstroke.stableDigit, 3);
+  assert.ok(Number.isFinite(downstroke.filteredY));
+  assert.ok(Number.isFinite(downstroke.strokeVelocityRequired));
+  assert.equal("landmarks" in result.diagnostics, false);
 });
 
 test("worker controller replays landmark frames without a webcam or detector", async () => {

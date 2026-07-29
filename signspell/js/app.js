@@ -11,7 +11,7 @@ import {
   prepareOfflineLanes,
   renderOfflineProject,
   resolveInstrumentGesture,
-} from "./music/index.js?v=12";
+} from "./music/index.js?v=13";
 import { LoopTransport } from "./looper.js?v=10";
 import { LOOP_PEDAL_CLEAR_HOLD_MS, digitFromKeyEvent, loopPedalActionFromKeyEvent } from "./input.js?v=2";
 import { MAX_SSPELL_FILE_BYTES, parseProjectFile, projectFileName, serializeProjectFile } from "./project-file.js?v=1";
@@ -476,7 +476,7 @@ function beginHeldNote({ gateId, digit, velocity = 0.78, confidence = 1, source 
   }
 }
 
-function endHeldNote(gateId, { render = true } = {}) {
+function endHeldNote(gateId, { render = true, reason = "input-ended" } = {}) {
   const held = heldNotes.get(gateId);
   if (!held) return false;
   const endedBeat = transport?.currentBeat() ?? 0;
@@ -489,6 +489,7 @@ function endHeldNote(gateId, { render = true } = {}) {
   }
   setHeldVisual(held.digit, false);
   dom.gestureState.textContent = `${held.source.replaceAll("-", " ").toUpperCase()} / RELEASED`;
+  if (held.source.startsWith("vision-")) diagnosticLog.add("gate", `release digit=${held.digit}; source=${held.source}; cause=${reason}`);
   if (captured && render) markChanged({ renderLanes: true });
   return Boolean(captured);
 }
@@ -499,21 +500,26 @@ function refreshVisionGateWatchdog() {
   if (![...heldNotes.values()].some((held) => held.source.startsWith("vision-"))) return;
   visionGateWatchdog = setTimeout(() => {
     visionGateWatchdog = 0;
-    releaseHeldNotes((held) => held.source.startsWith("vision-"));
+    releaseHeldNotes((held) => held.source.startsWith("vision-"), "watchdog-timeout");
   }, 520);
 }
 
-function releaseHeldNotes(predicate = () => true) {
+function releaseHeldNotes(predicate = () => true, reason = "bulk-release") {
   let changed = false;
   for (const [gateId, held] of [...heldNotes]) {
-    if (predicate(held)) changed = endHeldNote(gateId, { render: false }) || changed;
+    if (predicate(held)) changed = endHeldNote(gateId, { render: false, reason }) || changed;
   }
   if (changed) markChanged({ renderLanes: true });
 }
 
 function syncVisionHeldNotes(diagnostic) {
   for (const [gateId, held] of [...heldNotes]) {
-    if (shouldReleaseVisionGate(held, diagnostic)) endHeldNote(gateId);
+    if (shouldReleaseVisionGate(held, diagnostic)) {
+      const reason = held.source === "vision-downstroke"
+        ? diagnostic?.downstroke?.reason || diagnostic?.downstroke?.state || "stroke-unlocked"
+        : diagnostic?.contact?.reason || "contact-open";
+      endHeldNote(gateId, { reason });
+    }
   }
 }
 
@@ -543,7 +549,7 @@ function flashGesture(hit) {
   dom.gestureDigit.value = hit.digit;
   const baseState = hit.source === "contact" ? "CONTACT HIT" : hit.source === "downstroke" ? "DOWNSTROKE" : "MANUAL HIT";
   dom.gestureState.textContent = hit.predicted ? `PRED ${baseState} / ${Math.round(hit.leadMs || 0)}MS` : baseState;
-  diagnosticLog.add("gesture", `digit=${Number(hit.digit)}; source=${hit.source || "unknown"}; predicted=${hit.predicted ? 1 : 0}; lead=${Math.round(hit.leadMs || 0)}ms`);
+  diagnosticLog.add("gesture", `digit=${Number(hit.digit)}; source=${hit.source || "unknown"}; predicted=${hit.predicted ? 1 : 0}; fast=${hit.fastStart ? 1 : 0}; flow=${hit.flow ? 1 : 0}; reacquired=${hit.reacquired ? 1 : 0}; lead=${Math.round(hit.leadMs || 0)}ms`);
   dom.gestureConfidence.value = clamp(hit.confidence ?? 1, 0, 1);
   dom.gestureDigit.classList.remove("hit");
   void dom.gestureDigit.offsetWidth;
@@ -1113,12 +1119,15 @@ function showVisionDetectorFailure(error, reason = "detector failed") {
 }
 
 function logVisionPipeline() {
-  diagnosticLog.state("pipeline", visionPipelineSummary({
+  const summary = visionPipelineSummary({
     worker: visionWorker,
     ready: visionReady,
     inFlight: frameInFlight,
     videoReadyState: dom.video?.readyState ?? 0,
-  }));
+  });
+  // Frame idle/in-flight toggles every request and used to bury every useful
+  // gesture event. Keep only persistent pipeline health in the state log.
+  diagnosticLog.state("pipeline", summary.replace(/; frame=(?:in-flight|idle)/, ""));
 }
 
 function disposeVisionWorker(reason = "reset") {
@@ -1155,7 +1164,7 @@ async function initVisionWorker() {
   if (visionWorker) return;
   try {
     diagnosticLog.add("worker", "starting vision worker");
-    const worker = new Worker("js/vision/vision-worker.js?v=14", { type: "module" });
+    const worker = new Worker("js/vision/vision-worker.js?v=15", { type: "module" });
     visionWorker = worker;
     visionReady = false;
     worker.addEventListener("message", (event) => handleVisionMessage(event, worker));
@@ -1232,6 +1241,7 @@ function handleVisionMessage(event, sourceWorker = visionWorker) {
   const message = event.data || {};
   if (message.type === "diagnostic") {
     diagnosticLog.state("hand", `count=${message.diagnostic?.hand?.detected ? 1 : 0}`);
+    logGestureDiagnostics(message.diagnostic);
     syncVisionHeldNotes(message.diagnostic);
     if (message.diagnostic?.hand?.detected) refreshVisionGateWatchdog();
     updateHandDiagnostics(message.diagnostic);
@@ -1309,6 +1319,25 @@ function clearHandOverlay() {
 }
 
 const DIAGNOSTIC_FINGERS = Object.freeze({ index: 9, middle: 8, ring: 7, pinky: 6 });
+
+function diagnosticNumber(value, digits = 2) {
+  return Number.isFinite(value) ? Number(value).toFixed(digits) : "--";
+}
+
+function logGestureDiagnostics(diagnostic) {
+  if (!diagnostic?.hand?.detected) {
+    diagnosticLog.state("pose", "no hand", { key: "gesture:pose" });
+    diagnosticLog.state("stroke", "state=unavailable", { key: "gesture:stroke" });
+    return;
+  }
+  const pose = diagnostic.pose || {};
+  const stroke = diagnostic.downstroke || {};
+  const poseMode = pose.stabilized ? `stable-${pose.stabilizationPhase || "nearest"}` : pose.accepted ? "raw" : "candidate";
+  diagnosticLog.state("pose", `digit=${pose.digit ?? "-"}; gate=${pose.accepted ? "ready" : "wait"}; mode=${poseMode}; reason=${pose.rawReason || pose.reason || "unknown"}`, { key: "gesture:pose" });
+  diagnosticLog.state("stroke", `state=${stroke.state || "unknown"}; digit=${stroke.lockedDigit ?? stroke.stableDigit ?? "-"}; candidate=${stroke.strikeCandidate ? 1 : 0}`, { key: "gesture:stroke" });
+  if (!serialLogExpanded) return;
+  diagnosticLog.add("motion", `pose=${diagnosticNumber(pose.distance)}/${diagnosticNumber(pose.effectiveThreshold)} r=${diagnosticNumber(pose.thresholdRatio)} sep=${diagnosticNumber(pose.separation)} view=${diagnosticNumber(pose.viewDistance)}; y=${diagnosticNumber(diagnostic.palmScreenY, 3)} fy=${diagnosticNumber(stroke.filteredY, 3)} v=${diagnosticNumber(stroke.velocity)} dy=${diagnosticNumber(stroke.displacement, 3)}; recover=${diagnosticNumber(stroke.recovery, 3)}/${diagnosticNumber(stroke.recoveryThreshold, 3)} frames=${stroke.recoveryFrames || 0}/${stroke.recoveryFramesRequired || "-"} ms=${Math.round(stroke.recoveryMs || 0)}/${stroke.recoveryMsRequired || "-"}; reason=${stroke.reason || "unknown"}`, { key: "gesture:motion", throttleMs: 350 });
+}
 
 function updateLiveGestureReadout(diagnostic) {
   const live = resolveLiveGestureDebugState(diagnostic);

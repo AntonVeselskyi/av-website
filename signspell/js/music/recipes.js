@@ -1,4 +1,4 @@
-import { getVibeCollection } from './collections.js?v=7';
+import { getVibeCollection } from './collections.js?v=8';
 import { quantizeBeat } from './tonal.js?v=5';
 
 export function seededRandom(seed = 1) {

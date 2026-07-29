@@ -1,5 +1,5 @@
-import { SignSpellRecognizer } from "./recognizer.js?v=11";
-import { buildCalibrationProfile } from "./calibration.js?v=4";
+import { SignSpellRecognizer } from "./recognizer.js?v=12";
+import { buildCalibrationProfile } from "./calibration.js?v=5";
 import { contactDistances, normalizeLandmarks, poseFeatures } from "./landmarks.js?v=2";
 
 /**

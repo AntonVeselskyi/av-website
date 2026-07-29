@@ -92,12 +92,12 @@ test('a held tonal gate sustains until its matching release', () => {
   const engine = new MusicEngine(audio);
   engine.startGate(hit, { gateId: 'keyboard:Numpad1', groupId: 'lane-1' });
   assert.equal(engine.gates.size, 1);
-  assert.equal(oscillators.length, 1);
-  assert.equal(oscillators[0].stoppedAt, undefined);
+  assert.equal(oscillators.length, 2);
+  assert.ok(oscillators.every((oscillator) => oscillator.stoppedAt === undefined));
 
   assert.equal(engine.releaseGate('keyboard:Numpad1'), true);
   assert.equal(engine.gates.size, 0);
-  assert.ok(oscillators[0].stoppedAt > audio.currentTime);
+  assert.ok(oscillators.every((oscillator) => oscillator.stoppedAt > audio.currentTime));
 });
 
 test('stopping a lane group also releases each held gate in that lane', () => {

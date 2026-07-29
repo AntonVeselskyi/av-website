@@ -2,9 +2,18 @@ import { median, medianAbsoluteDeviation } from "./landmarks.js?v=2";
 
 const ANGLE_MIN_SPREAD = 0.055;
 const TIP_MIN_SPREAD = 0.10;
+const THUMB_ANGLE_MIN_SPREAD = 0.12;
+const THUMB_TIP_MIN_SPREAD = 0.16;
 const MIN_VIEW_SPREAD = 0.08;
 const ANGLE_WEIGHT = 1.55;
 const TIP_POSITION_WEIGHT = 0.22;
+
+function featureSpreadFloor(index) {
+  const isTip = index % 3 === 2;
+  const isThumb = index < 3;
+  if (isThumb) return isTip ? THUMB_TIP_MIN_SPREAD : THUMB_ANGLE_MIN_SPREAD;
+  return isTip ? TIP_MIN_SPREAD : ANGLE_MIN_SPREAD;
+}
 
 function vectorDistance(vector, prototype, spread) {
   let totalWeight = 0;
@@ -15,7 +24,7 @@ function vectorDistance(vector, prototype, spread) {
     // not. Bias recognition toward which fingers are actually straight.
     const weight = index % 3 === 2 ? TIP_POSITION_WEIGHT : ANGLE_WEIGHT;
     totalWeight += weight;
-    const spreadFloor = index % 3 === 2 ? TIP_MIN_SPREAD : ANGLE_MIN_SPREAD;
+    const spreadFloor = featureSpreadFloor(index);
     const normalized = (value - prototype[index]) / Math.max(spreadFloor, Number(spread[index]) || 0);
     return normalized * normalized * weight;
   });
@@ -26,7 +35,7 @@ function vectorStats(samples) {
   const width = samples[0].length;
   const center = Array.from({ length: width }, (_, index) => median(samples.map((sample) => sample[index])));
   const spread = Array.from({ length: width }, (_, index) => Math.max(
-    index % 3 === 2 ? TIP_MIN_SPREAD : ANGLE_MIN_SPREAD,
+    featureSpreadFloor(index),
     1.4826 * (medianAbsoluteDeviation(samples.map((sample) => sample[index]), center[index]) || 0),
   ));
   return { center, spread };
