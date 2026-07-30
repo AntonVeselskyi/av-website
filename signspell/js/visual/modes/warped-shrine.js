@@ -46,6 +46,8 @@
  * See MODE_CONTRACT in ../visualizer.js for the frame object.
  */
 
+import { FluidField } from "../fluid.js";
+
 // --- World units: 1.0 is half the nave's clear width. --------------------
 const PIER_IN = 0.79;      // inner face of the piers, i.e. the clear span
 const PIER_OUT = 1.05;     // outer face, buried in the wall
@@ -75,6 +77,49 @@ const BAY_RATIO = 1.215;   // geometric depths read as even spacing under 1/z
 const Z_FIRST = 1.0;
 const Z_FLOOR_NEAR = 0.56; // floor runs off the bottom of the frame
 const Z_FADE = 5.6;        // beyond this the nave is only haze
+
+// The summoning circle, brought down the frame and tightened so the whole rite
+// sits in the lower third and the thing standing over it has the frame to rise
+// into.  Everything drawn on the circle derives its radius from CIRCLE_R.
+const CIRCLE_Z = 1.86;
+const CIRCLE_R = 0.54;
+
+// The smoke grid.  64x72 interior cells, upsampled to roughly half the frame:
+// coarse enough to solve on the CPU inside the budget, fine enough that
+// vorticity confinement has something to bite on.
+const SMOKE_W = 64;
+const SMOKE_H = 72;
+
+/**
+ * The summoned thing, as a skeleton rather than a silhouette.
+ *
+ * Smoke cannot hold a shape — advection tears any figure apart within a second,
+ * which is the entire point of using a fluid.  So the demon is not drawn; it is
+ * continuously re-injected along these bones while the solver destroys it, and
+ * what you see is the argument between the two.
+ *
+ * Each bone carries its own `band`, so the figure is also the analyser: the
+ * base and torso swell on the low end, the arms follow the mids, and the horns
+ * flare on whatever is at the top of the spectrum.
+ *
+ * [u0, v0, u1, v1, r0, r1, band, samples] — u across in half-widths, v up from
+ * the circle in fractions of the plume's height.
+ */
+const DEMON_BONES = [
+  [0, 0.02, 0, 0.2, 0.05, 0.1, 0.02, 4],      // the wisp off the pentagram
+  [0, 0.2, 0, 0.46, 0.1, 0.16, 0.08, 5],      // torso
+  [0, 0.46, 0, 0.58, 0.16, 0.12, 0.18, 3],    // chest
+  [0, 0.56, -0.32, 0.59, 0.1, 0.065, 0.34, 4],
+  [0, 0.56, 0.32, 0.59, 0.1, 0.065, 0.34, 4],
+  [-0.32, 0.59, -0.5, 0.43, 0.065, 0.035, 0.5, 3],
+  [0.32, 0.59, 0.5, 0.43, 0.065, 0.035, 0.5, 3],
+  [0, 0.58, 0, 0.65, 0.06, 0.055, 0.6, 2],    // neck
+  [0, 0.65, 0, 0.73, 0.095, 0.085, 0.7, 3],   // head
+  [-0.065, 0.72, -0.26, 0.9, 0.075, 0.03, 0.86, 5],
+  [0.065, 0.72, 0.26, 0.9, 0.075, 0.03, 0.86, 5],
+];
+const DEMON_EYE_V = 0.7;
+const DEMON_EYE_U = 0.052;
 
 const IDOL_Z = 2.2;        // front plane of the effigy
 const IDOL_BACK = 3.05;
@@ -312,6 +357,14 @@ export default class WarpedShrineScene {
 
     this.preacher = { presence: 0, blink: 0, nextBlink: 3.4, glitch: 0, gaze: 0 };
 
+    // The smoke. The solver is allocated once and never resized — the grid is
+    // in its own space and the blit does the fitting, so a window resize costs
+    // nothing here and never interrupts the simulation.
+    this.fluid = new FluidField({ width: SMOKE_W, height: SMOKE_H, iterations: 10 });
+    this.smoke = new Layer({ scale: 1 });
+    this.smokeImage = null;
+    this.demon = { pulse: 0, blink: 0, nextBlink: 2.9, breath: 0 };
+
     this.lastBeatCount = -1;
     this.desecrate = 0;   // rare blood accent, every 16 hits
     this.scan = 0;        // machine scan across the idol, every 12 hits
@@ -329,6 +382,9 @@ export default class WarpedShrineScene {
   suspend() {
     this.arch.release();
     this.aether.release();
+    this.smoke.release();
+    this.smokeImage = null;
+    this.fluid.reset();
     this.warm.release();
     this.cool.release();
     this.feedback.release();
@@ -906,11 +962,11 @@ export default class WarpedShrineScene {
 
     // Static glyph ring of the summoning circle.  Baking it means the live
     // rings can rotate over a fixed inscription instead of dragging it along.
-    const ringZ = 2.5;
+    const ringZ = CIRCLE_Z;
     for (let glyph = 0; glyph < 14; glyph += 1) {
       const angle = (glyph / 14) * Math.PI * 2;
-      const gx = Math.sin(angle) * 0.86;
-      const gz = ringZ + Math.cos(angle) * 0.86;
+      const gx = Math.sin(angle) * CIRCLE_R * 1.16;
+      const gz = ringZ + Math.cos(angle) * CIRCLE_R * 1.16;
       if (gz < 1.2) continue;
       const scale = this.setFloorPlane(ctx, gx, gz, 100);
       if (!scale) continue;
@@ -1027,6 +1083,7 @@ export default class WarpedShrineScene {
         if (beats % 24 === 0 || audio.flux > 0.62) this.launchCrow();
         this.preacher.gaze = Math.max(this.preacher.gaze, clamp(audio.midAtt - 0.6, 0, 1));
         if (audio.flux > 0.5) this.preacher.glitch = 1;
+        this.demon.pulse = Math.min(1, this.demon.pulse + 0.5 + clamp(audio.bassAtt, 0, 3) * 0.2);
       }
       this.refreshReadout(audio);
     }
@@ -1049,6 +1106,7 @@ export default class WarpedShrineScene {
       this.advanceCrows(dt, audio);
       this.advanceSparks(dt);
       this.advancePreacher(dt, time);
+      this.advanceDemon(dt, audio);
       // Desecration fires on a genuinely violent transient rather than on a
       // beat count, and cannot retrigger until the last one has nearly gone —
       // it should feel like the room being struck, not like a strobe.
@@ -1104,6 +1162,11 @@ export default class WarpedShrineScene {
     // --- 7. the god, then whatever is sitting on him ---------------------
     this.paintIdol(frame, heat, sacred, still);
     this.paintPerchedCrows(frame, still);
+
+    // --- 7b. the thing standing on the circle ----------------------------
+    // Behind the braziers, which are nearer than the circle, and in front of
+    // the god, because it is being summoned between the two.
+    this.paintDemon(frame, still);
 
     // --- 8. the fire in front of the plinth, and what comes off it -------
     this.paintFlames(frame, heat, still, 1);
@@ -1364,7 +1427,7 @@ export default class WarpedShrineScene {
   paintCircle(frame, sacred, still) {
     const { ctx, ratio, audio, palette, detail, bands, bandPeaks } = frame;
     const { TAU } = this.kit;
-    const centreZ = 2.5;
+    const centreZ = CIRCLE_Z;
     const spin = still ? 0 : this.spin;
     const steps = Math.max(20, Math.round(40 * detail));
 
@@ -1373,7 +1436,7 @@ export default class WarpedShrineScene {
     ctx.globalCompositeOperation = "lighter";
     ctx.lineCap = "butt";
 
-    for (const [radius, alpha, weight] of [[0.78, 0.3, 1.4], [0.7, 0.15, 0.8]]) {
+    for (const [radius, alpha, weight] of [[CIRCLE_R, 0.3, 1.4], [CIRCLE_R * 0.9, 0.15, 0.8]]) {
       ctx.strokeStyle = palette.violet(alpha * (0.35 + sacred * 0.65));
       ctx.lineWidth = Math.max(1, ratio * weight);
       ctx.beginPath();
@@ -1396,9 +1459,9 @@ export default class WarpedShrineScene {
     ctx.beginPath();
     for (let point = 0; point <= 7; point += 1) {
       const angle = ((point * 3) % 7) * (TAU / 7) + spin * 0.6 + this.sigilStep * 0.22;
-      const z = centreZ + Math.cos(angle) * 0.7;
+      const z = centreZ + Math.cos(angle) * CIRCLE_R * 0.9;
       const scale = this.depthScale(Math.max(1.2, z));
-      const x = this.sx(Math.sin(angle) * 0.7, scale);
+      const x = this.sx(Math.sin(angle) * CIRCLE_R * 0.9, scale);
       const y = this.sy(FLOOR_Y - 0.006, scale);
       if (point === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
@@ -1416,15 +1479,15 @@ export default class WarpedShrineScene {
     ctx.beginPath();
     for (let tick = 0; tick < ticks; tick += 1) {
       const angle = (tick / ticks) * TAU + spin;
-      const z0 = centreZ + Math.cos(angle) * 0.78;
+      const z0 = centreZ + Math.cos(angle) * CIRCLE_R;
       if (z0 < 1.2) continue;
       const magnitude = bands[Math.round((tick / ticks) * last)];
-      const outer = 0.81 + magnitude * 0.2;
+      const outer = CIRCLE_R * 1.04 + magnitude * 0.2;
       const zOuter = centreZ + Math.cos(angle) * outer;
       if (zOuter < 1.2) continue;
       const inner = this.depthScale(z0);
       const outerScale = this.depthScale(zOuter);
-      ctx.moveTo(this.sx(Math.sin(angle) * 0.78, inner), this.sy(FLOOR_Y - 0.004, inner));
+      ctx.moveTo(this.sx(Math.sin(angle) * CIRCLE_R, inner), this.sy(FLOOR_Y - 0.004, inner));
       ctx.lineTo(this.sx(Math.sin(angle) * outer, outerScale), this.sy(FLOOR_Y - 0.004, outerScale));
     }
     ctx.strokeStyle = palette.violet(0.2 + audio.midAtt * 0.18);
@@ -1437,7 +1500,7 @@ export default class WarpedShrineScene {
       const held = bandPeaks[Math.round((tick / ticks) * last)];
       if (held < 0.05) continue;
       const angle = (tick / ticks) * TAU + spin;
-      const at = 0.81 + held * 0.2;
+      const at = CIRCLE_R * 1.04 + held * 0.2;
       const z = centreZ + Math.cos(angle) * at;
       if (z < 1.2) continue;
       const markScale = this.depthScale(z);
@@ -2254,6 +2317,187 @@ export default class WarpedShrineScene {
 
     ctx.restore();
     this.idolHalo = { x: haloX, y: haloY, r: haloR };
+  }
+
+  // -- the summoned thing --------------------------------------------------
+
+  /** The screen rectangle the smoke grid is stretched over. */
+  smokeRect(frame) {
+    const scale = this.depthScale(CIRCLE_Z);
+    const floor = this.sy(FLOOR_Y, scale);
+    // Deliberately smaller than the effigy behind it.  Matching the idol's
+    // height made the plume read as weather rather than as a summoned body.
+    const width = frame.width * 0.42;
+    const height = frame.height * 0.55;
+    return {
+      x: this.sx(0, scale) - width * 0.5,
+      y: floor + frame.height * 0.015 - height,
+      w: width,
+      h: height,
+    };
+  }
+
+  /**
+   * Feeds the solver.  Density and heat go in along the bones, weighted by each
+   * bone's own band, and momentum goes in as a column of updraught off the
+   * pentagram plus a swirl couple at the horns.
+   *
+   * Nothing here draws anything.  The figure only exists as a source term.
+   */
+  feedDemon(frame, dt) {
+    const { audio, bands } = frame;
+    const { clamp, lerp } = this.kit;
+    const fluid = this.fluid;
+    const last = bands.length - 1;
+    const rate = dt * 60;
+    const alive = 0.55 + clamp(audio.level * 3.2, 0, 1) * 0.95;
+
+    for (let bone = 0; bone < DEMON_BONES.length; bone += 1) {
+      const [u0, v0, u1, v1, r0, r1, band, samples] = DEMON_BONES[bone];
+      const voice = bands[Math.round(band * last)];
+      for (let step = 0; step <= samples; step += 1) {
+        const t = step / samples;
+        const u = lerp(u0, u1, t);
+        const v = lerp(v0, v1, t);
+        const radius = lerp(r0, r1, t) * SMOKE_W * 0.5;
+        const gx = (u * 0.5 + 0.5) * SMOKE_W;
+        const gy = (1 - v) * SMOKE_H;
+        // Each limb is fed by its own band, so the body is the spectrum.
+        const amount = (0.07 + voice * 0.42 + this.demon.pulse * 0.1) * alive * rate;
+        fluid.splat(gx, gy, radius, amount, amount * 0.3);
+      }
+    }
+
+    // The column off the circle: this is what holds the whole thing up.
+    // Deliberately weak.  Buoyancy is tuned to roughly cancel the smoke's own
+    // weight so the body hovers and churns in place; a strong updraught turns
+    // the whole thing into a chimney and no figure survives it.
+    const lift = 1.6 + clamp(audio.bassAtt, 0, 3) * 2.4 + this.demon.pulse * 4;
+    fluid.splat(SMOKE_W * 0.5, SMOKE_H * 0.965, SMOKE_W * 0.12, 0.035 * alive * rate, 0.1 * alive * rate, 0, -lift);
+
+    // A swirl couple at the horns, opposite handed, driven by the top end —
+    // this is what makes the head churn instead of merely rising.
+    const twist = (1.4 + clamp(audio.trebAtt, 0, 3) * 3) * rate;
+    for (const side of [-1, 1]) {
+      fluid.splat(
+        (side * 0.25 * 0.5 + 0.5) * SMOKE_W, (1 - 0.89) * SMOKE_H,
+        SMOKE_W * 0.06, 0, 0.012 * rate, side * twist, -twist * 0.4,
+      );
+    }
+
+    // On a hit the chest shoves outward — the thing exhales.
+    if (this.demon.pulse > 0.02) {
+      const shove = this.demon.pulse * 7;
+      for (const side of [-1, 1]) {
+        fluid.splat(
+          (side * 0.2 * 0.5 + 0.5) * SMOKE_W, (1 - 0.52) * SMOKE_H,
+          SMOKE_W * 0.1, 0, 0, side * shove, -shove * 0.25,
+        );
+      }
+    }
+  }
+
+  /**
+   * The demon: a Navier-Stokes plume, re-formed every frame along the bones and
+   * torn apart every frame by its own turbulence, levitating over the circle.
+   *
+   * The audio drives the physics rather than the drawing — buoyancy off the
+   * bass, vorticity off the top end, injection off the band each limb owns — so
+   * what reacts to the music is the fluid itself, not a filter over a picture.
+   */
+  paintDemon(frame, still) {
+    const { ctx, audio, detail, palette, ratio } = frame;
+    const { clamp, TAU } = this.kit;
+    const fluid = this.fluid;
+    if (!this.smoke.ctx) return;
+    if (this.smoke.match(SMOKE_W, SMOKE_H) || !this.smokeImage) {
+      this.smokeImage = this.smoke.ctx.createImageData(SMOKE_W, SMOKE_H);
+    }
+    const dt = clamp(frame.dt, 0, 0.05) * (still ? 0.15 : 1);
+
+    this.feedDemon(frame, dt);
+    fluid.step(dt, {
+      // Bass lifts it; the top end makes it churn.  Both are clamped well
+      // inside the range where confinement stays a decorative force.
+      buoyancy: 0.75 + clamp(audio.bassAtt, 0, 3) * 0.55,
+      vorticity: 5.5 + clamp(audio.trebAtt, 0, 3) * 4.5,
+      weight: 0.42,
+      dissipation: 0.972,
+      cooling: 0.88,
+      iterations: detail > 0.8 ? 10 : detail > 0.6 ? 6 : 4,
+    });
+
+    // --- density field -> RGBA ------------------------------------------
+    const image = this.smokeImage;
+    const pixels = image.data;
+    const { density, heat, stride } = fluid;
+    let cursor = 0;
+    for (let j = 0; j < SMOKE_H; j += 1) {
+      // The pentagram lights the plume from underneath, so the violet is
+      // strongest at the foot and gone by the head.
+      const under = 1 - j / SMOKE_H;
+      const wash = under * under;
+      for (let i = 0; i < SMOKE_W; i += 1) {
+        const at = (i + 1) + stride * (j + 1);
+        const smoke = density[at];
+        if (smoke < 0.01) { pixels[cursor + 3] = 0; cursor += 4; continue; }
+        const glow = Math.min(1, heat[at]);
+        // Cubed, so only the few hottest cells go warm at all — smoke lit from
+        // within reads as fire, and this is a body, not a bonfire.
+        const ember = glow * glow * glow;
+        pixels[cursor] = 38 + ember * 180 + wash * 22;
+        pixels[cursor + 1] = 31 + ember * 86 + wash * 11;
+        pixels[cursor + 2] = 66 + ember * 26 + wash * 60;
+        pixels[cursor + 3] = Math.min(205, smoke * 150);
+        cursor += 4;
+      }
+    }
+    this.smoke.ctx.putImageData(image, 0, 0);
+
+    const rect = this.smokeRect(frame);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    // A blur across the upscale hides the grid without costing a second solve:
+    // bilinear alone leaves 8px lozenges at this magnification.
+    if (detail > 0.7) ctx.filter = `blur(${(rect.w / SMOKE_W * 0.42).toFixed(2)}px)`;
+    ctx.drawImage(this.smoke.canvas, rect.x, rect.y, rect.w, rect.h);
+    ctx.filter = "none";
+
+    // --- the eyes --------------------------------------------------------
+    // The only part of it that is not smoke, and the only part that holds
+    // still. Same violet as the celebrant's, because it is looking back.
+    if (this.demon.blink <= 0) {
+      const eyeY = rect.y + rect.h * (1 - DEMON_EYE_V);
+      const radius = Math.max(1.2, rect.w * 0.009);
+      const stare = 0.5 + clamp(audio.midAtt - 0.5, 0, 1) * 0.5;
+      ctx.globalCompositeOperation = "lighter";
+      for (const side of [-1, 1]) {
+        const eyeX = rect.x + rect.w * 0.5 + side * DEMON_EYE_U * rect.w;
+        this.blitGlow(ctx, this.cool, eyeX, eyeY, radius * 9, 0.5 * stare);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = palette.violet(0.8);
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, radius, 0, TAU);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  advanceDemon(dt, audio) {
+    const demon = this.demon;
+    demon.pulse *= Math.exp(-dt * 4.2);
+    demon.blink = Math.max(0, demon.blink - dt);
+    demon.nextBlink -= dt;
+    if (demon.nextBlink <= 0) {
+      demon.blink = 0.09;
+      demon.nextBlink = 1.8 + this.kit.noise2D(audio.beatCount * 0.37, 5.1) * 4.4;
+    }
   }
 
   // -- the celebrant ------------------------------------------------------
