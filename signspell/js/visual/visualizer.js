@@ -4,7 +4,27 @@
  * Pass a Web Audio AnalyserNode (or anything with getByteFrequencyData and
  * getByteTimeDomainData), and the visualizer will only read its live data.
  * No audio samples, external art, or visualizer presets are embedded here.
+ *
+ * This module is the orchestrator.  It owns three jobs:
+ *
+ * 1. Signal analysis — turning the raw analyser bytes into the musical
+ *    features every scene wants (bands, peak holds, onsets, tempo, level).
+ * 2. The frame contract — one frozen-shape object handed to the active scene
+ *    each tick, documented under `MODE_CONTRACT` below.
+ * 3. The shared physical treatment — grain, interlace, tube curvature and the
+ *    surveillance HUD run here, so all six scenes read as one instrument.
+ *
+ * Each scene lives in `./modes/<id>.js` and owns its own look completely,
+ * including clearing or fading its own frame.
  */
+
+import * as kit from "./scene-kit.js";
+import WiredTunnelScene from "./modes/wired-tunnel.js";
+import SpectralFireScene from "./modes/spectral-fire.js";
+import CruciformScopeScene from "./modes/cruciform-scope.js";
+import WarpedShrineScene from "./modes/warped-shrine.js";
+import SerialOrbitScene from "./modes/serial-orbit.js";
+import LavaLampScene from "./modes/lava-lamp.js";
 
 const MODES = Object.freeze({
   WIRED_TUNNEL: "wired-tunnel",
@@ -12,6 +32,7 @@ const MODES = Object.freeze({
   CRUCIFORM_SCOPE: "cruciform-scope",
   WARPED_SHRINE: "warped-shrine",
   SERIAL_ORBIT: "serial-orbit",
+  LAVA_LAMP: "lava-lamp",
 });
 
 const MODE_LABELS = Object.freeze({
@@ -20,6 +41,7 @@ const MODE_LABELS = Object.freeze({
   [MODES.CRUCIFORM_SCOPE]: "cruciform // scope",
   [MODES.WARPED_SHRINE]: "warped // shrine",
   [MODES.SERIAL_ORBIT]: "serial // orbit",
+  [MODES.LAVA_LAMP]: "lava // lamp",
 });
 
 // The compact names are the HTML data-mode values.  Keeping them here makes
@@ -30,51 +52,80 @@ const MODE_ALIASES = Object.freeze({
   cruciform: MODES.CRUCIFORM_SCOPE,
   shrine: MODES.WARPED_SHRINE,
   orbit: MODES.SERIAL_ORBIT,
+  lava: MODES.LAVA_LAMP,
 });
 
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const SCENES = Object.freeze({
+  [MODES.WIRED_TUNNEL]: WiredTunnelScene,
+  [MODES.SPECTRAL_FIRE]: SpectralFireScene,
+  [MODES.CRUCIFORM_SCOPE]: CruciformScopeScene,
+  [MODES.WARPED_SHRINE]: WarpedShrineScene,
+  [MODES.SERIAL_ORBIT]: SerialOrbitScene,
+  [MODES.LAVA_LAMP]: LavaLampScene,
+});
 
-/** @param {Uint8Array} values */
-function average(values, start = 0, end = values.length) {
-  let sum = 0;
-  for (let index = start; index < end; index += 1) sum += values[index] || 0;
-  return sum / Math.max(1, end - start) / 255;
-}
+/**
+ * MODE_CONTRACT — what a scene receives and what it must honour.
+ *
+ * ```
+ * render(frame) where frame = {
+ *   ctx, width, height,          // destination context and pixel size
+ *   ratio,                       // device pixels per CSS pixel actually used
+ *   px(n),                       // CSS pixels -> device pixels
+ *   unit,                        // min(width,height)/1000, for scale-free sizing
+ *   time, dt, frameIndex,        // seconds, seconds, integer
+ *   bpm,                         // host tempo, then detected tempo, then 120
+ *   detail,                      // 0.55..1 budget multiplier for element counts
+ *   quality, reducedMotion,
+ *   audio: {
+ *     sub, bass, lowMid, mid, highMid, treble, air,  // 0..1 smoothed RMS
+ *     level, energy, flux, pulse, peak,              // 0..1
+ *     beat, beatCount, sinceBeat, bpm, bar,          // onset envelope + tempo
+ *     stereoDrift,                                   // slow LFO-ish wander
+ *     bassRel, midRel, trebRel,                      // 1 == average for this
+ *     bassAtt, midAtt, trebAtt,                      //   track; damped variants
+ *     brightness,                                    // spectral centroid 0..1
+ *     transient, sustain, silent,                    // percussive vs sustained
+ *   },
+ *   spectrum, waveform,          // Uint8Array, raw analyser data
+ *   bands, bandPeaks,            // Float32Array(32), mel-spaced 0..1
+ *   band(position),              // 0..1 position -> interpolated magnitude
+ *   kit, palette,                // scene-kit namespace and ink set
+ * }
+ * ```
+ *
+ * Prefer the `*Rel` / `*Att` measures for anything whose scale matters (zoom
+ * rates, radii, particle counts).  They hold their meaning whether the user is
+ * playing the instrument quietly or piping in a mastered track.
+ *
+ * A scene MUST paint or fade its own background — nothing is cleared for it.
+ * A scene SHOULD keep the top-left quadrant visually calm (DOM type sits
+ * there) and leave the right edge for the shared HUD.  A scene MAY declare
+ * `static post` to tune the shared treatment, and `suspend()` to release
+ * offscreen buffers while it is not on screen.
+ */
 
-function power(values, start = 0, end = values.length) {
-  let sum = 0;
-  for (let index = start; index < end; index += 1) {
-    const value = (values[index] || 0) / 255;
-    sum += value * value;
-  }
-  return Math.sqrt(sum / Math.max(1, end - start));
-}
+const clamp = kit.clamp;
+const { palette } = kit;
 
-function rotate3D(x, y, z, pitch, yaw, roll) {
-  const cp = Math.cos(pitch), sp = Math.sin(pitch);
-  const cy = Math.cos(yaw), sy = Math.sin(yaw);
-  const cr = Math.cos(roll), sr = Math.sin(roll);
-  const py = y * cp - z * sp;
-  const pz = y * sp + z * cp;
-  const yx = x * cy + pz * sy;
-  const yz = -x * sy + pz * cy;
-  return { x: yx * cr - py * sr, y: yx * sr + py * cr, z: yz };
-}
+const BAND_COUNT = 32;
+const FLUX_HISTORY = 48;
 
-function project3D(point, width, height, focal, cameraZ = 0) {
-  const depth = point.z - cameraZ;
-  if (depth < 0.18) return null;
-  const scale = focal / depth;
-  const x = width * 0.5 + point.x * scale;
-  const y = height * 0.5 + point.y * scale;
-  if (!Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x) > width * 4 || Math.abs(y) > height * 4) return null;
-  return { x, y, depth, scale };
-}
+const DEFAULT_POST = Object.freeze({
+  grain: 0.085,
+  scanlines: 0.15,
+  dither: 0.07,
+  vignette: 0.5,
+  bar: 0.045,
+  curve: 0.012,
+  tear: true,
+  hud: true,
+});
 
 export class SpellVisualizer {
   /**
    * @param {HTMLCanvasElement} canvas
-   * @param {{ analyser?: AnalyserNode, mode?: string, reducedMotion?: boolean }} [options]
+   * @param {{ analyser?: AnalyserNode, mode?: string, reducedMotion?: boolean, bpm?: number }} [options]
    */
   constructor(canvas, options = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) throw new TypeError("SpellVisualizer needs a canvas element.");
@@ -88,26 +139,47 @@ export class SpellVisualizer {
     this.quality = 1;
     this.running = false;
     this.frame = 0;
+    this.frameIndex = 0;
     this.lastTimestamp = 0;
     this.phase = 0;
-    this.audio = { bass: 0, mid: 0, treble: 0, flux: 0, pulse: 0, energy: 0 };
+    this.ratio = 1;
+
+    this.audio = {
+      sub: 0, bass: 0, lowMid: 0, mid: 0, highMid: 0, treble: 0, air: 0,
+      level: 0, energy: 0, flux: 0, pulse: 0, peak: 0,
+      beat: 0, beatCount: 0, sinceBeat: 9, bpm: 0, bar: 0, stereoDrift: 0,
+      // Self-normalizing measures: 1 means "average for whatever is playing".
+      bassRel: 1, midRel: 1, trebRel: 1,
+      bassAtt: 1, midAtt: 1, trebAtt: 1,
+      brightness: 0.5, transient: 0, sustain: 0, silent: true,
+    };
     this.previousFrequency = new Float32Array(this.frequency.length);
-    this.stars = Array.from({ length: 96 }, (_, index) => ({
-      x: (((index * 67) % 193) / 193) * 2 - 1,
-      y: (((index * 101) % 197) / 197) * 2 - 1,
-      z: 0.4 + ((index * 43) % 157) / 24,
-      size: 0.4 + (index % 4) * 0.28,
-    }));
-    this.embers = Array.from({ length: 84 }, (_, index) => ({
-      x: ((index * 47) % 83) / 83,
-      y: ((index * 29) % 89) / 89,
-      speed: 0.0018 + (index % 11) * 0.00034,
-      size: 0.6 + (index % 5) * 0.42,
-      drift: (index % 2 ? 1 : -1) * (0.002 + (index % 7) * 0.0005),
-    }));
+    this.bands = new Float32Array(BAND_COUNT);
+    this.bandPeaks = new Float32Array(BAND_COUNT);
+    this.fluxHistory = new Float32Array(FLUX_HISTORY);
+    this.fluxCursor = 0;
+    this.beatIntervals = [];
+    this.lastBeatAt = -9;
+    // Long-window means behind the self-normalizing measures.
+    this.longTerm = { bass: 0.08, mid: 0.06, treble: 0.04 };
+    this.sourceLabel = "INTERNAL";
+    this.hostBpm = 0;
+
+    // Render-budget governor: scenes multiply their element counts by
+    // `detail`, so a slow machine loses density instead of frame rate.
+    this.load = 8;
+    this.detail = 1;
+    this.lastTearBeat = -1;
+
+    this.scenes = new Map();
+    this.grain = new kit.Grain();
+    this.dither = new kit.Dither();
+    this.tube = new kit.Layer({ scale: 1, alpha: false });
+
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.setAnalyser(options.analyser ?? null);
+    this.setBpm(options.bpm ?? 0);
     this.setMode(options.mode ?? MODES.WIRED_TUNNEL);
     this.resize();
   }
@@ -125,6 +197,7 @@ export class SpellVisualizer {
   setMode(mode) {
     mode = MODE_ALIASES[mode] || mode;
     if (!Object.values(MODES).includes(mode)) throw new RangeError(`Unknown visualizer mode: ${mode}`);
+    if (mode !== this.mode) this.scenes.get(this.mode)?.suspend?.();
     this.mode = mode;
     const parent = this.canvas.closest(".spell-visualizer, .visualizer-panel");
     if (parent) parent.dataset.modeLabel = MODE_LABELS[mode];
@@ -135,15 +208,39 @@ export class SpellVisualizer {
   setQuality(level = 1) { this.quality = clamp(Number(level) || 1, 0.25, 1); this.resize(); }
   setReducedMotion(enabled) { this.reducedMotion = Boolean(enabled); }
 
+  /** Supplies the workstation tempo. Pass 0 to return to analyser detection. */
+  setBpm(value = 0) {
+    const bpm = Number(value);
+    this.hostBpm = Number.isFinite(bpm) && bpm > 0 ? clamp(bpm, 30, 300) : 0;
+  }
+
+  /** Names the signal source in the HUD, e.g. when piping in system audio. */
+  setSourceLabel(label) { this.sourceLabel = String(label || "INTERNAL").toUpperCase().slice(0, 18); }
+
+  /** Lazily builds the active scene and keeps it warm for instant switching. */
+  activeScene() {
+    let scene = this.scenes.get(this.mode);
+    if (!scene) {
+      const Scene = SCENES[this.mode];
+      if (!Scene) return null;
+      scene = new Scene(kit);
+      this.scenes.set(this.mode, scene);
+    }
+    scene.resume?.();
+    return scene;
+  }
+
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     const ratio = Math.min(window.devicePixelRatio || 1, 2) * this.quality;
     const width = Math.max(1, Math.round(rect.width * ratio));
     const height = Math.max(1, Math.round(rect.height * ratio));
+    this.ratio = ratio;
     if (this.canvas.width === width && this.canvas.height === height) return;
     this.canvas.width = width;
     this.canvas.height = height;
     this.context?.setTransform(1, 0, 0, 1, 0, 0);
+    for (const scene of this.scenes.values()) scene.resize?.(width, height, ratio);
   }
 
   start() {
@@ -161,10 +258,15 @@ export class SpellVisualizer {
   destroy() {
     this.stop();
     this.resizeObserver.disconnect();
+    for (const scene of this.scenes.values()) scene.suspend?.();
+    this.scenes.clear();
+    this.grain.release();
+    this.dither.release();
+    this.tube.release();
     this.analyser = null;
   }
 
-  readAudio() {
+  readAudio(delta) {
     if (this.analyser) {
       this.analyser.getByteFrequencyData(this.frequency);
       this.analyser.getByteTimeDomainData(this.waveform);
@@ -173,337 +275,339 @@ export class SpellVisualizer {
       this.waveform.fill(128);
     }
     const count = this.frequency.length;
-    const bass = power(this.frequency, 0, Math.max(2, Math.floor(count * 0.075)));
-    const mid = power(this.frequency, Math.floor(count * 0.075), Math.floor(count * 0.38));
-    const treble = power(this.frequency, Math.floor(count * 0.38), Math.floor(count * 0.86));
+    const slice = (from, to) => kit.power(this.frequency, Math.floor(count * from), Math.max(Math.floor(count * from) + 1, Math.floor(count * to)));
+    const sub = slice(0, 0.028);
+    const bass = slice(0.028, 0.085);
+    const lowMid = slice(0.085, 0.18);
+    const mid = slice(0.18, 0.34);
+    const highMid = slice(0.34, 0.55);
+    const treble = slice(0.55, 0.78);
+    const air = slice(0.78, 0.97);
+
+    // Superflux-flavoured spectral flux: each bin is compared against the
+    // maximum of its neighbourhood in the previous frame, which stops vibrato
+    // and pitch drift from firing false onsets on sustained material.
     let flux = 0;
+    let centroidWeighted = 0;
+    let centroidTotal = 0;
     for (let index = 0; index < count; index += 1) {
       const value = this.frequency[index] / 255;
-      flux += Math.max(0, value - this.previousFrequency[index]);
+      const previous = Math.max(
+        this.previousFrequency[index],
+        this.previousFrequency[Math.max(0, index - 1)],
+        this.previousFrequency[Math.min(count - 1, index + 1)],
+      );
+      flux += Math.max(0, value - previous);
+      centroidWeighted += value * index;
+      centroidTotal += value;
       this.previousFrequency[index] = value;
     }
     flux /= Math.max(1, count);
-    const smooth = (key, value, attack = 0.52, release = 0.1) => {
+    const centroid = centroidTotal > 0.0001 ? centroidWeighted / centroidTotal / Math.max(1, count - 1) : 0.5;
+
+    let square = 0;
+    for (let index = 0; index < this.waveform.length; index += 1) {
+      const value = (this.waveform[index] - 128) / 128;
+      square += value * value;
+    }
+    const level = Math.sqrt(square / Math.max(1, this.waveform.length));
+
+    const smooth = (key, value, attack, release) => {
       const alpha = value > this.audio[key] ? attack : release;
       this.audio[key] += (value - this.audio[key]) * alpha;
     };
+    smooth("sub", sub, 0.55, 0.07);
     smooth("bass", bass, 0.62, 0.08);
+    smooth("lowMid", lowMid, 0.5, 0.085);
     smooth("mid", mid, 0.48, 0.09);
+    smooth("highMid", highMid, 0.58, 0.11);
     smooth("treble", treble, 0.7, 0.13);
+    smooth("air", air, 0.74, 0.15);
+    smooth("level", level, 0.6, 0.1);
     smooth("flux", Math.min(1, flux * 7), 0.85, 0.16);
+
     this.audio.pulse = Math.max(this.audio.pulse * 0.86, Math.min(1, flux * 13 + bass * 0.16));
-    this.audio.energy = this.audio.bass * 0.46 + this.audio.mid * 0.34 + this.audio.treble * 0.2;
+    this.audio.energy = this.audio.bass * 0.4 + this.audio.mid * 0.32 + this.audio.treble * 0.18 + this.audio.air * 0.1;
+    this.audio.peak = Math.max(this.audio.peak * 0.985, this.audio.energy);
+    this.audio.stereoDrift = Math.sin(this.phase * 0.19) * 0.6 + Math.sin(this.phase * 0.07 + 1.3) * 0.4;
+    this.audio.brightness += (centroid - this.audio.brightness) * 0.09;
+
+    // Self-normalizing measures.  A visualizer keyed to absolute amplitude
+    // dies on quiet material and clips on loud material; dividing by a slow
+    // running mean means 1.0 always reads as "normal for this track", which is
+    // what lets one scene react musically to anything the user plays.
+    const longAlpha = 1 - Math.exp(-delta / 9);
+    this.longTerm.bass += (Math.max(bass, 0.004) - this.longTerm.bass) * longAlpha;
+    this.longTerm.mid += (Math.max(mid, 0.004) - this.longTerm.mid) * longAlpha;
+    this.longTerm.treble += (Math.max(treble, 0.004) - this.longTerm.treble) * longAlpha;
+    const relative = (value, mean) => clamp(value / Math.max(0.012, mean), 0, 4);
+    this.audio.bassRel = relative(bass, this.longTerm.bass);
+    this.audio.midRel = relative(mid, this.longTerm.mid);
+    this.audio.trebRel = relative(treble, this.longTerm.treble);
+    const attack = 1 - Math.exp(-delta / 0.28);
+    this.audio.bassAtt += (this.audio.bassRel - this.audio.bassAtt) * attack;
+    this.audio.midAtt += (this.audio.midRel - this.audio.midAtt) * attack;
+    this.audio.trebAtt += (this.audio.trebRel - this.audio.trebAtt) * attack;
+
+    // Percussive vs sustained split, so scenes can flash on hits while their
+    // slow motion follows the pad underneath.
+    this.audio.transient = Math.max(this.audio.transient * Math.exp(-delta * 7), clamp(flux * 11));
+    this.audio.sustain += (this.audio.level - this.audio.sustain) * (1 - Math.exp(-delta / 1.4));
+    this.audio.silent = this.audio.level < 0.006 && this.audio.energy < 0.01;
+
+    this.updateBands();
+    this.detectBeat(flux, delta);
+  }
+
+  /**
+   * Log-spaced bands with falling peak holds.  Linear FFT bins put almost
+   * everything musical in the first eighth of the array; scenes that draw one
+   * element per bin end up with a dead right-hand side.
+   */
+  updateBands() {
+    const count = this.frequency.length;
+    for (let band = 0; band < BAND_COUNT; band += 1) {
+      const from = kit.melPosition(band / BAND_COUNT);
+      const to = kit.melPosition((band + 1) / BAND_COUNT);
+      const start = Math.min(count - 1, Math.floor(from * count));
+      const end = Math.max(start + 1, Math.min(count, Math.ceil(to * count)));
+      const value = clamp(kit.power(this.frequency, start, end) * (1 + band / BAND_COUNT * 1.15));
+      const previous = this.bands[band];
+      this.bands[band] = previous + (value - previous) * (value > previous ? 0.6 : 0.14);
+      this.bandPeaks[band] = Math.max(this.bandPeaks[band] * 0.972, this.bands[band]);
+    }
+  }
+
+  /**
+   * Adaptive onset detection.  Spectral flux is compared against the mean of a
+   * short rolling window, which tracks loud and quiet passages without any
+   * per-instrument tuning.  Interval medians give a usable tempo readout.
+   */
+  detectBeat(flux, delta) {
+    this.fluxHistory[this.fluxCursor] = flux;
+    this.fluxCursor = (this.fluxCursor + 1) % FLUX_HISTORY;
+    let sum = 0;
+    for (let index = 0; index < FLUX_HISTORY; index += 1) sum += this.fluxHistory[index];
+    const mean = sum / FLUX_HISTORY;
+    const threshold = mean * 1.72 + 0.0016;
+
+    this.audio.beat = Math.max(0, this.audio.beat - delta * 4.4);
+    this.audio.sinceBeat += delta;
+    if (flux > threshold && this.audio.sinceBeat > 0.11) {
+      this.audio.beat = 1;
+      this.audio.beatCount += 1;
+      const interval = this.phase - this.lastBeatAt;
+      if (interval > 0.16 && interval < 1.8) {
+        this.beatIntervals.push(interval);
+        if (this.beatIntervals.length > 12) this.beatIntervals.shift();
+        const sorted = this.beatIntervals.slice().sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+        const bpm = clamp(60 / median, 60, 220);
+        this.audio.bpm = this.audio.bpm ? this.audio.bpm + (bpm - this.audio.bpm) * 0.22 : bpm;
+      }
+      this.lastBeatAt = this.phase;
+      this.audio.sinceBeat = 0;
+    }
+    const beatLength = this.audio.bpm ? 60 / this.audio.bpm : 0.43;
+    this.audio.bar = kit.wrap01(this.phase / (beatLength * 4));
+  }
+
+  /** Builds the per-frame contract object handed to the active scene. */
+  buildFrame(context, width, height, delta) {
+    const ratio = this.ratio || 1;
+    return {
+      ctx: context,
+      width,
+      height,
+      ratio,
+      px: (value) => value * ratio,
+      unit: Math.min(width, height) / 1000,
+      time: this.phase,
+      dt: delta,
+      frameIndex: this.frameIndex,
+      bpm: this.hostBpm || this.audio.bpm || 120,
+      detail: this.detail,
+      quality: this.quality,
+      reducedMotion: this.reducedMotion,
+      audio: this.audio,
+      spectrum: this.frequency,
+      waveform: this.waveform,
+      bands: this.bands,
+      bandPeaks: this.bandPeaks,
+      band: (position) => this.bands[Math.min(BAND_COUNT - 1, Math.max(0, Math.round(clamp(position) * (BAND_COUNT - 1))))],
+      kit,
+      palette,
+    };
   }
 
   draw(timestamp) {
     if (!this.running || !this.context) return;
+    const started = performance.now();
     const delta = Math.min(0.08, (timestamp - this.lastTimestamp || 16.7) / 1000);
     this.lastTimestamp = timestamp;
     if (!this.reducedMotion) this.phase += delta;
-    this.readAudio();
+    else this.phase += delta * 0.12;
+    this.frameIndex += 1;
+    this.readAudio(delta);
+
     const context = this.context;
     const { width, height } = this.canvas;
-    const energy = this.audio.energy;
-    context.fillStyle = this.mode === MODES.WIRED_TUNNEL || this.mode === MODES.SERIAL_ORBIT
-      ? `rgba(3, 3, 8, ${this.reducedMotion ? 1 : 0.34})`
-      : "#050508";
-    context.fillRect(0, 0, width, height);
-    if (this.mode === MODES.WIRED_TUNNEL) this.drawWiredTunnel(context, width, height, energy);
-    if (this.mode === MODES.SPECTRAL_FIRE) this.drawSpectralFire(context, width, height, energy);
-    if (this.mode === MODES.CRUCIFORM_SCOPE) this.drawCruciformScope(context, width, height, energy);
-    if (this.mode === MODES.WARPED_SHRINE) this.drawWarpedShrine(context, width, height, energy);
-    if (this.mode === MODES.SERIAL_ORBIT) this.drawSerialOrbit(context, width, height, energy);
+    const scene = this.activeScene();
+    const frame = this.buildFrame(context, width, height, delta);
+    const post = { ...DEFAULT_POST, ...(scene?.constructor?.post ?? {}) };
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = 1;
+    context.globalCompositeOperation = "source-over";
+    context.filter = "none";
+
+    if (scene) scene.render(frame);
+    else kit.fadeTo(context, width, height, palette.void, 1);
+
+    this.applyPost(frame, post);
+
+    const elapsed = performance.now() - started;
+    this.load += (elapsed - this.load) * 0.06;
+    // Two frames of headroom at 60fps, then start shedding density.
+    const wanted = this.load > 13 ? 0.58 : this.load > 9.5 ? 0.78 : 1;
+    this.detail += (wanted - this.detail) * 0.02;
     this.frame = requestAnimationFrame((next) => this.draw(next));
   }
 
-  drawWiredTunnel(context, width, height, energy) {
-    const rings = Math.max(9, Math.floor(18 * this.quality));
-    const segments = Math.max(14, Math.floor(24 * this.quality));
-    const travel = this.reducedMotion ? 0.22 : (this.phase * (0.12 + this.audio.bass * 0.18)) % 1;
-    const roll = this.reducedMotion ? 0 : Math.sin(this.phase * 0.37) * 0.13 + this.audio.flux * 0.12;
-    const yaw = this.reducedMotion ? 0 : Math.sin(this.phase * 0.21) * 0.17;
-    const focal = Math.min(width, height) * 0.82;
-    const mesh = [];
-    for (let ring = 0; ring < rings; ring += 1) {
-      const progress = ((ring / rings - travel) % 1 + 1) % 1;
-      const z = 0.32 + progress * 6.2;
-      const row = [];
-      for (let segment = 0; segment < segments; segment += 1) {
-        const theta = segment / segments * Math.PI * 2;
-        const bin = this.frequency[Math.floor(segment / segments * Math.max(1, this.frequency.length - 1))] / 255;
-        const radius = 0.7
-          + Math.sin(theta * 4 + this.phase * 0.7 + ring * 0.28) * 0.07
-          + this.audio.bass * Math.sin(theta * 2 + ring * 0.4) * 0.17
-          + bin * 0.055;
-        const twist = theta + z * 0.19 + (this.reducedMotion ? 0 : this.phase * 0.08);
-        const point = rotate3D(
-          Math.cos(twist) * radius * 1.12,
-          Math.sin(twist) * radius * 0.67,
-          z,
-          Math.sin(this.phase * 0.17) * 0.035,
-          yaw,
-          roll,
-        );
-        row.push(project3D(point, width, height, focal));
+  /**
+   * The treatment every scene shares: tube curvature, interlace, toner grain,
+   * ordered dither, vignette and the surveillance HUD.  Doing it once here is
+   * what makes six different scenes feel like one physical device.
+   */
+  applyPost(frame, post) {
+    const { ctx, width, height } = frame;
+    const reduced = this.reducedMotion;
+    const audio = this.audio;
+
+    if (!reduced && post.curve > 0 && this.tube.ctx) {
+      // Copy out, then recomposite as curved bands.  One extra full-frame blit.
+      this.tube.match(width, height);
+      this.tube.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.tube.ctx.globalCompositeOperation = "copy";
+      this.tube.ctx.drawImage(this.canvas, 0, 0);
+      kit.curveWarp(ctx, this.tube.canvas, width, height, {
+        amount: post.curve * (1 + audio.bass * 0.7),
+        bands: Math.round(26 * this.detail) + 8,
+      });
+      // Tracking errors land on hits, at most once per onset.  Rolling a die
+      // every frame instead reads as noise rather than malfunction.
+      if (post.tear && audio.beat > 0.72 && audio.beatCount !== this.lastTearBeat && audio.transient > 0.34) {
+        this.lastTearBeat = audio.beatCount;
+        if ((audio.beatCount % 4 === 0) || audio.flux > 0.55) {
+          kit.tapeTear(ctx, this.tube.canvas, width, height, {
+            count: 1 + Math.floor(audio.flux * 3),
+            seed: audio.beatCount * 977 + this.frameIndex,
+            amount: 0.03 + audio.flux * 0.05,
+          });
+        }
       }
-      mesh.push({ progress, row });
     }
-    context.save();
-    context.globalCompositeOperation = "lighter";
-    for (let ring = rings - 1; ring >= 0; ring -= 1) {
-      const { row, progress } = mesh[ring];
-      const alpha = 0.07 + (1 - progress) * 0.42 + this.audio.pulse * 0.18;
-      const hue = 112 + this.audio.treble * 92 + progress * 38;
-      context.strokeStyle = `hsla(${hue}, 95%, 72%, ${alpha})`;
-      context.lineWidth = Math.max(0.65, (1.7 - progress) * this.quality);
-      context.beginPath();
-      for (let segment = 0; segment <= segments; segment += 1) {
-        const point = row[segment % segments];
-        if (!point) continue;
-        if (segment === 0) context.moveTo(point.x, point.y); else context.lineTo(point.x, point.y);
-      }
-      context.stroke();
+
+    if (post.bar > 0 && !reduced) {
+      kit.rollingBar(ctx, width, height, this.phase * 0.14, { alpha: post.bar, thickness: height * 0.22 });
     }
-    for (let segment = 0; segment < segments; segment += 1) {
-      const bin = this.frequency[Math.floor(segment / segments * Math.max(1, this.frequency.length - 1))] / 255;
-      context.strokeStyle = segment % 4 === 0
-        ? `rgba(177,140,255,${0.12 + bin * 0.42})`
-        : `rgba(165,255,157,${0.055 + bin * 0.22})`;
-      context.lineWidth = segment % 4 === 0 ? 1.2 : 0.7;
-      context.beginPath();
-      let started = false;
-      const ordered = mesh.slice().sort((left, right) => right.progress - left.progress);
-      for (const ring of ordered) {
-        const point = ring.row[segment];
-        if (!point) continue;
-        if (!started) { context.moveTo(point.x, point.y); started = true; } else context.lineTo(point.x, point.y);
-      }
-      context.stroke();
+    if (post.scanlines > 0) {
+      kit.scanlines(ctx, width, height, {
+        alpha: post.scanlines * (reduced ? 0.5 : 1),
+        period: Math.max(2, Math.round(3 * this.ratio)),
+        offset: reduced ? 0 : Math.floor(this.phase * 26) % 4,
+      });
     }
-    // A restrained 2000s-player HUD: serial blocks and a live lower spectrum.
-    context.globalCompositeOperation = "source-over";
-    context.fillStyle = `rgba(165,255,157,${0.2 + this.audio.treble * 0.35})`;
-    const bars = 28;
-    for (let bar = 0; bar < bars; bar += 1) {
-      const amp = this.frequency[Math.floor(bar / bars * this.frequency.length)] / 255;
-      const barWidth = width * 0.17 / bars;
-      context.fillRect(width * 0.04 + bar * barWidth, height * 0.92 - amp * height * 0.09, Math.max(1, barWidth - 1), amp * height * 0.09);
+    if (post.dither > 0) this.dither.apply(ctx, width, height, post.dither);
+    if (post.grain > 0) {
+      this.grain.apply(ctx, width, height, {
+        alpha: post.grain + audio.flux * 0.03,
+        frame: this.frameIndex,
+        jitter: reduced ? 0 : (this.frameIndex % 7) / 7,
+      });
     }
-    context.font = `${Math.max(9, width * 0.012)}px monospace`;
-    context.fillText(`WIRE://${String(Math.floor(this.phase * 1000) % 100000).padStart(5, "0")}  B${Math.round(this.audio.bass * 99)}  F${Math.round(this.audio.flux * 99)}`, width * 0.04, height * 0.965);
-    context.restore();
+    if (post.vignette > 0) kit.vignette(ctx, width, height, { strength: post.vignette });
+    if (post.hud) this.drawHud(frame);
   }
 
-  drawSpectralFire(context, width, height, energy) {
-    const columns = Math.max(18, Math.floor(72 * this.quality));
-    const columnWidth = width / columns;
-    context.save();
-    const bloom = context.createRadialGradient(width * 0.5, height, 0, width * 0.5, height, height * 0.92);
-    bloom.addColorStop(0, `rgba(255, 105, 50, ${0.2 + energy * 0.42})`);
-    bloom.addColorStop(0.32, `rgba(225, 72, 88, ${0.11 + energy * 0.2})`);
-    bloom.addColorStop(0.72, "rgba(80, 20, 62, 0.06)");
-    bloom.addColorStop(1, "rgba(5, 5, 8, 0)");
-    context.fillStyle = bloom;
-    context.fillRect(0, 0, width, height);
-    context.globalCompositeOperation = "lighter";
-    for (let column = 0; column < columns; column += 1) {
-      const index = Math.floor((column / columns) * (this.frequency.length - 1));
-      const amplitude = this.frequency[index] / 255;
-      const flicker = this.reducedMotion ? 0 : (Math.sin(this.phase * 7 + column * 1.9) + 1) * 0.025;
-      const flameHeight = (amplitude * 0.78 + energy * 0.18 + flicker) * height;
-      const x = column * columnWidth;
-      const gradient = context.createLinearGradient(x, height, x, height - flameHeight);
-      gradient.addColorStop(0, "rgba(225, 72, 88, 0.1)");
-      gradient.addColorStop(0.32, "rgba(225, 72, 88, 0.82)");
-      gradient.addColorStop(0.7, "rgba(233, 168, 91, 0.76)");
-      gradient.addColorStop(1, "rgba(177, 140, 255, 0)");
-      context.fillStyle = gradient;
-      context.fillRect(x + 1, height - flameHeight, Math.max(1, columnWidth - 2), flameHeight);
-    }
-    // Wide translucent tongues make the spectrum feel like a continuous
-    // flame body instead of a row of equalizer bars.
-    const tongues = Math.max(7, Math.floor(16 * this.quality));
-    for (let tongue = 0; tongue < tongues; tongue += 1) {
-      const index = Math.floor((tongue / tongues) * (this.frequency.length * 0.68));
-      const amplitude = this.frequency[index] / 255;
-      const center = ((tongue + 0.5) / tongues) * width;
-      const sway = this.reducedMotion ? 0 : Math.sin(this.phase * (2.8 + tongue * 0.07) + tongue * 1.7) * width * 0.018;
-      const flameHeight = height * (0.16 + amplitude * 0.72 + energy * 0.16);
-      const half = width / tongues * (0.55 + amplitude * 0.45);
-      const gradient = context.createLinearGradient(center, height, center + sway, height - flameHeight);
-      gradient.addColorStop(0, "rgba(255, 58, 36, 0.28)"); gradient.addColorStop(0.35, "rgba(255, 136, 54, 0.32)"); gradient.addColorStop(0.72, "rgba(225, 72, 88, 0.2)"); gradient.addColorStop(1, "rgba(177, 140, 255, 0)");
-      context.fillStyle = gradient;
-      context.beginPath();
-      context.moveTo(center - half, height);
-      context.bezierCurveTo(center - half * 0.55, height - flameHeight * 0.36, center + sway - half * 0.3, height - flameHeight * 0.68, center + sway, height - flameHeight);
-      context.bezierCurveTo(center + sway + half * 0.45, height - flameHeight * 0.62, center + half * 0.72, height - flameHeight * 0.25, center + half, height);
-      context.closePath(); context.fill();
-    }
-    for (const ember of this.embers) {
-      if (!this.reducedMotion) {
-        ember.y -= ember.speed * (1.2 + energy * 5.5);
-        ember.x += Math.sin(this.phase * 2.2 + ember.y * 17) * ember.drift;
-        if (ember.y < -0.04) { ember.y = 1.02; ember.x = (ember.x * 1.71 + 0.37) % 1; }
-        if (ember.x < 0) ember.x += 1;
-        if (ember.x > 1) ember.x -= 1;
-      }
-      const bin = this.frequency[Math.floor(ember.x * Math.max(1, this.frequency.length - 1))] / 255;
-      context.fillStyle = `rgba(255, ${105 + Math.floor(bin * 95)}, ${45 + Math.floor(bin * 70)}, ${0.16 + bin * 0.72})`;
-      context.beginPath(); context.arc(ember.x * width, ember.y * height, ember.size * (0.7 + bin * 1.5) * this.quality, 0, Math.PI * 2); context.fill();
-    }
-    context.strokeStyle = `rgba(239, 230, 208, ${0.12 + energy * 0.25})`;
-    context.beginPath();
-    context.moveTo(0, height * 0.75);
-    for (let index = 0; index < this.waveform.length; index += 1) {
-      const x = (index / (this.waveform.length - 1)) * width;
-      const y = height * 0.75 + ((this.waveform[index] - 128) / 128) * height * 0.2;
-      context.lineTo(x, y);
-    }
-    context.stroke();
-    context.restore();
-  }
+  /**
+   * Machine furniture: corner landmarks, a channel serial, a tick ladder and a
+   * timecode.  Deliberately sparse and never in the scene's way — the right
+   * edge and the bottom-right corner are HUD territory.
+   */
+  drawHud(frame) {
+    const { ctx, width, height, ratio } = frame;
+    const audio = this.audio;
+    const small = Math.max(9, 11 * ratio);
+    const inset = 10 * ratio;
 
-  drawCruciformScope(context, width, height, energy) {
-    const cx = width / 2;
-    const cy = height / 2;
-    const span = Math.min(width, height) * (0.32 + energy * 0.15);
-    context.save();
-    context.translate(cx, cy);
-    context.globalCompositeOperation = "lighter";
-    context.strokeStyle = `rgba(177, 140, 255, ${0.3 + energy * 0.45})`;
-    context.lineWidth = Math.max(1, width * 0.003);
-    context.beginPath();
-    context.moveTo(-span, 0); context.lineTo(span, 0);
-    context.moveTo(0, -span * 1.2); context.lineTo(0, span * 1.2);
-    context.stroke();
-    context.strokeStyle = `rgba(165, 255, 157, ${0.34 + energy * 0.5})`;
-    context.lineWidth = Math.max(1, width * 0.0015);
-    context.beginPath();
-    for (let index = 0; index < this.waveform.length; index += 1) {
-      const x = ((index / (this.waveform.length - 1)) - 0.5) * span * 2.2;
-      const y = ((this.waveform[index] - 128) / 128) * span * 0.52;
-      if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
-    }
-    context.stroke();
-    context.rotate(this.reducedMotion ? 0 : this.phase * 0.13);
-    for (let arm = 0; arm < 4; arm += 1) {
-      context.rotate(Math.PI / 2);
-      context.strokeStyle = `rgba(225, 72, 88, ${0.08 + average(this.frequency, arm * 8, arm * 8 + 8) * 0.38})`;
-      context.beginPath();
-      context.arc(0, 0, span * (0.3 + arm * 0.17), -0.7, 0.7);
-      context.stroke();
-    }
-    context.restore();
-  }
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  drawWarpedShrine(context, width, height, energy) {
-    const cx = width / 2;
-    const cy = height * 0.56;
-    const scale = Math.min(width, height);
-    const wobble = this.reducedMotion ? 0 : Math.sin(this.phase * 1.2) * scale * 0.015;
-    context.save();
-    context.translate(cx, cy);
-    context.globalCompositeOperation = "lighter";
-    for (let arch = 0; arch < 7; arch += 1) {
-      const bin = this.frequency[Math.floor((arch / 7) * (this.frequency.length * 0.55))] / 255;
-      const radius = scale * (0.12 + arch * 0.075 + bin * 0.035);
-      context.strokeStyle = `hsla(${267 + arch * 5}, 85%, 76%, ${0.07 + bin * 0.45})`;
-      context.lineWidth = Math.max(1, scale * 0.002);
-      context.beginPath();
-      context.ellipse(wobble * (arch - 3), scale * 0.28, radius * 0.58, radius, 0, Math.PI, Math.PI * 2);
-      context.stroke();
+    // Corner landmarks.
+    ctx.strokeStyle = palette.wire(0.2 + audio.beat * 0.4);
+    ctx.lineWidth = Math.max(1, ratio);
+    const arm = 16 * ratio;
+    ctx.beginPath();
+    for (const [cx, cy, sx, sy] of [
+      [inset, inset, 1, 1],
+      [width - inset, inset, -1, 1],
+      [width - inset, height - inset, -1, -1],
+      [inset, height - inset, 1, -1],
+    ]) {
+      ctx.moveTo(cx + sx * arm, cy);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(cx, cy + sy * arm);
     }
-    const blocks = Math.max(5, Math.floor(13 * this.quality));
-    for (let block = 0; block < blocks; block += 1) {
-      const amp = this.frequency[Math.floor((block / blocks) * this.frequency.length)] / 255;
-      const x = ((block / (blocks - 1)) - 0.5) * scale * 0.78;
-      const h = scale * (0.11 + amp * 0.27);
-      context.fillStyle = `rgba(239, 230, 208, ${0.025 + amp * 0.15})`;
-      context.fillRect(x - scale * 0.027, scale * 0.34 - h, scale * 0.054, h);
-    }
-    context.strokeStyle = `rgba(165, 255, 157, ${0.22 + energy * 0.52})`;
-    context.beginPath();
-    context.moveTo(0, -scale * 0.31);
-    context.lineTo(0, scale * 0.27);
-    context.moveTo(-scale * 0.13, -scale * 0.06);
-    context.lineTo(scale * 0.13, -scale * 0.06);
-    context.stroke();
-    context.restore();
-  }
+    ctx.stroke();
 
-  drawSerialOrbit(context, width, height, energy) {
-    const focal = Math.min(width, height) * 1.05;
-    const baseTime = this.reducedMotion ? 0.6 : this.phase;
-    const pulse = 1 + this.audio.bass * 0.2 + this.audio.pulse * 0.08;
-    context.save();
-    context.globalCompositeOperation = "lighter";
-
-    // A slow field of data stars gives the polyhedron real depth without a
-    // bitmap texture or a GPU dependency.
-    for (const star of this.stars) {
-      const travel = this.reducedMotion ? star.z : ((star.z - baseTime * 0.42) % 6.5 + 6.5) % 6.5 + 0.3;
-      const point = project3D({ x: star.x * 2.2, y: star.y * 1.4, z: travel }, width, height, focal);
-      if (!point) continue;
-      const alpha = clamp((1 - travel / 7) * (0.18 + this.audio.treble * 0.55), 0.03, 0.7);
-      context.fillStyle = `rgba(239,230,208,${alpha})`;
-      context.fillRect(point.x, point.y, star.size * point.scale * 0.016, star.size * point.scale * 0.016);
+    // Right-edge signal ladder.
+    const ladderTop = height * 0.3;
+    const ladderHeight = height * 0.4;
+    const ticks = 18;
+    for (let tick = 0; tick < ticks; tick += 1) {
+      const t = tick / (ticks - 1);
+      const y = ladderTop + t * ladderHeight;
+      const lit = 1 - t < audio.level * 1.6 + audio.beat * 0.2;
+      const long = tick % 6 === 0;
+      ctx.fillStyle = lit ? palette.wire(0.55) : palette.bone(0.14);
+      ctx.fillRect(width - inset - (long ? 11 : 6) * ratio, y, (long ? 11 : 6) * ratio, Math.max(1, ratio));
     }
 
-    const vertices = [
-      [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
-      [-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1],
-    ];
-    const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-    const projected = vertices.map(([x, y, z]) => {
-      const rotated = rotate3D(x * 0.58 * pulse, y * 0.58 * pulse, z * 0.58 * pulse,
-        baseTime * 0.23, baseTime * 0.31, baseTime * 0.17 + this.audio.flux * 0.25);
-      rotated.z += 2.45;
-      return project3D(rotated, width, height, focal);
+    // Channel identity, top right.
+    const serial = kit.serialString(Math.floor(this.phase * 3.1), 6);
+    kit.machineText(ctx, `CH06 · ${serial}`, width - inset - 15 * ratio, inset + small, {
+      size: small, align: "right", color: palette.wire(0.42), letterSpacing: 0.08,
     });
-    for (let layer = 0; layer < 3; layer += 1) {
-      context.strokeStyle = layer === 0
-        ? `rgba(225,72,88,${0.2 + energy * 0.5})`
-        : layer === 1 ? `rgba(177,140,255,${0.18 + this.audio.mid * 0.5})`
-          : `rgba(165,255,157,${0.2 + this.audio.treble * 0.55})`;
-      context.lineWidth = (3 - layer) * 0.8;
-      context.beginPath();
-      for (const [from, to] of edges) {
-        const a = projected[from], b = projected[to];
-        if (!a || !b) continue;
-        const scale = 1 + layer * 0.08;
-        const ax = width * 0.5 + (a.x - width * 0.5) * scale;
-        const ay = height * 0.5 + (a.y - height * 0.5) * scale;
-        const bx = width * 0.5 + (b.x - width * 0.5) * scale;
-        const by = height * 0.5 + (b.y - height * 0.5) * scale;
-        context.moveTo(ax, ay); context.lineTo(bx, by);
-      }
-      context.stroke();
-    }
+    kit.machineText(ctx, MODE_LABELS[this.mode].toUpperCase(), width - inset - 15 * ratio, inset + small * 2.2, {
+      size: small * 0.92, align: "right", color: palette.violet(0.35), letterSpacing: 0.1,
+    });
+    kit.machineText(ctx, `SRC ${this.sourceLabel}${audio.silent ? " · NO SIGNAL" : ""}`, width - inset - 15 * ratio, inset + small * 3.4, {
+      size: small * 0.85, align: "right", color: audio.silent ? palette.blood(0.42) : palette.wire(0.3), letterSpacing: 0.08,
+    });
 
-    // Counter-rotating orbital ellipses evoke the impossible 3D screensavers
-    // and music-player plugins of the era while remaining an original scene.
-    for (let orbit = 0; orbit < 7; orbit += 1) {
-      context.strokeStyle = `hsla(${105 + orbit * 25 + this.audio.treble * 45},90%,72%,${0.08 + (orbit % 3) * 0.045 + energy * 0.24})`;
-      context.lineWidth = orbit % 3 === 0 ? 1.4 : 0.75;
-      context.beginPath();
-      let started = false;
-      for (let step = 0; step <= 72; step += 1) {
-        const theta = step / 72 * Math.PI * 2;
-        const radius = 0.72 + orbit * 0.105 + Math.sin(theta * 3 + baseTime) * this.audio.mid * 0.045;
-        const tilted = rotate3D(Math.cos(theta) * radius, Math.sin(theta) * radius * 0.48, 0,
-          orbit * 0.38 + baseTime * (orbit % 2 ? -0.07 : 0.09), orbit * 0.29, baseTime * 0.06);
-        tilted.z += 2.55;
-        const point = project3D(tilted, width, height, focal);
-        if (!point) continue;
-        if (!started) { context.moveTo(point.x, point.y); started = true; } else context.lineTo(point.x, point.y);
-      }
-      context.stroke();
+    // Timecode block, bottom right.
+    const totalFrames = this.frameIndex;
+    const seconds = Math.floor(this.phase);
+    const timecode = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}:${String(totalFrames % 60).padStart(2, "0")}`;
+    const readout = [
+      `T ${timecode}`,
+      `BPM ${Math.round(frame.bpm)}  HIT ${String(audio.beatCount % 1000).padStart(3, "0")}`,
+      `LVL ${String(Math.round(audio.level * 99)).padStart(2, "0")}  LOAD ${String(Math.round(this.load)).padStart(2, "0")}`,
+    ];
+    readout.forEach((line, index) => {
+      kit.machineText(ctx, line, width - inset - 15 * ratio, height - inset - (readout.length - 1 - index) * small * 1.15 - 4 * ratio, {
+        size: small, align: "right", color: index === 0 ? palette.amber(0.5) : palette.bone(0.3), letterSpacing: 0.05,
+      });
+    });
+
+    // On-beat frame flash — the only place the HUD raises its voice.
+    if (audio.beat > 0.5 && !this.reducedMotion) {
+      ctx.strokeStyle = palette.blood((audio.beat - 0.5) * 0.5);
+      ctx.lineWidth = Math.max(1, ratio);
+      ctx.strokeRect(inset * 0.5, inset * 0.5, width - inset, height - inset);
     }
-    context.globalCompositeOperation = "source-over";
-    context.fillStyle = `rgba(165,255,157,${0.3 + this.audio.flux * 0.45})`;
-    context.font = `${Math.max(9, width * 0.012)}px monospace`;
-    context.fillText("SERIAL ORBIT / NO CARRIER / AUDIO BODY ONLINE", width * 0.04, height * 0.95);
-    context.restore();
+    ctx.restore();
   }
 }
 

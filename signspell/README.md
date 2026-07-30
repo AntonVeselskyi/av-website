@@ -19,6 +19,14 @@ Serve the repository over `localhost` or HTTPS, then open `/signspell/` in deskt
 - 808 gestures use a dedicated scale-safe sub layout between C1 and G2; they do not climb into G3. Changing a collection or instrument while playing immediately revoices the selected line.
 - WAV export renders the current loops with the same native synthesizers used for live playback.
 
+## The Wired / master vision
+
+Six original canvas scenes — wired tunnel, spectral fire, cruciform scope, warped shrine, serial orbit and lava lamp — react to the live analyser. Each scene lives in its own module under `js/visual/modes/` and is handed one frame contract by `js/visual/visualizer.js`; the shared toolkit in `js/visual/scene-kit.js` provides the feedback buffer, bloom, grain, tube curvature and stamp type, so all six read as one device. Band energy is mel-spaced and self-normalizing: 1.0 always means "average for whatever is playing", which is what lets one scene react musically to a quiet performance and a mastered track alike.
+
+**PC AUDIO** taps audio already playing on the machine and feeds it to the scenes, turning the page into a standalone visualizer for any player. Chrome asks you to pick a screen or tab and to tick its share-audio box; whole-screen shares carry system audio on Windows. The captured signal reaches the analyser only — it is never recorded, uploaded, or played back, so there is no echo of what you are already hearing. Press the button again, or stop the share from Chrome's bar, to release it. Firefox and Safari expose the picker but discard the audio track, so the button reports that and does nothing.
+
+`visual-lab.html` is a local development harness that drives all six scenes from a synthetic pattern (or from PC audio) without a webcam or a calibration profile. It is not linked from the instrument.
+
 ## Sound collections
 
 The four collections are original, sample-free mood palettes inspired by emo trap, horror trap, intimate distorted rap, and industrial trap. Artist names in the selector describe creative reference points only; the app does not claim endorsement or reproduce signature recordings.

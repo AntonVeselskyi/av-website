@@ -31,7 +31,7 @@ import {
   saveCalibrationDraft,
   saveProject,
 } from "./storage.js?v=7";
-import { createSpellVisualizer } from "./visual/visualizer.js?v=3";
+import { createSpellVisualizer } from "./visual/visualizer.js?v=4";
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const COLLECTION_REFERENCES = Object.freeze({
@@ -61,7 +61,7 @@ const dom = {
   master: $("#master-volume"), sub: $("#sub-boost"), grit: $("#distortion"), reverb: $("#master-reverb"), generate: $("#generate-loop"), lanes: $("#loop-lanes"), laneTemplate: $("#lane-template"),
   focusedPanel: $(".focused-editor-panel"), focusedSummary: $("#focused-lane-summary"), focusedRoll: $("#focused-lane-roll"), focusedEmpty: $("#focused-roll-empty"), focusedLength: $("#focused-roll-length"), focusedRecord: $("#focused-record"), stepInput: $("#step-input"), recordNext: $("#record-next"), focusedOverdub: $("#focused-overdub"), focusedMute: $("#focused-mute"), focusedSolo: $("#focused-solo"), focusedClear: $("#focused-clear"),
   laneCount: $("#lane-count"),
-  export: $("#export-wav"), exportProject: $("#export-project"), restoreProject: $("#restore-project"), restoreProjectFile: $("#restore-project-file"), visualCanvas: $("#visualizer-canvas"), visualLabel: $("#visualizer-label"), fullVisual: $("#fullscreen-visualizer"), reduceMotion: $("#reduced-motion"),
+  export: $("#export-wav"), exportProject: $("#export-project"), restoreProject: $("#restore-project"), restoreProjectFile: $("#restore-project-file"), visualCanvas: $("#visualizer-canvas"), visualLabel: $("#visualizer-label"), fullVisual: $("#fullscreen-visualizer"), captureAudio: $("#capture-audio"), reduceMotion: $("#reduced-motion"),
   calibrationButton: $("#calibrate-button"), calibrationDialog: $("#calibration-dialog"), calibrationCameraMount: $("#calibration-camera-mount"), calibrationDiagnosticMount: $("#calibration-diagnostic-mount"), calibrationHeading: $("#calibration-heading"), calibrationInstruction: $("#calibration-instruction"), calibrationOrientation: $("#calibration-orientation"), calibrationGlyph: $("#calibration-glyph"), calibrationStatus: $("#calibration-status"), calibrationCount: $("#calibration-count"), calibrationProgress: $("#calibration-progress"), calibrationChecklist: $("#calibration-checklist"), calibrationBack: $("#calibration-back"), calibrationReset: $("#calibration-reset"), calibrationNext: $("#calibration-next"),
 };
 
@@ -70,6 +70,7 @@ let audioContext = null;
 let music = null;
 let analyser = null;
 let visualizer = null;
+let systemAudio = null;
 let transport = null;
 let audioInitPromise = null;
 let cameraStream = null;
@@ -304,7 +305,7 @@ async function initAudio({ timeoutMs = 1600 } = {}) {
     // its own attack/release smoothing instead of smearing them at the analyser.
     analyser.smoothingTimeConstant = 0.48;
     music.master.output.connect(analyser);
-    visualizer = createSpellVisualizer(dom.visualCanvas, { analyser, mode: project.ui.visualizerMode, reducedMotion: project.ui.reducedMotion });
+    visualizer = createSpellVisualizer(dom.visualCanvas, { analyser, mode: project.ui.visualizerMode, reducedMotion: project.ui.reducedMotion, bpm: project.tonalScene.bpm });
     visualizer.start();
     transport = new LoopTransport({ getAudioTime: () => audioContext.currentTime, scheduleEvent: scheduleLoopEvent, project });
     transport.addEventListener("tick", (event) => {
@@ -324,6 +325,83 @@ async function initAudio({ timeoutMs = 1600 } = {}) {
     // A blocked first gesture may be retried by Play, a key, or a pedal.
     audioInitPromise = null;
   }
+}
+
+/**
+ * Pipes audio already playing on this machine into the visualizer, turning the
+ * page into a standalone visualizer for any player.
+ *
+ * Two constraints shape this.  The capture API refuses an audio-only request,
+ * so a throwaway video track is asked for and immediately disabled rather than
+ * rendered.  And the captured signal is wired to the analyser *only* — sending
+ * it onward to the speakers would echo whatever the user is already hearing.
+ */
+async function toggleSystemAudioCapture() {
+  if (systemAudio) {
+    stopSystemAudioCapture("PC AUDIO RELEASED");
+    return;
+  }
+  if (!navigator.mediaDevices?.getDisplayMedia) {
+    showToast("THIS BROWSER CANNOT TAP SYSTEM AUDIO — USE DESKTOP CHROME OR EDGE", 4600);
+    return;
+  }
+  try {
+    await initAudio();
+  } catch (error) {
+    showToast(`AUDIO ENGINE OFFLINE: ${error?.message || "unknown error"}`, 4200);
+    return;
+  }
+
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 1 },
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      systemAudio: "include",
+      monitorTypeSurfaces: "include",
+      selfBrowserSurface: "exclude",
+    });
+  } catch (error) {
+    if (error?.name === "NotAllowedError") showToast("PC AUDIO CANCELLED", 2400);
+    else showToast(`PC AUDIO FAILED: ${error?.message || "unknown error"}`, 4200);
+    return;
+  }
+
+  const [track] = stream.getAudioTracks();
+  if (!track) {
+    for (const other of stream.getTracks()) other.stop();
+    showToast("THAT SHARE CARRIED NO AUDIO — RETRY AND TICK THE SHARE-AUDIO BOX", 5400);
+    return;
+  }
+  for (const video of stream.getVideoTracks()) video.enabled = false;
+
+  const source = audioContext.createMediaStreamSource(stream);
+  const gain = audioContext.createGain();
+  gain.gain.value = 1.4;
+  source.connect(gain).connect(analyser);
+  systemAudio = { stream, source, gain };
+  for (const any of stream.getTracks()) any.addEventListener("ended", () => stopSystemAudioCapture("PC AUDIO ENDED"));
+
+  dom.captureAudio.setAttribute("aria-pressed", "true");
+  dom.captureAudio.textContent = "PC AUDIO ●";
+  visualizer?.setSourceLabel(track.label ? `PC · ${track.label}` : "PC AUDIO");
+  visualizer?.setBpm(0);
+  diagnosticLog.state("visual", "external audio attached to analyser (not routed to output)");
+  showToast("PC AUDIO LIVE — THE SCENES NOW FOLLOW WHATEVER IS PLAYING", 3800);
+}
+
+function stopSystemAudioCapture(message = "") {
+  if (!systemAudio) return;
+  try { systemAudio.source.disconnect(); } catch { /* already torn down */ }
+  try { systemAudio.gain.disconnect(); } catch { /* already torn down */ }
+  for (const track of systemAudio.stream.getTracks()) track.stop();
+  systemAudio = null;
+  dom.captureAudio.setAttribute("aria-pressed", "false");
+  dom.captureAudio.textContent = "PC AUDIO";
+  visualizer?.setSourceLabel("INTERNAL");
+  visualizer?.setBpm(project.tonalScene.bpm);
+  diagnosticLog.state("visual", "external audio released");
+  if (message) showToast(message);
 }
 
 function applyMasterSettings() {
@@ -375,6 +453,7 @@ function setProjectBpm(value) {
   const previousBpm = sanitizeBpm(project.tonalScene.bpm);
   const nextBpm = sanitizeBpm(value);
   project.tonalScene.bpm = nextBpm;
+  visualizer?.setBpm(nextBpm);
   if (transport?.playing && nextBpm !== previousBpm) {
     releaseHeldNotes();
     music?.stopAllGroups?.();
@@ -2017,6 +2096,7 @@ function wireEvents() {
   dom.calibrationReset.addEventListener("click", resetCalibrationProgress);
   for (const button of $$(".visual-mode")) button.addEventListener("click", () => { $$(".visual-mode").forEach((item) => item.classList.remove("active")); button.classList.add("active"); visualizer?.setMode(button.dataset.mode); project.ui.visualizerMode = button.dataset.mode; markChanged(); });
   dom.fullVisual.addEventListener("click", () => $(".visualizer-panel")?.requestFullscreen?.());
+  dom.captureAudio.addEventListener("click", toggleSystemAudioCapture);
   dom.reduceMotion.addEventListener("click", () => { project.ui.reducedMotion = !project.ui.reducedMotion; dom.reduceMotion.setAttribute("aria-pressed", String(project.ui.reducedMotion)); document.body.classList.toggle("reduced-motion", project.ui.reducedMotion); visualizer?.setReducedMotion(project.ui.reducedMotion); markChanged(); });
   window.addEventListener("keydown", (event) => {
     if (event.defaultPrevented || isEditableTarget(event.target)) return;

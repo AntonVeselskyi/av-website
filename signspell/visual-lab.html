@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>$IGN⸸$PELL // VISUAL LAB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/sign-spell.css?v=15">
+  <style>
+    /*
+     * Development harness for the visualizer scenes.  It drives every mode
+     * from a synthetic Web Audio pattern so the scenes can be reviewed without
+     * a webcam, a calibration profile or a gesture performance.
+     */
+    body { padding: 0.9rem; }
+    .lab-bar { align-items: center; display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; position: relative; z-index: 2; }
+    .lab-bar h1 { font: 1.1rem/1 var(--spell-mono); color: var(--spell-wire); letter-spacing: 0.08em; margin: 0 0.6rem 0 0; }
+    .lab-bar output { color: var(--spell-amber); font: 0.9rem/1 var(--spell-mono); margin-left: auto; }
+    .lab-grid { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr)); position: relative; z-index: 2; }
+    .lab-grid[data-solo] { grid-template-columns: 1fr; }
+    .lab-cell { background: #050508; border: 1px solid var(--spell-line); position: relative; }
+    .lab-cell[hidden] { display: none; }
+    .lab-cell canvas { aspect-ratio: 16 / 9; display: block; height: 100%; width: 100%; }
+    .lab-grid[data-solo] .lab-cell canvas { aspect-ratio: 21 / 9; }
+    .lab-cell figcaption { color: var(--spell-muted); font: 0.8rem/1 var(--spell-mono); left: 0.5rem; letter-spacing: 0.08em; position: absolute; text-transform: uppercase; top: 0.45rem; z-index: 3; }
+    .lab-note { color: var(--spell-dim); font: 0.85rem/1.5 var(--spell-mono); margin-top: 0.8rem; position: relative; z-index: 2; }
+  </style>
+</head>
+<body class="sign-spell">
+  <div class="noise" aria-hidden="true"></div>
+  <div class="lab-bar">
+    <h1>VISUAL LAB</h1>
+    <button id="lab-run" type="button">RUN SIGNAL</button>
+    <button id="lab-pc" type="button">PC AUDIO</button>
+    <button id="lab-mute" type="button" aria-pressed="true">AUDIBLE: OFF</button>
+    <button class="lab-solo" data-solo="" type="button" data-active="true">ALL</button>
+    <button class="lab-solo" data-solo="wired" type="button">WIRED</button>
+    <button class="lab-solo" data-solo="fire" type="button">FIRE</button>
+    <button class="lab-solo" data-solo="cruciform" type="button">SCOPE</button>
+    <button class="lab-solo" data-solo="shrine" type="button">SHRINE</button>
+    <button class="lab-solo" data-solo="orbit" type="button">ORBIT</button>
+    <button class="lab-solo" data-solo="lava" type="button">LAVA</button>
+    <button id="lab-motion" type="button" aria-pressed="false">REDUCE MOTION</button>
+    <output id="lab-readout">IDLE</output>
+  </div>
+
+  <div class="lab-grid" id="lab-grid">
+    <figure class="lab-cell" data-mode="wired"><figcaption>wired // tunnel</figcaption><canvas></canvas></figure>
+    <figure class="lab-cell" data-mode="fire"><figcaption>spectral // fire</figcaption><canvas></canvas></figure>
+    <figure class="lab-cell" data-mode="cruciform"><figcaption>cruciform // scope</figcaption><canvas></canvas></figure>
+    <figure class="lab-cell" data-mode="shrine"><figcaption>warped // shrine</figcaption><canvas></canvas></figure>
+    <figure class="lab-cell" data-mode="orbit"><figcaption>serial // orbit</figcaption><canvas></canvas></figure>
+    <figure class="lab-cell" data-mode="lava"><figcaption>lava // lamp</figcaption><canvas></canvas></figure>
+  </div>
+
+  <p class="lab-note">Local development harness. Not linked from the instrument and not part of the shipped flow.</p>
+
+  <script type="module">
+    import { createSpellVisualizer } from "./js/visual/visualizer.js";
+
+    const grid = document.getElementById("lab-grid");
+    const readout = document.getElementById("lab-readout");
+    const cells = [...document.querySelectorAll(".lab-cell")];
+    const bpm = 142;
+    const visualizers = cells.map((cell) => createSpellVisualizer(cell.querySelector("canvas"), { mode: cell.dataset.mode, bpm }));
+    for (const visualizer of visualizers) visualizer.start();
+    window.labVisualizers = visualizers;
+
+    // ---- synthetic signal ------------------------------------------------
+    // A real AnalyserNode fed by a scheduled pattern, so onset detection,
+    // band energy and tempo estimation all see honest data.
+    let audio = null;
+    let analyser = null;
+    let master = null;
+    let step = 0;
+    let nextTime = 0;
+    let timer = 0;
+
+    function noiseBuffer(context, seconds = 1) {
+      const buffer = context.createBuffer(1, Math.floor(context.sampleRate * seconds), context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let index = 0; index < data.length; index += 1) data[index] = Math.random() * 2 - 1;
+      return buffer;
+    }
+    let noise = null;
+
+    function envelope(gain, time, peak, attack, decay) {
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.linearRampToValueAtTime(peak, time + attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + attack + decay);
+    }
+
+    function kick(time) {
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.frequency.setValueAtTime(148, time);
+      osc.frequency.exponentialRampToValueAtTime(38, time + 0.13);
+      envelope(gain, time, 1, 0.004, 0.34);
+      osc.connect(gain).connect(master);
+      osc.start(time); osc.stop(time + 0.4);
+    }
+
+    function hat(time, open) {
+      const source = audio.createBufferSource();
+      const filter = audio.createBiquadFilter();
+      const gain = audio.createGain();
+      source.buffer = noise;
+      filter.type = "highpass";
+      filter.frequency.value = open ? 6200 : 9000;
+      envelope(gain, time, open ? 0.3 : 0.16, 0.002, open ? 0.16 : 0.05);
+      source.connect(filter).connect(gain).connect(master);
+      source.start(time); source.stop(time + 0.25);
+    }
+
+    function snare(time) {
+      const source = audio.createBufferSource();
+      const filter = audio.createBiquadFilter();
+      const gain = audio.createGain();
+      source.buffer = noise;
+      filter.type = "bandpass";
+      filter.frequency.value = 1900;
+      filter.Q.value = 0.7;
+      envelope(gain, time, 0.55, 0.003, 0.19);
+      source.connect(filter).connect(gain).connect(master);
+      source.start(time); source.stop(time + 0.3);
+    }
+
+    function stab(time, semitone) {
+      for (const detune of [0, 7, 12]) {
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.value = 110 * Math.pow(2, (semitone + detune) / 12);
+        envelope(gain, time, 0.13, 0.02, 0.45);
+        osc.connect(gain).connect(master);
+        osc.start(time); osc.stop(time + 0.6);
+      }
+    }
+
+    const PATTERN = [0, 3, 7, 10, 12, 10, 7, 3];
+
+    function schedule() {
+      const stepLength = 60 / bpm / 4;
+      while (nextTime < audio.currentTime + 0.24) {
+        const beat = step % 16;
+        if (beat % 4 === 0) kick(nextTime);
+        if (beat === 4 || beat === 12) snare(nextTime);
+        hat(nextTime, beat % 4 === 2);
+        if (beat % 2 === 0) stab(nextTime, PATTERN[(step / 2 | 0) % PATTERN.length]);
+        nextTime += stepLength;
+        step += 1;
+      }
+    }
+
+    document.getElementById("lab-run").addEventListener("click", async () => {
+      if (audio) { audio.resume(); return; }
+      audio = new AudioContext();
+      await audio.resume();
+      noise = noiseBuffer(audio, 1);
+      analyser = audio.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.72;
+      master = audio.createGain();
+      master.gain.value = 0.55;
+      const output = audio.createGain();
+      output.gain.value = 0;
+      master.connect(analyser);
+      analyser.connect(output).connect(audio.destination);
+      for (const visualizer of visualizers) visualizer.setAnalyser(analyser);
+      nextTime = audio.currentTime + 0.05;
+      timer = setInterval(schedule, 60);
+      window.labAnalyser = analyser;
+      window.labOutput = output;
+    });
+
+    // Drive the scenes from whatever is playing on the machine.  Capture needs
+    // a video track it never uses, and the signal reaches the analyser only.
+    document.getElementById("lab-pc").addEventListener("click", async (event) => {
+      audio ||= new AudioContext();
+      await audio.resume();
+      analyser ||= audio.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.72;
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 1 },
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+          systemAudio: "include", monitorTypeSurfaces: "include", selfBrowserSurface: "exclude",
+        });
+      } catch (error) { readout.textContent = `CAPTURE: ${error.name}`; return; }
+      if (!stream.getAudioTracks().length) {
+        for (const track of stream.getTracks()) track.stop();
+        readout.textContent = "CAPTURE: NO AUDIO IN SHARE";
+        return;
+      }
+      for (const video of stream.getVideoTracks()) video.enabled = false;
+      const source = audio.createMediaStreamSource(stream);
+      const gain = audio.createGain();
+      gain.gain.value = 1.4;
+      source.connect(gain).connect(analyser);
+      for (const visualizer of visualizers) { visualizer.setAnalyser(analyser); visualizer.setSourceLabel("PC AUDIO"); }
+      window.labAnalyser = analyser;
+      event.currentTarget.dataset.active = "true";
+    });
+
+    document.getElementById("lab-mute").addEventListener("click", (event) => {
+      const muted = event.currentTarget.getAttribute("aria-pressed") === "true";
+      event.currentTarget.setAttribute("aria-pressed", String(!muted));
+      event.currentTarget.textContent = `AUDIBLE: ${muted ? "ON" : "OFF"}`;
+      if (window.labOutput) window.labOutput.gain.value = muted ? 0.16 : 0;
+    });
+
+    document.getElementById("lab-motion").addEventListener("click", (event) => {
+      const on = event.currentTarget.getAttribute("aria-pressed") !== "true";
+      event.currentTarget.setAttribute("aria-pressed", String(on));
+      for (const visualizer of visualizers) visualizer.setReducedMotion(on);
+    });
+
+    for (const button of document.querySelectorAll(".lab-solo")) {
+      button.addEventListener("click", () => {
+        const solo = button.dataset.solo;
+        for (const other of document.querySelectorAll(".lab-solo")) other.dataset.active = String(other === button);
+        if (solo) grid.dataset.solo = solo; else delete grid.dataset.solo;
+        for (const cell of cells) cell.hidden = Boolean(solo) && cell.dataset.mode !== solo;
+        requestAnimationFrame(() => { for (const visualizer of visualizers) visualizer.resize(); });
+      });
+    }
+
+    setInterval(() => {
+      const first = visualizers[0];
+      const a = first.audio;
+      readout.textContent = `LOAD ${first.load.toFixed(1)}ms · DETAIL ${first.detail.toFixed(2)} · BPM ${Math.round(a.bpm)} · HITS ${a.beatCount} · LVL ${a.level.toFixed(2)} · BASS ${a.bass.toFixed(2)} · AIR ${a.air.toFixed(2)}`;
+    }, 250);
+  </script>
+</body>
+</html>
