@@ -25,6 +25,8 @@ Six original canvas scenes — wired tunnel, spectral fire, cruciform scope, war
 
 Warped shrine is the ritual scene: a headless effigy in a ruined nave, two braziers throwing its shadow up the far end, crows on the capitals that break for the camera, and a cowled celebrant at the plinth whose only feature is a pair of violet pupils. He is absent for part of every cycle; the surveillance overlay holds his track and keeps reporting on him either way.
 
+It is also where the analyser is built out of the architecture instead of laid on top of it. The god's halo is a polar oscilloscope carrying the raw waveform, mirrored so the ring closes without a seam. The colonnade is the spectrum: light climbs each pier's lit arris to that pier's band under a falling peak hold, low frequencies in the bay you are standing in and the high end receding toward the vanishing point, mirrored down both sides so it reads as one instrument seen from inside. The summoning circle carries the fine 32-band readout, and the braziers ride the low end continuously rather than waiting for the onset detector.
+
 **PC AUDIO** taps audio already playing on the machine and feeds it to the scenes, turning the page into a standalone visualizer for any player. Chrome asks you to pick a screen or tab and to tick its share-audio box; whole-screen shares carry system audio on Windows. The captured signal reaches the analyser only — it is never recorded, uploaded, or played back, so there is no echo of what you are already hearing. Press the button again, or stop the share from Chrome's bar, to release it. Firefox and Safari expose the picker but discard the audio track, so the button reports that and does nothing.
 
 `visual-lab.html` is a local development harness that drives all six scenes from a synthetic pattern (or from PC audio) without a webcam or a calibration profile. It is not linked from the instrument.
@@ -53,4 +55,6 @@ With Node 22 or newer:
 npm --prefix signspell test
 ```
 
-The suite covers tonal safety, loop scheduling, WAV encoding, project migration, pose classification, fingertip contacts, downstroke recovery, and worker replay.
+The suite covers tonal safety, loop scheduling, WAV encoding, project migration, pose classification, fingertip contacts, downstroke recovery, worker replay, and scene behaviour.
+
+The glob is quoted so Node expands it rather than the shell: POSIX `**` matches only one directory deep, which silently skipped every test file sitting directly in `tests/`.

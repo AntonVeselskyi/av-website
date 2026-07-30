@@ -58,6 +58,18 @@ const VAULT_H = Math.sqrt(VAULT_R * VAULT_R - VAULT_D * VAULT_D);
 const APEX_Y = CAP_Y - VAULT_H;
 const VAULT_PHI = Math.atan2(VAULT_H, VAULT_D);
 
+// The clerestory band, in world units.  It used to sit at CAP_Y - 1.34..-0.44,
+// which at 16:9 projects to roughly y = -400..-30 — the whole band was above
+// the top of the frame and had never once been visible.  Dropped to just above
+// the arcade, where the wall actually is on screen.
+const WINDOW_TOP = CAP_Y - 0.42;
+const WINDOW_SILL = CAP_Y - 0.1;
+// One light per bay.  Subdividing into mullions is architecturally right and
+// visually useless: the wall plane is almost edge-on to the camera, so a bay's
+// opening is only ~25px wide on screen to begin with and each mullion came out
+// two pixels across.
+const WINDOW_LIGHTS = 1;
+
 const BAY_COUNT = 9;
 const BAY_RATIO = 1.215;   // geometric depths read as even spacing under 1/z
 const Z_FIRST = 1.0;
@@ -184,6 +196,21 @@ export function crowFlight(progress) {
     flap: p * 15.5,
     alpha: smooth01(0, 0.07, p) * (1 - smooth01(0.84, 1, p)),
   };
+}
+
+/**
+ * Deals spectrum positions over a list of element depths.
+ *
+ * Elements at the same depth — the two sides of the nave — get the same band,
+ * so the colonnade reads as one instrument seen from inside it rather than as
+ * two unrelated ladders of light.  Bands are spread over the depths actually
+ * present, not over every bay the architecture has, so a band is never spent
+ * lighting something that got filtered off screen.
+ */
+export function spectrumRungs(depths) {
+  const rungs = [...new Set(depths)].sort((a, b) => a - b);
+  const span = Math.max(1, rungs.length - 1);
+  return depths.map((depth) => rungs.indexOf(depth) / span);
 }
 
 export default class WarpedShrineScene {
@@ -386,7 +413,25 @@ export default class WarpedShrineScene {
     this.paintVault(ctx, ratio, random);
     this.paintColonnade(ctx, ratio, random);
     this.paintCarvings(ctx, ratio, random);
+    this.mapSpectrum(this.windows);
+    this.mapSpectrum(this.piers);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  /**
+   * Deals one mel band to each recorded element, ordered by depth: the low end
+   * lights the bay you are standing in and the high end recedes toward the
+   * vanishing point.  Both sides of the nave get the same band at the same
+   * depth, so the spectrum reads as one instrument seen from inside it rather
+   * than as two unrelated ladders of light.
+   *
+   * Bands are dealt over the elements that survived the on-screen filter, not
+   * over every bay, so the spectrum always spans exactly what is visible.
+   */
+  mapSpectrum(elements) {
+    if (!elements || !elements.length) return;
+    const bands = spectrumRungs(elements.map((item) => item.depth));
+    for (let index = 0; index < elements.length; index += 1) elements[index].band = bands[index];
   }
 
   /** Walls, floor and aisle darkness: the large tonal masses. */
@@ -433,39 +478,61 @@ export default class WarpedShrineScene {
 
     // Clerestory band: dim glazed rectangles between the piers.  These are the
     // only openings we ever see; the shaft source itself stays off frame.
+    //
+    // Their quads are also recorded here, in the nominal-camera space the arch
+    // layer is baked in, because these fourteen openings are the scene's
+    // spectrum analyser: each is lit from its sill by one mel band, low bands
+    // at the near bays and high bands receding toward the vanishing point.
+    // Recording them at bake time is what keeps the live light registered with
+    // the baked stone under the parallax blit.
+    this.windows = [];
+    const mullion = 0.03;
     for (let bay = 1; bay < BAY_COUNT - 1; bay += 1) {
-      const front = this.bays[bay] + 0.14;
-      const back = this.bays[bay + 1] - 0.14;
-      if (back <= front) continue;
-      const frontScale = this.depthScale(front);
-      const backScale = this.depthScale(back);
+      const first = this.bays[bay] + 0.12;
+      const last = this.bays[bay + 1] - 0.12;
+      if (last <= first) continue;
       const fog = this.kit.depthFade(this.bays[bay], 0.9, Z_FADE + 2);
       for (const side of [-1, 1]) {
-        const x0 = this.sx(side * WALL_X, frontScale);
-        const x1 = this.sx(side * WALL_X, backScale);
-        const top0 = this.sy(sillY - 0.02, frontScale);
-        const bottom0 = this.sy(CAP_Y - 0.44, frontScale);
-        const top1 = this.sy(sillY - 0.02, backScale);
-        const bottom1 = this.sy(CAP_Y - 0.44, backScale);
-        const glass = ctx.createLinearGradient(x0, top0, x0, bottom0);
-        // Light falls from above, so the sill end of the opening is dimmest.
-        glass.addColorStop(0, palette.bone(0.15 * fog));
-        glass.addColorStop(0.7, palette.bone(0.05 * fog));
-        glass.addColorStop(1, palette.bone(0.012 * fog));
-        ctx.fillStyle = glass;
-        ctx.beginPath();
-        ctx.moveTo(x0, top0);
-        ctx.lineTo(x1, top1);
-        ctx.lineTo(x1, bottom1);
-        ctx.lineTo(x0, bottom0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = palette.bone(0.09 * fog);
-        ctx.lineWidth = Math.max(1, ratio * 0.8);
-        ctx.beginPath();
-        ctx.moveTo(x0, top0);
-        ctx.lineTo(x1, top1);
-        ctx.stroke();
+        for (let light = 0; light < WINDOW_LIGHTS; light += 1) {
+          const near = first + ((last - first) * light) / WINDOW_LIGHTS + mullion;
+          const far = first + ((last - first) * (light + 1)) / WINDOW_LIGHTS - mullion;
+          if (far <= near) continue;
+          const nearScale = this.depthScale(near);
+          const farScale = this.depthScale(far);
+          const x0 = this.sx(side * WALL_X, nearScale);
+          const x1 = this.sx(side * WALL_X, farScale);
+          const top0 = this.sy(WINDOW_TOP, nearScale);
+          const top1 = this.sy(WINDOW_TOP, farScale);
+          const bottom0 = this.sy(WINDOW_SILL, nearScale);
+          const bottom1 = this.sy(WINDOW_SILL, farScale);
+          const glass = ctx.createLinearGradient(x0, top0, x0, bottom0);
+          // Light falls from above, so the sill end of the opening is dimmest.
+          glass.addColorStop(0, palette.bone(0.13 * fog));
+          glass.addColorStop(0.7, palette.bone(0.042 * fog));
+          glass.addColorStop(1, palette.bone(0.01 * fog));
+          ctx.fillStyle = glass;
+          ctx.beginPath();
+          ctx.moveTo(x0, top0);
+          ctx.lineTo(x1, top1);
+          ctx.lineTo(x1, bottom1);
+          ctx.lineTo(x0, bottom0);
+          ctx.closePath();
+          ctx.fill();
+          // Head and sill, so an unlit light still reads as an opening.
+          ctx.strokeStyle = palette.bone(0.085 * fog);
+          ctx.lineWidth = Math.max(1, ratio * 0.8);
+          ctx.beginPath();
+          ctx.moveTo(x0, top0);
+          ctx.lineTo(x1, top1);
+          ctx.moveTo(x0, bottom0);
+          ctx.lineTo(x1, bottom1);
+          ctx.stroke();
+
+          // Only openings that land on screen become analyser channels — a
+          // band spent lighting glass above the top of the frame is a band
+          // nobody can hear with their eyes.
+          if (bottom0 > 4) this.windows.push({ x0, x1, top0, top1, bottom0, bottom1, fog, depth: near, band: 0 });
+        }
       }
     }
   }
@@ -587,6 +654,7 @@ export default class WarpedShrineScene {
   paintColonnade(ctx, ratio, random) {
     const { palette, depthFade } = this.kit;
     const missing = 6;
+    this.piers = [];
 
     for (let bay = BAY_COUNT - 1; bay >= 0; bay -= 1) {
       const z = this.bays[bay];
@@ -671,12 +739,19 @@ export default class WarpedShrineScene {
         ctx.fill();
 
         // The lit arris — a single heavy highlight is what gives stone volume.
+        const arrisX = this.sx(side * PIER_IN, front);
         ctx.strokeStyle = palette.bone(0.1 + 0.34 * fog);
         ctx.lineWidth = Math.max(1, ratio * (0.8 + 1.6 * fog));
         ctx.beginPath();
-        ctx.moveTo(this.sx(side * PIER_IN, front), faceBottom);
-        ctx.lineTo(this.sx(side * PIER_IN, front), faceTop);
+        ctx.moveTo(arrisX, faceBottom);
+        ctx.lineTo(arrisX, faceTop);
         ctx.stroke();
+
+        // Recorded for the live spectrum.  This arris is the tallest, most
+        // evenly-spaced vertical the scene owns, and eighteen of them march
+        // away from the camera — the colonnade is already the shape of a bar
+        // graph, so the analyser can just be the light climbing the columns.
+        this.piers.push({ x: arrisX, base: faceBottom, top: faceTop, fog, depth: z, band: 0 });
 
         // Fluting on the inner face.
         ctx.strokeStyle = palette.bone(0.05 * fog);
@@ -812,12 +887,14 @@ export default class WarpedShrineScene {
     }
 
     // Litany: dim, dense, illegible-by-design. Right wall carries most of it
-    // so the top-left quadrant stays calm for the DOM type.
+    // so the top-left quadrant stays calm for the DOM type.  It runs along the
+    // spandrel just above the arcade — it used to sit inside the clerestory
+    // band, where the lit glass now washes straight over it.
     for (let line = 0; line < LITANY.length; line += 1) {
       const side = line < 4 ? 1 : -1;
       const z = 1.55 + line * 0.42;
       const fog = depthFade(z, 0.8, Z_FADE);
-      const scale = this.setWallPlane(ctx, side * WALL_X, CAP_Y - 0.24 - (line % 2) * 0.17, z, 100);
+      const scale = this.setWallPlane(ctx, side * WALL_X, CAP_Y + 0.02 - (line % 2) * 0.05, z, 100);
       if (!scale) continue;
       ctx.font = `${Math.max(4, 11 * ratio)}px ${FONTS.mono}`;
       ctx.textAlign = "left";
@@ -939,15 +1016,17 @@ export default class WarpedShrineScene {
           this.flare[beats % Math.max(1, this.votives.length - 2)] = 1;
         }
         if (beats % 8 === 0) this.sigilStep = (this.sigilStep + 1) % 7;
+        // The scan is machine furniture, so a fixed clock is right for it.
+        // Everything organic below hangs off the signal instead.
         if (beats % 12 === 0) this.scan = 1;
-        if (beats % 16 === 0) this.desecrate = 1;
         if (beats % 32 === 0) this.wordFade = 0;
-        if (beats % 4 === 0) this.spawnSparks(2 + Math.round(clamp(audio.bassAtt, 0, 3)));
-        // A crow breaks every twenty-fourth hit, or whenever the signal spikes
-        // hard enough that something in the roof would have startled.
+        this.spawnSparks(1 + Math.round(clamp(audio.bassAtt, 0, 3) * 1.6));
+        // A crow breaks when the signal spikes hard enough that something in
+        // the roof would have startled — and every twenty-fourth hit anyway,
+        // so the flock is never completely still on smooth material.
         if (beats % 24 === 0 || audio.flux > 0.62) this.launchCrow();
-        if (beats % 16 === 0) this.preacher.gaze = 1;
-        if (beats % 16 === 0) this.preacher.glitch = 1;
+        this.preacher.gaze = Math.max(this.preacher.gaze, clamp(audio.midAtt - 0.6, 0, 1));
+        if (audio.flux > 0.5) this.preacher.glitch = 1;
       }
       this.refreshReadout(audio);
     }
@@ -970,6 +1049,10 @@ export default class WarpedShrineScene {
       this.advanceCrows(dt, audio);
       this.advanceSparks(dt);
       this.advancePreacher(dt, time);
+      // Desecration fires on a genuinely violent transient rather than on a
+      // beat count, and cannot retrigger until the last one has nearly gone —
+      // it should feel like the room being struck, not like a strobe.
+      if (this.desecrate < 0.12 && audio.transient > 0.7 && audio.bassAtt > 1.5) this.desecrate = 1;
     }
 
     // Idle life so a silent shrine still breathes: candles and haze run off
@@ -983,14 +1066,15 @@ export default class WarpedShrineScene {
     fadeTo(ctx, width, height, palette.void, 1);
     this.paintDistance(frame, sacred);
 
-    // --- 2. the stone ----------------------------------------------------
+    // --- 2. the stone, and the spectrum burning in its windows -----------
+    const parallax = view.focal / 2.4;
+    const blit = { tx: view.vpx - camX * parallax, ty: view.vpy - camY * parallax, scale: dolly };
     if (this.arch.canvas && this.arch.width > 8) {
-      const parallax = view.focal / 2.4;
       ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1;
-      ctx.translate(view.vpx - camX * parallax, view.vpy - camY * parallax);
-      ctx.scale(dolly, dolly);
+      ctx.translate(blit.tx, blit.ty);
+      ctx.scale(blit.scale, blit.scale);
       ctx.translate(-view.vpx, -view.vpy);
       ctx.drawImage(this.arch.canvas, 0, 0, width, height);
       ctx.restore();
@@ -1009,6 +1093,13 @@ export default class WarpedShrineScene {
     // After the aether, not before it: the shadow has to fall on the haze the
     // braziers just lit, or the glow simply paints back over it.
     this.paintCastShadow(frame, heat, still);
+
+    // --- 6b. the architecture reading the signal -------------------------
+    // Deliberately after the haze and the shadow.  Painted with the stone at
+    // step 2 it was drawn first and then buried — the aether washed over it,
+    // the cast shadow darkened it and the vignette crushed whatever reached
+    // the frame edges. An analyser you cannot read is decoration.
+    this.paintClerestory(frame, blit);
 
     // --- 7. the god, then whatever is sitting on him ---------------------
     this.paintIdol(frame, heat, sacred, still);
@@ -1086,6 +1177,119 @@ export default class WarpedShrineScene {
   }
 
   /**
+   * The clerestory as a spectrum analyser.
+   *
+   * Fourteen openings, seven bands, mirrored down both walls: each window fills
+   * from its sill with the energy in its band, and carries a falling peak-hold
+   * bar above the level. Low frequencies sit in the near bays and the high end
+   * recedes toward the vanishing point, so a bass note lights the room around
+   * you and a cymbal lights the far dark.
+   *
+   * It is drawn inside the arch layer's own parallax transform, which is what
+   * keeps the light registered inside the stone frames it belongs to.
+   */
+  paintClerestory(frame, blit) {
+    const { ctx, ratio, bands, bandPeaks, palette, audio } = frame;
+    const windows = this.windows;
+    const piers = this.piers;
+    const last = bands.length - 1;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.translate(blit.tx, blit.ty);
+    ctx.scale(blit.scale, blit.scale);
+    ctx.translate(-this.view.vpx, -this.view.vpy);
+    ctx.globalCompositeOperation = "lighter";
+
+    // The colonnade: light climbing each pier's lit arris to its band, capped
+    // by a brighter mark at the level and a falling peak hold above it.  Kept
+    // to the arris rather than washing the whole face, so it reads as light
+    // finding an edge rather than as a bar drawn over the architecture.
+    if (piers && piers.length) {
+      ctx.lineCap = "butt";
+      for (let index = 0; index < piers.length; index += 1) {
+        const pier = piers[index];
+        const slot = Math.round(pier.band * last);
+        const level = Math.min(1, bands[slot] * 1.5);
+        const peak = Math.min(1, bandPeaks[slot] * 1.5);
+        if (peak < 0.02) continue;
+        const run = pier.top - pier.base;          // negative: up the screen
+        const litY = pier.base + run * level;
+        ctx.strokeStyle = palette.violet((0.14 + level * 0.34) * pier.fog);
+        ctx.lineWidth = Math.max(1, ratio * (1.6 + 2.4 * pier.fog));
+        ctx.beginPath();
+        ctx.moveTo(pier.x, pier.base);
+        ctx.lineTo(pier.x, litY);
+        ctx.stroke();
+        // The level cap, which is where the eye reads the value.
+        ctx.strokeStyle = palette.bone((0.3 + level * 0.55) * pier.fog);
+        ctx.lineWidth = Math.max(1, ratio * (1.2 + 1.6 * pier.fog));
+        ctx.beginPath();
+        ctx.moveTo(pier.x, litY);
+        ctx.lineTo(pier.x, litY - run * 0.03);
+        ctx.stroke();
+        if (peak > level + 0.04) {
+          const holdY = pier.base + run * peak;
+          ctx.strokeStyle = palette.amber(0.32 * pier.fog);
+          ctx.lineWidth = Math.max(1, ratio * 1.2);
+          ctx.beginPath();
+          ctx.moveTo(pier.x, holdY);
+          ctx.lineTo(pier.x, holdY - run * 0.018);
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (!windows || !windows.length) {
+      ctx.restore();
+      ctx.globalCompositeOperation = "source-over";
+      return;
+    }
+
+    for (let index = 0; index < windows.length; index += 1) {
+      const glass = windows[index];
+      const slot = Math.round(glass.band * last);
+      const level = Math.min(1, bands[slot] * 1.35);
+      const peak = Math.min(1, bandPeaks[slot] * 1.35);
+      if (peak < 0.02) continue;
+      // Interpolate the lit height along both mullions so the fill keeps the
+      // window's foreshortening instead of sitting in it as a flat rectangle.
+      const litNear = glass.bottom0 + (glass.top0 - glass.bottom0) * level;
+      const litFar = glass.bottom1 + (glass.top1 - glass.bottom1) * level;
+      ctx.fillStyle = palette.violet((0.13 + level * 0.38) * glass.fog);
+      ctx.beginPath();
+      ctx.moveTo(glass.x0, litNear);
+      ctx.lineTo(glass.x1, litFar);
+      ctx.lineTo(glass.x1, glass.bottom1);
+      ctx.lineTo(glass.x0, glass.bottom0);
+      ctx.closePath();
+      ctx.fill();
+      // The lit edge, which is where the eye actually reads the level from.
+      ctx.strokeStyle = palette.bone((0.2 + level * 0.5) * glass.fog);
+      ctx.lineWidth = Math.max(1, ratio * 1.2);
+      ctx.beginPath();
+      ctx.moveTo(glass.x0, litNear);
+      ctx.lineTo(glass.x1, litFar);
+      ctx.stroke();
+      // Peak hold, falling on its own clock — this is what makes an analyser
+      // feel like it is measuring rather than merely flashing.
+      if (peak > level + 0.03) {
+        const holdNear = glass.bottom0 + (glass.top0 - glass.bottom0) * peak;
+        const holdFar = glass.bottom1 + (glass.top1 - glass.bottom1) * peak;
+        ctx.strokeStyle = palette.amber((0.18 + audio.trebAtt * 0.06) * glass.fog);
+        ctx.lineWidth = Math.max(1, ratio);
+        ctx.beginPath();
+        ctx.moveTo(glass.x0, holdNear);
+        ctx.lineTo(glass.x1, holdFar);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  /**
    * Traces an outline as a shadow: world units in, a leaning and elongated
    * screen polygon out.  `dir` is the direction the shadow falls, which is
    * away from whichever brazier is casting it.  No allocation, because this
@@ -1158,8 +1362,8 @@ export default class WarpedShrineScene {
    * plane so the circle is a true perspective conic rather than an ellipse.
    */
   paintCircle(frame, sacred, still) {
-    const { ctx, ratio, audio, palette, detail, band } = frame;
-    const { melPosition, TAU } = this.kit;
+    const { ctx, ratio, audio, palette, detail, bands, bandPeaks } = frame;
+    const { TAU } = this.kit;
     const centreZ = 2.5;
     const spin = still ? 0 : this.spin;
     const steps = Math.max(20, Math.round(40 * detail));
@@ -1201,16 +1405,21 @@ export default class WarpedShrineScene {
     }
     ctx.stroke();
 
-    // Spectral ticks around the rim — the only place the raw bands appear.
-    const ticks = Math.max(10, Math.round(22 * detail));
+    // Spectral ticks around the rim.  `bands` is ALREADY mel-spaced — its bin
+    // ranges are built through melPosition — so the old band(melPosition(t))
+    // applied the curve twice and squeezed all 22 ticks into the bottom sixth
+    // of the spectrum, leaving the high end permanently dead.  An even sweep
+    // across the band array is the evenly-spaced-to-a-listener layout.
+    const ticks = Math.max(12, Math.round(32 * detail));
+    const last = bands.length - 1;
     ctx.lineWidth = Math.max(1, ratio * 1.6);
     ctx.beginPath();
     for (let tick = 0; tick < ticks; tick += 1) {
       const angle = (tick / ticks) * TAU + spin;
       const z0 = centreZ + Math.cos(angle) * 0.78;
       if (z0 < 1.2) continue;
-      const magnitude = band(melPosition(tick / ticks));
-      const outer = 0.78 + 0.03 + magnitude * 0.14;
+      const magnitude = bands[Math.round((tick / ticks) * last)];
+      const outer = 0.81 + magnitude * 0.2;
       const zOuter = centreZ + Math.cos(angle) * outer;
       if (zOuter < 1.2) continue;
       const inner = this.depthScale(z0);
@@ -1218,8 +1427,29 @@ export default class WarpedShrineScene {
       ctx.moveTo(this.sx(Math.sin(angle) * 0.78, inner), this.sy(FLOOR_Y - 0.004, inner));
       ctx.lineTo(this.sx(Math.sin(angle) * outer, outerScale), this.sy(FLOOR_Y - 0.004, outerScale));
     }
-    ctx.strokeStyle = palette.violet(0.18 + audio.midAtt * 0.16);
+    ctx.strokeStyle = palette.violet(0.2 + audio.midAtt * 0.18);
     ctx.stroke();
+
+    // Peak holds: a detached mark riding out at each band's recent maximum.
+    ctx.lineWidth = Math.max(1, ratio * 1.5);
+    ctx.beginPath();
+    for (let tick = 0; tick < ticks; tick += 1) {
+      const held = bandPeaks[Math.round((tick / ticks) * last)];
+      if (held < 0.05) continue;
+      const angle = (tick / ticks) * TAU + spin;
+      const at = 0.81 + held * 0.2;
+      const z = centreZ + Math.cos(angle) * at;
+      if (z < 1.2) continue;
+      const markScale = this.depthScale(z);
+      const x = this.sx(Math.sin(angle) * at, markScale);
+      const y = this.sy(FLOOR_Y - 0.004, markScale);
+      const step = 0.022 * markScale;
+      ctx.moveTo(x - step, y);
+      ctx.lineTo(x + step, y);
+    }
+    ctx.strokeStyle = palette.amber(0.22 + audio.trebAtt * 0.1);
+    ctx.stroke();
+
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";
   }
@@ -1262,7 +1492,7 @@ export default class WarpedShrineScene {
    * of it and are drawn after the god for that reason.
    */
   paintFlames(frame, heat, still, pass = 0) {
-    const { ctx, ratio, palette, detail } = frame;
+    const { ctx, ratio, palette, detail, audio } = frame;
     const { noise2D, clamp, depthFade } = this.kit;
     const time = still ? 12 : frame.time;
     const budget = Math.max(0.6, detail);
@@ -1280,12 +1510,18 @@ export default class WarpedShrineScene {
       const flick = noise2D(lamp.seed + time * (lamp.kind ? 5.2 : 7.4), lamp.seed * 0.37);
       const voice = frame.band(lamp.band);
       const flare = this.flare[index];
-      const life = (0.55 + flick * 0.45) * heat + voice * 0.5 + flare * 0.8;
+      // The braziers ride the low end continuously, not just on the beats the
+      // onset detector happens to find.  Fire that only moves when a counter
+      // ticks reads as a metronome; fire that leans on the bass reads as fire
+      // in a room with the music in it.
+      const drive = lamp.kind ? clamp(audio.bassAtt - 0.75, 0, 2.4) * 0.4 : 0;
+      const life = (0.55 + flick * 0.45) * heat + voice * 0.5 + flare * 0.8 + drive;
       const px = this.sx(lamp.x, scale);
       const py = this.sy(lamp.y, scale);
       // Braziers get the height; the aisle candles stay small so the fire in
       // front of the plinth is unmistakably the loudest light in the room.
-      const reach = lamp.size * (lamp.kind ? 1.8 : 0.95) * (0.85 + flick * 0.5 + flare * 0.8 + voice * 0.55);
+      const reach = lamp.size * (lamp.kind ? 1.8 : 0.95)
+        * (0.85 + flick * 0.5 + flare * 0.8 + voice * (lamp.kind ? 0.55 : 1.05) + drive);
       const flameH = Math.max(1.5, reach * scale);
       const flameW = Math.max(1, flameH * (lamp.kind ? 0.4 : 0.3));
       const drift = lamp.kind ? 0.5 : 0.34;
@@ -1699,7 +1935,7 @@ export default class WarpedShrineScene {
    * It breathes from its base on `bassAtt` and otherwise does not move.
    */
   paintIdol(frame, heat, sacred, still) {
-    const { ctx, ratio, audio, palette } = frame;
+    const { ctx, ratio, audio, palette, waveform, detail } = frame;
     const { clamp, lerp, TAU } = this.kit;
     const scale = this.depthScale(IDOL_Z);
     const breath = still ? 1 : 1 + clamp(audio.bassAtt, 0, 3) * 0.006;
@@ -1931,16 +2167,46 @@ export default class WarpedShrineScene {
     ctx.lineTo(px(0.66), py(-0.66));
     ctx.stroke();
 
-    // The halo survives; the head does not.
+    // The halo survives; the head does not.  It is also the scene's
+    // oscilloscope: the raw time-domain data wrapped around the ring, so the
+    // waveform sits exactly where the eye already goes and the one intact holy
+    // thing in the room is the one thing actually reading the signal.
+    //
+    // The trace is mirrored about the vertical, which closes the ring without a
+    // seam — the first and last samples of a buffer never match — and turns the
+    // scope into something with the symmetry of a sigil.
     const haloX = px(0);
     const haloY = py(-0.95);
     const haloR = Math.max(2, 0.2 * scale * breath);
     if (Number.isFinite(haloX) && Number.isFinite(haloY)) {
-      ctx.strokeStyle = palette.violet(0.24 + sacred * 0.3);
-      ctx.lineWidth = Math.max(1, ratio * 1.7);
+      // Zero line: what the halo reads on silence, and on silence the trace
+      // lies exactly on top of it.
+      ctx.strokeStyle = palette.violet(0.12 + sacred * 0.1);
+      ctx.lineWidth = Math.max(1, ratio);
       ctx.beginPath();
       ctx.arc(haloX, haloY, haloR, 0, TAU);
       ctx.stroke();
+
+      const samples = waveform.length - 1;
+      const steps = Math.max(56, Math.round(140 * detail));
+      const swing = haloR * 0.44;
+      ctx.strokeStyle = palette.violet(0.34 + sacred * 0.36 + audio.transient * 0.2);
+      ctx.lineWidth = Math.max(1, ratio * 1.7);
+      ctx.beginPath();
+      for (let step = 0; step <= steps; step += 1) {
+        const t = step / steps;
+        const fold = t < 0.5 ? t * 2 : (1 - t) * 2;
+        const deviation = (waveform[Math.round(fold * samples)] - 128) / 128;
+        const radius = haloR + deviation * swing;
+        const angle = t * TAU - Math.PI * 0.5;
+        const x = haloX + Math.cos(angle) * radius;
+        const y = haloY + Math.sin(angle) * radius;
+        if (step === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+
       ctx.strokeStyle = palette.violet(0.09);
       ctx.lineWidth = Math.max(1, ratio * 0.8);
       ctx.beginPath();

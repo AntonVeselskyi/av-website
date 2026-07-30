@@ -8,7 +8,7 @@ import {
 } from "../js/visual/visualizer.js";
 import { tunnelTempoScale } from "../js/visual/modes/wired-tunnel.js";
 import { orbitZoomCycle } from "../js/visual/modes/serial-orbit.js";
-import { crowFlight, preacherPresence } from "../js/visual/modes/warped-shrine.js";
+import { crowFlight, preacherPresence, spectrumRungs } from "../js/visual/modes/warped-shrine.js";
 
 test("visualizer exposes the projected wired and serial orbit scenes", () => {
   assert.equal(SPELL_VISUALIZER_MODE_ALIASES.wired, SPELL_VISUALIZER_MODES.WIRED_TUNNEL);
@@ -20,6 +20,18 @@ test("wired tunnel travel scales monotonically with workstation tempo", () => {
   assert.equal(tunnelTempoScale(120), 1);
   assert.ok(tunnelTempoScale(80) < tunnelTempoScale(120));
   assert.ok(tunnelTempoScale(180) > tunnelTempoScale(120));
+});
+
+test("the shrine deals its spectrum across the nave by depth, mirrored", () => {
+  // Two sides of the nave at four depths, interleaved as the colonnade records
+  // them: same depth must mean same band, near must be low, far must be high.
+  const bands = spectrumRungs([1, 1, 2.2, 2.2, 3.5, 3.5, 5, 5]);
+  assert.deepEqual(bands, [0, 0, 1 / 3, 1 / 3, 2 / 3, 2 / 3, 1, 1]);
+  // Order of arrival must not matter — only depth does.
+  assert.deepEqual(spectrumRungs([5, 1, 2.2]), [1, 0, 0.5]);
+  // A single surviving element must not divide by zero.
+  assert.deepEqual(spectrumRungs([2.2]), [0]);
+  assert.deepEqual(spectrumRungs([]), []);
 });
 
 test("the shrine celebrant arrives and leaves without ever popping", () => {
