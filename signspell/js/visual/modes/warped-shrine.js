@@ -12,6 +12,18 @@
  *   - per-bar light sweeps down the nave and per-beat brazier flares,
  *   - per-frame flame flicker (noise, never a sine) and dust shimmer.
  *
+ * Four things are alive in here, and only four:
+ *   - the fire — braziers flanking the plinth throw real tongues, not blobs,
+ *     and shed embers that rise and die;
+ *   - the shadow the fire throws — the idol's headless silhouette, stretched
+ *     up the far end of the nave, leaning and wavering with the flame that
+ *     casts it.  It is the largest thing in the frame and it is not stone;
+ *   - the crows — perched on the capitals and on the god's own shoulder,
+ *     ruffling, and now and then one breaks and comes at the camera;
+ *   - the preacher — a cowled celebrant at the foot of the plinth, backlit,
+ *     faceless apart from two violet pupils.  He is not always there.  The
+ *     readout admits it when he is not.
+ *
  * How it fits the frame budget:
  *   - Every piece of stone — piers, arcade, vault ribs, clerestory, floor
  *     joints, carved sigils, wall litany, rubble — is drawn ONCE into `arch`,
@@ -57,8 +69,40 @@ const IDOL_BACK = 3.05;
 const IDOL_FRONT = 1.95;
 
 const DUST_MAX = 176;
+const SPARK_MAX = 84;
 const SPRITE = 128;
 const STONE_SEED = 0x5b1d3;
+
+const BRAZIER_Z = 1.78;     // in front of the plinth, so the fire can cast
+// Far enough forward and to the side that both braziers stay visible past him,
+// and low enough in frame to leave the top-left quadrant to the DOM type.
+const PREACHER_X = -0.66;
+const PREACHER_Z = 1.34;
+const PREACHER_H = 0.63;    // head top above the floor, i.e. human beside a god
+const PREACHER_CYCLE = 47;  // seconds between arrivals
+
+// [u, v] in half-widths and fractions of PREACHER_H, hem up the left side,
+// over the crown and back down the right.
+const PREACHER_COWL = [
+  [-0.128, 0.14], [-0.108, 0.3], [-0.118, 0.46], [-0.148, 0.62],
+  [-0.112, 0.72], [-0.098, 0.82], [-0.086, 0.9], [-0.058, 0.965], [-0.022, 1],
+  [0.026, 0.998], [0.062, 0.958], [0.09, 0.895], [0.102, 0.815], [0.116, 0.715],
+  [0.152, 0.62], [0.122, 0.46], [0.112, 0.3], [0.132, 0.14], [0.158, 0],
+];
+// Index ranges into PREACHER_COWL for the two lit edges: [right start, right
+// end, left start, left end].  The fire is behind him, so only these catch it.
+const PREACHER_CREST = [8, 15, 0, 8];
+
+// [x, y, z, facing].  Kept nearer than 2.2 so that a bird on a capital is
+// never behind the effigy in screen space — perched crows are painted after it.
+const CROW_PERCHES = [
+  [-PIER_IN, CAP_Y - 0.07, 1.476, 1],
+  [PIER_IN, CAP_Y - 0.07, 1.794, -1],
+  [-PIER_IN, CAP_Y - 0.07, 2.18, 1],
+  [0.5, FLOOR_Y - 0.18, 1.96, -1],  // the plinth itself, watching the celebrant
+  [0.45, -0.58, IDOL_Z, -1],        // the intact shoulder
+  [0.6, -0.7, IDOL_Z, -1],          // the broken arm
+];
 
 const INSCRIPTIONS = ["nullus deus", "vox nihil", "tacet", "deus abest", "oratio vacua"];
 const LITANY = [
@@ -69,6 +113,24 @@ const LITANY = [
   "ossa · ossa",
   "0x00 orate",
 ];
+
+const IDOL_BASE_Y = FLOOR_Y - 0.18;
+
+/**
+ * The effigy's outline in world units, declared once so the body fill and the
+ * cast shadow are guaranteed to be the same object.  A silhouette that does not
+ * match its own shadow is the fastest way to make a scene read as flat.
+ */
+const IDOL_BODY = Float32Array.from([
+  -0.33, IDOL_BASE_Y, -0.3, -0.16, -0.27, -0.46,
+  -0.43, -0.53,                     // shoulder, broken away
+  -0.22, -0.6, -0.11, -0.66,
+  -0.1, -0.78, 0.1, -0.78,          // neck stub, where the head was
+  0.12, -0.64, 0.29, -0.62,
+  0.45, -0.56,                      // intact shoulder
+  0.42, -0.42, 0.33, -0.34, 0.36, 0.06, 0.31, IDOL_BASE_Y,
+]);
+const IDOL_ARM = Float32Array.from([0.4, -0.54, 0.56, -0.72, 0.66, -0.66, 0.52, -0.46]);
 
 /** The gothic cross-section, sampled once in world units and reused forever. */
 function vaultProfile(steps = 11) {
@@ -87,6 +149,41 @@ function vaultProfile(steps = 11) {
     cursor += 2;
   }
   return points;
+}
+
+const smooth01 = (edge0, edge1, value) => {
+  const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0 || 1)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * How present the celebrant is, 0..1, on a fixed 47-second cycle.
+ *
+ * He is deliberately absent for roughly a third of it.  A figure that is always
+ * standing there is set dressing; one that is sometimes simply gone is the
+ * point — the readout keeps reporting on him either way.
+ */
+export function preacherPresence(time) {
+  const t = ((time % PREACHER_CYCLE) + PREACHER_CYCLE) % PREACHER_CYCLE;
+  return smooth01(6, 10, t) * (1 - smooth01(33, 38.5, t));
+}
+
+/**
+ * A crow's departure, parameterised on 0..1 from perch to gone.
+ *
+ * `depth` is 1 at the perch and 0 at the near plane, so the caller lerps its
+ * own perch depth toward the camera; the rest is body language.  Pure, because
+ * the launch feel is the one thing here worth pinning down in a test.
+ */
+export function crowFlight(progress) {
+  const p = Math.min(1, Math.max(0, progress));
+  return {
+    depth: 1 - Math.pow(p, 1.7),
+    lift: Math.sin(p * Math.PI * 0.86) * 0.92,
+    sway: Math.sin(p * 5.1) * (1 - p) * 0.42,
+    flap: p * 15.5,
+    alpha: smooth01(0, 0.07, p) * (1 - smooth01(0.84, 1, p)),
+  };
 }
 
 export default class WarpedShrineScene {
@@ -134,13 +231,17 @@ export default class WarpedShrineScene {
         size: 0.05, kind: 0, band: 0.06 + lamp * 0.05, seed: 31.4 + lamp * 2.7,
       });
     }
+    // The two braziers sit in FRONT of the plinth.  That is what lets them
+    // light the effigy's face and throw its shadow away up the nave; a fire
+    // behind the subject only ever gives you a rim.
     for (const side of [-1, 1]) {
       this.votives.push({
-        x: side * 0.6, y: FLOOR_Y - 0.075, z: 2.32,
-        size: 0.12, kind: 1, band: side > 0 ? 0.02 : 0.1, seed: side > 0 ? 91.3 : 57.9,
+        x: side * 0.62, y: FLOOR_Y - 0.085, z: BRAZIER_Z,
+        size: 0.098, kind: 1, band: side > 0 ? 0.02 : 0.1, seed: side > 0 ? 91.3 : 57.9,
       });
     }
     this.flare = new Float32Array(this.votives.length);
+    this.braziers = [this.votives.length - 2, this.votives.length - 1];
 
     // Dust field.  x/z are fixed per mote so recycling never pops laterally;
     // only the rise wraps, and it cross-fades at both ends of the column.
@@ -160,6 +261,29 @@ export default class WarpedShrineScene {
     // Three alpha tiers so the whole field costs three batched fills.
     this.dustBins = [new Float32Array(DUST_MAX * 3), new Float32Array(DUST_MAX * 3), new Float32Array(DUST_MAX * 3)];
     this.dustCounts = new Int32Array(3);
+
+    // Embers off the braziers.  A ring buffer, so a spawn never allocates and
+    // a heavy passage simply overwrites the oldest ember instead of growing.
+    this.sparkX = new Float32Array(SPARK_MAX);
+    this.sparkY = new Float32Array(SPARK_MAX);
+    this.sparkZ = new Float32Array(SPARK_MAX);
+    this.sparkVX = new Float32Array(SPARK_MAX);
+    this.sparkVY = new Float32Array(SPARK_MAX);
+    this.sparkLife = new Float32Array(SPARK_MAX);
+    this.sparkSeed = new Float32Array(SPARK_MAX);
+    this.sparkCursor = 0;
+    this.sparkRandom = mulberry32(0xe3b0c);
+
+    // The flock.  Perched by default; `flight` is the 0..1 departure clock and
+    // -1 means "sitting".  At most two are ever in the air.
+    this.crows = CROW_PERCHES.map(([x, y, z, facing], index) => ({
+      x, y, z, facing,
+      seed: 13.7 + index * 6.31,
+      flight: -1,
+    }));
+    this.crowCooldown = 0;
+
+    this.preacher = { presence: 0, blink: 0, nextBlink: 3.4, glitch: 0, gaze: 0 };
 
     this.lastBeatCount = -1;
     this.desecrate = 0;   // rare blood accent, every 16 hits
@@ -818,6 +942,12 @@ export default class WarpedShrineScene {
         if (beats % 12 === 0) this.scan = 1;
         if (beats % 16 === 0) this.desecrate = 1;
         if (beats % 32 === 0) this.wordFade = 0;
+        if (beats % 4 === 0) this.spawnSparks(2 + Math.round(clamp(audio.bassAtt, 0, 3)));
+        // A crow breaks every twenty-fourth hit, or whenever the signal spikes
+        // hard enough that something in the roof would have startled.
+        if (beats % 24 === 0 || audio.flux > 0.62) this.launchCrow();
+        if (beats % 16 === 0) this.preacher.gaze = 1;
+        if (beats % 16 === 0) this.preacher.glitch = 1;
       }
       this.refreshReadout(audio);
     }
@@ -826,6 +956,9 @@ export default class WarpedShrineScene {
       this.desecrate = 0;
       this.scan = 0;
       this.wordFade = 1;
+      this.preacher.presence = 1;
+      this.preacher.blink = 0;
+      this.preacher.glitch = 0;
     } else {
       const decay = Math.exp(-dt * 2.6);
       for (let index = 0; index < this.flare.length; index += 1) this.flare[index] *= decay;
@@ -834,6 +967,9 @@ export default class WarpedShrineScene {
       this.wordFade = Math.min(1, this.wordFade + dt * 1.4);
       this.spin += dt * (0.016 + audio.midAtt * 0.012);
       if (this.spin > TAU) this.spin -= TAU;
+      this.advanceCrows(dt, audio);
+      this.advanceSparks(dt);
+      this.advancePreacher(dt, time);
     }
 
     // Idle life so a silent shrine still breathes: candles and haze run off
@@ -863,20 +999,34 @@ export default class WarpedShrineScene {
     // --- 3. the summoning circle, drawn in the floor plane ---------------
     this.paintCircle(frame, sacred, still);
 
-    // --- 4. votive cores (occluded by the plinth, as they should be) -----
-    this.paintFlames(frame, heat, still);
+    // --- 4. aisle candles (occluded by the plinth, as they should be) ----
+    this.paintFlames(frame, heat, still, 0);
 
-    // --- 5. volumetrics -------------------------------------------------
+    // --- 5. volumetrics --------------------------------------------------
     this.paintAether(frame, sacred, heat, still);
 
-    // --- 6. the god ------------------------------------------------------
-    this.paintIdol(frame, heat, sacred, still);
+    // --- 6. what the fire cannot get past --------------------------------
+    // After the aether, not before it: the shadow has to fall on the haze the
+    // braziers just lit, or the glow simply paints back over it.
+    this.paintCastShadow(frame, heat, still);
 
-    // --- 7. foreground: one shaft in front of the idol, then dust -------
+    // --- 7. the god, then whatever is sitting on him ---------------------
+    this.paintIdol(frame, heat, sacred, still);
+    this.paintPerchedCrows(frame, still);
+
+    // --- 8. the fire in front of the plinth, and what comes off it -------
+    this.paintFlames(frame, heat, still, 1);
+    this.paintSparks(frame, still);
+
+    // --- 9. the celebrant, backlit by that fire --------------------------
+    this.paintPreacher(frame, heat, sacred, still);
+
+    // --- 10. foreground: one shaft in front of the idol, then dust ------
     this.paintNearShaft(frame, sacred);
     this.paintDust(frame, still);
+    this.paintFlyingCrows(frame, still);
 
-    // --- 8. machine intrusion + inscription ------------------------------
+    // --- 11. machine intrusion + inscription -----------------------------
     this.paintOverlay(frame, span, ratio);
 
     // --- 9. phosphor ------------------------------------------------------
@@ -897,8 +1047,13 @@ export default class WarpedShrineScene {
   refreshReadout(audio) {
     const { hexString, serialString } = this.kit;
     const beats = audio.beatCount;
+    // The machine keeps a field for the celebrant whether or not one is there,
+    // and it never stops filling it in.  That is the joke and the dread.
+    const here = this.preacher.presence > 0.5;
     this.readout[0] = `orison 0x${hexString(0.13 + (beats % 4096) * 0.017, 5)}`;
-    this.readout[1] = "celebrant ..... absent";
+    this.readout[1] = here
+      ? `celebrant .... present · ${serialString(beats + 7, 4)}`
+      : "celebrant ..... absent";
     this.readout[2] = `vox ${serialString(beats * 3 + 11, 3)} · nihil`;
     this.readout[3] = `integrity 00.0 · ${audio.silent ? "dormant" : "rite"}`;
   }
@@ -911,8 +1066,10 @@ export default class WarpedShrineScene {
     if (!this.hazeGradient || this.hazeKey !== key) {
       const radius = Math.max(8, view.span * 0.52);
       const haze = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-      haze.addColorStop(0, "rgba(88,74,132,0.34)");
-      haze.addColorStop(0.32, "rgba(52,44,78,0.18)");
+      // Bright enough that the effigy's shadow has something to cut into.  In
+      // a nave this dark the shadow is only visible where the haze is not.
+      haze.addColorStop(0, "rgba(96,80,144,0.44)");
+      haze.addColorStop(0.32, "rgba(56,47,84,0.22)");
       haze.addColorStop(0.7, "rgba(24,20,34,0.07)");
       haze.addColorStop(1, "rgba(0,0,0,0)");
       this.hazeGradient = haze;
@@ -926,6 +1083,74 @@ export default class WarpedShrineScene {
     ctx.fillRect(-width, -height, width * 2, height * 2);
     ctx.restore();
     ctx.globalAlpha = 1;
+  }
+
+  /**
+   * Traces an outline as a shadow: world units in, a leaning and elongated
+   * screen polygon out.  `dir` is the direction the shadow falls, which is
+   * away from whichever brazier is casting it.  No allocation, because this
+   * runs six times a frame.
+   */
+  shadowPath(ctx, points, ox, oy, unit, spread, stretch, lean, dir) {
+    ctx.beginPath();
+    for (let index = 0; index < points.length; index += 2) {
+      const rise = FLOOR_Y - points[index + 1];
+      const x = ox + (points[index] * spread + dir * rise * lean) * unit;
+      const y = oy - rise * stretch * unit;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  /**
+   * The god's shadow, thrown up the far end of the nave by the two braziers.
+   *
+   * This is not a projection through a light position — a flame at floor level
+   * a metre from the subject projects a silhouette several storeys high, which
+   * is geometrically honest and visually useless.  It is the stage version: the
+   * silhouette anchored at the plinth, stretched, sheared away from each fire,
+   * and wavering on that fire's own flicker.  Two lights, two shadows, leaning
+   * apart, darkest where they cross.
+   *
+   * It lands on the haze rather than the stone, which is the only thing back
+   * there bright enough to be darkened.  Three jittered passes stand in for a
+   * blur: a soft edge for the price of two extra polygon fills.
+   */
+  paintCastShadow(frame, heat, still) {
+    const { ctx, detail } = frame;
+    const time = still ? 9 : frame.time;
+    const unit = this.depthScale(IDOL_BACK);
+    const originX = this.sx(0, unit);
+    const originY = this.sy(FLOOR_Y, unit);
+    if (!Number.isFinite(originX) || !Number.isFinite(originY)) return;
+    const passes = detail > 0.7 ? 3 : 1;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+
+    for (let index = 0; index < this.braziers.length; index += 1) {
+      const lamp = this.votives[this.braziers[index]];
+      const flare = this.flare[this.braziers[index]];
+      // The shadow is only as steady as the fire behind it.
+      const flicker = this.kit.noise2D(lamp.seed * 0.5 + time * 1.35, lamp.seed);
+      const dir = lamp.x > 0 ? -1 : 1;
+      const spread = 1.24 + flicker * 0.07;
+      const stretch = 1.42 + flicker * 0.13 + flare * 0.06;
+      const lean = 0.34 + flicker * 0.09;
+      const alpha = (0.58 + heat * 0.22 + flare * 0.16) / passes;
+      ctx.fillStyle = `rgba(3,2,5,${alpha.toFixed(3)})`;
+      for (let pass = 0; pass < passes; pass += 1) {
+        const jitter = (pass - (passes - 1) * 0.5) * 3.5;
+        this.shadowPath(ctx, IDOL_BODY, originX + jitter, originY, unit, spread, stretch + pass * 0.004, lean, dir);
+        ctx.fill();
+        this.shadowPath(ctx, IDOL_ARM, originX + jitter, originY, unit, spread, stretch + pass * 0.004, lean, dir);
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
   }
 
   /**
@@ -999,58 +1224,333 @@ export default class WarpedShrineScene {
     ctx.globalCompositeOperation = "source-over";
   }
 
-  /** Flame cores only — the pools and bloom belong to the aether layer. */
-  paintFlames(frame, heat, still) {
-    const { ctx, ratio, palette, audio, detail } = frame;
-    const { noise2D, clamp, depthFade, band } = frame.kit ? frame : frame;
+  /**
+   * One flame tongue: a spine that wanders on the noise field, widest a third
+   * of the way up, closing to a point that leans further than the base does.
+   *
+   * Both sides are walked from the same spine so the shape stays a tongue
+   * rather than a leaf, and the whole thing is one path — three of these
+   * stacked is a convincing flame for the price of three fills.
+   */
+  flameTongue(ctx, px, py, width, height, seed, time, drift) {
+    const noise = this.kit.noise2D;
+    const STEPS = 6;
+    ctx.beginPath();
+    ctx.moveTo(px - width * 0.5, py);
+    for (let side = 0; side < 2; side += 1) {
+      // Up the left edge, then back down the right, so the tip is shared.
+      for (let step = 0; step <= STEPS; step += 1) {
+        const t = side === 0 ? step / STEPS : 1 - step / STEPS;
+        const wander = (noise(seed + t * 2.4, time * 1.9 + t * 3.1) - 0.5) * drift * t * t;
+        // Fat low, pinched at the tip: t*(1-t) squared off toward the top.
+        const girth = width * (1 - t) * (0.5 + 1.5 * (1 - t) * t * 2.2);
+        const edge = side === 0 ? -girth : girth;
+        const x = px + wander * height + edge;
+        const y = py - t * height;
+        if (side === 0 && step === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+    }
+    ctx.closePath();
+  }
+
+  /**
+   * Flame cores only — the pools and bloom belong to the aether layer.
+   *
+   * `pass` 0 draws the aisle candles and the offering row, which the plinth is
+   * entitled to occlude; `pass` 1 draws the two braziers, which stand in front
+   * of it and are drawn after the god for that reason.
+   */
+  paintFlames(frame, heat, still, pass = 0) {
+    const { ctx, ratio, palette, detail } = frame;
+    const { noise2D, clamp, depthFade } = this.kit;
     const time = still ? 12 : frame.time;
-    const limit = Math.max(8, Math.round(this.votives.length * Math.max(0.6, detail)));
+    const budget = Math.max(0.6, detail);
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "lighter";
-    for (let index = 0; index < limit; index += 1) {
+    for (let index = 0; index < this.votives.length; index += 1) {
       const lamp = this.votives[index];
+      if ((lamp.kind === 1) !== (pass === 1)) continue;
+      if (pass === 0 && index > this.votives.length * budget) continue;
       const scale = this.depthScale(lamp.z);
-      const fog = this.kit.depthFade(lamp.z, 0.8, 6.4);
+      const fog = depthFade(lamp.z, 0.8, 6.4);
       if (fog <= 0.03) continue;
       // Noise, not a sine: a sine reads as a machine, noise reads as a flame.
-      const flick = this.kit.noise2D(lamp.seed + time * (lamp.kind ? 5.2 : 7.4), lamp.seed * 0.37);
+      const flick = noise2D(lamp.seed + time * (lamp.kind ? 5.2 : 7.4), lamp.seed * 0.37);
       const voice = frame.band(lamp.band);
       const flare = this.flare[index];
       const life = (0.55 + flick * 0.45) * heat + voice * 0.5 + flare * 0.8;
-      const height = lamp.size * (0.9 + flick * 0.5 + flare * 1.2 + voice * 0.6);
       const px = this.sx(lamp.x, scale);
       const py = this.sy(lamp.y, scale);
-      const flameH = Math.max(1, height * scale);
-      const flameW = Math.max(0.8, flameH * (lamp.kind ? 0.58 : 0.36));
-      ctx.fillStyle = palette.ember(this.kit.clamp(0.3 + life * 0.5, 0, 0.9) * fog);
-      ctx.beginPath();
-      ctx.ellipse(px, py - flameH * 0.55, flameW, flameH * 0.62, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = palette.bone(this.kit.clamp(0.25 + life * 0.55, 0, 0.95) * fog);
-      ctx.beginPath();
-      ctx.ellipse(px, py - flameH * 0.42, flameW * 0.34, flameH * 0.3, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Braziers get the height; the aisle candles stay small so the fire in
+      // front of the plinth is unmistakably the loudest light in the room.
+      const reach = lamp.size * (lamp.kind ? 1.8 : 0.95) * (0.85 + flick * 0.5 + flare * 0.8 + voice * 0.55);
+      const flameH = Math.max(1.5, reach * scale);
+      const flameW = Math.max(1, flameH * (lamp.kind ? 0.4 : 0.3));
+      const drift = lamp.kind ? 0.5 : 0.34;
+
       if (lamp.kind) {
-        // Brazier bowl.
-        ctx.fillStyle = "rgba(10,9,12,0.95)";
+        // Brazier bowl, drawn first so the fire sits inside it.
+        const bowl = 0.072 * scale;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "rgba(9,8,11,0.97)";
         ctx.beginPath();
-        ctx.moveTo(px - 0.11 * scale, py);
-        ctx.lineTo(px + 0.11 * scale, py);
-        ctx.lineTo(px + 0.07 * scale, py + 0.06 * scale);
-        ctx.lineTo(px - 0.07 * scale, py + 0.06 * scale);
+        ctx.moveTo(px - bowl, py - bowl * 0.2);
+        ctx.lineTo(px + bowl, py - bowl * 0.2);
+        ctx.lineTo(px + bowl * 0.6, py + bowl * 0.75);
+        ctx.lineTo(px - bowl * 0.6, py + bowl * 0.75);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = palette.amber(0.3 * fog);
-        ctx.lineWidth = Math.max(1, ratio);
+        // Tripod legs — they read as a stand rather than a bowl on the floor.
+        ctx.strokeStyle = "rgba(9,8,11,0.95)";
+        ctx.lineWidth = Math.max(1, ratio * 1.6);
         ctx.beginPath();
-        ctx.moveTo(px - 0.11 * scale, py);
-        ctx.lineTo(px + 0.11 * scale, py);
+        for (const foot of [-1, 0, 1]) {
+          ctx.moveTo(px + foot * bowl * 0.4, py + bowl * 0.7);
+          ctx.lineTo(px + foot * bowl * 0.85, this.sy(FLOOR_Y, scale));
+        }
+        ctx.stroke();
+        ctx.globalCompositeOperation = "lighter";
+        // The rim catches its own fire.
+        ctx.strokeStyle = palette.ember((0.28 + life * 0.3) * fog);
+        ctx.lineWidth = Math.max(1, ratio * 1.3);
+        ctx.beginPath();
+        ctx.moveTo(px - bowl, py - bowl * 0.2);
+        ctx.lineTo(px + bowl, py - bowl * 0.2);
         ctx.stroke();
       }
+
+      // Three nested tongues: a wide ember body, an amber heart, a white core.
+      // Each runs on its own slice of the noise field so they slide against
+      // each other instead of scaling as one rubber shape.  Additive stacking
+      // means the alphas have to stay low or the whole thing clips to white.
+      const ink = (lamp.kind ? 1.5 : 0.82) * fog;
+      ctx.fillStyle = palette.ember(clamp(0.12 + life * 0.26, 0, 0.58) * ink);
+      this.flameTongue(ctx, px, py, flameW * 1.15, flameH, lamp.seed, time, drift);
+      ctx.fill();
+      ctx.fillStyle = palette.amber(clamp(0.13 + life * 0.28, 0, 0.6) * ink);
+      this.flameTongue(ctx, px, py, flameW * 0.66, flameH * 0.74, lamp.seed + 21.5, time * 1.24, drift * 0.8);
+      ctx.fill();
+      ctx.fillStyle = palette.bone(clamp(0.1 + life * 0.3, 0, 0.62) * ink);
+      this.flameTongue(ctx, px, py, flameW * 0.3, flameH * 0.4, lamp.seed + 47.1, time * 1.55, drift * 0.55);
+      ctx.fill();
     }
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";
+  }
+
+  /** Embers off the braziers, on downbeats and on the fire's own account. */
+  spawnSparks(count) {
+    const random = this.sparkRandom;
+    for (let made = 0; made < count; made += 1) {
+      const lamp = this.votives[this.braziers[made % this.braziers.length]];
+      const slot = this.sparkCursor;
+      this.sparkCursor = (this.sparkCursor + 1) % SPARK_MAX;
+      this.sparkX[slot] = lamp.x + (random() - 0.5) * 0.12;
+      this.sparkY[slot] = lamp.y - lamp.size * (0.6 + random() * 0.8);
+      this.sparkZ[slot] = lamp.z + (random() - 0.5) * 0.16;
+      this.sparkVX[slot] = (random() - 0.5) * 0.055;
+      this.sparkVY[slot] = -(0.14 + random() * 0.26);
+      this.sparkLife[slot] = 1;
+      this.sparkSeed[slot] = random() * 80;
+    }
+  }
+
+  advanceSparks(dt) {
+    for (let index = 0; index < SPARK_MAX; index += 1) {
+      const life = this.sparkLife[index];
+      if (life <= 0) continue;
+      // Embers slow as they cool and wander sideways on the updraught.
+      this.sparkVY[index] *= Math.exp(-dt * 0.75);
+      this.sparkX[index] += this.sparkVX[index] * dt;
+      this.sparkY[index] += this.sparkVY[index] * dt;
+      this.sparkVX[index] += (this.kit.noise2D(this.sparkSeed[index], this.sparkY[index] * 4) - 0.5) * dt * 0.22;
+      this.sparkLife[index] = Math.max(0, life - dt * (0.35 + this.sparkSeed[index] % 0.24));
+    }
+  }
+
+  paintSparks(frame, still) {
+    if (still) return;
+    const { ctx, palette } = frame;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "lighter";
+    // The whole pool every frame: live embers land at arbitrary slots in the
+    // ring, so a shortened loop would drop the newest ones, not the cheapest.
+    for (let index = 0; index < SPARK_MAX; index += 1) {
+      const life = this.sparkLife[index];
+      if (life <= 0.01) continue;
+      const scale = this.depthScale(this.sparkZ[index]);
+      const px = this.sx(this.sparkX[index], scale);
+      const py = this.sy(this.sparkY[index], scale);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+      // An ember cools from white through amber to ember red as it dies.
+      const heat = life * life;
+      const size = Math.max(1, 0.0095 * scale * (0.4 + heat));
+      ctx.fillStyle = heat > 0.55 ? palette.bone(life * 0.85) : palette.ember(life * 0.8);
+      ctx.fillRect(px - size * 0.5, py - size * 0.5, size, size * (1 + (1 - heat) * 1.6));
+    }
+    ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  // -- the flock ----------------------------------------------------------
+
+  /** Startles one bird off its perch.  Two in the air at once is the ceiling. */
+  launchCrow() {
+    if (this.crowCooldown > 0) return;
+    let airborne = 0;
+    for (const crow of this.crows) if (crow.flight >= 0) airborne += 1;
+    if (airborne >= 2) return;
+    for (const crow of this.crows) {
+      if (crow.flight >= 0) continue;
+      crow.flight = 0;
+      this.crowCooldown = 3.2;
+      return;
+    }
+  }
+
+  advanceCrows(dt) {
+    this.crowCooldown = Math.max(0, (this.crowCooldown || 0) - dt);
+    for (const crow of this.crows) {
+      if (crow.flight < 0) continue;
+      crow.flight += dt / 2.7;
+      if (crow.flight > 1) crow.flight = -1;
+    }
+  }
+
+  /**
+   * One crow.  A folded silhouette when `flap` is null, wings out when it is
+   * not — the same bird either way, which is what stops a departure from
+   * looking like one thing vanishing and a different thing appearing.
+   */
+  drawCrow(ctx, px, py, size, facing, alpha, glint, flap) {
+    const { palette } = this.kit;
+    const s = size;
+    const f = facing;
+    ctx.globalAlpha = alpha;
+
+    if (flap !== null) {
+      // Wings first, so the body reads as sitting in front of the near one.
+      const angle = Math.sin(flap) * 1.02;
+      const shoulderX = px + f * s * 0.05;
+      const shoulderY = py - s * 0.04;
+      ctx.fillStyle = "rgba(4,3,6,0.96)";
+      for (const wing of [-1, 1]) {
+        const tipX = shoulderX + wing * s * (0.62 + 0.32 * Math.cos(angle));
+        const tipY = shoulderY - s * 0.95 * Math.sin(angle);
+        ctx.beginPath();
+        ctx.moveTo(shoulderX, shoulderY);
+        ctx.quadraticCurveTo(shoulderX + wing * s * 0.42, shoulderY - s * 0.16 + (tipY - shoulderY) * 0.5, tipX, tipY);
+        ctx.quadraticCurveTo(shoulderX + wing * s * 0.34, shoulderY + s * 0.2 + (tipY - shoulderY) * 0.28, shoulderX, shoulderY + s * 0.11);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Body: tail, back, breast.  Perched birds sit up; flying birds lie flat.
+    const crouch = flap === null ? 1 : 0.62;
+    ctx.fillStyle = "rgba(4,3,6,0.99)";
+    ctx.beginPath();
+    ctx.moveTo(px + f * -0.6 * s, py - 0.3 * s * crouch);
+    ctx.lineTo(px + f * -1.02 * s, py - (flap === null ? 0.15 : 0.34) * s);
+    ctx.lineTo(px + f * -0.58 * s, py - 0.15 * s * crouch);
+    ctx.lineTo(px + f * 0.06 * s, py - 0.12 * s * crouch);
+    ctx.lineTo(px + f * 0.34 * s, py - 0.3 * s * crouch);
+    ctx.lineTo(px + f * 0.2 * s, py - 0.5 * s * crouch);
+    ctx.lineTo(px + f * -0.2 * s, py - 0.5 * s * crouch);
+    ctx.closePath();
+    ctx.fill();
+
+    // Head and beak.
+    const headX = px + f * 0.3 * s;
+    const headY = py - (flap === null ? 0.62 : 0.4) * s;
+    ctx.beginPath();
+    ctx.arc(headX, headY, s * 0.19, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(headX + f * 0.15 * s, headY - 0.04 * s);
+    ctx.lineTo(headX + f * 0.46 * s, headY + 0.01 * s);
+    ctx.lineTo(headX + f * 0.14 * s, headY + 0.09 * s);
+    ctx.closePath();
+    ctx.fill();
+
+    if (flap === null) {
+      // Legs, and a bone edge along the back so it does not vanish into stone.
+      ctx.strokeStyle = "rgba(4,3,6,0.99)";
+      ctx.lineWidth = Math.max(1, s * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(px + f * 0.02 * s, py - 0.14 * s);
+      ctx.lineTo(px + f * 0.02 * s, py);
+      ctx.moveTo(px + f * 0.16 * s, py - 0.16 * s);
+      ctx.lineTo(px + f * 0.13 * s, py);
+      ctx.stroke();
+      ctx.strokeStyle = palette.bone(0.15 * alpha);
+      ctx.lineWidth = Math.max(1, s * 0.05);
+      ctx.beginPath();
+      ctx.moveTo(px + f * -0.58 * s, py - 0.3 * s);
+      ctx.lineTo(px + f * -0.2 * s, py - 0.5 * s);
+      ctx.lineTo(px + f * 0.2 * s, py - 0.5 * s);
+      ctx.stroke();
+    }
+
+    // The eye takes the fire.  It is the only warm point above the flames.
+    if (glint > 0.01 && s > 7) {
+      ctx.fillStyle = palette.amber(glint);
+      ctx.beginPath();
+      ctx.arc(headX + f * 0.06 * s, headY - 0.03 * s, Math.max(0.7, s * 0.045), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Perched birds: capitals down the aisles, and two on the god himself. */
+  paintPerchedCrows(frame, still) {
+    const { ctx, detail } = frame;
+    const { noise2D, depthFade } = this.kit;
+    const time = still ? 3 : frame.time;
+    if (detail < 0.62) return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    for (const crow of this.crows) {
+      if (crow.flight >= 0) continue;
+      const scale = this.depthScale(crow.z);
+      const fog = depthFade(crow.z, 0.8, 5.4);
+      if (fog <= 0.06) continue;
+      const size = Math.max(3, 0.075 * scale);
+      // Never still, never animated: a slow ruffle and a head that resettles.
+      const ruffle = noise2D(crow.seed + time * 0.42, crow.seed * 0.3) - 0.5;
+      const px = this.sx(crow.x, scale) + ruffle * size * 0.1;
+      const py = this.sy(crow.y, scale) - Math.abs(ruffle) * size * 0.08;
+      this.drawCrow(ctx, px, py, size, crow.facing, 0.55 + fog * 0.45, 0.34 * fog, null);
+    }
+    ctx.restore();
+  }
+
+  /** Whatever is currently coming at the camera. */
+  paintFlyingCrows(frame, still) {
+    if (still) return;
+    const { ctx } = frame;
+    const { lerp } = this.kit;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    for (const crow of this.crows) {
+      if (crow.flight < 0) continue;
+      const pose = crowFlight(crow.flight);
+      const z = lerp(0.44, crow.z, pose.depth);
+      const scale = this.depthScale(z);
+      // It leaves the perch, drifts toward the nave axis, and rises as it comes.
+      const x = lerp(crow.x * 0.35, crow.x, pose.depth) + pose.sway;
+      const y = crow.y - pose.lift * 0.42;
+      const px = this.sx(x, scale);
+      const py = this.sy(y, scale);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+      this.drawCrow(ctx, px, py, Math.max(4, 0.075 * scale), crow.facing, pose.alpha, 0.2, pose.flap);
+    }
+    ctx.restore();
   }
 
   /**
@@ -1102,6 +1602,9 @@ export default class WarpedShrineScene {
     );
 
     // Candle pools on the floor and the warm wash they throw on the piers.
+    // The braziers are held to a tighter, dimmer pool than their flame size
+    // implies: they sit close to the camera, and at this range an honest
+    // falloff merges both of them into one lit floor and buries the scene.
     for (let index = 0; index < this.votives.length; index += 1) {
       const lamp = this.votives[index];
       const scale = this.depthScale(lamp.z);
@@ -1109,11 +1612,17 @@ export default class WarpedShrineScene {
       if (fog <= 0.03) continue;
       const flick = this.kit.noise2D(lamp.seed + (still ? 12 : frame.time) * 6.1, lamp.seed * 0.71);
       const flare = this.flare[index];
-      const radius = Math.max(4, (lamp.size * (5.4 + flare * 6) + 0.1) * scale);
+      // A brazier throws a small hot pool; an aisle candle throws a wide weak
+      // one.  Driving both off the same falloff is what merges twelve candles
+      // into a lit runway down each aisle and flattens the whole floor.
+      const spill = lamp.kind ? 2.5 : 3.9;
+      const wash = lamp.kind ? 0.115 : 0.05;
+      const surge = lamp.kind ? 0.28 : 0.14;
+      const radius = Math.max(4, (lamp.size * (spill + flare * 3.4) + 0.08) * scale);
       this.blitGlow(
         target, this.warm,
         this.sx(lamp.x, scale), this.sy(lamp.y - lamp.size * 0.6, scale),
-        radius, (0.11 + flick * 0.05 + flare * 0.3) * heat * fog,
+        radius, (wash + flick * 0.035 + flare * surge) * heat * fog,
       );
     }
 
@@ -1206,31 +1715,79 @@ export default class WarpedShrineScene {
     ctx.globalCompositeOperation = "source-over";
     ctx.lineJoin = "miter";
 
-    // Plinth, as a box so it reads as standing on the floor plane.
+    // Plinth.  A single slab across the middle of the frame reads as a caption
+    // bar sitting on top of the scene rather than as stone standing in it — a
+    // flat black rectangle with one bright horizontal edge is exactly what a
+    // subtitle box looks like.  So the profile is broken into a footing, a die
+    // and an oversailing cornice, each with its own top surface receding to the
+    // apse and its own lit arris.  Three lit horizontals at three different
+    // widths, uplit from the offering row below, with the joints and the
+    // dedication cut into the die: a monument, not a bar.
     const frontScale = this.depthScale(IDOL_FRONT);
     const backScale = this.depthScale(IDOL_BACK);
-    ctx.fillStyle = "rgba(7,6,9,0.98)";
+    const FOOTING_Y = FLOOR_Y - 0.048;
+    const DIE_Y = FLOOR_Y - 0.152;
+    for (const [half, top, bottom, edge] of [
+      [0.73, FOOTING_Y, FLOOR_Y, 1],
+      [0.575, DIE_Y, FOOTING_Y, 1],
+      [0.63, IDOL_BASE_Y, DIE_Y, 1.7],
+    ]) {
+      const backHalf = half * 0.86;
+      const faceTop = this.sy(top, frontScale);
+      const faceBottom = this.sy(bottom, frontScale);
+      // Top surface, running back toward the apse.
+      ctx.fillStyle = palette.bone(0.035 + heat * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(this.sx(-half, frontScale), faceTop);
+      ctx.lineTo(this.sx(-backHalf, backScale), this.sy(top, backScale));
+      ctx.lineTo(this.sx(backHalf, backScale), this.sy(top, backScale));
+      ctx.lineTo(this.sx(half, frontScale), faceTop);
+      ctx.closePath();
+      ctx.fill();
+      // Front face, and the candlelight climbing it from the floor.
+      ctx.beginPath();
+      ctx.moveTo(this.sx(-half, frontScale), faceTop);
+      ctx.lineTo(this.sx(half, frontScale), faceTop);
+      ctx.lineTo(this.sx(half, frontScale), faceBottom);
+      ctx.lineTo(this.sx(-half, frontScale), faceBottom);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(7,6,9,0.99)";
+      ctx.fill();
+      if (Number.isFinite(faceTop) && Number.isFinite(faceBottom)) {
+        const lit = ctx.createLinearGradient(0, faceBottom, 0, faceTop);
+        lit.addColorStop(0, palette.amber(0.15 * heat));
+        lit.addColorStop(0.65, palette.ember(0.035 * heat));
+        lit.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = lit;
+        ctx.fill();
+      }
+      ctx.strokeStyle = palette.bone(0.11 + heat * 0.15);
+      ctx.lineWidth = Math.max(1, ratio * edge);
+      ctx.beginPath();
+      ctx.moveTo(this.sx(-half, frontScale), faceTop);
+      ctx.lineTo(this.sx(half, frontScale), faceTop);
+      ctx.stroke();
+    }
+
+    // Courses of stone across the die.
+    ctx.strokeStyle = "rgba(2,2,3,0.85)";
+    ctx.lineWidth = Math.max(1, ratio);
     ctx.beginPath();
-    ctx.moveTo(this.sx(-0.62, frontScale), this.sy(FLOOR_Y, frontScale));
-    ctx.lineTo(this.sx(-0.62, frontScale), this.sy(FLOOR_Y - 0.18, frontScale));
-    ctx.lineTo(this.sx(0.62, frontScale), this.sy(FLOOR_Y - 0.18, frontScale));
-    ctx.lineTo(this.sx(0.62, frontScale), this.sy(FLOOR_Y, frontScale));
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(this.sx(-0.62, frontScale), this.sy(FLOOR_Y - 0.18, frontScale));
-    ctx.lineTo(this.sx(-0.52, backScale), this.sy(FLOOR_Y - 0.18, backScale));
-    ctx.lineTo(this.sx(0.52, backScale), this.sy(FLOOR_Y - 0.18, backScale));
-    ctx.lineTo(this.sx(0.62, frontScale), this.sy(FLOOR_Y - 0.18, frontScale));
-    ctx.closePath();
-    ctx.fillStyle = palette.bone(0.05 + heat * 0.05);
-    ctx.fill();
-    ctx.strokeStyle = palette.bone(0.16 + heat * 0.14);
-    ctx.lineWidth = Math.max(1, ratio * 1.6);
-    ctx.beginPath();
-    ctx.moveTo(this.sx(-0.62, frontScale), this.sy(FLOOR_Y - 0.18, frontScale));
-    ctx.lineTo(this.sx(0.62, frontScale), this.sy(FLOOR_Y - 0.18, frontScale));
+    for (const joint of [-0.3, 0.3]) {
+      ctx.moveTo(this.sx(joint, frontScale), this.sy(FOOTING_Y, frontScale));
+      ctx.lineTo(this.sx(joint, frontScale), this.sy(DIE_Y, frontScale));
+    }
     ctx.stroke();
+
+    // The dedication, cut into the die.  Dis Manibus — to the shades — of
+    // nobody.  It is a tomb inscription with the name left out.
+    this.kit.machineText(ctx, "D · M · NVLLI", this.sx(0, frontScale), this.sy(FLOOR_Y - 0.086, frontScale), {
+      size: Math.max(7, 0.038 * frontScale),
+      align: "center",
+      color: palette.bone(0.09 + heat * 0.07),
+      letterSpacing: 0.2,
+      shadow: false,
+    });
 
     // Body: a tapering mass with the left shoulder sheared off.  Not a figure,
     // only almost one.
@@ -1433,6 +1990,170 @@ export default class WarpedShrineScene {
     this.idolHalo = { x: haloX, y: haloY, r: haloR };
   }
 
+  // -- the celebrant ------------------------------------------------------
+
+  advancePreacher(dt, time) {
+    const preacher = this.preacher;
+    preacher.presence = preacherPresence(time);
+    preacher.blink = Math.max(0, preacher.blink - dt);
+    preacher.nextBlink -= dt;
+    if (preacher.nextBlink <= 0) {
+      preacher.blink = 0.11;
+      // Irregular, and long enough between blinks to be unsettling rather than
+      // busy.  A metronomic blink reads as an animation loop.
+      preacher.nextBlink = 2.4 + this.kit.noise2D(time * 3.1, 7.7) * 5.6;
+    }
+    preacher.glitch *= Math.exp(-dt * 7);
+    preacher.gaze *= Math.exp(-dt * 0.85);
+  }
+
+  /**
+   * The preacher.  A cowl, backlit by the braziers he is standing in front of,
+   * with nothing inside the hood except two violet pupils.
+   *
+   * He is human-scaled on purpose: at 1.5 he is a little over half the height
+   * of the effigy behind him, which is the only thing in the frame that says
+   * how big the god actually is.  Everything about him is dark except the
+   * pupils and the fire on his shoulders — there is nothing behind the
+   * interface, and he is the interface.
+   */
+  paintPreacher(frame, heat, sacred, still) {
+    const presence = still ? 0.85 : this.preacher.presence;
+    if (presence <= 0.02) return;
+    const { ctx, ratio, palette, audio } = frame;
+    const { clamp, noise2D, TAU } = this.kit;
+    const time = still ? 7 : frame.time;
+    const scale = this.depthScale(PREACHER_Z);
+    if (!(scale > 0)) return;
+    // A breath, and a sway so slow it is only detectable against the piers.
+    const swayAmount = still ? 0 : Math.sin(time * 0.29) * 0.004 + noise2D(time * 0.11, 4.2) * 0.006 - 0.003;
+    const rise = still ? 1 : 1 + clamp(audio.sustain, 0, 1) * 0.012;
+    const px = (u) => this.sx(PREACHER_X + u + swayAmount, scale);
+    const py = (v) => this.sy(FLOOR_Y - v * rise * PREACHER_H, scale);
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = presence;
+
+    // His own shadow, thrown toward the camera because the fire is behind him.
+    const castScale = this.depthScale(0.82);
+    ctx.fillStyle = `rgba(3,2,5,${(0.34 * heat).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.moveTo(px(-0.15), py(0));
+    ctx.lineTo(px(0.158), py(0));
+    ctx.lineTo(this.sx(PREACHER_X + 0.5, castScale), this.sy(FLOOR_Y, castScale));
+    ctx.lineTo(this.sx(PREACHER_X - 0.62, castScale), this.sy(FLOOR_Y, castScale));
+    ctx.closePath();
+    ctx.fill();
+
+    // The cowl: heavy hem, narrow waist, wide shoulders, and a hood that domes
+    // over rather than coming to a point — a peak would read as the wrong kind
+    // of hood entirely.  Deliberately not symmetrical about the axis.
+    ctx.beginPath();
+    ctx.moveTo(px(-0.15), py(0));
+    for (const [u, v] of PREACHER_COWL) ctx.lineTo(px(u), py(v));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(3,3,5,0.995)";
+    ctx.fill();
+
+    // Firelight from directly behind: hot edges only, never a closed outline.
+    // Stroking the whole silhouette is what makes a backlit figure read as a
+    // sticker instead of as a shape with a fire behind it.
+    const rim = 0.24 + heat * 0.32;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = palette.amber(rim);
+    ctx.lineWidth = Math.max(1, ratio * 1.3);
+    ctx.beginPath();
+    for (let point = PREACHER_CREST[0]; point <= PREACHER_CREST[1]; point += 1) {
+      const [u, v] = PREACHER_COWL[point];
+      if (point === PREACHER_CREST[0]) ctx.moveTo(px(u), py(v));
+      else ctx.lineTo(px(u), py(v));
+    }
+    ctx.stroke();
+    ctx.strokeStyle = palette.ember(rim * 0.6);
+    ctx.lineWidth = Math.max(1, ratio);
+    ctx.beginPath();
+    for (let point = PREACHER_CREST[2]; point <= PREACHER_CREST[3]; point += 1) {
+      const [u, v] = PREACHER_COWL[point];
+      if (point === PREACHER_CREST[2]) ctx.moveTo(px(u), py(v));
+      else ctx.lineTo(px(u), py(v));
+    }
+    ctx.stroke();
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+
+    // Robe folds, only where the rim light would find them.
+    ctx.strokeStyle = palette.amber(0.07 * heat);
+    ctx.lineWidth = Math.max(1, ratio * 0.8);
+    ctx.beginPath();
+    for (let fold = 0; fold < 3; fold += 1) {
+      const fx = -0.055 + fold * 0.058;
+      ctx.moveTo(px(fx), py(0.02));
+      ctx.lineTo(px(fx * 0.7), py(0.46));
+    }
+    ctx.stroke();
+
+    // Cupped hands, the one pale thing on him, holding nothing.
+    ctx.fillStyle = palette.bone(0.1 + heat * 0.07);
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(px(side * 0.03), py(0.44), Math.max(0.8, 0.013 * scale), Math.max(0.6, 0.008 * scale), side * 0.5, 0, TAU);
+      ctx.fill();
+    }
+
+    // The hood is empty.  This is a hole, not a face.
+    const faceX = px(0.006);
+    const faceY = py(0.8);
+    const faceW = Math.max(1.5, 0.042 * scale);
+    const faceH = Math.max(2, 0.055 * scale);
+    ctx.fillStyle = "rgba(1,1,2,1)";
+    ctx.beginPath();
+    ctx.ellipse(faceX, faceY, faceW, faceH, 0, 0, TAU);
+    ctx.fill();
+    // The leading edge of the cowl, catching a little of the fire behind it.
+    // Without this the hole reads as a hole in the canvas rather than a hood.
+    ctx.strokeStyle = palette.amber(0.13 + heat * 0.12);
+    ctx.lineWidth = Math.max(1, ratio);
+    ctx.beginPath();
+    ctx.ellipse(faceX, faceY, faceW * 1.12, faceH * 1.1, 0, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.stroke();
+
+    // Pupils.  They drift on `gaze`, they double when the signal breaks, and
+    // every so often they are simply not there for a tenth of a second.
+    if (this.preacher.blink <= 0) {
+      const drift = (noise2D(time * 0.5, 11.3) - 0.5) * this.preacher.gaze * 0.9;
+      const gap = faceW * 0.42;
+      const pupilR = Math.max(0.9, 0.0085 * scale);
+      const glow = 0.55 + sacred * 0.45;
+      // A ghost pair on hits: the same eyes, one frame out of register.
+      if (this.preacher.glitch > 0.05) {
+        ctx.fillStyle = palette.violet(0.28 * this.preacher.glitch);
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(faceX + side * gap + this.preacher.glitch * faceW * 0.5, faceY - faceH * 0.1, pupilR, 0, TAU);
+          ctx.fill();
+        }
+      }
+      ctx.globalCompositeOperation = "lighter";
+      for (const side of [-1, 1]) {
+        const eyeX = faceX + side * gap + drift * faceW;
+        const eyeY = faceY - faceH * 0.1;
+        this.blitGlow(ctx, this.cool, eyeX, eyeY, pupilR * 7, 0.4 * glow * presence);
+        ctx.globalAlpha = presence;
+        ctx.fillStyle = palette.violet(0.72 + sacred * 0.28);
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, pupilR, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
   /** One shaft in front of the idol so something crosses it. */
   paintNearShaft(frame, sacred) {
     const { ctx } = frame;
@@ -1567,6 +2288,32 @@ export default class WarpedShrineScene {
       machineText(ctx, "no return", halo.x + halo.r * 1.5, halo.y - halo.r * 1.5 + small, {
         size: small * 0.85, color: palette.blood(0.3), letterSpacing: 0.06,
       });
+    }
+
+    // A second lock, on the celebrant.  It is drawn whether or not he is
+    // standing there — the machine holds the track, reports a serial for it,
+    // and has no way of telling you the floor is empty.
+    const bodyScale = this.depthScale(PREACHER_Z);
+    const headX = this.sx(PREACHER_X, bodyScale);
+    const headY = this.sy(FLOOR_Y - 0.8 * PREACHER_H, bodyScale);
+    const headR = Math.max(6, 0.062 * bodyScale);
+    if (Number.isFinite(headX) && Number.isFinite(headY)) {
+      const here = this.preacher.presence > 0.5;
+      reticle(ctx, headX, headY, headR * 2.4, {
+        color: here ? palette.violet(0.2 + audio.beat * 0.14) : palette.wire(0.12),
+        width: Math.max(1, ratio),
+        crosshair: !here,
+      });
+      machineText(ctx, here ? "celebrant" : "no subject", headX + headR * 1.75, headY - headR * 1.5, {
+        size: small * 0.85,
+        color: here ? palette.violet(0.4) : palette.dim(0.42),
+        letterSpacing: 0.07,
+      });
+      if (here) {
+        machineText(ctx, "unresolved", headX + headR * 1.75, headY - headR * 1.5 + small * 0.95, {
+          size: small * 0.8, color: palette.blood(0.28), letterSpacing: 0.06,
+        });
+      }
     }
 
     // Bottom left is ours; the HUD owns the right edge and bottom right.
