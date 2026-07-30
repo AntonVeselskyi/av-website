@@ -71,6 +71,7 @@ let music = null;
 let analyser = null;
 let visualizer = null;
 let transport = null;
+let audioInitPromise = null;
 let cameraStream = null;
 let cameraGeneration = 0;
 let visionWorker = null;
@@ -268,34 +269,61 @@ function scheduleLoopEvent(event, when) {
   }
 }
 
-async function initAudio() {
-  if (audioContext) {
-    await audioContext.resume();
-    return;
+async function resumeAudio(context, timeoutMs = 1600) {
+  if (context.state === "running") return;
+  let timeout = 0;
+  try {
+    await Promise.race([
+      context.resume(),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("AUDIO WAITING FOR A PLAY/NOTE GESTURE")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
   }
-  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextCtor) throw new Error("Web Audio is not supported in this browser.");
-  audioContext = new AudioContextCtor({ latencyHint: "interactive" });
-  await audioContext.resume();
-  music = new MusicEngine(audioContext, project.master);
-  analyser = audioContext.createAnalyser();
-  analyser.fftSize = 1024;
-  // Preserve kick/snare/hat onsets for the visual scenes; the renderer adds
-  // its own attack/release smoothing instead of smearing them at the analyser.
-  analyser.smoothingTimeConstant = 0.48;
-  music.master.output.connect(analyser);
-  visualizer = createSpellVisualizer(dom.visualCanvas, { analyser, mode: project.ui.visualizerMode, reducedMotion: project.ui.reducedMotion });
-  visualizer.start();
-  transport = new LoopTransport({ getAudioTime: () => audioContext.currentTime, scheduleEvent: scheduleLoopEvent, project });
-  transport.addEventListener("tick", (event) => {
-    updateTransportPosition(event.detail.beat);
-    updatePlayheads(event.detail.beat);
-  });
-  transport.addEventListener("transport", (event) => {
-    dom.play.classList.toggle("active", event.detail.playing);
-    updateLoopPedal();
-  });
-  applyMasterSettings();
+  if (context.state !== "running") throw new Error("AUDIO WAITING FOR A PLAY/NOTE GESTURE");
+}
+
+async function initAudio({ timeoutMs = 1600 } = {}) {
+  if (music && audioContext) {
+    await resumeAudio(audioContext, timeoutMs);
+    return music;
+  }
+  if (audioInitPromise) return audioInitPromise;
+  audioInitPromise = (async () => {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) throw new Error("Web Audio is not supported in this browser.");
+    audioContext ||= new AudioContextCtor({ latencyHint: "interactive" });
+    await resumeAudio(audioContext, timeoutMs);
+    if (music) return music;
+    music = new MusicEngine(audioContext, project.master);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 1024;
+    // Preserve kick/snare/hat onsets for the visual scenes; the renderer adds
+    // its own attack/release smoothing instead of smearing them at the analyser.
+    analyser.smoothingTimeConstant = 0.48;
+    music.master.output.connect(analyser);
+    visualizer = createSpellVisualizer(dom.visualCanvas, { analyser, mode: project.ui.visualizerMode, reducedMotion: project.ui.reducedMotion });
+    visualizer.start();
+    transport = new LoopTransport({ getAudioTime: () => audioContext.currentTime, scheduleEvent: scheduleLoopEvent, project });
+    transport.addEventListener("tick", (event) => {
+      updateTransportPosition(event.detail.beat);
+      updatePlayheads(event.detail.beat);
+    });
+    transport.addEventListener("transport", (event) => {
+      dom.play.classList.toggle("active", event.detail.playing);
+      updateLoopPedal();
+    });
+    applyMasterSettings();
+    return music;
+  })();
+  try {
+    return await audioInitPromise;
+  } finally {
+    // A blocked first gesture may be retried by Play, a key, or a pedal.
+    audioInitPromise = null;
+  }
 }
 
 function applyMasterSettings() {
@@ -1874,14 +1902,18 @@ async function copyDiagnosticLog() {
 function wireEvents() {
   dom.start.addEventListener("click", async () => {
     dom.start.disabled = true;
+    // Start the Web Audio unlock inside the actual click task, but never make
+    // the workstation UI conditional on a browser-owned resume promise.
+    const audioReady = initAudio({ timeoutMs: 1400 });
+    dom.boot.hidden = true;
+    dom.workstation.hidden = false;
+    visualizer?.resize();
+    startCamera().catch((error) => { showToast(error.message, 5000); stopCamera(); });
     try {
-      await initAudio();
-      dom.boot.hidden = true;
-      dom.workstation.hidden = false;
-      visualizer?.resize();
-      await startCamera().catch((error) => { showToast(error.message, 5000); stopCamera(); });
+      await audioReady;
     } catch (error) {
-      showToast(error.message, 5000);
+      showToast(`${error.message} — PRESS PLAY OR A NOTE TO RETRY`, 6200);
+    } finally {
       dom.start.disabled = false;
     }
   });
