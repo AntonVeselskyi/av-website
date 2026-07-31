@@ -31,7 +31,7 @@ import {
   saveCalibrationDraft,
   saveProject,
 } from "./storage.js?v=7";
-import { createSpellVisualizer } from "./visual/visualizer.js?v=11";
+import { createSpellVisualizer } from "./visual/visualizer.js?v=12";
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const COLLECTION_REFERENCES = Object.freeze({

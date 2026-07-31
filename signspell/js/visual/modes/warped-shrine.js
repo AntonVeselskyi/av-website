@@ -1167,7 +1167,12 @@ export default class WarpedShrineScene {
       // it should feel like the room being struck, not like a strobe.
       if (this.desecrate < 0.12 && audio.transient > 0.7 && audio.bassAtt > 1.5) this.desecrate = 1;
     }
-    if (wallFallFallbackDue({ still, silent: audio.silent, time, lastAt: this.lastWallFallAt, delay: 0.3 })) {
+    // `audio.silent` only means "not digital zero", which a reverb tail or a
+    // compressor's idle output clears easily — so on a noise floor the fallback
+    // became a metronome dropping light down a wall with nothing playing. The
+    // fallback needs actual musical energy, not merely a non-zero buffer.
+    const tooQuietToFall = audio.silent || audio.level < 0.03;
+    if (wallFallFallbackDue({ still, silent: tooQuietToFall, time, lastAt: this.lastWallFallAt, delay: 0.3 })) {
       this.spawnWallFalls(frame, Math.floor(time * 2));
       this.lastWallFallAt = time;
     }
