@@ -89,6 +89,7 @@ const STELLA = (() => {
 })();
 
 const SOLIDS = [ICOSA, CUBE, STELLA, OCTA];
+const MAX_VERTS = Math.max(...SOLIDS.map((s) => s.v.length));
 
 const STAR_COUNT = 420;
 const GALAXY_ARMS = 3;
@@ -98,6 +99,23 @@ const NEBULA_H = 54;
 const NEBULA_INTERVAL = 6;      // frames between nebula recomputes
 
 const DESIGNATIONS = ["NGC", "IC", "PGC", "ABELL", "MRK"];
+const GALAXY_SHELLS = 3;
+
+/**
+ * One galaxy shell of the endless zoom, as a function of travel so it can be
+ * reasoned about on its own. `scale` carries the shell's size and `alpha`
+ * fades it at both ends of its life, which is what lets a shell be recycled
+ * without anything popping. Feeding it negative travel runs the cycle the
+ * other way, so the shells grow toward the camera instead of receding.
+ */
+export function orbitZoomCycle(beatTravel, offset = 0) {
+  const phase = ((beatTravel / 8 + offset) % 1 + 1) % 1;
+  return {
+    phase,
+    scale: 1.52 - phase * 1.18,
+    alpha: Math.pow(Math.sin(Math.PI * phase), 0.7),
+  };
+}
 
 function hash01(n) {
   let x = Math.imul(n | 0, 0x27d4eb2d) ^ 0x9e3779b9;
@@ -136,17 +154,18 @@ export default class SerialOrbitScene {
     this.sSeed = new Float32Array(STAR_COUNT);
     for (let i = 0; i < STAR_COUNT; i += 1) this.seedStar(i, true);
 
-    // Galaxy: radius and base angle per point; the winding is computed live.
+    // Galaxy point cloud. The arm assignment is resolved per shell rather than
+    // baked in, so each shell of the zoom can be a different galaxy.
+    this.gt = new Float32Array(GALAXY_POINTS);
     this.gr = new Float32Array(GALAXY_POINTS);
-    this.ga = new Float32Array(GALAXY_POINTS);
     this.gj = new Float32Array(GALAXY_POINTS);
     for (let i = 0; i < GALAXY_POINTS; i += 1) {
-      const arm = i % GALAXY_ARMS;
       const t = Math.pow(hash01(i * 5 + 3), 0.62);
+      this.gt[i] = t;
       this.gr[i] = 0.12 + t * 0.95;
-      this.ga[i] = (arm / GALAXY_ARMS) * Math.PI * 2 + t * 2.6;
       this.gj[i] = (hash01(i * 5 + 9) - 0.5) * 0.42 * (1 - t * 0.55);
     }
+    this.galaxyTravel = 1.7;
 
     // Per-solid state.
     this.bodies = SOLIDS.map((geometry, index) => ({
@@ -159,10 +178,15 @@ export default class SerialOrbitScene {
       spin: [0.13 + hash01(index * 13 + 1) * 0.2, 0.09 + hash01(index * 13 + 5) * 0.24, 0.05 + hash01(index * 13 + 8) * 0.13],
       phase: [hash01(index * 3) * 6, hash01(index * 3 + 1) * 6, hash01(index * 3 + 2) * 6],
       band: index / SOLIDS.length,
-      px: new Float32Array(geometry.v.length),
-      py: new Float32Array(geometry.v.length),
-      pd: new Float32Array(geometry.v.length),
-      pok: new Uint8Array(geometry.v.length),
+      // A body can be handed a different solid when the set reconfigures, so
+      // the scratch is sized to the largest geometry rather than its own.
+      px: new Float32Array(MAX_VERTS),
+      py: new Float32Array(MAX_VERTS),
+      pd: new Float32Array(MAX_VERTS),
+      pok: new Uint8Array(MAX_VERTS),
+      enter: 1,
+      entryAngle: hash01(index * 29) * Math.PI * 2,
+      shape: index,
     }));
     // Edge draw order, rebuilt per body per frame without allocating.
     this.edgeOrder = new Int32Array(Math.max(...SOLIDS.map((s) => s.e.length)));
@@ -232,37 +256,65 @@ export default class SerialOrbitScene {
     target.drawImage(this.nebulaSurface, 0, 0, this.nebula.width, this.nebula.height);
   }
 
-  /** Spiral arms wound by differential rotation. */
-  drawGalaxy(frame, cx, cy, scale) {
+/**
+   * One galaxy, wound by differential rotation. `cycle` identifies which pass of
+   * the endless zoom this is, and seeds a different galaxy each time — so
+   * falling inward keeps revealing new ones rather than the same one larger.
+   */
+  drawGalaxyShell(frame, cx, cy, scale, alpha, cycle) {
     const { ctx, audio, palette } = frame;
-    const count = Math.max(160, Math.round(GALAXY_POINTS * frame.detail));
+    if (alpha <= 0.012 || scale <= 1) return;
+    // Bigger shells are nearer, so they resolve into more stars. That is the
+    // "reveal" — detail arrives as you fall in, instead of a bitmap scaling up.
+    const nearness = Math.min(1, scale / (Math.min(frame.width, frame.height) * 0.9));
+    const count = Math.max(70, Math.round(GALAXY_POINTS * frame.detail * (0.4 + nearness * 0.75)));
+    const arms = 2 + (cycle % 4);
+    const spin = hash01(cycle * 13 + 1) > 0.5 ? 1 : -1;
+    const tilt = 0.2 + hash01(cycle * 13 + 5) * 0.55;
+    const hue = 250 + hash01(cycle * 13 + 9) * 90;
+    const drift = hash01(cycle * 13 + 3) * 6.283;
+
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     for (let i = 0; i < count; i += 1) {
       const r = this.gr[i];
+      const p = this.gt[i];
       // Flat rotation curve: angular rate falls as 1/r, which is what winds
       // the arms. The galaxy slowly eats its own structure, as it should.
       const omega = 0.42 / Math.max(0.16, r);
-      const angle = this.ga[i] + this.t * omega * 0.16 + this.gj[i];
+      const angle = ((i % arms) / arms) * Math.PI * 2 + p * 2.6 + drift
+        + spin * this.t * omega * 0.16 + this.gj[i];
       const rr = r * scale;
       const x = cx + Math.cos(angle) * rr;
-      const y = cy + Math.sin(angle) * rr * 0.34;
-      const bright = (1 - r / 1.1) * (0.5 + audio.trebRel * 0.22);
+      const y = cy + Math.sin(angle) * rr * tilt;
+      const bright = (1 - r / 1.1) * (0.5 + Math.min(2, audio.trebRel) * 0.22) * alpha;
       if (bright <= 0.01) continue;
-      const size = (0.7 + this.gj[i] * 0.4 + bright * 2.2) * frame.ratio;
+      const size = (0.6 + this.gj[i] * 0.4 + bright * 2 * (0.5 + nearness)) * frame.ratio;
       ctx.fillStyle = i % 11 === 0
-        ? palette.wire(Math.min(0.6, bright * 0.62))
-        : palette.violet(Math.min(0.42, bright * 0.4));
+        ? palette.wire(Math.min(0.5, bright * 0.55))
+        : `hsla(${hue.toFixed(0)}, 82%, 74%, ${Math.min(0.4, bright * 0.4).toFixed(3)})`;
       ctx.fillRect(x, y, size, size);
     }
-    // Core.
-    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, scale * 0.3);
-    core.addColorStop(0, palette.bone(0.26 + audio.sustain * 0.2));
-    core.addColorStop(0.4, palette.violet(0.13));
+    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(2, scale * 0.3));
+    core.addColorStop(0, palette.bone((0.2 + audio.sustain * 0.18) * alpha));
+    core.addColorStop(0.4, palette.violet(0.1 * alpha));
     core.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = core;
     ctx.fillRect(cx - scale * 0.3, cy - scale * 0.3, scale * 0.6, scale * 0.6);
     ctx.restore();
+  }
+
+  /** The endless fall: shells grow past the camera and are replaced behind. */
+  drawGalaxies(frame, cx, cy, base) {
+    for (let shell = 0; shell < GALAXY_SHELLS; shell += 1) {
+      const offset = shell / GALAXY_SHELLS;
+      // Negative travel runs the cycle outward, so shells grow toward us.
+      const zoom = frame.reducedMotion
+        ? { phase: 0.5, scale: 0.93, alpha: shell === 0 ? 1 : 0 }
+        : orbitZoomCycle(-this.galaxyTravel, offset);
+      const cycle = Math.floor((this.galaxyTravel / 8 + offset)) + shell * 101;
+      this.drawGalaxyShell(frame, cx, cy, base * zoom.scale, zoom.alpha, cycle);
+    }
   }
 
   /** Motes integrated against the central mass. */
@@ -325,9 +377,19 @@ export default class SerialOrbitScene {
 
     // Travel along its own inclined orbit rather than sitting at the centre.
     const orbit = body.orbitPhase + this.t * body.orbitSpeed * this.axisFlip;
-    const ox = Math.cos(orbit) * body.orbitR;
-    const oy = Math.sin(orbit) * body.orbitR * 0.36;
-    const oz = 2.9 + Math.sin(orbit * 0.7 + body.tilt) * 0.85;
+    let ox = Math.cos(orbit) * body.orbitR;
+    let oy = Math.sin(orbit) * body.orbitR * 0.36;
+    let oz = 2.9 + Math.sin(orbit * 0.7 + body.tilt) * 0.85;
+
+    // Arrivals slide in from outside the frame and settle onto the orbit.
+    // A solid that simply switches shape in place reads as a glitch.
+    const ease = body.enter * body.enter * (3 - 2 * body.enter);
+    if (ease < 0.999) {
+      const far = 4.4;
+      ox = kit.lerp(Math.cos(body.entryAngle) * far, ox, ease);
+      oy = kit.lerp(Math.sin(body.entryAngle) * far * 0.6, oy, ease);
+      oz = kit.lerp(oz + 5.5, oz, ease);
+    }
 
     const pitch = body.phase[0] + this.t * body.spin[0] * this.axisFlip;
     const yaw = body.phase[1] + this.t * body.spin[1];
@@ -402,7 +464,8 @@ export default class SerialOrbitScene {
       const to = Math.floor(((band + 1) / 3) * live);
       if (to <= from) continue;
       const near = band / 2;
-      const alpha = (0.07 + near * 0.26) * (dominant ? 1 : 0.6) * (0.55 + Math.min(2, audio.midRel) * 0.22);
+      const alpha = (0.07 + near * 0.26) * (dominant ? 1 : 0.6)
+        * (0.55 + Math.min(2, audio.midRel) * 0.22) * (0.25 + ease * 0.75);
       ctx.strokeStyle = `hsla(${hue.toFixed(0)}, 92%, ${(62 + near * 16).toFixed(0)}%, ${Math.min(0.85, alpha).toFixed(3)})`;
       ctx.lineWidth = (0.6 + near * 1.5) * frame.ratio * (dominant ? 1.2 : 0.85);
       ctx.beginPath();
@@ -437,7 +500,12 @@ export default class SerialOrbitScene {
     const { ctx, width, height, audio, kit, palette } = frame;
     const reduced = frame.reducedMotion;
     const dt = Math.min(0.05, frame.dt);
-    if (!reduced) this.t += dt;
+    if (!reduced) {
+      this.t += dt;
+      // Tempo drives the fall, so the zoom keeps time with the music.
+      this.galaxyTravel += dt * (frame.bpm || 120) / 60;
+      for (const body of this.bodies) body.enter = Math.min(1, body.enter + dt / 1.7);
+    }
 
     // Reconfigure on a musical boundary rather than a timer.
     if (!reduced && audio.beat > 0.7 && audio.beatCount !== this.lastBeat) {
@@ -446,6 +514,12 @@ export default class SerialOrbitScene {
         this.dominant = (this.dominant + 1) % this.bodies.length;
         this.axisFlip = -this.axisFlip;
         this.channel = (this.channel + 1) % 999;
+        // Retire the body furthest along and fly a different solid in behind it.
+        const swap = this.bodies[(this.dominant + 2) % this.bodies.length];
+        swap.shape = (swap.shape + 1 + Math.floor(hash01(audio.beatCount) * 2)) % SOLIDS.length;
+        swap.geometry = SOLIDS[swap.shape];
+        swap.entryAngle = hash01(audio.beatCount * 7 + 3) * Math.PI * 2;
+        swap.enter = 0;
       }
     }
 
@@ -462,7 +536,7 @@ export default class SerialOrbitScene {
 
     const gx = width * (0.5 + Math.sin(this.t * 0.03) * 0.06);
     const gy = height * (0.46 + Math.cos(this.t * 0.024) * 0.05);
-    this.drawGalaxy(frame, gx, gy, Math.min(width, height) * 0.52);
+    this.drawGalaxies(frame, gx, gy, Math.min(width, height) * 0.52);
     this.drawField(frame, dt);
 
     // Solids and their light trails, on their own buffer.
@@ -511,7 +585,8 @@ export default class SerialOrbitScene {
     const { ctx, width, height, audio, kit, palette } = frame;
     const small = Math.max(9, 11 * frame.ratio);
     const designation = `${DESIGNATIONS[this.channel % DESIGNATIONS.length]} ${kit.serialString(this.channel * 7 + 3, 4)}`;
-    kit.machineText(ctx, `${designation}  ·  ${["ICOSA", "HEXA", "STELLA", "OCTA"][this.dominant]}`, width * 0.04, height * 0.9, {
+    const shape = ["ICOSA", "HEXA", "STELLA", "OCTA"][this.bodies[this.dominant].shape] || "ICOSA";
+    kit.machineText(ctx, `${designation}  ·  ${shape}`, width * 0.04, height * 0.9, {
       size: small * 1.1, color: palette.wire(0.42), letterSpacing: 0.09,
     });
     kit.machineText(ctx,

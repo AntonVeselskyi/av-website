@@ -500,6 +500,64 @@ export function tapeTear(ctx, source, width, height, options = {}) {
 }
 
 /**
+ * Codec breakdown: displaced macroblocks, quantization collapse and dropped
+ * blocks.  Tape tearing is analogue and slides whole scanlines; this is the
+ * digital failure — the picture survives in square lumps that no longer agree
+ * with each other about what frame they belong to.
+ *
+ * `source` must be a snapshot of the destination taken this frame.
+ */
+export function blockGlitch(ctx, source, width, height, options = {}) {
+  const strength = clamp(options.strength ?? 0, 0, 1);
+  if (strength <= 0 || !source) return;
+  const unit = Math.max(8, options.size ?? 28);
+  const count = Math.round((options.count ?? 22) * strength);
+  if (count <= 0) return;
+  const random = mulberry32(Math.floor(options.seed ?? 0) + 977);
+  const slide = (options.slide ?? 0.09) * width * strength;
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.imageSmoothingEnabled = false;
+
+  for (let block = 0; block < count; block += 1) {
+    const bw = unit * (1 + Math.floor(random() * 4));
+    const bh = unit * (1 + Math.floor(random() * 2));
+    const sx = Math.floor(random() * Math.max(1, width - bw) / unit) * unit;
+    const sy = Math.floor(random() * Math.max(1, height - bh) / unit) * unit;
+    const roll = random();
+
+    if (roll < 0.18) {
+      // Lost block: the decoder had nothing to draw here.
+      ctx.globalAlpha = 0.5 + random() * 0.4;
+      ctx.fillStyle = random() > 0.5 ? "rgba(9,8,12,1)" : "rgba(28,10,26,1)";
+      ctx.fillRect(sx, sy, bw, bh);
+      continue;
+    }
+
+    if (roll < 0.46) {
+      // Quantization collapse: down to a handful of samples and back up with
+      // smoothing off, which is what a starved bitrate actually looks like.
+      const qw = Math.max(1, Math.floor(bw / (4 + random() * 8)));
+      const qh = Math.max(1, Math.floor(bh / (4 + random() * 8)));
+      ctx.globalAlpha = 1;
+      ctx.drawImage(source, sx, sy, bw, bh, sx, sy, qw, qh);
+      ctx.drawImage(ctx.canvas, sx, sy, qw, qh, sx, sy, bw, bh);
+      continue;
+    }
+
+    // Motion-vector error: the block is copied from the wrong place.
+    const dx = sx + Math.round((random() - 0.5) * slide / unit) * unit;
+    const dy = sy + Math.round((random() - 0.5) * 3) * unit;
+    ctx.globalAlpha = 0.7 + random() * 0.3;
+    ctx.drawImage(source, sx, sy, bw, bh, dx, dy, bw, bh);
+  }
+
+  ctx.restore();
+}
+
+/**
  * Cheap CRT bulge.  The source is recomposited as horizontal bands, each
  * scaled by its distance from the tube centre.
  */
@@ -916,7 +974,7 @@ export default {
   TAU, clamp, lerp, wrap01, smoothstep, approach, mulberry32,
   noise2D, fbm, flowAngle, palette, FONTS, serialString, hexString,
   createSurface, Layer, Bloom, RgbSplit, Grain, Dither,
-  scanlines, rollingBar, vignette, tapeTear, curveWarp,
+  scanlines, rollingBar, vignette, tapeTear, curveWarp, blockGlitch,
   FeedbackWarp, tone, darkenCenter,
   fadeTo, glowStroke, stampText, machineText, reticle,
   rotate3D, project3D, depthFade, average, power, sampleBand, melPosition,

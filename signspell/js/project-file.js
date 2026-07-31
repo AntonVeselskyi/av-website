@@ -20,7 +20,7 @@ export const MAX_SSPELL_FILE_BYTES = 2 * 1024 * 1024;
 export const MAX_EVENTS_PER_LANE = 4096;
 
 const ROOTS = new Set(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]);
-const VISUALIZER_MODES = new Set(["wired", "fire", "cruciform", "shrine", "orbit", "lava"]);
+const VISUALIZER_MODES = new Set(["wired", "fire", "cruciform", "shrine", "orbit", "lava", "royale"]);
 
 function boundedString(value, fallback, maxLength) {
   if (typeof value !== "string") return fallback;

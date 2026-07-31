@@ -18,13 +18,14 @@
  * including clearing or fading its own frame.
  */
 
-import * as kit from "./scene-kit.js?v=5";
-import WiredTunnelScene from "./modes/wired-tunnel.js?v=5";
-import SpectralFireScene from "./modes/spectral-fire.js?v=5";
-import CruciformScopeScene from "./modes/cruciform-scope.js?v=5";
-import WarpedShrineScene from "./modes/warped-shrine.js?v=5";
-import SerialOrbitScene from "./modes/serial-orbit.js?v=5";
-import LavaLampScene from "./modes/lava-lamp.js?v=5";
+import * as kit from "./scene-kit.js?v=7";
+import WiredTunnelScene from "./modes/wired-tunnel.js?v=7";
+import SpectralFireScene from "./modes/spectral-fire.js?v=7";
+import CruciformScopeScene from "./modes/cruciform-scope.js?v=7";
+import WarpedShrineScene from "./modes/warped-shrine.js?v=7";
+import SerialOrbitScene from "./modes/serial-orbit.js?v=7";
+import LavaLampScene from "./modes/lava-lamp.js?v=7";
+import RoyaleFractalScene from "./modes/royale-fractal.js?v=7";
 
 const MODES = Object.freeze({
   WIRED_TUNNEL: "wired-tunnel",
@@ -33,6 +34,7 @@ const MODES = Object.freeze({
   WARPED_SHRINE: "warped-shrine",
   SERIAL_ORBIT: "serial-orbit",
   LAVA_LAMP: "lava-lamp",
+  ROYALE_FRACTAL: "royale-fractal",
 });
 
 const MODE_LABELS = Object.freeze({
@@ -42,6 +44,7 @@ const MODE_LABELS = Object.freeze({
   [MODES.WARPED_SHRINE]: "warped // shrine",
   [MODES.SERIAL_ORBIT]: "serial // orbit",
   [MODES.LAVA_LAMP]: "lava // lamp",
+  [MODES.ROYALE_FRACTAL]: "royale // fractal",
 });
 
 // The compact names are the HTML data-mode values.  Keeping them here makes
@@ -53,6 +56,7 @@ const MODE_ALIASES = Object.freeze({
   shrine: MODES.WARPED_SHRINE,
   orbit: MODES.SERIAL_ORBIT,
   lava: MODES.LAVA_LAMP,
+  royale: MODES.ROYALE_FRACTAL,
 });
 
 const SCENES = Object.freeze({
@@ -62,6 +66,7 @@ const SCENES = Object.freeze({
   [MODES.WARPED_SHRINE]: WarpedShrineScene,
   [MODES.SERIAL_ORBIT]: SerialOrbitScene,
   [MODES.LAVA_LAMP]: LavaLampScene,
+  [MODES.ROYALE_FRACTAL]: RoyaleFractalScene,
 });
 
 /**

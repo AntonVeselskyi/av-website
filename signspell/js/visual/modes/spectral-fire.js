@@ -143,9 +143,9 @@ export default class SpectralFireScene {
       // Break the bed up with noise so the fire never looks like a bar chart,
       // and roll the noise sideways so the hot spots wander.
       const grain = kit.fbm(x * 0.06, this.t * 0.55, 3);
-      const edge = Math.sin((x / GRID_W) * Math.PI);          // taper at the walls
-      const value = (fuel * (0.55 + grain * 0.85) + idle * 0.055 + this.flare * 0.5) * (0.35 + edge * 0.85);
-      this.seed[x] = kit.clamp(value * (0.85 + audio.bassAtt * 0.35), 0, 1.25);
+      const edge = Math.pow(Math.sin((x / GRID_W) * Math.PI), 0.45);   // gentle wall taper
+      const value = (fuel * (0.62 + grain * 0.95) + idle * 0.055 + this.flare * 0.6) * (0.3 + edge * 0.92);
+      this.seed[x] = kit.clamp(value * (0.78 + audio.bassAtt * 0.32), 0, 1.05);
     }
   }
 
@@ -166,6 +166,7 @@ export default class SpectralFireScene {
       for (let x = 0; x < GRID_W; x += 1) next[base + x] = this.seed[x] * falloff;
     }
 
+    const ceiling = Math.floor(GRID_H * 0.16);
     for (let y = GRID_H - 1 - SEED_ROWS; y >= 0; y -= 1) {
       const rowOut = y * GRID_W;
       const rowA = (y + 1) * GRID_W;
@@ -173,7 +174,7 @@ export default class SpectralFireScene {
       const height = 1 - y / GRID_H;                    // 1 at the base, 0 at the top
       // Cooling rises toward the top; the +0.004 floor guarantees decay even
       // when the bed is saturated, which is what stops a white-out.
-      const cool = 0.009 + (1 - height) * 0.044 + 0.003;
+      const cool = 0.0055 + (1 - height) * 0.026 + 0.002;
       // Lateral advection from the flow field, in cells.
       const swirl = kit.flowAngle(y * 0.035, drift * 0.35, 1.15);
       const lean = Math.cos(swirl) * (1.1 + (1 - height) * 2.6);
@@ -191,8 +192,11 @@ export default class SpectralFireScene {
         const right = x < GRID_W - 1 ? heat[rowA + x + 1] : 0;
         const below = heat[rowB + x];
         // Weighted toward the advected sample: that is the licking motion.
-        let value = centre * 0.52 + left * 0.17 + right * 0.17 + below * 0.14;
+        let value = centre * 0.46 + left * 0.145 + right * 0.145 + below * 0.25;
         value -= cool * (0.6 + local * 0.5 + 0.4);
+        // Extra loss in the top sixth: the flame thins out into smoke there
+        // instead of stacking against the ceiling.
+        if (y < ceiling) value -= (1 - y / ceiling) * 0.05;
         next[rowOut + x] = value > 0 ? (value < 1.6 ? value : 1.6) : 0;
       }
     }
@@ -292,7 +296,7 @@ export default class SpectralFireScene {
 
     if (fire.ctx) {
       this.bloom.apply(ctx, fire.canvas, {
-        strength: 0.72 + audio.trebAtt * 0.2,
+        strength: 0.42 + Math.min(2, audio.trebAtt) * 0.12,
         blur: 22 * frame.ratio,
         passes: 2,
       });
@@ -325,14 +329,14 @@ export default class SpectralFireScene {
       smokeCtx.save();
       smokeCtx.globalCompositeOperation = "lighter";
       const puffs = Math.max(3, Math.round(9 * frame.detail));
-      const row = Math.floor(GRID_H * 0.55) * GRID_W;
+      const row = Math.floor(GRID_H * 0.3) * GRID_W;
       for (let p = 0; p < puffs; p += 1) {
         this.smokeSeed += 1;
         const gx = Math.floor(hash01(this.smokeSeed) * GRID_W);
         const hot = this.heat[row + gx];
         if (hot < 0.12) continue;
         const x = (gx / GRID_W) * layer.width;
-        const y = layer.height * (0.5 + hash01(gx * 3 + frame.frameIndex) * 0.16);
+        const y = layer.height * (0.26 + hash01(gx * 3 + frame.frameIndex) * 0.16);
         const radius = layer.height * (0.03 + hot * 0.07);
         const gradient = smokeCtx.createRadialGradient(x, y, 0, x, y, radius);
         gradient.addColorStop(0, `rgba(120, 58, 74, ${(0.05 + hot * 0.1).toFixed(3)})`);

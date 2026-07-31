@@ -145,6 +145,12 @@ export default class WiredTunnelScene {
     this.lobeSpin = 0.3;
     this.lobeBlend = 0.5;
     this.surge = 0;
+    this.turn = 0;        // signed horizontal turn rate of the axis ahead
+    this.turnSmooth = 0;  // damped, drives banking and directional smear
+    this.kick = 0;        // beat bounce, decays
+    this.kickX = 0;
+    this.kickY = 0;
+    this.corrupt = 0;     // codec breakdown envelope
     this.fault = 0;
     this.dropout = 0;
     this.idle = 1;
@@ -291,6 +297,7 @@ export default class WiredTunnelScene {
   onBeat(frame) {
     const { audio, kit } = frame;
     this.surge = 1;
+    this.kick = Math.min(1.4, this.kick + 0.7 + kit.clamp(audio.transient, 0, 1) * 0.6);
     const burst = 1 + Math.floor(kit.clamp(audio.bassAtt, 0, 2.4) * 2.2);
     for (let i = 0; i < burst; i += 1) this.emit(frame, false);
     if (audio.beatCount % 8 === 0) {
@@ -301,9 +308,14 @@ export default class WiredTunnelScene {
     }
     if (audio.beatCount % 16 === 0) {
       this.fault = 1;
+      this.corrupt = 1;
       this.emit(frame, true);
     }
-    if (audio.beatCount % 32 === 0) this.dropout = 1;
+    if (audio.beatCount % 32 === 0) { this.dropout = 1; this.corrupt = 1.4; }
+    // Hard corners shake the link loose on their own.
+    if (Math.abs(this.turnSmooth) > 0.055 && audio.beatCount % 4 === 0) {
+      this.corrupt = Math.max(this.corrupt, 0.55);
+    }
   }
 
   /** Advances every envelope, the camera and the traffic field. */
@@ -324,6 +336,7 @@ export default class WiredTunnelScene {
       if (!reduced) this.onBeat(frame);
     }
     this.surge = Math.max(0, this.surge - dt * 1.8);
+    this.corrupt = Math.max(0, this.corrupt - dt * 2.1);
     this.fault = Math.max(0, this.fault - dt * 0.75);
     this.dropout = Math.max(0, this.dropout - dt * 2.4);
 
@@ -338,12 +351,28 @@ export default class WiredTunnelScene {
     // Structural drift: the axis bend, its amplitude and the cross-section all
     // move on 8–30s cycles, independent of anything musical.
     this.bendPhase += dt * (0.12 + clamp(audio.midAtt, 0, 2) * 0.05);
-    this.bendAmp = approach(this.bendAmp, 0.09 + Math.abs(Math.sin(t * 0.041)) * 0.2, 0.5, dt);
+    this.bendAmp = approach(this.bendAmp, 0.17 + Math.abs(Math.sin(t * 0.041)) * 0.36, 0.5, dt);
     this.lobeSpin += dt * 0.07;
     this.lobeBlend = 0.5 + Math.sin(t * 0.033) * 0.5;
+    const ahead = 2.6;
+    this.turn = (this.bendX(this.travel + ahead) - this.bendX(this.travel)) / ahead;
+    const climb = (this.bendY(this.travel + ahead) - this.bendY(this.travel)) / ahead;
+    this.turnSmooth = approach(this.turnSmooth, this.turn, 2.2, dt);
+
+    // Beat bounce: a kick the camera absorbs over about a third of a second,
+    // thrown sideways so consecutive hits do not stack into a vertical judder.
+    this.kick = Math.max(0, this.kick - dt * 3.2);
+    const kickAmp = this.kick * this.kick;
+    this.kickX = Math.sin(this.lastBeat * 2.399) * kickAmp * 0.045;
+    this.kickY = (Math.cos(this.lastBeat * 1.117) * 0.4 - 0.9) * kickAmp * 0.05;
+
     this.prevRoll = this.roll;
-    const rollTarget = Math.sin(t * 0.19) * 0.075 + Math.sin(t * 0.071) * 0.045 + (audio.stereoDrift || 0) * 0.03;
+    const rollTarget = Math.sin(t * 0.19) * 0.075 + Math.sin(t * 0.071) * 0.045
+      + (audio.stereoDrift || 0) * 0.03
+      + this.turnSmooth * 2.6                       // bank into the corner
+      + kickAmp * Math.sin(this.lastBeat * 3.7) * 0.05;
     this.roll = approach(this.roll, rollTarget, 1.4, dt);
+    void climb;
 
     if (!reduced) {
       if (clamp(audio.transient, 0, 1) > 0.55 && frame.frameIndex % 4 === 0) this.emit(frame, false);
@@ -457,13 +486,17 @@ export default class WiredTunnelScene {
     if (frame.reducedMotion) {
       kit.fadeTo(ctx, width, height, palette.void, 1);
     } else {
+      // Cornering drags the accumulated frame sideways and holds it longer,
+      // which is the smear you get swinging a camera through a bend.
+      const swing = clamp(Math.abs(this.turnSmooth) * 7, 0, 1);
       this.feedback.warp(frame, {
         zoom: 1.0035 + rush * 0.0085 + this.surge * 0.005,
         rot: this.roll - this.prevRoll,   // keeps the trails aligned with roll
         cx: this.vpX / width,
         cy: this.vpY / height,
-        sx: 1 + clamp(audio.transient, 0, 1) * 0.003,
-        decay: clamp(0.895 + clamp(audio.sustain, 0, 1) * 0.04 - this.dropout * 0.22, 0.6, 0.95),
+        dx: -this.turnSmooth * 0.16,
+        sx: 1 + clamp(audio.transient, 0, 1) * 0.003 + swing * 0.004,
+        decay: clamp(0.895 + clamp(audio.sustain, 0, 1) * 0.04 + swing * 0.045 - this.dropout * 0.22, 0.6, 0.965),
         background: palette.void,
       });
       // The zoom centre is where accumulation saturates, so that is where the
@@ -1043,7 +1076,7 @@ export default class WiredTunnelScene {
     this.paintDepth(frame);
 
     ctx.save();
-    ctx.translate(this.halfW, this.halfH);
+    ctx.translate(this.halfW + this.kickX * width, this.halfH + this.kickY * height);
     ctx.rotate(this.roll);
     ctx.translate(-this.halfW, -this.halfH);
     this.drawRings(frame);
@@ -1077,6 +1110,21 @@ export default class WiredTunnelScene {
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
     ctx.filter = "none";
+
+    // Codec breakdown last, so it corrupts the finished picture rather than
+    // something the bloom then papers back over. The source is the copy the
+    // feedback pass already took, so this costs no extra full-frame read.
+    if (!frame.reducedMotion && this.corrupt > 0.02 && this.feedback.layer.canvas) {
+      frame.kit.blockGlitch(ctx, this.feedback.layer.canvas, width, height, {
+        strength: Math.min(1, this.corrupt),
+        size: Math.max(12, Math.round(26 * frame.ratio)),
+        count: 20,
+        slide: 0.1 + Math.abs(this.turnSmooth) * 0.6,
+        seed: this.lastBeat * 131 + (frame.frameIndex >> 2),
+      });
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    }
   }
 
   suspend() {

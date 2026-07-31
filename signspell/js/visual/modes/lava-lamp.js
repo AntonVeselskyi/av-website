@@ -1,7 +1,9 @@
 /**
- * lava // lamp — a retro-anime lava lamp, plugged in and monitored.
+ * lava // lamp — cel-shaded metaballs adrift in the void.
  *
- * Two ideas carry the scene.
+ * No vessel, no base, no glass. The lamp furniture made it a picture of an
+ * object; without it the blobs are the whole subject and can use the entire
+ * frame, which is what the thing was for.
  *
  * The wax is metaballs. Soft radial fields are summed additively into an
  * offscreen layer, then that whole layer is composited back through a
@@ -24,24 +26,20 @@
  * rim light. That is cel animation's actual construction — flat areas bounded by
  * a hard edge — rather than a gradient pretending to be one.
  *
- * Everything cold around it is deliberate: the wax is the only warm, living
- * thing, and it is surrounded by screentone, etched sigils and machine
- * diagnostics measuring it like a specimen.
- *
  * See MODE_CONTRACT in ../visualizer.js for the frame object.
  */
 
-const BLOB_COUNT = 16;
+const BLOB_COUNT = 20;
 const TONE_TILE = 8;
 
 // Cel bands: [brightness applied before the threshold, additive increment].
 // Larger brightness cuts a larger silhouette, so these run outermost-first and
 // each inner band stacks onto the ones outside it — the core ends up hot amber.
 const BANDS = [
-  [1.5, "rgb(74, 10, 28)"],
-  [1.05, "rgb(84, 28, 20)"],
-  [0.76, "rgb(74, 62, 18)"],
-  [0.55, "rgb(40, 74, 54)"],
+  [1.5, "rgb(52, 7, 20)"],
+  [1.05, "rgb(58, 20, 14)"],
+  [0.76, "rgb(52, 43, 13)"],
+  [0.55, "rgb(28, 52, 38)"],
 ];
 
 function hash01(n) {
@@ -54,9 +52,9 @@ function hash01(n) {
 export default class LavaLampScene {
   static id = "lava-lamp";
   static label = "lava // lamp";
-  // Flat cel areas show dithering badly, so ordered dither is dialled back and
-  // the print grain carries the texture instead.
-  static post = { grain: 0.1, scanlines: 0.13, dither: 0.03, vignette: 0.6, bar: 0.03, curve: 0.017 };
+  // Flat cel areas show ordered dither badly, so it is dialled back and the
+  // print grain carries the texture instead.
+  static post = { grain: 0.1, scanlines: 0.13, dither: 0.03, vignette: 0.58, bar: 0.03, curve: 0.017 };
 
   constructor(kit) {
     this.kit = kit;
@@ -73,20 +71,19 @@ export default class LavaLampScene {
     this.blobs = new Array(BLOB_COUNT);
     for (let i = 0; i < BLOB_COUNT; i += 1) {
       this.blobs[i] = {
-        x: 0.5 + (hash01(i * 9 + 1) - 0.5) * 0.5,
-        y: 0.62 + hash01(i * 9 + 2) * 0.36,
-        vx: 0,
-        vy: 0,
-        r: 0.055 + hash01(i * 9 + 3) * 0.075,
-        heat: hash01(i * 9 + 4),
+        x: hash01(i * 9 + 1),
+        y: hash01(i * 9 + 2),
+        vx: (hash01(i * 9 + 6) - 0.5) * 0.05,
+        vy: (hash01(i * 9 + 7) - 0.5) * 0.05,
+        r: 0.05 + hash01(i * 9 + 3) * 0.085,
+        mass: 0.5 + hash01(i * 9 + 8) * 0.9,
         wobble: hash01(i * 9 + 5) * 6.28,
         band: i / BLOB_COUNT,
       };
     }
 
-    this.plugged = 1;      // 0..1 warmth of the element; drops when silent
-    this.lastBeat = -1;
     this.pinch = 0;
+    this.lastBeat = -1;
     this.t = 0;
   }
 
@@ -98,8 +95,7 @@ export default class LavaLampScene {
     const surface = this.kit.createSurface(TONE_TILE, TONE_TILE);
     const ctx = surface?.getContext("2d");
     if (!ctx) return;
-    ctx.fillStyle = "rgba(0,0,0,0)";
-    ctx.fillRect(0, 0, TONE_TILE, TONE_TILE);
+    ctx.clearRect(0, 0, TONE_TILE, TONE_TILE);
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.beginPath();
     ctx.arc(TONE_TILE * 0.25, TONE_TILE * 0.25, 1.25, 0, Math.PI * 2);
@@ -108,70 +104,59 @@ export default class LavaLampScene {
     this.tone = surface;
   }
 
-  /** The vessel profile, in canvas coordinates. */
-  vessel(frame) {
-    const { width, height } = frame;
-    const cx = width * 0.5;
-    const top = height * 0.1;
-    const bottom = height * 0.79;
-    const halfTop = Math.min(width * 0.1, height * 0.19);
-    const halfBottom = Math.min(width * 0.15, height * 0.29);
-    return { cx, top, bottom, halfTop, halfBottom, h: bottom - top };
-  }
-
-  /** Traces the tapered glass so the wax can be clipped to it. */
-  vesselPath(ctx, v, inset = 0) {
-    const top = v.top + inset;
-    const bottom = v.bottom - inset;
-    const ht = v.halfTop - inset;
-    const hb = v.halfBottom - inset;
-    ctx.beginPath();
-    ctx.moveTo(v.cx - ht, top);
-    ctx.bezierCurveTo(v.cx - ht * 1.02, top + v.h * 0.4, v.cx - hb * 0.99, bottom - v.h * 0.22, v.cx - hb, bottom);
-    ctx.lineTo(v.cx + hb, bottom);
-    ctx.bezierCurveTo(v.cx + hb * 0.99, bottom - v.h * 0.22, v.cx + ht * 1.02, top + v.h * 0.4, v.cx + ht, top);
-    ctx.closePath();
-  }
-
   // ---------------------------------------------------------------------------
-  // Convection
+  // Drift
   // ---------------------------------------------------------------------------
 
   /**
-   * Wax convection: heated at the base, cooled at the cap. Blobs rise while
-   * hot, flatten and give up heat at the top, then sink down the sides. A lamp
-   * whose blobs float straight up at a constant rate is a dead lamp.
+   * Free drift on a slow flow field, with a weak mutual attraction so the
+   * blobs keep finding each other, fusing and tearing apart again. Without the
+   * attraction they spread evenly and stop making shapes.
    */
   stepBlobs(frame, dt) {
     const { audio, kit } = frame;
-    const count = this.blobs.length;
-    const drive = 0.35 + audio.bassAtt * 0.4 + this.pinch * 0.5;
-    for (let i = 0; i < count; i += 1) {
-      const b = this.blobs[i];
-      // Heat exchange with the element below and the cap above.
-      const nearBase = kit.clamp((b.y - 0.62) / 0.38);
-      const nearCap = kit.clamp((0.3 - b.y) / 0.3);
-      b.heat += (nearBase * this.plugged * 1.5 - nearCap * 1.7 - 0.12) * dt * 0.55;
-      b.heat = kit.clamp(b.heat, 0, 1);
+    const blobs = this.blobs;
+    const drive = 0.4 + audio.bassAtt * 0.5 + this.pinch * 0.9;
 
-      // Buoyancy, damped; heavy blobs sink even while warm.
-      const buoyancy = (b.heat - 0.46) * drive;
-      b.vy += (-buoyancy * 0.55 - b.vy * 1.5) * dt;
-      // Lateral convection: up the middle, down the walls.
-      const toWall = b.x - 0.5;
-      b.wobble += dt * 0.6;
-      const lateral = Math.sin(b.wobble) * 0.02 + kit.noise2D(b.x * 4, b.y * 4 + this.t * 0.2) - 0.5;
-      b.vx += (lateral * 0.09 - toWall * (b.heat > 0.5 ? 0.12 : -0.14) - b.vx * 1.7) * dt;
+    for (let i = 0; i < blobs.length; i += 1) {
+      const b = blobs[i];
+      // Flow field: the whole population shares one current, so the motion
+      // reads as a fluid rather than as independent particles.
+      const angle = kit.flowAngle(b.x * 1.6 + this.t * 0.03, b.y * 1.6 - this.t * 0.04, 1);
+      b.vx += Math.cos(angle) * 0.055 * drive * dt;
+      b.vy += Math.sin(angle) * 0.055 * drive * dt;
+
+      // Loose mutual attraction toward the centre of mass of the near field.
+      let ax = 0;
+      let ay = 0;
+      for (let j = 0; j < blobs.length; j += 4) {
+        const o = blobs[(i + j + 1) % blobs.length];
+        const dx = o.x - b.x;
+        const dy = o.y - b.y;
+        const d2 = dx * dx + dy * dy + 0.02;
+        const pull = 0.0025 / d2;
+        ax += dx * pull;
+        ay += dy * pull;
+      }
+      b.vx += ax * dt / b.mass;
+      b.vy += ay * dt / b.mass;
+
+      b.wobble += dt * (0.4 + b.mass * 0.3);
+      b.vx *= 0.985;
+      b.vy *= 0.985;
+      const speed = Math.hypot(b.vx, b.vy);
+      const limit = 0.19;
+      if (speed > limit) { b.vx = b.vx / speed * limit; b.vy = b.vy / speed * limit; }
 
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
-      // The vessel walls and the meniscus keep everything contained.
-      const margin = 0.09 + b.r * 0.5;
-      if (b.x < margin) { b.x = margin; b.vx = Math.abs(b.vx) * 0.4; }
-      if (b.x > 1 - margin) { b.x = 1 - margin; b.vx = -Math.abs(b.vx) * 0.4; }
-      if (b.y < 0.06 + b.r) { b.y = 0.06 + b.r; b.vy = Math.abs(b.vy) * 0.3; }
-      if (b.y > 0.97 - b.r * 0.6) { b.y = 0.97 - b.r * 0.6; b.vy = -Math.abs(b.vy) * 0.25; }
+      // Soft wrap with a margin, so a blob leaving one edge is already fused
+      // with the field it re-enters rather than popping into existence.
+      if (b.x < -0.25) b.x += 1.5;
+      if (b.x > 1.25) b.x -= 1.5;
+      if (b.y < -0.25) b.y += 1.5;
+      if (b.y > 1.25) b.y -= 1.5;
     }
   }
 
@@ -192,15 +177,17 @@ export default class LavaLampScene {
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, w, h);
-    const count = Math.max(8, Math.round(BLOB_COUNT * frame.detail));
+    const count = Math.max(10, Math.round(BLOB_COUNT * frame.detail));
     ctx.globalCompositeOperation = "lighter";
     for (let i = 0; i < count; i += 1) {
       const b = this.blobs[i];
-      // Rising blobs stretch, settling ones flatten — the read on surface
-      // tension that a plain circle never gives you.
-      const stretch = 1 + Math.max(0, -b.vy) * 1.4;
+      // Stretch along the direction of travel — the read on surface tension a
+      // plain circle never gives you.
+      const speed = Math.hypot(b.vx, b.vy);
+      const stretch = 1 + Math.min(1.1, speed * 5.5);
+      const heading = Math.atan2(b.vy, b.vx);
       const energy = frame.band(b.band);
-      const radius = b.r * (0.86 + energy * 0.3 + this.pinch * 0.12) * Math.min(w, h) * 1.5;
+      const radius = b.r * (0.8 + energy * 0.38 + this.pinch * 0.14) * Math.min(w, h) * 1.2;
       const x = b.x * w;
       const y = b.y * h;
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
@@ -209,7 +196,9 @@ export default class LavaLampScene {
       gradient.addColorStop(1, "rgba(255,255,255,0)");
       ctx.save();
       ctx.translate(x, y);
-      ctx.scale(1 / Math.sqrt(stretch), stretch);
+      ctx.rotate(heading);
+      ctx.scale(stretch, 1 / Math.sqrt(stretch));
+      ctx.rotate(-heading);
       ctx.translate(-x, -y);
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -244,7 +233,7 @@ export default class LavaLampScene {
     shade.ctx.drawImage(scratch.canvas, 0, 0);
   }
 
-  /** Builds the full cel stack plus the ink contour. */
+  /** Builds the full cel stack plus the rim light. */
   paintWax(frame) {
     const shade = this.shade;
     const scratch = this.scratch;
@@ -261,7 +250,7 @@ export default class LavaLampScene {
 
     for (const [brightness, fill] of BANDS) this.stampBand(brightness, contrast, fill, blur);
 
-    // Contour: the outermost silhouette minus a marginally tighter one.
+    // Rim: the outermost silhouette minus a marginally tighter one.
     const ctx = scratch.ctx;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "copy";
@@ -274,15 +263,13 @@ export default class LavaLampScene {
     ctx.filter = `blur(${blur.toFixed(2)}px) brightness(1.24) contrast(${contrast})`;
     ctx.drawImage(this.field.canvas, 0, 0, scratch.width, scratch.height);
     ctx.filter = "none";
-    // The ring is the only place the wax reaches bone — a backlit rim rather
-    // than an ink line, which is what glass in front of a lamp actually does.
     ctx.globalCompositeOperation = "multiply";
-    ctx.fillStyle = "rgb(158, 128, 100)";
+    ctx.fillStyle = "rgb(120, 96, 74)";
     ctx.fillRect(0, 0, scratch.width, scratch.height);
     shade.ctx.globalCompositeOperation = "lighter";
     shade.ctx.drawImage(scratch.canvas, 0, 0);
 
-    // Screentone over the mid band, the way cheap cel work filled its shadows.
+    // Screentone, the way cheap cel work filled its shadows.
     if (this.tone) {
       if (!this.tonePattern) this.tonePattern = shade.ctx.createPattern(this.tone, "repeat");
       if (this.tonePattern) {
@@ -305,7 +292,6 @@ export default class LavaLampScene {
     const { ctx, width, height, audio, kit, palette } = frame;
     const reduced = frame.reducedMotion;
     const dt = Math.min(0.05, frame.dt);
-    const v = this.vessel(frame);
 
     if (!reduced) {
       this.t += dt;
@@ -314,190 +300,71 @@ export default class LavaLampScene {
         this.lastBeat = audio.beatCount;
         this.pinch = Math.min(1, this.pinch + 0.45);
       }
-      // Unplugged wax cools and settles; this is the state a visitor sees.
-      this.plugged += ((audio.silent ? 0.12 : 1) - this.plugged) * (1 - Math.exp(-dt / 2.4));
       this.stepBlobs(frame, dt);
     }
 
     kit.fadeTo(ctx, width, height, palette.void, 1);
 
-    // The room: a cold pool of light on the surface the lamp stands on.
-    const room = ctx.createRadialGradient(v.cx, v.bottom, 0, v.cx, v.bottom, Math.max(width, height) * 0.55);
-    room.addColorStop(0, `rgba(78, 22, 40, ${(0.16 + audio.sustain * 0.2) * this.plugged})`);
-    room.addColorStop(0.45, "rgba(30, 12, 34, 0.09)");
-    room.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = room;
+    // A dull thermal wash behind the wax so it is not floating on flat black.
+    const wash = ctx.createRadialGradient(
+      width * 0.5, height * 0.5, 0,
+      width * 0.5, height * 0.5, Math.max(width, height) * 0.62,
+    );
+    wash.addColorStop(0, `rgba(72, 18, 42, ${(0.16 + audio.sustain * 0.28).toFixed(3)})`);
+    wash.addColorStop(0.55, "rgba(32, 12, 34, 0.08)");
+    wash.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = wash;
     ctx.fillRect(0, 0, width, height);
 
-    // Glass interior, unlit.
-    ctx.save();
-    this.vesselPath(ctx, v);
-    ctx.fillStyle = "rgba(14, 8, 16, 0.92)";
-    ctx.fill();
-    ctx.restore();
-
-    // Wax, clipped to the vessel so nothing can escape the glass.
     if (this.paintField(frame)) {
       this.paintWax(frame);
-      ctx.save();
-      this.vesselPath(ctx, v, Math.max(1, frame.ratio));
-      ctx.clip();
-      // The wax layer is opaque black outside the blobs, so it is added, not
-      // painted over — that keeps the glass interior visible around it.
-      ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.55 + this.plugged * 0.45;
-      if (this.shade.canvas) ctx.drawImage(this.shade.canvas, 0, 0, width, height);
-      ctx.restore();
-    }
-
-    this.drawGlass(frame, v);
-    this.drawFurniture(frame, v);
-
-    if (this.shade.canvas) {
-      this.bloom.apply(ctx, this.shade.canvas, {
-        strength: (0.3 + audio.sustain * 0.24) * this.plugged,
-        blur: 18 * frame.ratio,
-        passes: 2,
-      });
-    }
-    this.drawReadouts(frame, v);
-  }
-
-  /** Glass thickness, specular streak and the etched sigils. */
-  drawGlass(frame, v) {
-    const { ctx, audio, kit, palette } = frame;
-    const line = Math.max(1, frame.ratio);
-
-    // Body highlight down one side, shadow the other.
-    ctx.save();
-    this.vesselPath(ctx, v);
-    ctx.clip();
-    const sheen = ctx.createLinearGradient(v.cx - v.halfBottom, 0, v.cx + v.halfBottom, 0);
-    sheen.addColorStop(0, "rgba(255,255,255,0.09)");
-    sheen.addColorStop(0.18, "rgba(255,255,255,0.02)");
-    sheen.addColorStop(0.72, "rgba(0,0,0,0.16)");
-    sheen.addColorStop(1, "rgba(0,0,0,0.34)");
-    ctx.fillStyle = sheen;
-    ctx.fillRect(v.cx - v.halfBottom, v.top, v.halfBottom * 2, v.h);
-    // A hard specular streak, the anime glass cue.
-    ctx.strokeStyle = palette.bone(0.2);
-    ctx.lineWidth = line * 2.4;
-    ctx.beginPath();
-    ctx.moveTo(v.cx - v.halfTop * 0.55, v.top + v.h * 0.08);
-    ctx.lineTo(v.cx - v.halfBottom * 0.62, v.top + v.h * 0.52);
-    ctx.stroke();
-    ctx.restore();
-
-    // Rim.
-    ctx.strokeStyle = palette.bone(0.26);
-    ctx.lineWidth = line * 1.4;
-    this.vesselPath(ctx, v);
-    ctx.stroke();
-
-    // Etched sigils on the glass, advancing every eight hits.
-    const stage = Math.floor(audio.beatCount / 8);
-    ctx.save();
-    ctx.strokeStyle = palette.wire(0.14 + audio.beat * 0.12);
-    ctx.lineWidth = line;
-    for (let s = 0; s < 3; s += 1) {
-      const y = v.top + v.h * (0.2 + s * 0.28);
-      const size = v.halfTop * 0.26;
-      const x = v.cx + (s % 2 ? 1 : -1) * v.halfTop * 0.5;
-      ctx.beginPath();
-      const spokes = 3 + (stage + s) % 4;
-      for (let k = 0; k < spokes; k += 1) {
-        const a = (k / spokes) * Math.PI * 2 + stage * 0.6;
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + Math.cos(a) * size, y + Math.sin(a) * size);
+      if (this.shade.canvas) {
+        ctx.save();
+        // The wax layer is opaque black outside the blobs, so it is added.
+        ctx.globalCompositeOperation = "lighter";
+        ctx.drawImage(this.shade.canvas, 0, 0, width, height);
+        ctx.restore();
+        this.bloom.apply(ctx, this.shade.canvas, {
+          strength: 0.2 + audio.sustain * 0.16,
+          blur: 18 * frame.ratio,
+          passes: 2,
+        });
       }
-      ctx.arc(x, y, size * 0.62, 0, Math.PI * 2);
-      ctx.stroke();
     }
-    ctx.restore();
-    void kit;
+
+    this.drawOverlay(frame);
   }
 
-  /** Base, collar, cap — the object has to sit on something. */
-  drawFurniture(frame, v) {
-    const { ctx, width, height, audio, kit, palette } = frame;
-    const line = Math.max(1, frame.ratio);
-    const baseTop = v.bottom;
-    const baseBottom = Math.min(height * 0.96, v.bottom + v.h * 0.19);
-    const halfB = v.halfBottom * 1.34;
-
-    // Collar.
-    ctx.fillStyle = "rgba(30, 24, 30, 1)";
-    ctx.fillRect(v.cx - v.halfBottom * 1.08, baseTop - line * 2, v.halfBottom * 2.16, v.h * 0.035);
-    ctx.strokeStyle = palette.bone(0.2);
-    ctx.lineWidth = line;
-    ctx.strokeRect(v.cx - v.halfBottom * 1.08, baseTop - line * 2, v.halfBottom * 2.16, v.h * 0.035);
-
-    // Tapered base.
-    ctx.beginPath();
-    ctx.moveTo(v.cx - v.halfBottom, baseTop + v.h * 0.03);
-    ctx.lineTo(v.cx - halfB, baseBottom);
-    ctx.lineTo(v.cx + halfB, baseBottom);
-    ctx.lineTo(v.cx + v.halfBottom, baseTop + v.h * 0.03);
-    ctx.closePath();
-    const metal = ctx.createLinearGradient(v.cx - halfB, 0, v.cx + halfB, 0);
-    metal.addColorStop(0, "rgba(46, 38, 44, 1)");
-    metal.addColorStop(0.22, "rgba(96, 86, 92, 1)");
-    metal.addColorStop(0.6, "rgba(26, 22, 28, 1)");
-    metal.addColorStop(1, "rgba(12, 10, 14, 1)");
-    ctx.fillStyle = metal;
-    ctx.fill();
-    ctx.strokeStyle = palette.bone(0.16);
-    ctx.lineWidth = line;
-    ctx.stroke();
-
-    // The element glowing through the vents.
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.fillStyle = palette.ember(0.18 * this.plugged + audio.sustain * 0.1);
-    for (let i = 0; i < 7; i += 1) {
-      const x = v.cx + (i - 3) * halfB * 0.24;
-      ctx.fillRect(x - line, baseTop + v.h * 0.07, line * 2, v.h * 0.05);
-    }
-    ctx.restore();
-
-    // Cap.
-    ctx.fillStyle = "rgba(24, 20, 26, 1)";
-    ctx.fillRect(v.cx - v.halfTop * 0.92, v.top - v.h * 0.05, v.halfTop * 1.84, v.h * 0.052);
-    ctx.strokeStyle = palette.bone(0.18);
-    ctx.strokeRect(v.cx - v.halfTop * 0.92, v.top - v.h * 0.05, v.halfTop * 1.84, v.h * 0.052);
-
-    // Stamped label on the base.
-    kit.stampText(ctx, "RELIQUARY", v.cx, baseBottom - (baseBottom - baseTop) * 0.3, {
-      size: Math.max(11, width * 0.021),
-      align: "center",
-      ink: palette.bone,
-      bruise: palette.blood(0.5),
-      rotate: -0.02,
-      spread: 1.7 * frame.ratio,
-      alpha: 0.5,
-      letterSpacing: -0.02,
-    });
-  }
-
-  /** Cold diagnostics measuring a warm thing. */
-  drawReadouts(frame, v) {
+  /** Cold machine furniture tracking warm shapes it does not understand. */
+  drawOverlay(frame) {
     const { ctx, width, height, audio, kit, palette } = frame;
     const small = Math.max(9, 11 * frame.ratio);
-    let hottest = 0;
-    for (const b of this.blobs) if (b.heat > hottest) hottest = b.heat;
+
+    // Track the two largest blobs with surveillance brackets.
+    const stage = Math.floor(audio.beatCount / 8);
+    for (let i = 0; i < 2; i += 1) {
+      const b = this.blobs[(stage + i * 7) % this.blobs.length];
+      if (b.x < -0.1 || b.x > 1.1 || b.y < -0.1 || b.y > 1.1) continue;
+      const size = b.r * Math.min(width, height) * 2.6;
+      kit.reticle(ctx, b.x * width, b.y * height, size, {
+        color: palette.wire(0.14 + audio.beat * 0.16),
+        width: Math.max(1, frame.ratio),
+        crosshair: i === 0,
+      });
+      kit.machineText(ctx, `M${String(i + 1).padStart(2, "0")} ${kit.serialString(stage * 3 + i, 4)}`,
+        b.x * width + size * 0.5 + 6 * frame.ratio, b.y * height - size * 0.5 + small, {
+          size: small * 0.85, color: palette.wire(0.3), letterSpacing: 0.06,
+        });
+    }
+
     const lines = [
-      `WAX ${this.plugged > 0.4 ? "MOLTEN" : "SET"}  T ${String(Math.round(38 + hottest * 34)).padStart(2, "0")}°C`,
-      `MASS ${String(Math.round(audio.midRel * 60 + 40)).padStart(3, "0")}g  VISC 0.${String(Math.round((1 - hottest) * 89)).padStart(2, "0")}`,
-      `CONV ${String(Math.round(audio.bassRel * 40)).padStart(3, "0")}  CYCLE ${kit.serialString(this.t * 0.4, 4)}`,
+      `MASS ${String(Math.round(audio.midRel * 60 + 40)).padStart(3, "0")}g  VISC 0.${String(Math.round((1 - audio.sustain) * 89)).padStart(2, "0")}`,
+      `FLOW ${String(Math.round(audio.bassRel * 40)).padStart(3, "0")}  CYCLE ${kit.serialString(this.t * 0.4, 4)}`,
     ];
     lines.forEach((text, i) => {
-      kit.machineText(ctx, text, width * 0.04, height * 0.86 + i * small * 1.2, {
-        size: small, color: palette.wire(0.32), letterSpacing: 0.06,
+      kit.machineText(ctx, text, width * 0.04, height * 0.93 + i * small * 1.2, {
+        size: small, color: palette.wire(0.3), letterSpacing: 0.06,
       });
-    });
-    // A measurement bracket around the vessel, observing it.
-    kit.reticle(ctx, v.cx, v.top + v.h * 0.5, Math.max(v.halfBottom * 2.4, v.h * 0.6), {
-      color: palette.wire(0.12 + audio.beat * 0.1), width: Math.max(1, frame.ratio), arm: 0.1,
     });
   }
 

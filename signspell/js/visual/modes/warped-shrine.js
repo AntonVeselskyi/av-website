@@ -2345,26 +2345,39 @@ export default class WarpedShrineScene {
    * Nothing here draws anything.  The figure only exists as a source term.
    */
   feedDemon(frame, dt) {
-    const { audio, bands } = frame;
+    const { audio, bands, bandPeaks } = frame;
     const { clamp, lerp } = this.kit;
     const fluid = this.fluid;
     const last = bands.length - 1;
     const rate = dt * 60;
-    const alive = 0.55 + clamp(audio.level * 3.2, 0, 1) * 0.95;
+    const alive = 0.4 + clamp(audio.level * 4.6, 0, 1) * 1.3 + clamp(audio.transient, 0, 1) * 0.4;
+
+    // Per-limb envelopes, fast to rise and slow to fall. Feeding the solver the
+    // raw band value spends most of its range on whatever the mix happens to
+    // sit at; measuring each band against its own falling peak instead means a
+    // limb reads as loud when it is loud *for that limb*, and the difference
+    // between a hit and no hit is most of the travel rather than a few percent.
+    const env = this.boneEnv || (this.boneEnv = new Float32Array(DEMON_BONES.length));
 
     for (let bone = 0; bone < DEMON_BONES.length; bone += 1) {
       const [u0, v0, u1, v1, r0, r1, band, samples] = DEMON_BONES[bone];
-      const voice = bands[Math.round(band * last)];
+      const slot = Math.round(band * last);
+      const voice = bands[slot];
+      const peak = Math.max(0.05, bandPeaks[slot] || 0);
+      const excite = clamp(voice / peak, 0, 1.4) * clamp(0.35 + voice * 1.5, 0, 1.5);
+      env[bone] += (excite - env[bone]) * (excite > env[bone] ? 0.6 : 0.11);
+      const drive = env[bone];
       for (let step = 0; step <= samples; step += 1) {
         const t = step / samples;
         const u = lerp(u0, u1, t);
         const v = lerp(v0, v1, t);
-        const radius = lerp(r0, r1, t) * SMOKE_W * 0.5;
+        // The limb thickens as well as brightens, so the silhouette itself
+        // moves with the band rather than only its density.
+        const radius = lerp(r0, r1, t) * SMOKE_W * 0.5 * (0.78 + drive * 0.55);
         const gx = (u * 0.5 + 0.5) * SMOKE_W;
         const gy = (1 - v) * SMOKE_H;
-        // Each limb is fed by its own band, so the body is the spectrum.
-        const amount = (0.07 + voice * 0.42 + this.demon.pulse * 0.1) * alive * rate;
-        fluid.splat(gx, gy, radius, amount, amount * 0.3);
+        const amount = (0.02 + drive * 0.62 + this.demon.pulse * 0.22) * alive * rate;
+        fluid.splat(gx, gy, radius, amount, amount * 0.34);
       }
     }
 
@@ -2372,12 +2385,12 @@ export default class WarpedShrineScene {
     // Deliberately weak.  Buoyancy is tuned to roughly cancel the smoke's own
     // weight so the body hovers and churns in place; a strong updraught turns
     // the whole thing into a chimney and no figure survives it.
-    const lift = 1.6 + clamp(audio.bassAtt, 0, 3) * 2.4 + this.demon.pulse * 4;
+    const lift = 1.2 + clamp(audio.bassAtt, 0, 3) * 4.4 + this.demon.pulse * 7;
     fluid.splat(SMOKE_W * 0.5, SMOKE_H * 0.965, SMOKE_W * 0.12, 0.035 * alive * rate, 0.1 * alive * rate, 0, -lift);
 
     // A swirl couple at the horns, opposite handed, driven by the top end —
     // this is what makes the head churn instead of merely rising.
-    const twist = (1.4 + clamp(audio.trebAtt, 0, 3) * 3) * rate;
+    const twist = (1.0 + clamp(audio.trebAtt, 0, 3) * 6.5) * rate;
     for (const side of [-1, 1]) {
       fluid.splat(
         (side * 0.25 * 0.5 + 0.5) * SMOKE_W, (1 - 0.89) * SMOKE_H,
@@ -2387,7 +2400,7 @@ export default class WarpedShrineScene {
 
     // On a hit the chest shoves outward — the thing exhales.
     if (this.demon.pulse > 0.02) {
-      const shove = this.demon.pulse * 7;
+      const shove = this.demon.pulse * 13;
       for (const side of [-1, 1]) {
         fluid.splat(
           (side * 0.2 * 0.5 + 0.5) * SMOKE_W, (1 - 0.52) * SMOKE_H,
