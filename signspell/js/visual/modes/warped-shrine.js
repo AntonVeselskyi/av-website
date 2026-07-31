@@ -284,6 +284,10 @@ export function wallFallRungs(pierBands = []) {
   return rungs.sort((a, b) => a - b);
 }
 
+export function wallFallFallbackDue({ still = false, silent = true, time = 0, lastAt = 0, delay = 0.9 } = {}) {
+  return !still && !silent && Number(time) - Number(lastAt) > Math.max(0.1, Number(delay) || 0.9);
+}
+
 export default class WarpedShrineScene {
   static id = "warped-shrine";
   static label = "warped // shrine";
@@ -307,6 +311,8 @@ export default class WarpedShrineScene {
     this.dirty = true;
     this.hazeGradient = null;
     this.hazeKey = "";
+    this.windows = [];
+    this.piers = [];
 
     this.bays = new Float32Array(BAY_COUNT);
     for (let bay = 0; bay < BAY_COUNT; bay += 1) this.bays[bay] = Z_FIRST * Math.pow(BAY_RATIO, bay);
@@ -399,6 +405,7 @@ export default class WarpedShrineScene {
     this.fluid = new FluidField({ width: SMOKE_W, height: SMOKE_H, iterations: 10 });
     this.smoke = new Layer({ scale: 1 });
     this.smokeImage = null;
+    this.smokeRendered = false;
     this.demon = { pulse: 0, blink: 0, nextBlink: 2.9, breath: 0 };
 
     this.lastBeatCount = -1;
@@ -415,11 +422,14 @@ export default class WarpedShrineScene {
     this.dirty = true;
   }
 
+  setReducedMotion() { this.feedback.release(); }
+
   suspend() {
     this.arch.release();
     this.aether.release();
     this.smoke.release();
     this.smokeImage = null;
+    this.smokeRendered = false;
     this.fluid.reset();
     this.warm.release();
     this.cool.release();
@@ -1099,9 +1109,9 @@ export default class WarpedShrineScene {
     // --- envelopes: anticipation and decay, never a live value scaled ----
     const beats = audio.beatCount;
     if (beats !== this.lastBeatCount) {
-      const fresh = this.lastBeatCount >= 0;
+      const liveBeat = kit.liveBeatChanged(this.lastBeatCount, audio);
       this.lastBeatCount = beats;
-      if (fresh && !still) {
+      if (!still && liveBeat) {
         this.spawnWallFalls(frame, beats);
         this.lastWallFallAt = time;
         if (beats % 4 === 0) {
@@ -1123,6 +1133,10 @@ export default class WarpedShrineScene {
         this.preacher.gaze = Math.max(this.preacher.gaze, clamp(audio.midAtt - 0.6, 0, 1));
         if (audio.flux > 0.5) this.preacher.glitch = 1;
         this.demon.pulse = Math.min(1, this.demon.pulse + 0.5 + clamp(audio.bassAtt, 0, 3) * 0.2);
+      } else {
+        // Switching back to the scene between onsets only synchronizes state;
+        // it must not manufacture a delayed hit or immediate fallback flash.
+        this.lastWallFallAt = time;
       }
       this.refreshReadout(audio);
     }
@@ -1153,7 +1167,7 @@ export default class WarpedShrineScene {
       // it should feel like the room being struck, not like a strobe.
       if (this.desecrate < 0.12 && audio.transient > 0.7 && audio.bassAtt > 1.5) this.desecrate = 1;
     }
-    if (!still && !audio.silent && time - this.lastWallFallAt > 0.9) {
+    if (wallFallFallbackDue({ still, silent: audio.silent, time, lastAt: this.lastWallFallAt })) {
       this.spawnWallFalls(frame, Math.floor(time * 2));
       this.lastWallFallAt = time;
     }
@@ -1298,7 +1312,7 @@ export default class WarpedShrineScene {
    */
   spawnWallFalls(frame, beat) {
     const count = wallFallBurstSize(frame.audio);
-    if (!count) return;
+    if (!count || !this.piers?.length) return;
     const rungBands = wallFallRungs(this.piers.map((pier) => pier.band));
     const rungCount = rungBands.length;
     if (!rungCount) return;
@@ -2547,49 +2561,55 @@ export default class WarpedShrineScene {
     const { clamp, TAU } = this.kit;
     const fluid = this.fluid;
     if (!this.smoke.ctx) return;
-    if (this.smoke.match(SMOKE_W, SMOKE_H) || !this.smokeImage) {
+    const smokeResized = this.smoke.match(SMOKE_W, SMOKE_H);
+    if (smokeResized || !this.smokeImage) {
       this.smokeImage = this.smoke.ctx.createImageData(SMOKE_W, SMOKE_H);
+      this.smokeRendered = false;
     }
-    const dt = clamp(frame.dt, 0, 0.05) * (still ? 0.15 : 1);
+    const updateSmoke = !still || !this.smokeRendered;
+    const dt = still ? 1 / 60 : clamp(frame.dt, 0, 0.05);
 
-    this.feedDemon(frame, dt);
-    fluid.step(dt, {
-      // Bass lifts it; the top end makes it churn.  Both are clamped well
-      // inside the range where confinement stays a decorative force.
-      buoyancy: 0.75 + clamp(audio.bassAtt, 0, 3) * 0.55,
-      vorticity: 5.5 + clamp(audio.trebAtt, 0, 3) * 4.5,
-      weight: 0.42,
-      dissipation: 0.972,
-      cooling: 0.88,
-      iterations: detail > 0.8 ? 10 : detail > 0.6 ? 6 : 4,
-    });
+    if (updateSmoke) {
+      this.feedDemon(frame, dt);
+      fluid.step(dt, {
+        // Bass lifts it; the top end makes it churn. Both are clamped well
+        // inside the range where confinement stays a decorative force.
+        buoyancy: 0.75 + clamp(audio.bassAtt, 0, 3) * 0.55,
+        vorticity: 5.5 + clamp(audio.trebAtt, 0, 3) * 4.5,
+        weight: 0.42,
+        dissipation: 0.972,
+        cooling: 0.88,
+        iterations: detail > 0.8 ? 10 : detail > 0.6 ? 6 : 4,
+      });
 
-    // --- density field -> RGBA ------------------------------------------
-    const image = this.smokeImage;
-    const pixels = image.data;
-    const { density, heat, stride } = fluid;
-    let cursor = 0;
-    for (let j = 0; j < SMOKE_H; j += 1) {
-      // The pentagram lights the plume from underneath, so the violet is
-      // strongest at the foot and gone by the head.
-      const under = 1 - j / SMOKE_H;
-      const wash = under * under;
-      for (let i = 0; i < SMOKE_W; i += 1) {
-        const at = (i + 1) + stride * (j + 1);
-        const smoke = density[at];
-        if (smoke < 0.01) { pixels[cursor + 3] = 0; cursor += 4; continue; }
-        const glow = Math.min(1, heat[at]);
-        // Cubed, so only the few hottest cells go warm at all — smoke lit from
-        // within reads as fire, and this is a body, not a bonfire.
-        const ember = glow * glow * glow;
-        pixels[cursor] = 38 + ember * 180 + wash * 22;
-        pixels[cursor + 1] = 31 + ember * 86 + wash * 11;
-        pixels[cursor + 2] = 66 + ember * 26 + wash * 60;
-        pixels[cursor + 3] = Math.min(205, smoke * 150);
-        cursor += 4;
+      // --- density field -> RGBA ----------------------------------------
+      const image = this.smokeImage;
+      const pixels = image.data;
+      const { density, heat, stride } = fluid;
+      let cursor = 0;
+      for (let j = 0; j < SMOKE_H; j += 1) {
+        // The pentagram lights the plume from underneath, so the violet is
+        // strongest at the foot and gone by the head.
+        const under = 1 - j / SMOKE_H;
+        const wash = under * under;
+        for (let i = 0; i < SMOKE_W; i += 1) {
+          const at = (i + 1) + stride * (j + 1);
+          const smoke = density[at];
+          if (smoke < 0.01) { pixels[cursor + 3] = 0; cursor += 4; continue; }
+          const glow = Math.min(1, heat[at]);
+          // Cubed, so only the few hottest cells go warm at all — smoke lit
+          // from within reads as fire, and this is a body, not a bonfire.
+          const ember = glow * glow * glow;
+          pixels[cursor] = 38 + ember * 180 + wash * 22;
+          pixels[cursor + 1] = 31 + ember * 86 + wash * 11;
+          pixels[cursor + 2] = 66 + ember * 26 + wash * 60;
+          pixels[cursor + 3] = Math.min(205, smoke * 150);
+          cursor += 4;
+        }
       }
+      this.smoke.ctx.putImageData(image, 0, 0);
+      this.smokeRendered = true;
     }
-    this.smoke.ctx.putImageData(image, 0, 0);
 
     const rect = this.smokeRect(frame);
     ctx.save();

@@ -6,6 +6,7 @@ import {
   SPELL_VISUALIZER_MODE_LABELS,
   SPELL_VISUALIZER_MODES,
 } from "../js/visual/visualizer.js";
+import { liveBeatChanged } from "../js/visual/scene-kit.js";
 import { tunnelTempoScale, wiredCorruptionProfile } from "../js/visual/modes/wired-tunnel.js";
 import {
   orbitAuroraEdgeOffset,
@@ -18,6 +19,7 @@ import {
   preacherPresence,
   spectrumRungs,
   wallFallBurstSize,
+  wallFallFallbackDue,
   wallFallMotion,
   wallFallRungs,
 } from "../js/visual/modes/warped-shrine.js";
@@ -28,6 +30,14 @@ test("visualizer exposes the projected wired and serial orbit scenes", () => {
   assert.equal(SPELL_VISUALIZER_MODE_ALIASES.wired, SPELL_VISUALIZER_MODES.WIRED_TUNNEL);
   assert.equal(SPELL_VISUALIZER_MODE_ALIASES.orbit, SPELL_VISUALIZER_MODES.SERIAL_ORBIT);
   assert.match(SPELL_VISUALIZER_MODE_LABELS[SPELL_VISUALIZER_MODES.SERIAL_ORBIT], /orbit/);
+});
+
+test("visual scene beats require a live onset, not only a changed counter", () => {
+  assert.equal(liveBeatChanged(-1, { beatCount: 0, beat: 1, silent: false }), false);
+  assert.equal(liveBeatChanged(-1, { beatCount: 1, beat: 0.8, silent: false }), true);
+  assert.equal(liveBeatChanged(4, { beatCount: 9, beat: 0, silent: false }), false);
+  assert.equal(liveBeatChanged(4, { beatCount: 5, beat: 1, silent: true }), false);
+  assert.equal(liveBeatChanged(4, { beatCount: 5, beat: 0.8, silent: false }), true);
 });
 
 test("wired tunnel travel scales monotonically with workstation tempo", () => {
@@ -74,6 +84,9 @@ test("ritual wall falls are musical, accelerated and bounded", () => {
   const rungs = wallFallRungs(pierBands);
   assert.equal(rungs.length, 9);
   for (const rung of rungs) assert.ok(pierBands.filter((band) => Math.abs(band - rung) < 0.001).length >= 2);
+  assert.equal(wallFallFallbackDue({ silent: false, time: 2, lastAt: 1 }), true);
+  assert.equal(wallFallFallbackDue({ silent: false, time: 1.5, lastAt: 1 }), false);
+  assert.equal(wallFallFallbackDue({ still: true, silent: false, time: 4, lastAt: 1 }), false);
 });
 
 test("a departing crow closes on the camera and fades at both ends", () => {

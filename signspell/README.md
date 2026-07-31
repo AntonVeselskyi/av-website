@@ -55,8 +55,9 @@ With Node 22 or newer:
 
 ```sh
 npm --prefix signspell test
+npm --prefix signspell run test:visual
 ```
 
-The suite covers tonal safety, loop scheduling, WAV encoding, project migration, pose classification, fingertip contacts, downstroke recovery, worker replay, and scene behaviour.
+The unit suite covers tonal safety, loop scheduling, WAV encoding, project migration, pose classification, fingertip contacts, downstroke recovery, worker replay, and scene behaviour. The dependency-free visual smoke runner launches local Chrome or Edge headlessly, renders all seven scenes under deterministic audio, exercises maximize/resize and reduced-motion transitions, and fails on runtime errors, dead canvases, stale feedback dimensions, or scene-registry drift. Set `BROWSER_BIN` if the browser is installed in a nonstandard location.
 
 The glob is quoted so Node expands it rather than the shell: POSIX `**` matches only one directory deep, which silently skipped every test file sitting directly in `tests/`.

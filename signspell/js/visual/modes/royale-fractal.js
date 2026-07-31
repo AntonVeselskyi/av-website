@@ -431,6 +431,8 @@ export default class RoyaleFractalScene {
     });
   }
 
+  setReducedMotion() { this.feedback.release(); }
+
   suspend() {
     this.bloom.release();
     this.feedback.release();

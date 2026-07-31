@@ -163,7 +163,9 @@ export default class SerialOrbitScene {
     this.trail = new kit.Layer({ scale: 1, alpha: false });
     this.subFrame = {};
     this.bloom = new kit.Bloom({ scale: 0.3 });
-    this.nebula = new kit.Layer({ scale: 1 });
+    // The source is only 96×54; a full-resolution intermediate adds memory,
+    // not detail. A smaller buffer is safely upscaled with the same soft look.
+    this.nebula = new kit.Layer({ scale: 0.35 });
     this.rgb = new kit.RgbSplit({ scale: 0.5 });
 
     this.nebulaSurface = kit.createSurface(NEBULA_W, NEBULA_H);
@@ -299,7 +301,10 @@ export default class SerialOrbitScene {
     // Bigger shells are nearer, so they resolve into more stars. That is the
     // "reveal" — detail arrives as you fall in, instead of a bitmap scaling up.
     const nearness = Math.min(1, scale / (Math.min(frame.width, frame.height) * 0.9));
-    const count = Math.max(70, Math.round(GALAXY_POINTS * frame.detail * (0.4 + nearness * 0.75)));
+    const count = Math.min(
+      this.gr.length,
+      Math.max(70, Math.round(GALAXY_POINTS * frame.detail * (0.4 + nearness * 0.75))),
+    );
     const arms = 2 + (cycle % 4);
     const spin = hash01(cycle * 13 + 1) > 0.5 ? 1 : -1;
     const tilt = 0.2 + hash01(cycle * 13 + 5) * 0.55;
@@ -752,6 +757,8 @@ export default class SerialOrbitScene {
       size: small, color: palette.dim(0.5 + audio.flux * 0.3), letterSpacing: 0.12,
     });
   }
+
+  setReducedMotion() { this.feedback.release(); }
 
   suspend() {
     this.feedback.release();

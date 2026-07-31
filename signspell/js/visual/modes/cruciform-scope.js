@@ -65,6 +65,8 @@ export default class CruciformScopeScene {
     this.historyPeak = new Float32Array(HISTORY);
     this.cursor = 0;
 
+    this.slopeScale = 24;      // adaptive envelope for the derivative axis
+    this.driftSeed = 0;        // reseeded on the bar, changes how CH2 wanders
     this.lock = 1;             // trigger lock, 0..1
     this.lockDrop = 0;         // loss-of-lock envelope
     this.faultUntil = -1;      // beatCount at which the current fault clears
@@ -206,28 +208,61 @@ export default class CruciformScopeScene {
   }
 
   /**
-   * CH2 — X/Y phase figure.  Plotting the signal against a delayed copy of
-   * itself draws real Lissajous curves whose shape follows harmonic content,
-   * which is the classic vector-scope look and costs one path.
+   * CH2 — the phase portrait: the signal plotted against its own slope.
+   *
+   * The obvious construction, signal against a *delayed copy* of itself, is a
+   * trap. Over a short delay any signal is nearly perfectly correlated with
+   * itself, so x and y stay equal and the entire figure collapses onto the line
+   * y = x — a fixed diagonal streak that never becomes anything else no matter
+   * what is playing. The derivative is a quarter cycle out of phase by
+   * construction instead, so a steady tone opens into an ellipse and real
+   * material traces an orbit that keeps changing shape.
+   *
+   * The whole portrait then drifts around the graticule and rotates, on a
+   * figure that reseeds every bar, so it explores the screen rather than
+   * sitting on the datum.
    */
   drawPhase(frame, alpha) {
-    const { ctx, waveform, palette, audio } = frame;
+    const { ctx, waveform, palette, audio, kit } = frame;
     if (this.deadChannel === 1) return;
     const p = this.plot;
     const count = waveform.length;
-    const delay = Math.max(3, Math.round(count * (0.02 + audio.brightness * 0.06)));
-    const radius = Math.min(p.w, p.h) * 0.3 * (0.7 + audio.midRel * 0.22);
-    const step = Math.max(1, Math.round(count / 220));
+    const step = Math.max(1, Math.round(count / 240));
+
+    // The slope envelope depends entirely on how much treble is present, so it
+    // is tracked and normalized out — otherwise the portrait is a flat line on
+    // bass material and off the screen on a hi-hat.
+    let peak = 0;
+    for (let i = 1; i < count - 1; i += step) {
+      const slope = Math.abs(waveform[i + 1] - waveform[i - 1]);
+      if (slope > peak) peak = slope;
+    }
+    this.slopeScale += (Math.max(8, peak) - this.slopeScale) * 0.07;
+
+    const radius = Math.min(p.w, p.h) * 0.26 * (0.72 + Math.min(2, audio.midRel) * 0.2);
+    // Wander: two slow incommensurate orbits so the path never repeats, with a
+    // per-bar seed changing the direction it explores.
+    const s = this.driftSeed;
+    const wander = 0.3 + Math.min(1.5, audio.sustain * 3) * 0.12;
+    const cx = p.cx + (Math.cos(this.t * 0.23 + s) * 0.62 + Math.cos(this.t * 0.081 + s * 2.1) * 0.38) * p.w * wander * 0.5;
+    const cy = p.cy + (Math.sin(this.t * 0.31 + s * 1.7) * 0.6 + Math.sin(this.t * 0.113 + s) * 0.4) * p.h * wander * 0.42;
+    const rot = this.t * (0.19 + Math.sin(s) * 0.09) + audio.brightness * 1.2;
+    const cos = Math.cos(rot);
+    const sin = Math.sin(rot);
+
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     for (let pass = 0; pass < 2; pass += 1) {
       ctx.strokeStyle = palette.violet(pass === 0 ? alpha * 0.16 : alpha * 0.72);
       ctx.lineWidth = (pass === 0 ? 3.4 : 1) * frame.ratio;
       ctx.beginPath();
-      for (let i = 0, n = 0; i < count - delay; i += step, n += 1) {
-        const x = p.cx + ((waveform[i] - 128) / 128) * radius;
-        const y = p.cy + ((waveform[i + delay] - 128) / 128) * radius;
+      for (let i = 1, n = 0; i < count - 1; i += step, n += 1) {
+        const sx = (waveform[i] - 128) / 128;
+        const sy = kit.clamp((waveform[i + 1] - waveform[i - 1]) / this.slopeScale, -1.6, 1.6);
+        const x = cx + (sx * cos - sy * sin) * radius;
+        const y = cy + (sx * sin + sy * cos) * radius;
         if (n === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
@@ -429,6 +464,7 @@ export default class CruciformScopeScene {
       // frame reads as noise; losing lock on a downbeat reads as malfunction.
       if (audio.beat > 0.7 && audio.beatCount !== this.lastBeat) {
         this.lastBeat = audio.beatCount;
+        if (audio.beatCount % 4 === 0) this.driftSeed = hash01(audio.beatCount * 17) * 6.283;
         if (audio.beatCount % 16 === 0) {
           this.lockDrop = 1;
           this.faultIndex = Math.floor(hash01(audio.beatCount) * CHANNEL_FAULTS.length);
@@ -522,6 +558,8 @@ export default class CruciformScopeScene {
     });
     void width;
   }
+
+  setReducedMotion() { this.phosphor.release(); }
 
   suspend() {
     this.phosphor.release();

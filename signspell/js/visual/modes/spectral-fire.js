@@ -485,6 +485,8 @@ export default class SpectralFireScene {
       });
   }
 
+  setReducedMotion() { this.smokeFeedback.release(); }
+
   suspend() {
     this.smoke.release();
     this.smokeFeedback.release();

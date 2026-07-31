@@ -31,7 +31,7 @@ import {
   saveCalibrationDraft,
   saveProject,
 } from "./storage.js?v=7";
-import { createSpellVisualizer } from "./visual/visualizer.js?v=9";
+import { createSpellVisualizer } from "./visual/visualizer.js?v=10";
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const COLLECTION_REFERENCES = Object.freeze({
@@ -70,6 +70,7 @@ let audioContext = null;
 let music = null;
 let analyser = null;
 let visualizer = null;
+let visualizerRestoreFocus = null;
 let systemAudio = null;
 let transport = null;
 let audioInitPromise = null;
@@ -1981,10 +1982,29 @@ async function copyDiagnosticLog() {
 function setVisualizerMaximized(enabled) {
   const panel = $(".visualizer-panel");
   const active = Boolean(enabled && panel);
+  const outside = [
+    ...$$(".workstation > :not(.desktop-grid)"),
+    ...$$(".desktop-grid > :not(.visualizer-panel)"),
+  ];
+  if (active && !panel.classList.contains("is-maximized")) {
+    visualizerRestoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }
+  for (const element of outside) {
+    if (active && !element.inert) {
+      element.inert = true;
+      element.dataset.visualizerInert = "";
+    } else if (!active && Object.hasOwn(element.dataset, "visualizerInert")) {
+      element.inert = false;
+      delete element.dataset.visualizerInert;
+    }
+  }
   panel?.classList.toggle("is-maximized", active);
   document.body.classList.toggle("visualizer-maximized", active);
   dom.maxVisual?.setAttribute("aria-pressed", String(active));
   if (dom.maxVisual) dom.maxVisual.textContent = active ? "RESTORE" : "MAXIMIZE";
+  if (active) dom.maxVisual?.focus({ preventScroll: true });
+  else if (visualizerRestoreFocus?.isConnected && !visualizerRestoreFocus.closest("[inert]")) visualizerRestoreFocus.focus({ preventScroll: true });
+  if (!active) visualizerRestoreFocus = null;
   requestAnimationFrame(() => visualizer?.resize());
 }
 
@@ -2138,12 +2158,32 @@ function wireEvents() {
   dom.captureAudio.addEventListener("click", toggleSystemAudioCapture);
   dom.reduceMotion.addEventListener("click", () => { project.ui.reducedMotion = !project.ui.reducedMotion; dom.reduceMotion.setAttribute("aria-pressed", String(project.ui.reducedMotion)); document.body.classList.toggle("reduced-motion", project.ui.reducedMotion); visualizer?.setReducedMotion(project.ui.reducedMotion); markChanged(); });
   window.addEventListener("keydown", (event) => {
+    if (event.defaultPrevented || isEditableTarget(event.target) || dom.calibrationDialog.open) return;
+    if (event.key === "Tab" && document.body.classList.contains("visualizer-maximized")) {
+      const panel = $(".visualizer-panel");
+      const focusable = $$("button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])", panel)
+        .filter((element) => !element.hidden && element.getClientRects().length);
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) {
+        event.preventDefault();
+        panel?.focus({ preventScroll: true });
+        return;
+      }
+      if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+      return;
+    }
     if (event.key === "Escape" && document.body.classList.contains("visualizer-maximized")) {
       event.preventDefault();
       setVisualizerMaximized(false);
       return;
     }
-    if (event.defaultPrevented || isEditableTarget(event.target)) return;
     if (event.ctrlKey || event.altKey || event.metaKey || dom.calibrationDialog.open || !dom.boot.hidden) return;
     const pedalAction = loopPedalActionFromKeyEvent(event);
     if (pedalAction) {

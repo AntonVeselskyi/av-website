@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <title>$IGN⸸$PELL // VISUAL LAB</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=15">
+  <link rel="stylesheet" href="css/sign-spell.css?v=16">
   <style>
     /*
      * Development harness for the visualizer scenes.  It drives every mode
@@ -19,6 +19,9 @@
     .lab-bar output { color: var(--spell-amber); font: 0.9rem/1 var(--spell-mono); margin-left: auto; }
     .lab-grid { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(30rem, 1fr)); position: relative; z-index: 2; }
     .lab-grid[data-solo] { grid-template-columns: 1fr; }
+    .lab-grid[data-maximized] { background:#030306; display:block; inset:.4rem; position:fixed; z-index:20; }
+    .lab-grid[data-maximized] .lab-cell { height:100%; margin:0; }
+    .lab-grid[data-maximized] .lab-cell canvas { aspect-ratio:auto; height:100%; width:100%; }
     .lab-cell { background: #050508; border: 1px solid var(--spell-line); position: relative; }
     .lab-cell[hidden] { display: none; }
     .lab-cell canvas { aspect-ratio: 16 / 9; display: block; height: 100%; width: 100%; }
@@ -58,6 +61,34 @@
 
   <p class="lab-note">Local development harness. Not linked from the instrument and not part of the shipped flow.</p>
 
+  <script>
+    if (new URLSearchParams(location.search).has("smoke")) {
+      window.__visualLabIssues = [];
+      window.__emitVisualSmokeFailure = (message) => {
+        if (window.__SIGN_SPELL_VISUAL_SMOKE__) return;
+        const result = { status:"fail", checks:0, failures:[{ message:String(message || "visual smoke bootstrap failed"), details:null }], warnings:[] };
+        window.__SIGN_SPELL_VISUAL_SMOKE__ = result;
+        document.documentElement.dataset.visualSmoke = "fail";
+        const output = document.getElementById("visual-smoke-result") || document.body.appendChild(document.createElement("pre"));
+        output.id = "visual-smoke-result";
+        output.textContent = JSON.stringify(result);
+      };
+      const record = (type, value, target = null) => {
+        const issue = {
+          type,
+          message: String(value?.message || value || "unknown error"),
+          resource: target?.src || target?.href || "",
+        };
+        window.__visualLabIssues.push(issue);
+        const externalFont = type === "resource" && /fonts\.(googleapis|gstatic)\.com/.test(issue.resource);
+        if (!externalFont) setTimeout(() => window.__emitVisualSmokeFailure(`${type}: ${issue.message}`), 0);
+      };
+      window.addEventListener("error", (event) => record(event.target === window ? "error" : "resource", event.error || event.message, event.target), true);
+      window.addEventListener("unhandledrejection", (event) => record("rejection", event.reason));
+      const originalError = console.error.bind(console);
+      console.error = (...args) => { record("console", args.join(" ")); originalError(...args); };
+    }
+  </script>
   <script type="module">
     // Dev harness: always fetch a fresh module graph. Without the buster the
     // browser happily serves a cached visualizer.js, which then pulls in the
@@ -71,6 +102,35 @@
     const visualizers = cells.map((cell) => createSpellVisualizer(cell.querySelector("canvas"), { mode: cell.dataset.mode, bpm }));
     for (const visualizer of visualizers) visualizer.start();
     window.labVisualizers = visualizers;
+
+    function setReducedMotion(on) {
+      const active = Boolean(on);
+      const button = document.getElementById("lab-motion");
+      button.setAttribute("aria-pressed", String(active));
+      for (const visualizer of visualizers) visualizer.setReducedMotion(active);
+    }
+
+    function setSolo(solo = "") {
+      const active = String(solo || "");
+      for (const other of document.querySelectorAll(".lab-solo")) other.dataset.active = String(other.dataset.solo === active);
+      if (active) grid.dataset.solo = active; else delete grid.dataset.solo;
+      for (const cell of cells) cell.hidden = Boolean(active) && cell.dataset.mode !== active;
+      requestAnimationFrame(() => { for (const visualizer of visualizers) visualizer.resize(); });
+    }
+
+    function setMaximized(alias, enabled) {
+      if (enabled) {
+        setSolo(alias);
+        grid.dataset.maximized = alias;
+      } else {
+        delete grid.dataset.maximized;
+        setSolo("");
+      }
+      requestAnimationFrame(() => { for (const visualizer of visualizers) visualizer.resize(); });
+    }
+
+    window.visualLab = { grid, cells, visualizers, setSolo, setMaximized, setReducedMotion };
+    window.visualLabReady = Promise.resolve(window.visualLab);
 
     // ---- synthetic signal ------------------------------------------------
     // A real AnalyserNode fed by a scheduled pattern, so onset detection,
@@ -219,17 +279,12 @@
 
     document.getElementById("lab-motion").addEventListener("click", (event) => {
       const on = event.currentTarget.getAttribute("aria-pressed") !== "true";
-      event.currentTarget.setAttribute("aria-pressed", String(on));
-      for (const visualizer of visualizers) visualizer.setReducedMotion(on);
+      setReducedMotion(on);
     });
 
     for (const button of document.querySelectorAll(".lab-solo")) {
       button.addEventListener("click", () => {
-        const solo = button.dataset.solo;
-        for (const other of document.querySelectorAll(".lab-solo")) other.dataset.active = String(other === button);
-        if (solo) grid.dataset.solo = solo; else delete grid.dataset.solo;
-        for (const cell of cells) cell.hidden = Boolean(solo) && cell.dataset.mode !== solo;
-        requestAnimationFrame(() => { for (const visualizer of visualizers) visualizer.resize(); });
+        setSolo(button.dataset.solo);
       });
     }
 
@@ -238,6 +293,13 @@
       const a = first.audio;
       readout.textContent = `LOAD ${first.load.toFixed(1)}ms · DETAIL ${first.detail.toFixed(2)} · BPM ${Math.round(a.bpm)} · HITS ${a.beatCount} · LVL ${a.level.toFixed(2)} · BASS ${a.bass.toFixed(2)} · AIR ${a.air.toFixed(2)}`;
     }, 250);
+
+    if (new URLSearchParams(location.search).has("smoke")) {
+      import("./js/visual/visual-lab-smoke.js?v=1").catch((error) => {
+        window.__visualLabIssues?.push({ type: "smoke-import", message: error?.message || String(error), resource: "" });
+        window.__emitVisualSmokeFailure?.(`smoke-import: ${error?.message || String(error)}`);
+      });
+    }
   </script>
 </body>
 </html>

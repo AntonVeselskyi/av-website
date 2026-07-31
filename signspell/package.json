@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test \"tests/**/*.test.mjs\""
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "test:visual": "node tests/browser/visual-smoke-runner.mjs",
+    "test:all": "npm test && npm run test:visual"
   }
 }

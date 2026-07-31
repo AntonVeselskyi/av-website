@@ -20,6 +20,13 @@ export const TAU = Math.PI * 2;
 export const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const wrap01 = (value) => ((value % 1) + 1) % 1;
+/** A changed counter is only an onset while the live beat envelope is high. */
+export const liveBeatChanged = (lastBeat, audio, threshold = 0.55) => (
+  Number(audio?.beatCount) !== Number(lastBeat)
+  && (Number(lastBeat) >= 0 || Number(audio?.beatCount) > 0)
+  && Number(audio?.beat) > threshold
+  && audio?.silent !== true
+);
 export const smoothstep = (edge0, edge1, value) => {
   const t = clamp((value - edge0) / (edge1 - edge0 || 1));
   return t * t * (3 - 2 * t);
@@ -515,6 +522,8 @@ export function blockGlitch(ctx, source, width, height, options = {}) {
   if (count <= 0) return;
   const random = mulberry32(Math.floor(options.seed ?? 0) + 977);
   const slide = (options.slide ?? 0.09) * width * strength;
+  const sourceScaleX = (source.width || width) / Math.max(1, width);
+  const sourceScaleY = (source.height || height) / Math.max(1, height);
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -542,7 +551,11 @@ export function blockGlitch(ctx, source, width, height, options = {}) {
       const qw = Math.max(1, Math.floor(bw / (4 + random() * 8)));
       const qh = Math.max(1, Math.floor(bh / (4 + random() * 8)));
       ctx.globalAlpha = 1;
-      ctx.drawImage(source, sx, sy, bw, bh, sx, sy, qw, qh);
+      ctx.drawImage(
+        source,
+        sx * sourceScaleX, sy * sourceScaleY, bw * sourceScaleX, bh * sourceScaleY,
+        sx, sy, qw, qh,
+      );
       ctx.drawImage(ctx.canvas, sx, sy, qw, qh, sx, sy, bw, bh);
       continue;
     }
@@ -551,7 +564,11 @@ export function blockGlitch(ctx, source, width, height, options = {}) {
     const dx = sx + Math.round((random() - 0.5) * slide / unit) * unit;
     const dy = sy + Math.round((random() - 0.5) * 3) * unit;
     ctx.globalAlpha = 0.7 + random() * 0.3;
-    ctx.drawImage(source, sx, sy, bw, bh, dx, dy, bw, bh);
+    ctx.drawImage(
+      source,
+      sx * sourceScaleX, sy * sourceScaleY, bw * sourceScaleX, bh * sourceScaleY,
+      dx, dy, bw, bh,
+    );
   }
 
   ctx.restore();
@@ -768,6 +785,12 @@ export class FeedbackWarp {
   warp(frame, options = {}) {
     const { ctx, width, height } = frame;
     const background = options.background ?? palette.void;
+    const expectedWidth = Math.max(1, Math.round(width * this.layer.scale));
+    const expectedHeight = Math.max(1, Math.round(height * this.layer.scale));
+    if (this.layer.width !== expectedWidth || this.layer.height !== expectedHeight) {
+      this.layer.match(width, height);
+      this.primed = false;
+    }
     if (!this.layer.ctx || !this.primed) {
       fadeTo(ctx, width, height, background, 1);
       return;

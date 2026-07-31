@@ -340,8 +340,9 @@ export default class WiredTunnelScene {
     const idle = this.idle;
 
     if (audio.beatCount !== this.lastBeat) {
+      const liveBeat = kit.liveBeatChanged(this.lastBeat, audio);
       this.lastBeat = audio.beatCount;
-      if (!reduced) this.onBeat(frame);
+      if (!reduced && liveBeat) this.onBeat(frame);
     }
     this.surge = Math.max(0, this.surge - dt * 1.8);
     this.corrupt = Math.max(0, this.corrupt - dt * 2.1);
@@ -1135,6 +1136,8 @@ export default class WiredTunnelScene {
       ctx.globalCompositeOperation = "source-over";
     }
   }
+
+  setReducedMotion() { this.feedback.release(); }
 
   suspend() {
     this.feedback.release();
