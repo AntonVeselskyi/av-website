@@ -1167,7 +1167,7 @@ export default class WarpedShrineScene {
       // it should feel like the room being struck, not like a strobe.
       if (this.desecrate < 0.12 && audio.transient > 0.7 && audio.bassAtt > 1.5) this.desecrate = 1;
     }
-    if (wallFallFallbackDue({ still, silent: audio.silent, time, lastAt: this.lastWallFallAt })) {
+    if (wallFallFallbackDue({ still, silent: audio.silent, time, lastAt: this.lastWallFallAt, delay: 0.3 })) {
       this.spawnWallFalls(frame, Math.floor(time * 2));
       this.lastWallFallAt = time;
     }
@@ -1311,11 +1311,14 @@ export default class WarpedShrineScene {
    * keeps the light registered inside the stone frames it belongs to.
    */
   spawnWallFalls(frame, beat) {
-    const count = wallFallBurstSize(frame.audio);
-    if (!count || !this.piers?.length) return;
+    const burst = wallFallBurstSize(frame.audio);
+    if (!burst || !this.piers?.length) return;
     const rungBands = wallFallRungs(this.piers.map((pier) => pier.band));
     const rungCount = rungBands.length;
     if (!rungCount) return;
+    // The helper's size is the musical floor; the wall throws down more than
+    // that so the nave is visibly raining light rather than ticking over.
+    const count = Math.min(rungCount, burst * 2 + 1);
     const used = new Set();
     for (let fall = 0; fall < count; fall += 1) {
       let bestRung = (beat * 3 + fall * 5) % rungCount;
@@ -1331,8 +1334,8 @@ export default class WarpedShrineScene {
       this.wallFallCursor = (slot + 1) % WALL_FALL_MAX;
       this.wallFallBand[slot] = rungBands[bestRung];
       this.wallFallAge[slot] = 0;
-      this.wallFallDuration[slot] = 0.26 + fall * 0.07 + (1 - Math.min(1, frame.audio.transient)) * 0.15;
-      this.wallFallStrength[slot] = Math.min(1, 0.62 + frame.audio.transient * 0.32 + fall * 0.08);
+      this.wallFallDuration[slot] = 0.19 + fall * 0.05 + (1 - Math.min(1, frame.audio.transient)) * 0.1;
+      this.wallFallStrength[slot] = Math.min(1, 0.82 + frame.audio.transient * 0.18 + fall * 0.06);
       this.wallFallActive[slot] = 1;
     }
   }
@@ -1359,11 +1362,11 @@ export default class WarpedShrineScene {
         if (Math.abs(pier.band - targetBand) > 0.025) continue;
         const travel = pier.base - pier.top;
         const headY = pier.top + travel * motion.progress;
-        const trail = Math.abs(travel) * (0.16 + strength * 0.28) * (1 - motion.progress * 0.52);
+        const trail = Math.abs(travel) * (0.34 + strength * 0.52) * (1 - motion.progress * 0.35);
         const tailY = Math.max(pier.top, headY - trail);
 
-        ctx.strokeStyle = palette.violet(motion.alpha * (0.34 + strength * 0.5) * pier.fog);
-        ctx.lineWidth = Math.max(1, ratio * (1.8 + strength * 3.2) * pier.fog);
+        ctx.strokeStyle = palette.violet(motion.alpha * (0.62 + strength * 0.6) * pier.fog);
+        ctx.lineWidth = Math.max(1, ratio * (3 + strength * 5.4) * pier.fog);
         ctx.beginPath();
         ctx.moveTo(pier.x, tailY);
         ctx.lineTo(pier.x, headY);
@@ -1372,15 +1375,15 @@ export default class WarpedShrineScene {
         // A delayed spectral echo and a hot head make the fall read as an
         // event travelling down stone, not another static analyser bar.
         const echoY = pier.top + travel * Math.max(0, motion.progress - 0.12);
-        ctx.strokeStyle = palette.violet(motion.alpha * 0.18 * pier.fog);
-        ctx.lineWidth = Math.max(1, ratio * 1.1);
+        ctx.strokeStyle = palette.violet(motion.alpha * 0.34 * pier.fog);
+        ctx.lineWidth = Math.max(1, ratio * 2);
         ctx.beginPath();
         ctx.moveTo(pier.x, Math.max(pier.top, echoY - trail * 0.45));
         ctx.lineTo(pier.x, echoY);
         ctx.stroke();
 
-        ctx.fillStyle = palette.bone(motion.alpha * (0.36 + strength * 0.45) * pier.fog);
-        const head = Math.max(1.5, ratio * (1.8 + strength * 2.2));
+        ctx.fillStyle = palette.bone(motion.alpha * (0.6 + strength * 0.4) * pier.fog);
+        const head = Math.max(2, ratio * (3.2 + strength * 4));
         ctx.fillRect(pier.x - head * 0.5, headY - head * 0.5, head, head);
       }
     }
@@ -2556,6 +2559,44 @@ export default class WarpedShrineScene {
    * bass, vorticity off the top end, injection off the band each limb owns — so
    * what reacts to the music is the fluid itself, not a filter over a picture.
    */
+  /**
+   * The demon's colour ramp, rebuilt per frame from the mix. Building a 256
+   * entry table and indexing it per cell is both richer and cheaper than
+   * arithmetic at every pixel, and it lets the whole body change temperature
+   * with the music rather than only brightening.
+   */
+  buildDemonRamp(audio) {
+    const { clamp } = this.kit;
+    const lut = this.demonRamp || (this.demonRamp = new Uint8ClampedArray(256 * 3));
+    const bass = clamp(audio.bassAtt, 0, 2.5) / 2.5;
+    const loud = clamp(audio.level * 4, 0, 1);
+    const treble = clamp(audio.trebAtt, 0, 2.5) / 2.5;
+    const stops = [
+      [0.00, 22 + bass * 26, 18, 54 + bass * 26],
+      [0.24, 58 + bass * 70, 24, 96 - bass * 26],
+      [0.46, 132 + bass * 74, 34 + loud * 26, 86 - bass * 20],
+      [0.66, 206 + loud * 30, 74 + loud * 34, 62],
+      [0.84, 242, 150 + treble * 44, 74],
+      [0.94, 250, 206 + treble * 30, 130 + treble * 40],
+      [1.00, 252, 240, 206 + treble * 40],
+    ];
+    for (let i = 0; i < 256; i += 1) {
+      const t = i / 255;
+      let a = stops[0];
+      let b = stops[stops.length - 1];
+      for (let s = 0; s < stops.length - 1; s += 1) {
+        if (t >= stops[s][0] && t <= stops[s + 1][0]) { a = stops[s]; b = stops[s + 1]; break; }
+      }
+      const span = b[0] - a[0] || 1;
+      const k = (t - a[0]) / span;
+      const o = i * 3;
+      lut[o] = a[1] + (b[1] - a[1]) * k;
+      lut[o + 1] = a[2] + (b[2] - a[2]) * k;
+      lut[o + 2] = a[3] + (b[3] - a[3]) * k;
+    }
+    return lut;
+  }
+
   paintDemon(frame, still) {
     const { ctx, audio, detail, palette, ratio } = frame;
     const { clamp, TAU } = this.kit;
@@ -2586,6 +2627,7 @@ export default class WarpedShrineScene {
       const image = this.smokeImage;
       const pixels = image.data;
       const { density, heat, stride } = fluid;
+      const ramp = this.buildDemonRamp(audio);
       let cursor = 0;
       for (let j = 0; j < SMOKE_H; j += 1) {
         // The pentagram lights the plume from underneath, so the violet is
@@ -2597,13 +2639,17 @@ export default class WarpedShrineScene {
           const smoke = density[at];
           if (smoke < 0.01) { pixels[cursor + 3] = 0; cursor += 4; continue; }
           const glow = Math.min(1, heat[at]);
-          // Cubed, so only the few hottest cells go warm at all — smoke lit
-          // from within reads as fire, and this is a body, not a bonfire.
-          const ember = glow * glow * glow;
-          pixels[cursor] = 38 + ember * 180 + wash * 22;
-          pixels[cursor + 1] = 31 + ember * 86 + wash * 11;
-          pixels[cursor + 2] = 66 + ember * 26 + wash * 60;
-          pixels[cursor + 3] = Math.min(205, smoke * 150);
+          // Squared rather than cubed: cubing left all but a handful of cells
+          // on the same cold entry, which is why the body read as one colour.
+          // Density contributes too, so the thick core of a limb is hotter on
+          // the ramp than its wisps even at equal heat.
+          const ember = glow * glow;
+          const level = ember * 0.72 + Math.min(1, smoke * 0.55) * 0.28 + wash * 0.1;
+          const o = (level > 1 ? 255 : (level * 255) | 0) * 3;
+          pixels[cursor] = ramp[o];
+          pixels[cursor + 1] = ramp[o + 1];
+          pixels[cursor + 2] = ramp[o + 2];
+          pixels[cursor + 3] = Math.min(212, smoke * 152);
           cursor += 4;
         }
       }

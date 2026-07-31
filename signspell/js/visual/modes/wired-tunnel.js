@@ -41,6 +41,10 @@ const TIER_Z = [NEAR_PLANE, 1.35, 3.4, 64];
 const TIER_ALPHA = [0.78, 0.46, 0.24];
 const TIER_WIDTH = [3.0, 1.8, 1.0];
 
+const MAX_ROCKETS = 5;
+const MAX_BLASTS = 5;
+const BLAST_LIFE = 0.62;
+
 const FAULT_WORDS = ["NO CARRIER", "PACKET LOSS", "LINE BUSY", "CHECKSUM ERR", "TRACE LOST"];
 const WALL_TAGS = ["TRUNK", "SEG", "RELAY", "LINE", "HOP", "DUCT"];
 
@@ -53,7 +57,7 @@ export function tunnelTempoScale(bpm = 120) {
 /** Keeps the authored codec failure legible without overwhelming the tunnel. */
 export function wiredCorruptionProfile(corrupt = 0, turn = 0) {
   return {
-    strength: Math.min(0.55, Math.max(0, Number(corrupt) || 0) * 0.45),
+    strength: Math.min(0.24, Math.max(0, Number(corrupt) || 0) * 0.18),
     slide: 0.05 + Math.min(0.08, Math.abs(Number(turn) || 0) * 0.25),
   };
 }
@@ -138,6 +142,19 @@ export default class WiredTunnelScene {
     }
     this.cursor = 0;
     this.aliveCount = 0;
+
+    // Ordnance. Rockets run out along the trunk and detonate against the wall;
+    // blasts are the craters of light they leave. Both are fixed pools.
+    this.rockets = new Array(MAX_ROCKETS);
+    for (let i = 0; i < MAX_ROCKETS; i += 1) {
+      this.rockets[i] = { live: false, z: 0, theta: 0, r: 0, speed: 0, target: 0, spin: 0 };
+    }
+    this.rocketCursor = 0;
+    this.blasts = new Array(MAX_BLASTS);
+    for (let i = 0; i < MAX_BLASTS; i += 1) {
+      this.blasts[i] = { live: false, z: 0, theta: 0, age: 0, power: 1, seed: 0 };
+    }
+    this.blastCursor = 0;
 
     this.nearAng = new Float32Array(4);
     for (let j = 0; j < 4; j += 1) this.nearAng[j] = hash01(j * 31 + 5) * Math.PI * 2;
@@ -301,13 +318,164 @@ export default class WiredTunnelScene {
     }
   }
 
+  /** Sends a rocket down the trunk toward a point on the wall ahead. */
+  launchRocket(frame) {
+    const rocket = this.rockets[this.rocketCursor];
+    this.rocketCursor = (this.rocketCursor + 1) % MAX_ROCKETS;
+    const seed = this.lastBeat * 7 + this.rocketCursor;
+    rocket.live = true;
+    // Launched from just off the lens, so it visibly leaves from the viewer.
+    rocket.z = NEAR_PLANE + 0.35;
+    rocket.theta = hash01(seed) * Math.PI * 2;
+    rocket.r = 0.18;
+    rocket.speed = 5.5 + hash01(seed + 1) * 4.5 + this.speed * 0.8;
+    // Detonates part-way down the visible run, never past the fog plane.
+    rocket.target = 2.4 + hash01(seed + 2) * (this.farZ * 0.45);
+    rocket.spin = (hash01(seed + 3) - 0.5) * 1.6;
+    void frame;
+  }
+
+  /** Records a detonation at a point on the wall. */
+  detonate(z, theta, power) {
+    const blast = this.blasts[this.blastCursor];
+    this.blastCursor = (this.blastCursor + 1) % MAX_BLASTS;
+    blast.live = true;
+    blast.z = z;
+    blast.theta = theta;
+    blast.age = 0;
+    blast.power = power;
+    blast.seed = Math.floor(hash01(this.blastCursor * 31 + this.lastBeat) * 4096);
+  }
+
+  advanceOrdnance(frame, dt) {
+    if (dt <= 0) return;
+    for (let i = 0; i < MAX_ROCKETS; i += 1) {
+      const rocket = this.rockets[i];
+      if (!rocket.live) continue;
+      rocket.z += rocket.speed * dt;
+      // It curves out to the wall as it runs, so it strikes rather than
+      // vanishing down the middle.
+      rocket.r = Math.min(1, rocket.r + dt * 1.5);
+      rocket.theta += rocket.spin * dt;
+      if (rocket.z >= rocket.target || rocket.z > this.farZ) {
+        rocket.live = false;
+        this.detonate(Math.min(rocket.z, this.farZ), rocket.theta, 0.7 + hash01(i + this.lastBeat) * 0.5);
+      }
+    }
+    for (let i = 0; i < MAX_BLASTS; i += 1) {
+      const blast = this.blasts[i];
+      if (!blast.live) continue;
+      blast.age += dt;
+      if (blast.age >= BLAST_LIFE) blast.live = false;
+    }
+    void frame;
+  }
+
+  /**
+   * Rockets and their impacts, in the idiom of a 2000s console shooter: hard
+   * additive orange, a chunky shockwave ring on the wall and straight debris
+   * streaks. Everything rides the same projection as the trunk, so the blast
+   * sits on the wall at its own depth rather than on the glass.
+   */
+  drawOrdnance(frame) {
+    const { ctx, palette } = frame;
+    const ratio = frame.ratio;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    for (let i = 0; i < MAX_ROCKETS; i += 1) {
+      const rocket = this.rockets[i];
+      if (!rocket.live) continue;
+      const wallX = this.bendX(rocket.z + this.travel);
+      const wallY = this.bendY(rocket.z + this.travel);
+      const rx = Math.cos(rocket.theta) * rocket.r * ASPECT_X;
+      const ry = Math.sin(rocket.theta) * rocket.r * ASPECT_Y;
+      if (!this.project(wallX + rx, wallY + ry, rocket.z)) continue;
+      const hx = this.projX;
+      const hy = this.projY;
+      const scale = this.projS;
+      // Trail: a short sample of where it just was.
+      const tailZ = Math.max(NEAR_PLANE + 0.02, rocket.z - 0.5);
+      const tailR = Math.max(0, rocket.r - 0.06);
+      const tx = this.bendX(tailZ + this.travel) + Math.cos(rocket.theta) * tailR * ASPECT_X;
+      const ty = this.bendY(tailZ + this.travel) + Math.sin(rocket.theta) * tailR * ASPECT_Y;
+      if (this.project(tx, ty, tailZ)) {
+        ctx.strokeStyle = palette.amber(0.5);
+        ctx.lineWidth = Math.max(1, ratio * 1.6);
+        ctx.beginPath();
+        ctx.moveTo(this.projX, this.projY);
+        ctx.lineTo(hx, hy);
+        ctx.stroke();
+      }
+      const head = Math.max(1.2, scale * 0.006 * ratio);
+      ctx.fillStyle = palette.bone(0.85);
+      ctx.beginPath();
+      ctx.arc(hx, hy, head, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    for (let i = 0; i < MAX_BLASTS; i += 1) {
+      const blast = this.blasts[i];
+      if (!blast.live) continue;
+      const phase = blast.age / BLAST_LIFE;
+      const fade = 1 - phase;
+      const wallX = this.bendX(blast.z + this.travel);
+      const wallY = this.bendY(blast.z + this.travel);
+      const rx = Math.cos(blast.theta) * ASPECT_X;
+      const ry = Math.sin(blast.theta) * ASPECT_Y;
+      if (!this.project(wallX + rx, wallY + ry, blast.z)) continue;
+      const bx = this.projX;
+      const by = this.projY;
+      const scale = this.projS;
+      const reach = scale * 0.34 * blast.power;
+
+      // Flash core, hottest at the instant of impact.
+      const flash = Math.pow(fade, 2.2);
+      if (flash > 0.02) {
+        const core = ctx.createRadialGradient(bx, by, 0, bx, by, Math.max(2, reach * (0.35 + phase * 0.5)));
+        core.addColorStop(0, palette.bone(0.85 * flash));
+        core.addColorStop(0.3, `rgba(255,150,60,${(0.6 * flash).toFixed(3)})`);
+        core.addColorStop(0.7, `rgba(210,60,40,${(0.24 * flash).toFixed(3)})`);
+        core.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = core;
+        const r = Math.max(2, reach * (0.35 + phase * 0.5));
+        ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+      }
+
+      // Shockwave ring expanding across the wall.
+      const ringR = reach * (0.15 + phase * 1.15);
+      if (ringR > 1) {
+        ctx.strokeStyle = `rgba(255,190,120,${(0.5 * fade * fade).toFixed(3)})`;
+        ctx.lineWidth = Math.max(1, ratio * (1 + fade * 2.6));
+        ctx.beginPath();
+        ctx.ellipse(bx, by, ringR, ringR * 0.62, blast.theta, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Debris: straight streaks, the cheap and correct look for the era.
+      const shards = 7;
+      ctx.strokeStyle = `rgba(255,170,90,${(0.45 * fade).toFixed(3)})`;
+      ctx.lineWidth = Math.max(1, ratio);
+      ctx.beginPath();
+      for (let shard = 0; shard < shards; shard += 1) {
+        const a = hash01(blast.seed + shard) * Math.PI * 2;
+        const len = reach * (0.3 + hash01(blast.seed + shard + 64) * 0.9) * (0.3 + phase);
+        ctx.moveTo(bx + Math.cos(a) * len * 0.25, by + Math.sin(a) * len * 0.25);
+        ctx.lineTo(bx + Math.cos(a) * len, by + Math.sin(a) * len);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   /** Beat structure: re-route, fault and dropout on a schedule, not at random. */
   onBeat(frame) {
     const { audio, kit } = frame;
     this.surge = 1;
-    this.kick = Math.min(1.4, this.kick + 0.7 + kit.clamp(audio.transient, 0, 1) * 0.6);
+    this.kick = Math.min(0.85, this.kick + 0.34 + kit.clamp(audio.transient, 0, 1) * 0.26);
     const burst = 1 + Math.floor(kit.clamp(audio.bassAtt, 0, 2.4) * 2.2);
     for (let i = 0; i < burst; i += 1) this.emit(frame, false);
+    if (audio.beatCount % 4 === 0 || kit.clamp(audio.transient, 0, 1) > 0.72) this.launchRocket(frame);
     if (audio.beatCount % 8 === 0) {
       this.channel += 1;
       this.channelSerial = kit.serialString(this.channel * 7 + 3, 6);
@@ -319,10 +487,10 @@ export default class WiredTunnelScene {
       this.corrupt = 1;
       this.emit(frame, true);
     }
-    if (audio.beatCount % 32 === 0) { this.dropout = 1; this.corrupt = 1.4; }
+    if (audio.beatCount % 32 === 0) { this.dropout = 1; this.corrupt = 0.85; }
     // Hard corners shake the link loose on their own.
-    if (Math.abs(this.turnSmooth) > 0.055 && audio.beatCount % 4 === 0) {
-      this.corrupt = Math.max(this.corrupt, 0.55);
+    if (Math.abs(this.turnSmooth) > 0.075 && audio.beatCount % 16 === 0) {
+      this.corrupt = Math.max(this.corrupt, 0.3);
     }
   }
 
@@ -345,7 +513,8 @@ export default class WiredTunnelScene {
       if (!reduced && liveBeat) this.onBeat(frame);
     }
     this.surge = Math.max(0, this.surge - dt * 1.8);
-    this.corrupt = Math.max(0, this.corrupt - dt * 2.1);
+    this.corrupt = Math.max(0, this.corrupt - dt * 3.2);
+    this.advanceOrdnance(frame, dt);
     this.fault = Math.max(0, this.fault - dt * 0.75);
     this.dropout = Math.max(0, this.dropout - dt * 2.4);
 
@@ -372,8 +541,8 @@ export default class WiredTunnelScene {
     // thrown sideways so consecutive hits do not stack into a vertical judder.
     this.kick = Math.max(0, this.kick - dt * 3.2);
     const kickAmp = this.kick * this.kick;
-    this.kickX = Math.sin(this.lastBeat * 2.399) * kickAmp * 0.018;
-    this.kickY = (Math.cos(this.lastBeat * 1.117) * 0.4 - 0.9) * kickAmp * 0.022;
+    this.kickX = Math.sin(this.lastBeat * 2.399) * kickAmp * 0.0011;
+    this.kickY = (Math.cos(this.lastBeat * 1.117) * 0.4 - 0.9) * kickAmp * 0.0015;
 
     this.prevRoll = this.roll;
     const rollTarget = Math.sin(t * 0.19) * 0.075 + Math.sin(t * 0.071) * 0.045
@@ -441,7 +610,7 @@ export default class WiredTunnelScene {
     for (let i = 0; i < rings; i += 1) {
       const z = RING_Z0 + i * RING_GAP - travelMod;
       const worldZ = z + this.travel;
-      const fog = depthFade(z, 0.4, this.farZ);
+      const fog = depthFade(z, 0.4, this.farZ * 1.5);
       // Rings do not blink out as they swallow the lens, they just calm down.
       const pass = 0.34 + 0.66 * smoothstep(0.2, 0.85, z);
       this.ringZ[i] = z;
@@ -515,9 +684,9 @@ export default class WiredTunnelScene {
 
     const glow = this.glow;
     const haze = ctx.createRadialGradient(this.vpX, this.vpY, 0, this.vpX, this.vpY, minDim * (0.42 + this.speed * 0.05));
-    haze.addColorStop(0, palette.wire(0.075 * glow));
-    haze.addColorStop(0.32, palette.wire(0.035 * glow));
-    haze.addColorStop(0.66, palette.violet(0.026 * glow));
+    haze.addColorStop(0, palette.wire(0.04 * glow));
+    haze.addColorStop(0.32, palette.wire(0.017 * glow));
+    haze.addColorStop(0.66, palette.violet(0.012 * glow));
     haze.addColorStop(1, "rgba(0,0,0,0)");
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -672,7 +841,7 @@ export default class WiredTunnelScene {
       const dz = 0.24 + r2 * 0.3;
       const slot = Math.round((th / (Math.PI * 2)) * SEG) % SEG;
       const rad = this.segR[slot] * 1.01;
-      const fog = depthFade(z, 0.4, this.farZ);
+      const fog = depthFade(z, 0.4, this.farZ * 1.5);
       const alpha = clamp(0.16 + fog * 0.42, 0, 0.62) * this.glow;
 
       let valid = true;
@@ -1093,6 +1262,7 @@ export default class WiredTunnelScene {
     this.drawBrackets(frame);
     this.drawNodes(frame);
     this.drawTraffic(frame);
+    this.drawOrdnance(frame);
     this.drawWallPrint(frame);
     ctx.restore();
 

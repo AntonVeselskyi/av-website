@@ -133,19 +133,30 @@ export default class SpectralFireScene {
   loadSeed(frame) {
     const { audio, kit } = frame;
     const idle = this.idleWarm;
+    // The frame's own loudest band sets the reference, so the contrast holds
+    // whether the material is dense or sparse.
+    let loudest = 0.0001;
+    for (let i = 0; i < frame.bands.length; i += 1) if (frame.bands[i] > loudest) loudest = frame.bands[i];
     for (let x = 0; x < GRID_W; x += 1) {
       const band = frame.band(COLUMN_MEL[x]);
       const peak = frame.bandPeaks[Math.min(frame.bandPeaks.length - 1,
         Math.round(COLUMN_MEL[x] * (frame.bandPeaks.length - 1)))] || 0;
       // A little peak-hold under the live value keeps the bed from strobing
       // between frames on percussive material.
-      const fuel = band * 0.78 + peak * 0.34;
+      // Gate against the loudest band, then square what survives: a band at
+      // a third of the peak barely burns, one at the peak throws a jet.
+      const relative = band / loudest;
+      const gated = Math.max(0, relative - 0.34) / 0.66;
+      const fuel = gated * gated * (0.55 + band * 1.5) + peak * 0.06;
       // Break the bed up with noise so the fire never looks like a bar chart,
       // and roll the noise sideways so the hot spots wander.
       const grain = kit.fbm(x * 0.06, this.t * 0.55, 3);
       const edge = Math.pow(Math.sin((x / GRID_W) * Math.PI), 0.45);   // gentle wall taper
-      const value = (fuel * (0.62 + grain * 0.95) + idle * 0.055 + this.flare * 0.6) * (0.3 + edge * 0.92);
-      this.seed[x] = kit.clamp(value * (0.78 + audio.bassAtt * 0.32), 0, 1.05);
+      // The beat flare is applied *through* the fuel rather than added on top,
+      // so a hit lifts the columns that are actually playing instead of
+      // flashing the whole bed.
+      const value = (fuel * (0.62 + grain * 0.95) * (1 + this.flare * 1.5) + idle * 0.05) * (0.3 + edge * 0.92);
+      this.seed[x] = kit.clamp(value * (0.78 + audio.bassAtt * 0.32), 0, 1.15);
     }
   }
 
@@ -181,7 +192,7 @@ export default class SpectralFireScene {
 
       for (let x = 0; x < GRID_W; x += 1) {
         const local = kit.noise2D(x * 0.11 + drift * 1.6, y * 0.09 - drift * 2.4) - 0.5;
-        const shift = lean + local * 3.4 * (1 - height);
+        const shift = lean * 0.7 + local * 2.2 * (1 - height);
         const sx = x + shift;
         const i0 = Math.floor(sx);
         const frac = sx - i0;
@@ -192,7 +203,7 @@ export default class SpectralFireScene {
         const right = x < GRID_W - 1 ? heat[rowA + x + 1] : 0;
         const below = heat[rowB + x];
         // Weighted toward the advected sample: that is the licking motion.
-        let value = centre * 0.46 + left * 0.145 + right * 0.145 + below * 0.25;
+        let value = centre * 0.54 + left * 0.095 + right * 0.095 + below * 0.27;
         value -= cool * (0.6 + local * 0.5 + 0.4);
         // Extra loss in the top sixth: the flame thins out into smoke there
         // instead of stacking against the ceiling.

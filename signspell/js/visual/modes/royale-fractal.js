@@ -5,18 +5,21 @@
  * grow by a fixed ratio, and the whole field is scaled by that same ratio over
  * one cycle. When the cycle wraps, every ring has landed exactly where its
  * neighbour was, so the sequence continues with no seam and the descent never
- * ends. Rings fade in at the rim and out at the centre, which is the only thing
- * standing between this and a visible loop.
+ * ends. Rings fade in at the rim and out at the centre.
  *
- * Each suit then contains smaller copies of the other suits, so the image is
- * self-similar at two scales as well as at the ring scale.
+ * The suits genuinely morph. Cross-fading one suit into another looks like two
+ * pictures fighting, because nothing about a spade travels toward a heart — the
+ * ink just swaps. So each suit is instead defined as a union of primitives
+ * (circles and polygons) and sampled as a support radius at a fixed set of
+ * angles. Every suit therefore produces the same number of points at the same
+ * angles, which gives exact point correspondence, and the morph is a plain
+ * interpolation of radii: the spade's shoulders actually swell into the heart's
+ * lobes and its stem retracts. `royaleSuitTransition` supplies the mix, so the
+ * shape is continuous across every wrap of the stack.
  *
- * The suits are `Path2D` objects built once. Rebuilding a dozen bezier curves
- * per suit per frame, several hundred times, is the whole cost of the scene;
- * building them once and paying only for the transform is close to free.
- *
- * Palette is the title-sequence one — blood, bone and gold on black — which is
- * already most of the way to this instrument's own ink.
+ * Around that sits the rest of the table, in the idiom of the title sequence:
+ * a roulette ring of alternating red and black pockets, cards fanned and
+ * cascading out of the centre, and guilloche lattice printed over everything.
  *
  * See MODE_CONTRACT in ../visualizer.js for the frame object.
  */
@@ -25,6 +28,7 @@ const RING_RATIO = 2.15;      // radius multiplier between consecutive rings
 const RINGS = 9;
 const SUITS_PER_RING = 7;
 const BASE_RADIUS = 0.055;    // innermost ring, as a fraction of the short side
+const OUTLINE_STEPS = 72;     // samples per suit outline
 
 const SUIT_NAMES = ["SPADE", "HEART", "DIAMOND", "CLUB"];
 const SUIT_GLYPH = ["♠", "♥", "♦", "♣"];
@@ -82,63 +86,95 @@ export function royaleRingStyle(level, ringCount = RINGS) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Suit geometry
+// ---------------------------------------------------------------------------
+
 /**
- * The four suits as unit paths centred on the origin, roughly 2 units across.
- * Built from the same primitives a card printer would use: a heart is two arcs
- * meeting at a point, a spade is that inverted with a stem, a club is three
- * circles, a diamond is a rhombus.
+ * Each suit is a union of primitives. Sampling the union's support radius at a
+ * fixed angle set is what makes every suit produce corresponding points, and
+ * corresponding points are what make the morph read as one shape becoming
+ * another rather than as a dissolve.
  */
-function buildSuits() {
-  if (typeof Path2D !== "function") return null;
+const STEM = { polygon: [[-0.44, 1.0], [-0.1, 0.16], [0.1, 0.16], [0.44, 1.0]] };
 
-  const spade = new Path2D();
-  spade.moveTo(0, -1);
-  spade.bezierCurveTo(0.62, -0.36, 1.02, -0.06, 1.02, 0.28);
-  spade.bezierCurveTo(1.02, 0.66, 0.66, 0.82, 0.36, 0.66);
-  spade.bezierCurveTo(0.2, 0.57, 0.12, 0.44, 0.1, 0.34);
-  spade.bezierCurveTo(0.14, 0.62, 0.26, 0.86, 0.42, 1.0);
-  spade.lineTo(-0.42, 1.0);
-  spade.bezierCurveTo(-0.26, 0.86, -0.14, 0.62, -0.1, 0.34);
-  spade.bezierCurveTo(-0.12, 0.44, -0.2, 0.57, -0.36, 0.66);
-  spade.bezierCurveTo(-0.66, 0.82, -1.02, 0.66, -1.02, 0.28);
-  spade.bezierCurveTo(-1.02, -0.06, -0.62, -0.36, 0, -1);
-  spade.closePath();
+const SUIT_SHAPES = [
+  // Spade: two shoulders and a point, standing on a stem.
+  [
+    { circle: [-0.5, 0.16, 0.52] },
+    { circle: [0.5, 0.16, 0.52] },
+    { polygon: [[0, -1.02], [0.95, 0.3], [-0.95, 0.3]] },
+    STEM,
+  ],
+  // Heart: the same body inverted, cusped at the top, no stem.
+  [
+    { circle: [-0.5, -0.34, 0.54] },
+    { circle: [0.5, -0.34, 0.54] },
+    { polygon: [[-1.0, -0.2], [1.0, -0.2], [0, 1.02]] },
+  ],
+  // Diamond.
+  [
+    { polygon: [[0, -1.05], [0.78, 0], [0, 1.05], [-0.78, 0]] },
+  ],
+  // Club: three lobes on a stem.
+  [
+    { circle: [0, -0.46, 0.44] },
+    { circle: [-0.46, 0.18, 0.44] },
+    { circle: [0.46, 0.18, 0.44] },
+    STEM,
+  ],
+];
 
-  const heart = new Path2D();
-  heart.moveTo(0, 1);
-  heart.bezierCurveTo(-0.34, 0.62, -1.04, 0.2, -1.04, -0.3);
-  heart.bezierCurveTo(-1.04, -0.72, -0.66, -1.0, -0.34, -1.0);
-  heart.bezierCurveTo(-0.13, -1.0, 0, -0.84, 0, -0.66);
-  heart.bezierCurveTo(0, -0.84, 0.13, -1.0, 0.34, -1.0);
-  heart.bezierCurveTo(0.66, -1.0, 1.04, -0.72, 1.04, -0.3);
-  heart.bezierCurveTo(1.04, 0.2, 0.34, 0.62, 0, 1);
-  heart.closePath();
-
-  const diamond = new Path2D();
-  diamond.moveTo(0, -1.05);
-  diamond.bezierCurveTo(0.3, -0.44, 0.72, -0.12, 0.78, 0);
-  diamond.bezierCurveTo(0.72, 0.12, 0.3, 0.44, 0, 1.05);
-  diamond.bezierCurveTo(-0.3, 0.44, -0.72, 0.12, -0.78, 0);
-  diamond.bezierCurveTo(-0.72, -0.12, -0.3, -0.44, 0, -1.05);
-  diamond.closePath();
-
-  const club = new Path2D();
-  club.arc(0, -0.44, 0.42, 0, Math.PI * 2);
-  club.closePath();
-  club.moveTo(-0.36, 0.24);
-  club.arc(-0.44, 0.16, 0.42, 0, Math.PI * 2);
-  club.closePath();
-  club.moveTo(0.52, 0.16);
-  club.arc(0.44, 0.16, 0.42, 0, Math.PI * 2);
-  club.closePath();
-  club.moveTo(0.12, 0.2);
-  club.bezierCurveTo(0.16, 0.56, 0.28, 0.84, 0.42, 1.0);
-  club.lineTo(-0.42, 1.0);
-  club.bezierCurveTo(-0.28, 0.84, -0.16, 0.56, -0.12, 0.2);
-  club.closePath();
-
-  return [spade, heart, diamond, club];
+/** Distance from the origin to a circle's far side along a unit direction. */
+function circleSupport(cx, cy, r, dx, dy) {
+  const along = cx * dx + cy * dy;
+  const perp = cx * dy - cy * dx;
+  const inside = r * r - perp * perp;
+  if (inside <= 0) return 0;
+  const hit = along + Math.sqrt(inside);
+  return hit > 0 ? hit : 0;
 }
+
+/** Distance to a polygon's boundary along a unit direction from the origin. */
+function polygonSupport(points, dx, dy) {
+  let best = 0;
+  for (let i = 0; i < points.length; i += 1) {
+    const [ax, ay] = points[i];
+    const [bx, by] = points[(i + 1) % points.length];
+    const ex = bx - ax;
+    const ey = by - ay;
+    const denominator = dx * ey - dy * ex;
+    if (Math.abs(denominator) < 1e-9) continue;
+    // Ray from the origin against this edge segment.
+    const t = (ax * ey - ay * ex) / denominator;
+    if (t <= 0) continue;
+    const u = Math.abs(ex) > Math.abs(ey)
+      ? (t * dx - ax) / ex
+      : (t * dy - ay) / ey;
+    if (u < 0 || u > 1) continue;
+    if (t > best) best = t;
+  }
+  return best;
+}
+
+/** Radii of every suit at the shared sample angles, computed once. */
+const SUIT_RADII = SUIT_SHAPES.map((shape) => {
+  const radii = new Float32Array(OUTLINE_STEPS);
+  for (let step = 0; step < OUTLINE_STEPS; step += 1) {
+    const angle = (step / OUTLINE_STEPS) * Math.PI * 2;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    let best = 0;
+    for (const part of shape) {
+      const value = part.circle
+        ? circleSupport(part.circle[0], part.circle[1], part.circle[2], dx, dy)
+        : polygonSupport(part.polygon, dx, dy);
+      if (value > best) best = value;
+    }
+    radii[step] = best;
+  }
+  return radii;
+});
 
 export default class RoyaleFractalScene {
   static id = "royale-fractal";
@@ -148,10 +184,11 @@ export default class RoyaleFractalScene {
 
   constructor(kit) {
     this.kit = kit;
-    this.suits = buildSuits();
     this.bloom = new kit.Bloom({ scale: 0.3 });
     this.feedback = new kit.FeedbackWarp({ scale: 0.55 });
-    this.suitLayer = new kit.Layer({ scale: 1 });
+    // One morphed outline is shared by every suit on a ring.
+    this.morphX = new Float32Array(OUTLINE_STEPS);
+    this.morphY = new Float32Array(OUTLINE_STEPS);
 
     this.phase = 0;        // 0..1 within one ring-to-ring descent
     this.cycle = 0;        // how many rings have passed the camera
@@ -168,13 +205,13 @@ export default class RoyaleFractalScene {
 
   /**
    * Guilloche: the interlocking arc lattice printed on a card back and on
-   * banknotes. Two counter-rotating harmonics traced as one path.
+   * banknotes.
    */
   drawGuilloche(frame, cx, cy, radius, alpha, seed) {
     const { ctx, palette } = frame;
     if (alpha <= 0.01 || radius < 8) return;
     const lobes = 5 + (seed % 4);
-    const steps = Math.max(60, Math.round(150 * frame.detail));
+    const steps = Math.max(48, Math.round(120 * frame.detail));
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.strokeStyle = palette.amber(alpha);
@@ -191,38 +228,106 @@ export default class RoyaleFractalScene {
     ctx.restore();
   }
 
-  /** One suit, plus the smaller suits nested inside it. */
-  stampSuit(ctx, suitIndex, size, depth, frame, fill, edge) {
-    const suits = this.suits;
-    if (!suits) return;
+  /**
+   * The wheel: alternating red and black pockets with fret ticks, turning
+   * against the descent. It reads as the table the whole fall happens over.
+   */
+  drawWheel(frame, cx, cy, radius, alpha) {
+    const { ctx, palette, audio } = frame;
+    if (alpha <= 0.015 || radius < 20) return;
+    const pockets = 18;
+    const turn = -this.spin * 0.5 + audio.brightness * 0.4;
+    const inner = radius * 0.86;
     ctx.save();
-    ctx.scale(size, size);
-    ctx.fillStyle = fill;
-    ctx.fill(suits[suitIndex]);
-    if (edge) {
-      ctx.strokeStyle = edge;
-      ctx.lineWidth = Math.max(0.02, 0.045 / Math.max(0.15, size / 40));
-      ctx.stroke(suits[suitIndex]);
+    ctx.globalCompositeOperation = "lighter";
+    for (let pocket = 0; pocket < pockets; pocket += 1) {
+      const a0 = (pocket / pockets) * Math.PI * 2 + turn;
+      const a1 = ((pocket + 1) / pockets) * Math.PI * 2 + turn;
+      const lit = frame.band(pocket / pockets);
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, a0, a1);
+      ctx.arc(cx, cy, inner, a1, a0, true);
+      ctx.closePath();
+      // Red and black alternate; a lit pocket is one the spectrum is in.
+      ctx.fillStyle = pocket % 2
+        ? palette.blood(alpha * (0.16 + lit * 0.4))
+        : palette.void(alpha * 0.5);
+      ctx.fill();
     }
+    ctx.strokeStyle = palette.amber(alpha * 0.35);
+    ctx.lineWidth = Math.max(0.7, frame.ratio * 0.8);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.moveTo(cx + inner, cy);
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+    ctx.stroke();
+    // Frets between pockets.
+    ctx.beginPath();
+    for (let pocket = 0; pocket < pockets; pocket += 1) {
+      const a = (pocket / pockets) * Math.PI * 2 + turn;
+      ctx.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
+      ctx.lineTo(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+    }
+    ctx.stroke();
     ctx.restore();
+  }
 
-    if (depth <= 0 || size < 14) return;
-    // Self-similarity: three smaller suits set into the body of this one.
-    const child = size * 0.3;
-    for (let i = 0; i < 3; i += 1) {
-      const a = (i / 3) * Math.PI * 2 + this.spin * 0.6;
-      const rx = Math.cos(a) * size * 0.36;
-      const ry = Math.sin(a) * size * 0.36 + size * 0.08;
+  /** Cards thrown out of the centre, fanned and falling away. */
+  drawFan(frame, cx, cy, radius, alpha) {
+    const { ctx, palette, audio } = frame;
+    if (alpha <= 0.02 || radius < 14) return;
+    const cards = Math.max(4, Math.round(9 * frame.detail));
+    const w = radius * 0.3;
+    const h = radius * 0.44;
+    ctx.save();
+    for (let card = 0; card < cards; card += 1) {
+      const seed = hash01(this.cycle * 13 + card);
+      const spread = (card / (cards - 1) - 0.5) * (1.5 + audio.sustain * 0.5);
+      const a = spread + this.spin * 0.3 + seed * 0.2;
+      const reach = radius * (0.62 + seed * 0.5 + this.deal * 0.12);
+      const x = cx + Math.cos(a - Math.PI * 0.5) * reach;
+      const y = cy + Math.sin(a - Math.PI * 0.5) * reach;
       ctx.save();
-      ctx.translate(rx, ry);
-      ctx.rotate(a * 0.5);
-      // The nested suits are punched out of the parent, which is how the card
-      // reads as printed rather than as stacked stickers.
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.scale(child, child);
-      ctx.fill(this.suits[(suitIndex + i + 1) % 4]);
+      ctx.translate(x, y);
+      ctx.rotate(a + Math.sin(this.t * 0.5 + card) * 0.25);
+      ctx.globalAlpha = alpha * (0.28 + seed * 0.4);
+      ctx.fillStyle = palette.void(0.9);
+      ctx.fillRect(-w * 0.5, -h * 0.5, w, h);
+      ctx.strokeStyle = palette.bone(0.55);
+      ctx.lineWidth = Math.max(0.7, frame.ratio * 0.8);
+      ctx.strokeRect(-w * 0.5, -h * 0.5, w, h);
+      // A single pip, in the suit this ring is becoming.
+      ctx.fillStyle = card % 2 ? palette.blood(0.8) : palette.bone(0.5);
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(1, w * 0.13), 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
+    ctx.restore();
+  }
+
+  /**
+   * Builds the morphed outline for a suit pair into the shared scratch arrays.
+   * `warp` swells the shape mid-transition so the change of state is felt.
+   */
+  buildMorph(from, to, mix, size, warp) {
+    const a = SUIT_RADII[from];
+    const b = SUIT_RADII[to];
+    for (let step = 0; step < OUTLINE_STEPS; step += 1) {
+      const angle = (step / OUTLINE_STEPS) * Math.PI * 2;
+      const radius = (a[step] + (b[step] - a[step]) * mix)
+        * (1 + warp * 0.06 * Math.sin(angle * 3 + this.spin));
+      this.morphX[step] = Math.cos(angle) * radius * size;
+      this.morphY[step] = Math.sin(angle) * radius * size;
+    }
+  }
+
+  /** Traces the prepared outline. */
+  traceMorph(ctx) {
+    ctx.beginPath();
+    ctx.moveTo(this.morphX[0], this.morphY[0]);
+    for (let step = 1; step < OUTLINE_STEPS; step += 1) ctx.lineTo(this.morphX[step], this.morphY[step]);
+    ctx.closePath();
   }
 
   // ---------------------------------------------------------------------------
@@ -239,7 +344,6 @@ export default class RoyaleFractalScene {
 
     if (!reduced) {
       this.t += dt;
-      // The descent runs on tempo, accelerated by the low end.
       const rate = 0.1 + kit.clamp(audio.bassAtt, 0, 2.5) * 0.075 + this.deal * 0.12;
       this.phase += dt * rate;
       while (this.phase >= 1) { this.phase -= 1; this.cycle += 1; }
@@ -252,8 +356,6 @@ export default class RoyaleFractalScene {
       }
     }
 
-    // Felt: a deep table green would fight the ink, so the ground is the void
-    // with a single warm pool where the light hangs over the table.
     kit.fadeTo(ctx, width, height, palette.void, 1);
     const pool = ctx.createRadialGradient(cx, cy, 0, cx, cy, short * 0.78);
     pool.addColorStop(0, `rgba(96, 14, 26, ${(0.12 + audio.sustain * 0.18).toFixed(3)})`);
@@ -263,8 +365,6 @@ export default class RoyaleFractalScene {
     ctx.fillRect(0, 0, width, height);
 
     if (!reduced) {
-      // A slow rotational smear, so the descent leaves a trail like a card
-      // sequence flicked past the lens.
       this.feedback.warp(frame, {
         zoom: 1.004 + this.deal * 0.006,
         rot: 0.0012,
@@ -291,105 +391,66 @@ export default class RoyaleFractalScene {
     const detail = frame.detail;
     const suitsPerRing = Math.max(5, Math.round(SUITS_PER_RING * detail));
     const maxR = Math.hypot(cx, cy) * 1.15;
-    const layer = this.suitLayer;
-    layer.match(frame.width, frame.height);
-    layer.clear();
-    const incoming = layer.ctx;
-    if (incoming) {
-      incoming.setTransform(1, 0, 0, 1, 0, 0);
-      incoming.globalAlpha = 1;
-      incoming.globalCompositeOperation = "source-over";
-    }
 
     for (let ring = 0; ring < RINGS; ring += 1) {
-      // Continuous level: the ring index plus the sub-ring descent. As `phase`
-      // completes, every ring has taken its neighbour's place exactly.
       const level = ring + this.phase;
       const radius = short * BASE_RADIUS * Math.pow(RING_RATIO, level);
       if (radius > maxR * 1.6) continue;
 
-      // Fade in from the rim, out toward the vanishing centre.
       const near = kit.clamp(1 - (radius - maxR * 0.55) / (maxR * 0.9));
       const far = kit.clamp(radius / (short * 0.1));
       const presence = Math.min(near, far);
       if (presence <= 0.02) continue;
 
-      const cycleIndex = royaleRingIdentity(this.cycle, ring);
-      const transition = royaleSuitTransition(level);
-      const ringStyle = royaleRingStyle(level);
-      const band = frame.band(ringStyle.bandPosition);
-      const ringSpin = this.spin * ringStyle.spinCoefficient;
+      const identity = royaleRingIdentity(this.cycle, ring);
+      const style = royaleRingStyle(level, RINGS);
+      const transition = royaleSuitTransition(level + this.cycle);
+      const band = frame.band(style.bandPosition);
+      const ringSpin = this.spin * style.spinCoefficient;
       const size = radius * 0.22 * (0.86 + band * 0.26 + this.deal * 0.07);
 
-      this.drawGuilloche(frame, cx, cy, radius, presence * (0.05 + band * 0.13), cycleIndex);
+      this.drawGuilloche(frame, cx, cy, radius, presence * (0.05 + band * 0.13), identity);
+      // Every third ring carries the wheel, so the table is present at several
+      // depths at once without becoming a stack of concentric dials.
+      if (identity % 3 === 0) this.drawWheel(frame, cx, cy, radius * 1.14, presence * 0.5);
+      if (identity % 4 === 1) this.drawFan(frame, cx, cy, radius, presence * 0.5);
 
-      // Red suits are blood, black suits are bone-on-void so they stay legible
-      // against the dark; gold is reserved for the ornament.
+      // The suit is a genuine blend of two shapes, not two suits stacked.
+      this.buildMorph(transition.from, transition.to, transition.toAlpha, size, transition.warp);
+
+      // Colour follows the morph too: the red suits are blood, the black ones
+      // bone-on-void, and the transition crosses between them continuously.
+      const redness = (transition.from === 1 || transition.from === 2 ? transition.fromAlpha : 0)
+        + (transition.to === 1 || transition.to === 2 ? transition.toAlpha : 0);
       const lift = presence * (0.16 + band * 0.32 + this.deal * 0.1);
-      const depth = detail > 0.8 && radius > short * 0.12 ? 1 : 0;
-
-      const paint = (suitIndex) => {
-        const red = suitIndex === 1 || suitIndex === 2;
-        return {
-          fill: red ? palette.blood(Math.min(0.55, lift)) : palette.bone(Math.min(0.4, lift * 0.66)),
-          edge: red ? palette.amber(presence * 0.24) : palette.violet(presence * 0.2),
-        };
-      };
-      const fromPaint = paint(transition.from);
-      const toPaint = paint(transition.to);
+      const red = palette.blood(Math.min(0.55, lift));
+      const black = palette.bone(Math.min(0.4, lift * 0.66));
+      const edgeRed = palette.amber(presence * 0.24);
+      const edgeBlack = palette.violet(presence * 0.2);
 
       for (let i = 0; i < suitsPerRing; i += 1) {
         const a = (i / suitsPerRing) * Math.PI * 2 + ringSpin;
         const x = cx + Math.cos(a) * radius;
         const y = cy + Math.sin(a) * radius;
-        // Cull anything comfortably outside the frame before paying for it.
         if (x < -size * 2 || x > frame.width + size * 2 || y < -size * 2 || y > frame.height + size * 2) continue;
         ctx.save();
         ctx.translate(x, y);
-        const baseRotation = a + Math.PI * 0.5 + Math.sin(this.t * 0.4 + i) * 0.05;
-        const chroma = transition.warp * (0.08 + band * 0.1);
-
-        // A low-opacity chromatic echo blooms only while identities overlap.
-        // It makes the morph feel hallucinatory without smearing the stable
-        // parts of the descent or introducing random one-frame discontinuity.
-        if (incoming && transition.warp > 0.03 && (detail > 0.72 || ((i + ring) & 1) === 0)) {
-          incoming.save();
-          incoming.translate(x, y);
-          incoming.globalCompositeOperation = "lighter";
-          incoming.globalAlpha = transition.warp * presence * 0.2;
-          incoming.rotate(baseRotation + chroma * 1.7);
-          incoming.scale(1 + chroma * 1.8, 1 - chroma * 0.55);
-          this.stampSuit(incoming, transition.to, size * 1.06, 0, frame, palette.violet(0.2), palette.wire(0.28));
-          incoming.restore();
-        }
-
-        if (transition.fromAlpha > 0.004) {
-          ctx.save();
-          ctx.globalAlpha = transition.fromAlpha;
-          ctx.rotate(baseRotation - chroma * 0.75);
-          ctx.scale(1 + chroma * 0.7, 1 - chroma * 0.24);
-          this.stampSuit(ctx, transition.from, size * (1 + transition.warp * 0.08), depth, frame, fromPaint.fill, fromPaint.edge);
-          ctx.restore();
-        }
-        if (incoming && transition.toAlpha > 0.004) {
-          incoming.save();
-          incoming.translate(x, y);
-          incoming.globalAlpha = transition.toAlpha;
-          incoming.rotate(baseRotation + chroma * 0.9);
-          incoming.scale(1 - chroma * 0.32, 1 + chroma * 0.82);
-          this.stampSuit(incoming, transition.to, size * (0.9 + transition.toAlpha * 0.1), depth, frame, toPaint.fill, toPaint.edge);
-          incoming.restore();
-        }
+        ctx.rotate(a + Math.PI * 0.5 + Math.sin(this.t * 0.4 + i) * 0.05);
+        this.traceMorph(ctx);
+        // Two fills rather than two shapes: the silhouette is already single
+        // and continuous, so only its colour has to cross over.
+        ctx.globalAlpha = 1 - redness;
+        ctx.fillStyle = black;
+        ctx.fill();
+        ctx.globalAlpha = redness;
+        ctx.fillStyle = red;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = redness > 0.5 ? edgeRed : edgeBlack;
+        ctx.lineWidth = Math.max(0.6, frame.ratio * 0.8);
+        ctx.stroke();
         ctx.restore();
       }
-    }
-    if (incoming) {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-      ctx.drawImage(layer.canvas, 0, 0, frame.width, frame.height);
-      ctx.restore();
     }
     void audio;
   }
@@ -399,7 +460,6 @@ export default class RoyaleFractalScene {
     const { ctx, width, height, audio, kit, palette } = frame;
     const small = Math.max(9, 11 * frame.ratio);
 
-    // The dealt hand, stamped like a mixtape label.
     const seed = this.cycle * 4 + this.hand;
     let hand = "";
     for (let card = 0; card < 5; card += 1) {
@@ -423,7 +483,6 @@ export default class RoyaleFractalScene {
       `STAKE ${String(Math.round(audio.bassRel * 4000)).padStart(5, "0")}  ·  DEPTH ${String(this.cycle % 1000).padStart(3, "0")}  ·  ${SUIT_NAMES[this.cycle % 4]}`,
       width * 0.04, height * 0.962, { size: small, color: palette.amber(0.4), letterSpacing: 0.07 });
 
-    // The eye over the table.
     kit.reticle(ctx, cx, cy, short * (0.2 + this.deal * 0.05), {
       color: palette.wire(0.1 + audio.beat * 0.14),
       width: Math.max(1, frame.ratio),
@@ -431,11 +490,8 @@ export default class RoyaleFractalScene {
     });
   }
 
-  setReducedMotion() { this.feedback.release(); }
-
   suspend() {
     this.bloom.release();
     this.feedback.release();
-    this.suitLayer.release();
   }
 }

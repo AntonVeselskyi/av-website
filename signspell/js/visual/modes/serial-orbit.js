@@ -311,33 +311,67 @@ export default class SerialOrbitScene {
     const hue = 250 + hash01(cycle * 13 + 9) * 90;
     const drift = hash01(cycle * 13 + 3) * 6.283;
 
+    const roll = hash01(cycle * 13 + 7) * Math.PI;
+    const rollCos = Math.cos(roll);
+    const rollSin = Math.sin(roll);
+    const wind = 2.4 + hash01(cycle * 13 + 11) * 1.8;
+
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
+
+    // The disc it all sits in, so the arms have something to be arms of.
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(roll);
+    ctx.scale(1, tilt);
+    const disc = ctx.createRadialGradient(0, 0, 0, 0, 0, scale * 1.05);
+    disc.addColorStop(0, `hsla(${hue.toFixed(0)}, 70%, 72%, ${(0.1 * alpha).toFixed(3)})`);
+    disc.addColorStop(0.45, `hsla(${hue.toFixed(0)}, 70%, 62%, ${(0.045 * alpha).toFixed(3)})`);
+    disc.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = disc;
+    ctx.beginPath();
+    ctx.arc(0, 0, scale * 1.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     for (let i = 0; i < count; i += 1) {
       const r = this.gr[i];
-      const p = this.gt[i];
-      // Flat rotation curve: angular rate falls as 1/r, which is what winds
-      // the arms. The galaxy slowly eats its own structure, as it should.
+      // Logarithmic spiral: the arm's angle grows with the log of the radius,
+      // which is the curve real arms follow and the reason this reads as a
+      // galaxy rather than as rings of dots. Scatter is kept tight so the
+      // arms stay resolvable.
       const omega = 0.42 / Math.max(0.16, r);
-      const angle = ((i % arms) / arms) * Math.PI * 2 + p * 2.6 + drift
-        + spin * this.t * omega * 0.16 + this.gj[i];
+      const angle = ((i % arms) / arms) * Math.PI * 2
+        + Math.log(Math.max(0.12, r)) * wind + drift
+        + spin * this.t * omega * 0.16 + this.gj[i] * 0.42;
       const rr = r * scale;
-      const x = cx + Math.cos(angle) * rr;
-      const y = cy + Math.sin(angle) * rr * tilt;
+      const gx = Math.cos(angle) * rr;
+      const gy = Math.sin(angle) * rr * tilt;
+      const x = cx + gx * rollCos - gy * rollSin;
+      const y = cy + gx * rollSin + gy * rollCos;
       const bright = (1 - r / 1.1) * (0.5 + Math.min(2, audio.trebRel) * 0.22) * alpha;
       if (bright <= 0.01) continue;
-      const size = (0.6 + this.gj[i] * 0.4 + bright * 2 * (0.5 + nearness)) * frame.ratio;
+      const size = (0.72 + this.gj[i] * 0.4 + bright * 2.4 * (0.5 + nearness)) * frame.ratio;
       ctx.fillStyle = i % 11 === 0
-        ? palette.wire(Math.min(0.65, bright * 0.68))
-        : `hsla(${hue.toFixed(0)}, 84%, 77%, ${Math.min(0.56, bright * 0.55).toFixed(3)})`;
+        ? palette.wire(Math.min(0.9, bright * 0.95))
+        : `hsla(${hue.toFixed(0)}, 86%, 79%, ${Math.min(0.8, bright * 0.82).toFixed(3)})`;
       ctx.fillRect(x, y, size, size);
     }
-    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(2, scale * 0.3));
-    core.addColorStop(0, palette.bone((0.28 + audio.sustain * 0.22) * alpha));
-    core.addColorStop(0.4, palette.violet(0.14 * alpha));
+    // Bulge: elongated with the disc, not a round dot pasted on top.
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(roll);
+    ctx.scale(1, Math.max(0.35, tilt * 1.35));
+    const bulge = Math.max(2, scale * 0.26);
+    const core = ctx.createRadialGradient(0, 0, 0, 0, 0, bulge);
+    core.addColorStop(0, palette.bone((0.5 + audio.sustain * 0.3) * alpha));
+    core.addColorStop(0.35, `hsla(${hue.toFixed(0)}, 80%, 78%, ${(0.3 * alpha).toFixed(3)})`);
     core.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = core;
-    ctx.fillRect(cx - scale * 0.3, cy - scale * 0.3, scale * 0.6, scale * 0.6);
+    ctx.beginPath();
+    ctx.arc(0, 0, bulge, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
     ctx.restore();
   }
 
@@ -629,21 +663,30 @@ export default class SerialOrbitScene {
       const alpha = (0.07 + near * 0.26) * (dominant ? 1 : 0.6)
         * (0.55 + Math.min(2, audio.midRel) * 0.22) * (0.25 + ease * 0.75);
       const aura = orbitAuroraEdgeOffset(this.t, index, band, frame.ratio);
+      // Perspective scale for the fringe, from the vertex's own depth.
+      const fringe = (vertex) => {
+        const depth = body.pd[vertex];
+        return depth > 0.2 ? Math.min(2.4, 2.9 / depth) : 1;
+      };
       ctx.lineWidth = (0.6 + near * 1.5) * frame.ratio * (dominant ? 1.2 : 0.85) * 0.72;
-      ctx.strokeStyle = `hsla(166, 96%, 72%, ${Math.min(0.08, alpha * 0.15).toFixed(3)})`;
+      ctx.strokeStyle = `hsla(166, 96%, 74%, ${Math.min(0.16, alpha * 0.3).toFixed(3)})`;
       ctx.beginPath();
       for (let i = from; i < to; i += 1) {
         const [a, b] = edges[this.edgeOrder[i]];
-        ctx.moveTo(body.px[a] + aura.dx, body.py[a] + aura.dy);
-        ctx.lineTo(body.px[b] + aura.dx, body.py[b] + aura.dy);
+        const fa = fringe(a);
+        const fb = fringe(b);
+        ctx.moveTo(body.px[a] + aura.dx * fa, body.py[a] + aura.dy * fa);
+        ctx.lineTo(body.px[b] + aura.dx * fb, body.py[b] + aura.dy * fb);
       }
       ctx.stroke();
-      ctx.strokeStyle = `hsla(286, 96%, 72%, ${Math.min(0.07, alpha * 0.12).toFixed(3)})`;
+      ctx.strokeStyle = `hsla(286, 96%, 74%, ${Math.min(0.14, alpha * 0.24).toFixed(3)})`;
       ctx.beginPath();
       for (let i = from; i < to; i += 1) {
         const [a, b] = edges[this.edgeOrder[i]];
-        ctx.moveTo(body.px[a] - aura.dx * 0.72, body.py[a] - aura.dy * 0.72);
-        ctx.lineTo(body.px[b] - aura.dx * 0.72, body.py[b] - aura.dy * 0.72);
+        const fa = fringe(a) * 0.72;
+        const fb = fringe(b) * 0.72;
+        ctx.moveTo(body.px[a] - aura.dx * fa, body.py[a] - aura.dy * fa);
+        ctx.lineTo(body.px[b] - aura.dx * fb, body.py[b] - aura.dy * fb);
       }
       ctx.stroke();
     }
@@ -737,7 +780,11 @@ export default class SerialOrbitScene {
       passes: 2,
     });
     if (!reduced && audio.transient > 0.3) {
-      this.rgb.apply(ctx, ctx.canvas, { amount: 0.65 * frame.ratio * audio.transient, alpha: 0.06, angle: this.t * 0.4 });
+      this.rgb.apply(ctx, ctx.canvas, {
+        amount: frame.ratio * (0.55 + audio.transient * 0.7),
+        alpha: 0.07 + audio.transient * 0.05,
+        angle: this.t * 0.4,
+      });
     }
     this.drawReadouts(frame);
   }

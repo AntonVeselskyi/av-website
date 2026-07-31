@@ -183,8 +183,8 @@ export default class CruciformScopeScene {
     const p = this.plot;
     if (this.deadChannel === 0) return;
     const count = waveform.length;
-    const step = Math.max(1, Math.round(count / (p.w / Math.max(1, frame.ratio)) / 1.5));
-    const gain = p.h * 0.34 * (1 + audio.level * 1.6);
+    const step = Math.max(2, Math.round(count / (p.w / Math.max(1, frame.ratio)) * 2.2));
+    const gain = p.h * 0.2 * (1 + audio.level * 0.9);
     const roll = this.rollOffset * p.w;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -193,8 +193,8 @@ export default class CruciformScopeScene {
     // Two passes: a wide dim core and a tight bright filament.  A single stroke
     // width is the reason the old version read as a line drawing, not a beam.
     for (let pass = 0; pass < 2; pass += 1) {
-      ctx.strokeStyle = palette.wire(pass === 0 ? alpha * 0.22 : alpha * 0.9);
-      ctx.lineWidth = (pass === 0 ? 4.2 : 1.25) * frame.ratio;
+      ctx.strokeStyle = palette.wire(pass === 0 ? alpha * 0.08 : alpha * 0.4);
+      ctx.lineWidth = (pass === 0 ? 2.4 : 0.9) * frame.ratio;
       ctx.beginPath();
       for (let i = 0, n = 0; i < count; i += step, n += 1) {
         const x = p.left + ((i / (count - 1)) * p.w + roll) % p.w;
@@ -227,7 +227,7 @@ export default class CruciformScopeScene {
     if (this.deadChannel === 1) return;
     const p = this.plot;
     const count = waveform.length;
-    const step = Math.max(1, Math.round(count / 240));
+    const step = Math.max(2, Math.round(count / 130));
 
     // The slope envelope depends entirely on how much treble is present, so it
     // is tracked and normalized out — otherwise the portrait is a flat line on
@@ -255,8 +255,8 @@ export default class CruciformScopeScene {
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     for (let pass = 0; pass < 2; pass += 1) {
-      ctx.strokeStyle = palette.violet(pass === 0 ? alpha * 0.16 : alpha * 0.72);
-      ctx.lineWidth = (pass === 0 ? 3.4 : 1) * frame.ratio;
+      ctx.strokeStyle = palette.violet(pass === 0 ? alpha * 0.05 : alpha * 0.2);
+      ctx.lineWidth = (pass === 0 ? 2 : 0.8) * frame.ratio;
       ctx.beginPath();
       for (let i = 1, n = 0; i < count - 1; i += step, n += 1) {
         const sx = (waveform[i] - 128) / 128;
@@ -492,7 +492,7 @@ export default class CruciformScopeScene {
       kit.fadeTo(ctx, width, height, palette.void, 1);
     } else {
       this.phosphor.warp(frame, {
-        zoom: 1, rot: 0, decay: 0.9 - audio.transient * 0.03,
+        zoom: 1, rot: 0, decay: 0.8 - audio.transient * 0.04,
         background: palette.void,
       });
     }
@@ -514,7 +514,7 @@ export default class CruciformScopeScene {
     this.drawReadouts(frame);
 
     this.bloom.apply(ctx, ctx.canvas, {
-      strength: 0.34 + audio.trebAtt * 0.1,
+      strength: 0.2 + Math.min(2, audio.trebAtt) * 0.05,
       blur: 13 * frame.ratio,
       passes: 2,
     });

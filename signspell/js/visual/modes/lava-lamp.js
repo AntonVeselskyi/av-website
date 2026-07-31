@@ -150,7 +150,7 @@ export default class LavaLampScene {
         const dx = o.x - b.x;
         const dy = o.y - b.y;
         const d2 = dx * dx + dy * dy + 0.02;
-        const pull = 0.0025 / d2;
+        const pull = 0.0014 / d2;
         ax += dx * pull;
         ay += dy * pull;
       }
@@ -167,18 +167,57 @@ export default class LavaLampScene {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
-      // Soft wrap with a margin, so a blob leaving one edge is already fused
-      // with the field it re-enters rather than popping into existence.
-      if (b.x < -0.25) b.x += 1.5;
-      if (b.x > 1.25) b.x -= 1.5;
-      if (b.y < -0.25) b.y += 1.5;
-      if (b.y > 1.25) b.y -= 1.5;
+      // Held on stage. A soft spring at the edges turns a blob back before it
+      // leaves, and a very weak pull toward the middle stops the whole
+      // population drifting off together and emptying the frame.
+      const edge = 0.12;
+      if (b.x < edge) b.vx += (edge - b.x) * 2.2 * dt;
+      else if (b.x > 1 - edge) b.vx -= (b.x - (1 - edge)) * 2.2 * dt;
+      if (b.y < edge) b.vy += (edge - b.y) * 2.2 * dt;
+      else if (b.y > 1 - edge) b.vy -= (b.y - (1 - edge)) * 2.2 * dt;
+      b.vx += (0.5 - b.x) * 0.09 * dt;
+      b.vy += (0.5 - b.y) * 0.09 * dt;
+      b.x = Math.min(1.06, Math.max(-0.06, b.x));
+      b.y = Math.min(1.06, Math.max(-0.06, b.y));
     }
   }
 
   // ---------------------------------------------------------------------------
   // Wax
   // ---------------------------------------------------------------------------
+
+  /**
+   * The light the wax throws into the room. Drawn under the silhouette and
+   * deliberately much wider than it, so the blobs read as lit from within
+   * rather than as flat shapes on a dark ground.
+   */
+  paintHalo(frame) {
+    const { ctx, width, height, audio } = frame;
+    const short = Math.min(width, height);
+    const count = Math.max(8, Math.round(this.blobs.length * frame.detail));
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < count; i += 1) {
+      const b = this.blobs[i];
+      const energy = frame.band(b.band);
+      const radius = b.r * (0.8 + energy * 0.38 + this.pinch * 0.14) * short * 1.2;
+      const reach = radius * (2.1 + energy * 1.1 + this.pinch * 0.5);
+      if (reach < 2) continue;
+      const x = b.x * width;
+      const y = b.y * height;
+      // Cull haloes whose blob is well outside the frame.
+      if (x < -reach || x > width + reach || y < -reach || y > height + reach) continue;
+      const heat = 0.05 + energy * 0.09 + audio.sustain * 0.05 + this.pinch * 0.03;
+      const halo = ctx.createRadialGradient(x, y, radius * 0.35, x, y, reach);
+      halo.addColorStop(0, `rgba(255, 156, 74, ${heat.toFixed(3)})`);
+      halo.addColorStop(0.34, `rgba(214, 66, 74, ${(heat * 0.5).toFixed(3)})`);
+      halo.addColorStop(0.7, `rgba(126, 40, 96, ${(heat * 0.2).toFixed(3)})`);
+      halo.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = halo;
+      ctx.fillRect(x - reach, y - reach, reach * 2, reach * 2);
+    }
+    ctx.restore();
+  }
 
   /** Sums the blob fields; the filter pass downstream turns this into wax. */
   paintField(frame) {
@@ -336,8 +375,8 @@ export default class LavaLampScene {
       ctx.clip();
 
       const glow = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, lightR);
-      glow.addColorStop(0, `rgba(255,239,174,${Math.min(0.34, pose.alpha * 1.55).toFixed(3)})`);
-      glow.addColorStop(0.28, `rgba(233,168,91,${Math.min(0.25, pose.alpha).toFixed(3)})`);
+      glow.addColorStop(0, `rgba(255,239,174,${Math.min(0.46, pose.alpha * 2).toFixed(3)})`);
+      glow.addColorStop(0.28, `rgba(233,168,91,${Math.min(0.34, pose.alpha * 1.3).toFixed(3)})`);
       glow.addColorStop(0.68, `rgba(177,140,255,${Math.min(0.12, pose.alpha * 0.52).toFixed(3)})`);
       glow.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = glow;
@@ -352,7 +391,7 @@ export default class LavaLampScene {
         const distance = radius * (0.08 + phase * 0.48);
         const alpha = Math.sin(Math.PI * phase) ** 2 * pose.alpha * 0.75;
         const moteR = Math.max(0.8, radius * (0.018 + (1 - phase) * 0.026));
-        ctx.fillStyle = `rgba(255,220,136,${Math.min(0.2, alpha).toFixed(3)})`;
+        ctx.fillStyle = `rgba(255,226,150,${Math.min(0.3, alpha * 1.5).toFixed(3)})`;
         ctx.beginPath();
         ctx.arc(Math.cos(angle) * distance, Math.sin(angle) * distance, moteR, 0, Math.PI * 2);
         ctx.fill();
@@ -394,6 +433,8 @@ export default class LavaLampScene {
     wash.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = wash;
     ctx.fillRect(0, 0, width, height);
+
+    this.paintHalo(frame);
 
     if (this.paintField(frame)) {
       this.paintWax(frame);
