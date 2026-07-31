@@ -18,14 +18,14 @@
  * including clearing or fading its own frame.
  */
 
-import * as kit from "./scene-kit.js?v=12";
-import WiredTunnelScene from "./modes/wired-tunnel.js?v=12";
-import SpectralFireScene from "./modes/spectral-fire.js?v=12";
-import CruciformScopeScene from "./modes/cruciform-scope.js?v=12";
-import WarpedShrineScene from "./modes/warped-shrine.js?v=12";
-import SerialOrbitScene from "./modes/serial-orbit.js?v=12";
-import LavaLampScene from "./modes/lava-lamp.js?v=12";
-import RoyaleFractalScene from "./modes/royale-fractal.js?v=12";
+import * as kit from "./scene-kit.js?v=13";
+import WiredTunnelScene from "./modes/wired-tunnel.js?v=13";
+import SpectralFireScene from "./modes/spectral-fire.js?v=13";
+import CruciformScopeScene from "./modes/cruciform-scope.js?v=13";
+import WarpedShrineScene from "./modes/warped-shrine.js?v=13";
+import SerialOrbitScene from "./modes/serial-orbit.js?v=13";
+import LavaLampScene from "./modes/lava-lamp.js?v=13";
+import RoyaleFractalScene from "./modes/royale-fractal.js?v=13";
 
 const MODES = Object.freeze({
   WIRED_TUNNEL: "wired-tunnel",

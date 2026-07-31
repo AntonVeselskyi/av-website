@@ -41,6 +41,13 @@ const TIER_Z = [NEAR_PLANE, 1.35, 3.4, 64];
 const TIER_ALPHA = [0.78, 0.46, 0.24];
 const TIER_WIDTH = [3.0, 1.8, 1.0];
 
+// The trunk's cross-section walks this list, holding each shape then morphing
+// to the next. 0 is round; the rest are regular polygons by side count.
+const WALL_SHAPES = [0, 4, 6, 8, 3, 0, 5];
+const SHAPE_HOLD = 9.5;       // seconds on a shape before it starts changing
+const SHAPE_MORPH = 3.5;      // seconds spent in transition
+const MAX_ROCKS = 9;
+
 const MAX_ROCKETS = 5;
 const MAX_BLASTS = 5;
 const BLAST_LIFE = 0.62;
@@ -60,6 +67,19 @@ export function wiredCorruptionProfile(corrupt = 0, turn = 0) {
     strength: Math.min(0.24, Math.max(0, Number(corrupt) || 0) * 0.18),
     slide: 0.05 + Math.min(0.08, Math.abs(Number(turn) || 0) * 0.25),
   };
+}
+
+/**
+ * Radius of a regular polygon of circumradius 1 at a given angle. `sides < 3`
+ * is the degenerate case, a circle. Blending two of these gives a cross-section
+ * that travels continuously from round to square to hexagonal without the wall
+ * ever jumping.
+ */
+function shapeRadius(theta, sides) {
+  if (sides < 3) return 1;
+  const segment = (Math.PI * 2) / sides;
+  const offset = theta - Math.floor(theta / segment) * segment - segment * 0.5;
+  return Math.cos(Math.PI / sides) / Math.cos(offset);
 }
 
 /** Allocation-free integer hash — `mulberry32` builds a closure per call. */
@@ -150,6 +170,19 @@ export default class WiredTunnelScene {
       this.rockets[i] = { live: false, z: 0, theta: 0, r: 0, speed: 0, target: 0, spin: 0 };
     }
     this.rocketCursor = 0;
+    // Rock spoil bolted to the wall, scrolling past and available to be blown
+    // off it. Seeded across the visible run so the first frame is not bare.
+    this.rocks = new Array(MAX_ROCKS);
+    for (let i = 0; i < MAX_ROCKS; i += 1) {
+      this.rocks[i] = {
+        z: 0.6 + hash01(i * 41) * 12,
+        theta: hash01(i * 41 + 1) * Math.PI * 2,
+        size: 0.05 + hash01(i * 41 + 2) * 0.09,
+        spin: (hash01(i * 41 + 3) - 0.5) * 0.8,
+        facets: 5 + Math.floor(hash01(i * 41 + 4) * 3),
+        seed: Math.floor(hash01(i * 41 + 5) * 4096),
+      };
+    }
     this.blasts = new Array(MAX_BLASTS);
     for (let i = 0; i < MAX_BLASTS; i += 1) {
       this.blasts[i] = { live: false, z: 0, theta: 0, age: 0, power: 1, seed: 0 };
@@ -169,6 +202,9 @@ export default class WiredTunnelScene {
     this.bendAmp = 0.15;
     this.lobeSpin = 0.3;
     this.lobeBlend = 0.5;
+    this.shapeIndex = 0;
+    this.shapeMix = 0;
+    this.drive = 0;       // 0 idle .. 1 genuinely intense; gates all the chaos
     this.surge = 0;
     this.turn = 0;        // signed horizontal turn rate of the axis ahead
     this.turnSmooth = 0;  // damped, drives banking and directional smear
@@ -349,6 +385,17 @@ export default class WiredTunnelScene {
 
   advanceOrdnance(frame, dt) {
     if (dt <= 0) return;
+    // Spoil scrolls toward the camera with the travel and recycles far ahead.
+    for (let i = 0; i < MAX_ROCKS; i += 1) {
+      const rock = this.rocks[i];
+      rock.z -= this.speed * dt;
+      rock.theta += rock.spin * dt * 0.12;
+      if (rock.z < NEAR_PLANE + 0.05) {
+        rock.z += this.farZ + 2;
+        rock.theta = hash01(rock.seed + this.lastBeat) * Math.PI * 2;
+        rock.size = 0.05 + hash01(rock.seed + 7) * 0.09;
+      }
+    }
     for (let i = 0; i < MAX_ROCKETS; i += 1) {
       const rocket = this.rockets[i];
       if (!rocket.live) continue;
@@ -359,7 +406,18 @@ export default class WiredTunnelScene {
       rocket.theta += rocket.spin * dt;
       if (rocket.z >= rocket.target || rocket.z > this.farZ) {
         rocket.live = false;
-        this.detonate(Math.min(rocket.z, this.farZ), rocket.theta, 0.7 + hash01(i + this.lastBeat) * 0.5);
+        const at = Math.min(rocket.z, this.farZ);
+        this.detonate(at, rocket.theta, 0.7 + hash01(i + this.lastBeat) * 0.5);
+        // Anything bolted to the wall nearby is taken off it.
+        for (let r = 0; r < MAX_ROCKS; r += 1) {
+          const rock = this.rocks[r];
+          if (Math.abs(rock.z - at) > 1.1) continue;
+          const gap = Math.abs(((rock.theta - rocket.theta + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+          if (gap > 0.9) continue;
+          this.detonate(rock.z, rock.theta, 0.5 + rock.size * 4);
+          rock.z += this.farZ * 0.6;
+          rock.size = 0.05 + hash01(rock.seed + this.lastBeat) * 0.09;
+        }
       }
     }
     for (let i = 0; i < MAX_BLASTS; i += 1) {
@@ -378,7 +436,8 @@ export default class WiredTunnelScene {
    * sits on the wall at its own depth rather than on the glass.
    */
   drawOrdnance(frame) {
-    const { ctx, palette } = frame;
+    const { ctx, palette, kit } = frame;
+    const { depthFade } = kit;
     const ratio = frame.ratio;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -412,6 +471,35 @@ export default class WiredTunnelScene {
       ctx.beginPath();
       ctx.arc(hx, hy, head, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Spoil bolted to the wall, lit by depth like everything else.
+    for (let i = 0; i < MAX_ROCKS; i += 1) {
+      const rock = this.rocks[i];
+      const fog = depthFade(rock.z, 0.4, this.farZ * 1.5);
+      if (fog <= 0.03) continue;
+      const wallX = this.bendX(rock.z + this.travel);
+      const wallY = this.bendY(rock.z + this.travel);
+      const slot = Math.round((rock.theta / (Math.PI * 2)) * SEG) % SEG;
+      const rad = this.segR[(slot + SEG) % SEG] * 0.97;
+      const rx = Math.cos(rock.theta) * rad * ASPECT_X;
+      const ry = Math.sin(rock.theta) * rad * ASPECT_Y;
+      if (!this.project(wallX + rx, wallY + ry, rock.z)) continue;
+      const px = this.projX;
+      const py = this.projY;
+      const size = Math.max(1, rock.size * this.projS * 0.5);
+      ctx.strokeStyle = palette.bone(0.1 + fog * 0.26);
+      ctx.lineWidth = Math.max(1, ratio * 0.9);
+      ctx.beginPath();
+      for (let f = 0; f <= rock.facets; f += 1) {
+        const a = (f / rock.facets) * Math.PI * 2 + rock.theta;
+        const jag = 0.62 + hash01(rock.seed + f) * 0.5;
+        const x = px + Math.cos(a) * size * jag;
+        const y = py + Math.sin(a) * size * jag;
+        if (f === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.stroke();
     }
 
     for (let i = 0; i < MAX_BLASTS; i += 1) {
@@ -497,7 +585,7 @@ export default class WiredTunnelScene {
   /** Advances every envelope, the camera and the traffic field. */
   advance(frame) {
     const { audio, kit } = frame;
-    const { clamp, approach } = kit;
+    const { clamp, approach, smoothstep } = kit;
     const reduced = frame.reducedMotion;
     const dt = reduced ? 0 : Math.min(0.05, frame.dt || 0);
     this.t = reduced ? REDUCED_T : frame.time;
@@ -529,9 +617,24 @@ export default class WiredTunnelScene {
     // Structural drift: the axis bend, its amplitude and the cross-section all
     // move on 8–30s cycles, independent of anything musical.
     this.bendPhase += dt * (0.12 + clamp(audio.midAtt, 0, 2) * 0.05);
-    this.bendAmp = approach(this.bendAmp, 0.17 + Math.abs(Math.sin(t * 0.041)) * 0.36, 0.5, dt);
+    this.bendAmp = approach(this.bendAmp, 0.09 + Math.abs(Math.sin(t * 0.041)) * 0.14 + this.drive * 0.28, 0.5, dt);
     this.lobeSpin += dt * 0.07;
     this.lobeBlend = 0.5 + Math.sin(t * 0.033) * 0.5;
+
+    // How hard the scene is allowed to misbehave. Everything that costs
+    // legibility — the bend, the banking, the smear — is scaled by this, so an
+    // idle tunnel stays a readable corridor and only loud material tears it up.
+    const intensity = clamp(clamp(audio.level, 0, 1) * 3.2 + bassAtt * 0.3 - 0.08, 0, 1);
+    this.drive = approach(this.drive, intensity, 1.6, dt);
+    const drive = this.drive;
+
+    // The cross-section holds a shape, then morphs to the next.
+    const shapeClock = t / (SHAPE_HOLD + SHAPE_MORPH);
+    this.shapeIndex = Math.floor(shapeClock);
+    const withinShape = (shapeClock - this.shapeIndex) * (SHAPE_HOLD + SHAPE_MORPH);
+    this.shapeMix = withinShape <= SHAPE_HOLD
+      ? 0
+      : smoothstep(0, 1, (withinShape - SHAPE_HOLD) / SHAPE_MORPH);
     const ahead = 2.6;
     this.turn = (this.bendX(this.travel + ahead) - this.bendX(this.travel)) / ahead;
     const climb = (this.bendY(this.travel + ahead) - this.bendY(this.travel)) / ahead;
@@ -547,7 +650,7 @@ export default class WiredTunnelScene {
     this.prevRoll = this.roll;
     const rollTarget = Math.sin(t * 0.19) * 0.075 + Math.sin(t * 0.071) * 0.045
       + (audio.stereoDrift || 0) * 0.03
-      + this.turnSmooth * 2.6                       // bank into the corner
+      + this.turnSmooth * (0.9 + this.drive * 1.9)   // bank into the corner
       + kickAmp * Math.sin(this.lastBeat * 3.7) * 0.018;
     this.roll = approach(this.roll, rollTarget, 1.4, dt);
     void climb;
@@ -603,7 +706,14 @@ export default class WiredTunnelScene {
       const breath = Math.sin(th * 3 + t * 1.6) * 0.012;
       // Line noise: with no carrier the walls still creep, so it never dies.
       const hum = this.idle > 0.02 ? (fbm(s * 0.37, t * 0.22, 2) - 0.5) * 0.05 * this.idle : 0;
-      this.segR[s] = lerp(lobeA, lobeB, this.lobeBlend) * (1 + amp * 0.17 * live + breath + hum);
+      // Shape first, then the lobes and the music ride on top of it.
+      const sidesA = WALL_SHAPES[this.shapeIndex % WALL_SHAPES.length];
+      const sidesB = WALL_SHAPES[(this.shapeIndex + 1) % WALL_SHAPES.length];
+      const twist = th + this.lobeSpin * 0.35;
+      const profile = this.shapeMix <= 0
+        ? shapeRadius(twist, sidesA)
+        : lerp(shapeRadius(twist, sidesA), shapeRadius(twist, sidesB), this.shapeMix);
+      this.segR[s] = profile * lerp(lobeA, lobeB, this.lobeBlend) * (1 + amp * 0.17 * live + breath + hum);
     }
 
     const travelMod = this.travel % RING_GAP;
@@ -666,15 +776,19 @@ export default class WiredTunnelScene {
     } else {
       // Cornering drags the accumulated frame sideways and holds it longer,
       // which is the smear you get swinging a camera through a bend.
-      const swing = clamp(Math.abs(this.turnSmooth) * 7, 0, 1);
+      // Trails and lateral drag are what cost readability, so both are bought
+      // with intensity: at rest the corridor barely smears and the geometry
+      // stays crisp; only loud material earns the long streaks.
+      const drive = this.drive;
+      const swing = clamp(Math.abs(this.turnSmooth) * 7, 0, 1) * drive;
       this.feedback.warp(frame, {
         zoom: 1.0035 + rush * 0.0085 + this.surge * 0.005,
-        rot: this.roll - this.prevRoll,   // keeps the trails aligned with roll
+        rot: (this.roll - this.prevRoll) * (0.35 + drive * 0.65),
         cx: this.vpX / width,
         cy: this.vpY / height,
-        dx: -this.turnSmooth * 0.16,
+        dx: -this.turnSmooth * 0.16 * drive,
         sx: 1 + clamp(audio.transient, 0, 1) * 0.003 + swing * 0.004,
-        decay: clamp(0.895 + clamp(audio.sustain, 0, 1) * 0.04 + swing * 0.045 - this.dropout * 0.22, 0.6, 0.965),
+        decay: clamp(0.84 + drive * 0.08 + swing * 0.03 - this.dropout * 0.22, 0.6, 0.95),
         background: palette.void,
       });
       // The zoom centre is where accumulation saturates, so that is where the
