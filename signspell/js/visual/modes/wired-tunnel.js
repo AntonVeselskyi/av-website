@@ -206,6 +206,7 @@ export default class WiredTunnelScene {
     this.shapeMix = 0;
     this.drive = 0;       // 0 idle .. 1 genuinely intense; gates all the chaos
     this.surge = 0;
+    this.thump = 0;   // fast bass-only envelope driving the feedback zoom
     this.turn = 0;        // signed horizontal turn rate of the axis ahead
     this.turnSmooth = 0;  // damped, drives banking and directional smear
     this.kick = 0;        // beat bounce, decays
@@ -601,6 +602,11 @@ export default class WiredTunnelScene {
       if (!reduced && liveBeat) this.onBeat(frame);
     }
     this.surge = Math.max(0, this.surge - dt * 1.8);
+    // The tunnel's bass response only ever arrived through `speed`, which is
+    // approached at 2.6/s — by the time it moved, the kick was already over.
+    // This is direct: instant attack on the damped low end, ~4/s release, so
+    // each kick punches the feedback recession on the frame it lands.
+    this.thump = Math.max((this.thump || 0) * Math.exp(-dt * 4.2), clamp(audio.bassAtt - 0.75, 0, 2.6) * 0.42);
     this.corrupt = Math.max(0, this.corrupt - dt * 3.2);
     this.advanceOrdnance(frame, dt);
     this.fault = Math.max(0, this.fault - dt * 0.75);
@@ -782,18 +788,19 @@ export default class WiredTunnelScene {
       const drive = this.drive;
       const swing = clamp(Math.abs(this.turnSmooth) * 7, 0, 1) * drive;
       this.feedback.warp(frame, {
-        zoom: 1.0035 + rush * 0.0085 + this.surge * 0.005,
+        zoom: 1.0035 + rush * 0.0085 + this.surge * 0.005 + this.thump * 0.02,
         rot: (this.roll - this.prevRoll) * (0.35 + drive * 0.65),
         cx: this.vpX / width,
         cy: this.vpY / height,
         dx: -this.turnSmooth * 0.16 * drive,
-        sx: 1 + clamp(audio.transient, 0, 1) * 0.003 + swing * 0.004,
-        decay: clamp(0.84 + drive * 0.08 + swing * 0.03 - this.dropout * 0.22, 0.6, 0.95),
+        sx: 1 + clamp(audio.transient, 0, 1) * 0.003 + swing * 0.004 + this.thump * 0.004,
+        sy: 1 + this.thump * 0.007,
+        decay: clamp(0.84 + drive * 0.08 + swing * 0.03 + this.thump * 0.045 - this.dropout * 0.22, 0.6, 0.96),
         background: palette.void,
       });
       // The zoom centre is where accumulation saturates, so that is where the
       // frame gets pushed back down to black.
-      darkenAt(ctx, width, height, this.vpX, this.vpY, minDim * (0.3 + rush * 0.16), 0.34 + this.surge * 0.1);
+      darkenAt(ctx, width, height, this.vpX, this.vpY, minDim * (0.3 + rush * 0.16 + this.thump * 0.09), 0.34 + this.surge * 0.1);
     }
 
     const glow = this.glow;

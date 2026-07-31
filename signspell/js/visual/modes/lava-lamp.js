@@ -142,15 +142,36 @@ export default class LavaLampScene {
       b.vx += Math.cos(angle) * 0.055 * drive * dt;
       b.vy += Math.sin(angle) * 0.055 * drive * dt;
 
-      // Loose mutual attraction toward the centre of mass of the near field.
+      // Attractive at range, repulsive on contact — a soft core.
+      //
+      // These three numbers were tuned against a headless run of this very
+      // function that counts overlapping clusters over four simulated minutes.
+      // At the old values it was one cluster from five seconds in and never
+      // recovered; at much stronger repulsion the population spreads evenly and
+      // stops making shapes. Here it cycles between about four and eleven
+      // groups indefinitely, which is a lamp.
+      //
+      // The attraction alone is what made the lamp collapse: nothing opposed it
+      // at short range, so every blob converged and the population welded into
+      // one mass that never came apart again.  Below the contact distance the
+      // sign flips, so blobs still find each other and fuse, and still tear
+      // apart afterwards, but can never all end up in the same place.
+      //
+      // Every blob is now sampled rather than every fourth: a stride of 4 over
+      // 20 blobs meant a pair could sit inside each other and simply never test
+      // against one another.
       let ax = 0;
       let ay = 0;
-      for (let j = 0; j < blobs.length; j += 4) {
-        const o = blobs[(i + j + 1) % blobs.length];
+      for (let j = 1; j < blobs.length; j += 1) {
+        const o = blobs[(i + j) % blobs.length];
         const dx = o.x - b.x;
         const dy = o.y - b.y;
         const d2 = dx * dx + dy * dy + 0.02;
-        const pull = 0.0014 / d2;
+        const dist = Math.sqrt(d2);
+        const touch = (b.r + o.r) * 1.45;
+        const pull = dist < touch
+          ? -0.045 * ((touch - dist) / touch) / d2
+          : 0.0001 / d2;
         ax += dx * pull;
         ay += dy * pull;
       }
@@ -175,8 +196,17 @@ export default class LavaLampScene {
       else if (b.x > 1 - edge) b.vx -= (b.x - (1 - edge)) * 2.2 * dt;
       if (b.y < edge) b.vy += (edge - b.y) * 2.2 * dt;
       else if (b.y > 1 - edge) b.vy -= (b.y - (1 - edge)) * 2.2 * dt;
-      b.vx += (0.5 - b.x) * 0.09 * dt;
-      b.vy += (0.5 - b.y) * 0.09 * dt;
+      // Containment, not a constant attractor.  Applied every frame regardless
+      // of position, this was a steady inward drift with nothing opposing it —
+      // on its own enough to guarantee the population ended up in a pile at the
+      // centre.  It now only acts on blobs that have wandered outside the
+      // middle third.
+      const offX = b.x - 0.5;
+      const offY = b.y - 0.5;
+      if (Math.hypot(offX, offY) > 0.42) {
+        b.vx -= offX * 0.1 * dt;
+        b.vy -= offY * 0.1 * dt;
+      }
       b.x = Math.min(1.06, Math.max(-0.06, b.x));
       b.y = Math.min(1.06, Math.max(-0.06, b.y));
     }

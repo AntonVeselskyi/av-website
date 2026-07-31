@@ -109,8 +109,8 @@ export default class CruciformScopeScene {
     this.plot = { left, right, top, bottom, w, h, cx: (left + right) / 2, cy: (top + bottom) / 2 };
 
     // Minor ticks: one path for the whole lattice.
-    ctx.strokeStyle = palette.wire(0.075);
-    ctx.lineWidth = Math.max(1, ratio * 0.7);
+    ctx.strokeStyle = palette.wire(0.17);
+    ctx.lineWidth = Math.max(1, ratio * 1.05);
     ctx.beginPath();
     for (let i = 0; i <= DIV_X * 5; i += 1) {
       const x = left + (i / (DIV_X * 5)) * w;
@@ -125,8 +125,8 @@ export default class CruciformScopeScene {
     ctx.stroke();
 
     // Major divisions.
-    ctx.strokeStyle = palette.wire(0.13);
-    ctx.lineWidth = Math.max(1, ratio * 0.8);
+    ctx.strokeStyle = palette.wire(0.32);
+    ctx.lineWidth = Math.max(1, ratio * 1.25);
     ctx.beginPath();
     for (let i = 1; i < DIV_X; i += 1) {
       const x = left + (i / DIV_X) * w;
@@ -139,8 +139,8 @@ export default class CruciformScopeScene {
     ctx.stroke();
 
     // Datum axes and the screen border.
-    ctx.strokeStyle = palette.wire(0.3);
-    ctx.lineWidth = Math.max(1, ratio);
+    ctx.strokeStyle = palette.wire(0.58);
+    ctx.lineWidth = Math.max(1, ratio * 1.6);
     ctx.beginPath();
     ctx.moveTo(left, this.plot.cy); ctx.lineTo(right, this.plot.cy);
     ctx.moveTo(this.plot.cx, top); ctx.lineTo(this.plot.cx, bottom);
@@ -148,8 +148,8 @@ export default class CruciformScopeScene {
     ctx.stroke();
 
     // Corner brackets — the surveillance landmark, printed on the glass.
-    ctx.strokeStyle = palette.wire(0.34);
-    ctx.lineWidth = Math.max(1, ratio * 1.4);
+    ctx.strokeStyle = palette.wire(0.52);
+    ctx.lineWidth = Math.max(1, ratio * 1.8);
     const arm = Math.min(w, h) * 0.05;
     ctx.beginPath();
     for (const [x, y, sx, sy] of [
@@ -190,11 +190,19 @@ export default class CruciformScopeScene {
     ctx.globalCompositeOperation = "lighter";
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    // Two passes: a wide dim core and a tight bright filament.  A single stroke
-    // width is the reason the old version read as a line drawing, not a beam.
-    for (let pass = 0; pass < 2; pass += 1) {
-      ctx.strokeStyle = palette.wire(pass === 0 ? alpha * 0.08 : alpha * 0.4);
-      ctx.lineWidth = (pass === 0 ? 2.4 : 0.9) * frame.ratio;
+    // Three passes — a wide halo, a body, and a hot filament — rather than two
+    // thin ones. A phosphor beam is mostly bloom; at 0.08 and 0.4 this read as
+    // a pen plot of the signal instead of something glowing on a tube.
+    //
+    // `flare` is the beat: a CRT beam brightens and thickens when it is driven
+    // harder, so the green takes the hit rather than holding one level.
+    const flare = kit.clamp(audio.beat, 0, 1) * 0.85 + kit.clamp(audio.trebAtt - 0.6, 0, 2) * 0.3;
+    const bloom = 1 + flare * 0.9;
+    for (let pass = 0; pass < 3; pass += 1) {
+      const weight = pass === 0 ? alpha * 0.16 : pass === 1 ? alpha * 0.42 : alpha * 0.95;
+      const width = pass === 0 ? 6.5 : pass === 1 ? 2.6 : 1;
+      ctx.strokeStyle = palette.wire(Math.min(1, weight * bloom));
+      ctx.lineWidth = width * frame.ratio * (pass === 2 ? 1 : bloom);
       ctx.beginPath();
       for (let i = 0, n = 0; i < count; i += step, n += 1) {
         const x = p.left + ((i / (count - 1)) * p.w + roll) % p.w;
@@ -204,7 +212,6 @@ export default class CruciformScopeScene {
       ctx.stroke();
     }
     ctx.restore();
-    void kit;
   }
 
   /**
@@ -358,12 +365,20 @@ export default class CruciformScopeScene {
     const { ctx, palette, audio, kit } = frame;
     const p = this.plot;
     const scale = Math.min(p.w, p.h);
-    const breath = frame.reducedMotion ? 1 : 1 + Math.sin(this.t * 0.42) * 0.012 + audio.bassAtt * 0.016;
+    // The monument used to breathe only on `sustain` and a slow sine, which
+    // swells but never strikes. `throb` is the onset envelope plus the damped
+    // low end, so the cross takes the hit and relaxes off it.
+    const throb = frame.reducedMotion
+      ? 0
+      : kit.clamp(audio.beat, 0, 1) * 0.7 + kit.clamp(audio.bassAtt - 0.7, 0, 2) * 0.42;
+    const breath = frame.reducedMotion
+      ? 1
+      : 1 + Math.sin(this.t * 0.42) * 0.012 + audio.bassAtt * 0.016 + throb * 0.045;
     const armH = scale * 0.34 * breath;   // half-height of the vertical
     const armW = scale * 0.17 * breath;   // half-width of the crossbar
     const thick = scale * 0.026;
     const crossY = p.cy - armH * 0.28;
-    const glow = 0.28 + audio.sustain * 0.5;
+    const glow = 0.28 + audio.sustain * 0.5 + throb * 0.55;
 
     ctx.save();
     ctx.translate(p.cx, p.cy);
@@ -372,8 +387,8 @@ export default class CruciformScopeScene {
 
     // Halo behind the monument.
     const halo = ctx.createRadialGradient(p.cx, crossY, 0, p.cx, crossY, scale * 0.42);
-    halo.addColorStop(0, palette.violet(0.1 + audio.sustain * 0.12));
-    halo.addColorStop(0.5, palette.violet(0.035));
+    halo.addColorStop(0, palette.violet(0.1 + audio.sustain * 0.12 + throb * 0.3));
+    halo.addColorStop(0.5, palette.violet(0.035 + throb * 0.09));
     halo.addColorStop(1, "rgba(0,0,0,0)");
     ctx.globalCompositeOperation = "lighter";
     ctx.fillStyle = halo;
@@ -397,7 +412,7 @@ export default class CruciformScopeScene {
     };
 
     // Mass, then the bevel line inside it, then the bright contour.
-    ctx.fillStyle = palette.violet(0.06 + audio.sustain * 0.05);
+    ctx.fillStyle = palette.violet(0.06 + audio.sustain * 0.05 + throb * 0.12);
     outline(0);
     ctx.fill();
     ctx.strokeStyle = palette.violet(glow * 0.4);
