@@ -18,13 +18,13 @@
  * including clearing or fading its own frame.
  */
 
-import * as kit from "./scene-kit.js";
-import WiredTunnelScene from "./modes/wired-tunnel.js";
-import SpectralFireScene from "./modes/spectral-fire.js";
-import CruciformScopeScene from "./modes/cruciform-scope.js";
-import WarpedShrineScene from "./modes/warped-shrine.js";
-import SerialOrbitScene from "./modes/serial-orbit.js";
-import LavaLampScene from "./modes/lava-lamp.js";
+import * as kit from "./scene-kit.js?v=5";
+import WiredTunnelScene from "./modes/wired-tunnel.js?v=5";
+import SpectralFireScene from "./modes/spectral-fire.js?v=5";
+import CruciformScopeScene from "./modes/cruciform-scope.js?v=5";
+import WarpedShrineScene from "./modes/warped-shrine.js?v=5";
+import SerialOrbitScene from "./modes/serial-orbit.js?v=5";
+import LavaLampScene from "./modes/lava-lamp.js?v=5";
 
 const MODES = Object.freeze({
   WIRED_TUNNEL: "wired-tunnel",
@@ -443,7 +443,13 @@ export class SpellVisualizer {
   draw(timestamp) {
     if (!this.running || !this.context) return;
     const started = performance.now();
-    const delta = Math.min(0.08, (timestamp - this.lastTimestamp || 16.7) / 1000);
+    // Clamped at BOTH ends. A backwards timestamp — a resumed tab, a clock
+    // adjustment, a caller driving frames out of order — yields a negative
+    // delta, which inverts every `1 - exp(-delta / tau)` smoothing coefficient
+    // and makes the followers diverge away from their target instead of toward
+    // it. That runs the normalized measures off to absurd values within a few
+    // frames and takes the scenes down with it.
+    const delta = clamp((timestamp - this.lastTimestamp || 16.7) / 1000, 0, 0.08);
     this.lastTimestamp = timestamp;
     if (!this.reducedMotion) this.phase += delta;
     else this.phase += delta * 0.12;

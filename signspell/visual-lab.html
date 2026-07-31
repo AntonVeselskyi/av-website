@@ -57,7 +57,10 @@
   <p class="lab-note">Local development harness. Not linked from the instrument and not part of the shipped flow.</p>
 
   <script type="module">
-    import { createSpellVisualizer } from "./js/visual/visualizer.js";
+    // Dev harness: always fetch a fresh module graph. Without the buster the
+    // browser happily serves a cached visualizer.js, which then pulls in the
+    // module URLs *it* was built against, and edits appear to have no effect.
+    const { createSpellVisualizer } = await import(`./js/visual/visualizer.js?dev=${Date.now()}`);
 
     const grid = document.getElementById("lab-grid");
     const readout = document.getElementById("lab-readout");
