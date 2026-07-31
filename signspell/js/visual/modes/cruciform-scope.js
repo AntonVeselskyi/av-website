@@ -190,11 +190,19 @@ export default class CruciformScopeScene {
     ctx.globalCompositeOperation = "lighter";
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    // Two passes: a wide dim core and a tight bright filament.  A single stroke
-    // width is the reason the old version read as a line drawing, not a beam.
-    for (let pass = 0; pass < 2; pass += 1) {
-      ctx.strokeStyle = palette.wire(pass === 0 ? alpha * 0.08 : alpha * 0.4);
-      ctx.lineWidth = (pass === 0 ? 2.4 : 0.9) * frame.ratio;
+    // Three passes — a wide halo, a body, and a hot filament — rather than two
+    // thin ones. A phosphor beam is mostly bloom; at 0.08 and 0.4 this read as
+    // a pen plot of the signal instead of something glowing on a tube.
+    //
+    // `flare` is the beat: a CRT beam brightens and thickens when it is driven
+    // harder, so the green takes the hit rather than holding one level.
+    const flare = kit.clamp(audio.beat, 0, 1) * 0.85 + kit.clamp(audio.trebAtt - 0.6, 0, 2) * 0.3;
+    const bloom = 1 + flare * 0.9;
+    for (let pass = 0; pass < 3; pass += 1) {
+      const weight = pass === 0 ? alpha * 0.16 : pass === 1 ? alpha * 0.42 : alpha * 0.95;
+      const width = pass === 0 ? 6.5 : pass === 1 ? 2.6 : 1;
+      ctx.strokeStyle = palette.wire(Math.min(1, weight * bloom));
+      ctx.lineWidth = width * frame.ratio * (pass === 2 ? 1 : bloom);
       ctx.beginPath();
       for (let i = 0, n = 0; i < count; i += step, n += 1) {
         const x = p.left + ((i / (count - 1)) * p.w + roll) % p.w;
@@ -204,7 +212,6 @@ export default class CruciformScopeScene {
       ctx.stroke();
     }
     ctx.restore();
-    void kit;
   }
 
   /**

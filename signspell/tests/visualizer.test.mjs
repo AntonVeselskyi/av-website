@@ -12,6 +12,7 @@ import {
   orbitAuroraEdgeOffset,
   orbitAuroraPoint,
   orbitAuroraSegmentCount,
+  orbitBodyTravel,
   orbitZoomCycle,
 } from "../js/visual/modes/serial-orbit.js";
 import {
@@ -100,6 +101,24 @@ test("a departing crow closes on the camera and fades at both ends", () => {
   assert.ok(crowFlight(0.5).lift > 0);
   // Wingbeats only ever accumulate; a flap phase that rewinds reads as a stall.
   assert.ok(crowFlight(0.8).flap > crowFlight(0.2).flap);
+});
+
+test("orbit solids fade in and out of the corridor rather than popping", () => {
+  // The recycling point and the spawn point must both be fully invisible, or
+  // the swap that happens there is a solid blinking out of existence.
+  assert.equal(orbitBodyTravel(0.5).alpha, 0);
+  assert.equal(orbitBodyTravel(10.5).alpha, 0);
+  assert.equal(orbitBodyTravel(0.2).alpha, 0, "past the camera stays gone");
+  assert.equal(orbitBodyTravel(12).alpha, 0, "behind the spawn plane stays gone");
+  // Mid-corridor it is fully present.
+  assert.ok(orbitBodyTravel(5).alpha > 0.99);
+  // And both ends ramp rather than step.
+  assert.ok(orbitBodyTravel(9.6).alpha > 0 && orbitBodyTravel(9.6).alpha < 1);
+  assert.ok(orbitBodyTravel(1.2).alpha > 0 && orbitBodyTravel(1.2).alpha < 1);
+  // Progress runs from nothing at the far plane to one as it sweeps past.
+  assert.equal(orbitBodyTravel(10.5).progress, 0);
+  assert.equal(orbitBodyTravel(0.5).progress, 1);
+  assert.ok(orbitBodyTravel(3).progress > orbitBodyTravel(8).progress);
 });
 
 test("orbit galaxy shells continuously recede and fade before recycling", () => {

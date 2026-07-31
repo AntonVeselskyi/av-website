@@ -108,6 +108,29 @@ const GALAXY_SHELLS = 3;
  * without anything popping. Feeding it negative travel runs the cycle the
  * other way, so the shells grow toward the camera instead of receding.
  */
+// The corridor the solids travel down, in world units. They are spawned at
+// BODY_Z_FAR, stream toward the camera, and are recycled once past BODY_Z_NEAR.
+const BODY_Z_FAR = 10.5;
+const BODY_Z_NEAR = 0.5;
+
+/**
+ * How visible a solid is at a given depth, and how far along its run it is.
+ *
+ * Nothing may ever pop. A solid fades up out of the far dark, holds through the
+ * middle of the corridor, and fades out as it sweeps past the camera — so by
+ * the moment it is recycled and handed a new shape it is already invisible and
+ * the swap cannot be seen. That fade is the whole trick behind flying past
+ * them: the travel is continuous, and the recycling rides for free.
+ */
+export function orbitBodyTravel(z) {
+  const span = BODY_Z_FAR - BODY_Z_NEAR;
+  const progress = Math.min(1, Math.max(0, (BODY_Z_FAR - z) / span));
+  const rise = Math.min(1, Math.max(0, (BODY_Z_FAR - z) / 2.6));
+  const pass = Math.min(1, Math.max(0, (z - BODY_Z_NEAR) / 1.5));
+  const smooth = (t) => t * t * (3 - 2 * t);
+  return { progress, alpha: smooth(rise) * smooth(pass) };
+}
+
 export function orbitZoomCycle(beatTravel, offset = 0) {
   const phase = ((beatTravel / 8 + offset) % 1 + 1) % 1;
   return {
@@ -218,8 +241,9 @@ export default class SerialOrbitScene {
       py: new Float32Array(MAX_VERTS),
       pd: new Float32Array(MAX_VERTS),
       pok: new Uint8Array(MAX_VERTS),
-      enter: 1,
-      entryAngle: hash01(index * 29) * Math.PI * 2,
+      // Spread down the corridor at the start, so the opening seconds are
+      // already mid-flight rather than a formation arriving together.
+      z: BODY_Z_NEAR + ((index + 0.5) / SOLIDS.length) * (BODY_Z_FAR - BODY_Z_NEAR),
       shape: index,
     }));
     // Edge draw order, rebuilt per body per frame without allocating.
@@ -268,17 +292,31 @@ export default class SerialOrbitScene {
       for (let x = 0; x < NEBULA_W; x += 1, o += 4) {
         const u = x / NEBULA_W;
         const v = y / NEBULA_H;
-        const cloud = kit.fbm(u * 3.1 + drift, v * 3.1 - drift * 0.6, 4);
-        const veil = kit.fbm(u * 6.4 - drift * 1.7, v * 6.4 + drift, 3);
-        const density = Math.max(0, cloud * 0.82 + veil * 0.46 - 0.44);
+        // Six octaves rather than four, so the banks carry structure at every
+        // scale instead of reading as one soft smudge.
+        const cloud = kit.fbm(u * 2.4 + drift, v * 2.4 - drift * 0.6, 6);
+        const veil = kit.fbm(u * 5.8 - drift * 1.7, v * 5.8 + drift, 4);
+        const mist = kit.fbm(u * 11.5 + drift * 2.3, v * 11.5 - drift * 1.1, 3);
+        // Pushed to the sides. The middle of the frame belongs to the galaxy
+        // and the solids coming at us; the gas banks up the left and right
+        // edges and thins toward the axis, which is what gives the corridor
+        // walls and makes the flight read as going *through* something.
+        const flank = Math.pow(Math.abs(u - 0.5) * 2, 1.45);
+        // A low floor in the middle, banked hard at the edges. The galaxy and
+        // the oncoming solids own the centre of the frame; the gas is the wall
+        // of the corridor, not a veil over the whole thing.
+        const wall = 0.12 + flank * 1.85;
+        const density = Math.max(0, (cloud * 0.86 + veil * 0.4 - 0.42) * wall);
         // A gentler exponent than a square keeps the faint outer gas visible
         // instead of crushing the whole field to nothing.
-        const glow = Math.pow(density, 1.5) * 1.2;
-        // Violet gas with a green ionisation front where it is densest.
-        data[o] = Math.min(255, glow * 88 + veil * 8);
-        data[o + 1] = Math.min(255, glow * 44 + density * 30 * (0.4 + heat));
-        data[o + 2] = Math.min(255, glow * 146 + veil * 14);
-        data[o + 3] = Math.min(255, glow * 152);
+        const glow = Math.pow(density, 1.35) * 2.1;
+        const haze = mist * density * 0.9;
+        // Violet gas with a green ionisation front where it is densest, and a
+        // warm rim where the thin mist catches the light.
+        data[o] = Math.min(255, glow * 104 + veil * 14 + haze * 46);
+        data[o + 1] = Math.min(255, glow * 52 + density * 38 * (0.4 + heat) + haze * 20);
+        data[o + 2] = Math.min(255, glow * 176 + veil * 22 + haze * 30);
+        data[o + 3] = Math.min(255, glow * 205);
       }
     }
     this.nebulaCtx.putImageData(this.nebulaImage, 0, 0);
@@ -345,8 +383,27 @@ export default class SerialOrbitScene {
         + Math.log(Math.max(0.12, r)) * wind + drift
         + spin * this.t * omega * 0.16 + this.gj[i] * 0.42;
       const rr = r * scale;
-      const gx = Math.cos(angle) * rr;
-      const gy = Math.sin(angle) * rr * tilt;
+      let gx = Math.cos(angle) * rr;
+      let gy = Math.sin(angle) * rr * tilt;
+
+      // Fractal opening. The same log-spiral rule is applied again at half the
+      // scale and twice the winding, and another octave engages each time the
+      // shell gets appreciably nearer — so an arm that read as one smooth band
+      // from a distance resolves into sub-arms, then into clumps within those,
+      // as you fall into it. Detail keeps arriving instead of the same picture
+      // being magnified, which is the whole reason to zoom forever.
+      const octaves = 1 + Math.floor(nearness * 3.4);
+      let amp = 0.15;
+      let wind2 = wind * 2.1;
+      for (let o = 0; o < octaves; o += 1) {
+        const sub = angle * 2 + Math.log(Math.max(0.12, r)) * wind2
+          + this.gj[i] * 3.1 + spin * this.t * 0.09 * (o + 1);
+        gx += Math.cos(sub) * rr * amp;
+        gy += Math.sin(sub) * rr * amp * tilt;
+        amp *= 0.52;
+        wind2 *= 2.3;
+      }
+
       const x = cx + gx * rollCos - gy * rollSin;
       const y = cy + gx * rollSin + gy * rollCos;
       const bright = (1 - r / 1.1) * (0.5 + Math.min(2, audio.trebRel) * 0.22) * alpha;
@@ -520,21 +577,18 @@ export default class SerialOrbitScene {
     const verts = geometry.v;
     const dominant = index === this.dominant;
 
-    // Travel along its own inclined orbit rather than sitting at the centre.
+    // The solid is somewhere down the corridor, coming at us. It still circles
+    // the galaxy's axis while it travels, so it reads as something in orbit
+    // that we are overhauling rather than as scenery on a conveyor.
+    const travel = orbitBodyTravel(body.z);
+    if (travel.alpha <= 0.002) return;
     const orbit = body.orbitPhase + this.t * body.orbitSpeed * this.axisFlip;
-    let ox = Math.cos(orbit) * body.orbitR;
-    let oy = Math.sin(orbit) * body.orbitR * 0.36;
-    let oz = 2.9 + Math.sin(orbit * 0.7 + body.tilt) * 0.85;
-
-    // Arrivals slide in from outside the frame and settle onto the orbit.
-    // A solid that simply switches shape in place reads as a glitch.
-    const ease = body.enter * body.enter * (3 - 2 * body.enter);
-    if (ease < 0.999) {
-      const far = 4.4;
-      ox = kit.lerp(Math.cos(body.entryAngle) * far, ox, ease);
-      oy = kit.lerp(Math.sin(body.entryAngle) * far * 0.6, oy, ease);
-      oz = kit.lerp(oz + 5.5, oz, ease);
-    }
+    // Lateral spread opens up as it nears, which is the parallax that sells
+    // passing something rather than watching it shrink.
+    const swing = body.orbitR * (0.42 + travel.progress * 0.85);
+    const ox = Math.cos(orbit) * swing;
+    const oy = Math.sin(orbit) * swing * 0.36 + Math.sin(orbit * 0.7 + body.tilt) * 0.12;
+    const oz = body.z;
 
     const pitch = body.phase[0] + this.t * body.spin[0] * this.axisFlip;
     const yaw = body.phase[1] + this.t * body.spin[1];
@@ -561,6 +615,9 @@ export default class SerialOrbitScene {
     // for free, with no need for a transformed normal.
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
+    // Everything the body draws is scaled by its corridor fade, so it can never
+    // appear or vanish — it arrives out of the dark and dissolves as it passes.
+    ctx.globalAlpha = travel.alpha;
     const faceAlpha = (dominant ? 0.05 : 0.03) + audio.sustain * 0.05;
     ctx.fillStyle = index % 2 ? palette.violet(faceAlpha) : palette.wire(faceAlpha * 0.8);
     for (const face of geometry.f) {
@@ -609,8 +666,10 @@ export default class SerialOrbitScene {
       const to = Math.floor(((band + 1) / 3) * live);
       if (to <= from) continue;
       const near = band / 2;
+      // No fade factor here: ctx.globalAlpha already carries the corridor fade
+      // for the whole body, and applying it twice would square it.
       const alpha = (0.07 + near * 0.26) * (dominant ? 1 : 0.6)
-        * (0.55 + Math.min(2, audio.midRel) * 0.22) * (0.25 + ease * 0.75);
+        * (0.55 + Math.min(2, audio.midRel) * 0.22);
       ctx.strokeStyle = `hsla(${hue.toFixed(0)}, 92%, ${(62 + near * 16).toFixed(0)}%, ${Math.min(0.85, alpha).toFixed(3)})`;
       ctx.lineWidth = (0.6 + near * 1.5) * frame.ratio * (dominant ? 1.2 : 0.85);
       ctx.beginPath();
@@ -643,6 +702,8 @@ export default class SerialOrbitScene {
    */
   drawBodyAura(frame, body, index) {
     const { ctx, audio } = frame;
+    const travel = orbitBodyTravel(body.z);
+    if (travel.alpha <= 0.002) return;
     const edges = body.geometry.e;
     const dominant = index === this.dominant;
     let live = 0;
@@ -665,7 +726,8 @@ export default class SerialOrbitScene {
       this.edgeOrder[j + 1] = oi;
       this.edgeDepth[j + 1] = od;
     }
-    const ease = body.enter * body.enter * (3 - 2 * body.enter);
+    // Was body.enter, the old slide-in easing. The corridor fade replaces it.
+    const ease = travel.alpha;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     for (let band = 0; band < 3; band += 1) {
@@ -718,7 +780,20 @@ export default class SerialOrbitScene {
       this.t += dt;
       // Tempo drives the fall, so the zoom keeps time with the music.
       this.galaxyTravel += dt * (frame.bpm || 120) / 60;
-      for (const body of this.bodies) body.enter = Math.min(1, body.enter + dt / 1.7);
+      // Fly the corridor. Bass leans on the throttle, so the pack sweeps past
+      // faster when the track drives.
+      const closing = dt * (1.15 + kit.clamp(audio.bassAtt, 0, 2.4) * 0.75);
+      for (const body of this.bodies) {
+        body.z -= closing;
+        if (body.z > BODY_Z_NEAR) continue;
+        // Overrun. Send it round to the far end with a new shape and a new
+        // slot on the axis — invisible, because it is fully faded out here.
+        body.z += BODY_Z_FAR - BODY_Z_NEAR;
+        body.shape = Math.floor(hash01(this.channel * 31 + body.band * 97 + this.t) * SOLIDS.length) % SOLIDS.length;
+        body.geometry = SOLIDS[body.shape];
+        body.orbitPhase = hash01(this.t * 13 + body.band * 7) * Math.PI * 2;
+        body.orbitR = 0.45 + hash01(this.t * 17 + body.band * 11) * 1.5;
+      }
     }
 
     // Reconfigure on a musical boundary rather than a timer.
@@ -728,12 +803,10 @@ export default class SerialOrbitScene {
         this.dominant = (this.dominant + 1) % this.bodies.length;
         this.axisFlip = -this.axisFlip;
         this.channel = (this.channel + 1) % 999;
-        // Retire the body furthest along and fly a different solid in behind it.
-        const swap = this.bodies[(this.dominant + 2) % this.bodies.length];
-        swap.shape = (swap.shape + 1 + Math.floor(hash01(audio.beatCount) * 2)) % SOLIDS.length;
-        swap.geometry = SOLIDS[swap.shape];
-        swap.entryAngle = hash01(audio.beatCount * 7 + 3) * Math.PI * 2;
-        swap.enter = 0;
+        // Shapes are no longer swapped on the beat. Doing it here reset a solid
+        // that was in full view, which is exactly the disappearing the corridor
+        // exists to prevent — replacement now only happens at the far end,
+        // behind the fade.
       }
     }
 
@@ -743,7 +816,10 @@ export default class SerialOrbitScene {
     if (this.nebula.canvas && this.nebula.width > 1) {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.42;
+      // The gas was being laid in at 0.42 and then buried under everything
+      // else. It is the backdrop the whole flight happens inside, so it gets
+      // to be visible, and it breathes on the sustained energy.
+      ctx.globalAlpha = 0.7 + Math.min(1, audio.sustain * 2) * 0.14;
       ctx.drawImage(this.nebula.canvas, 0, 0, width, height);
       ctx.restore();
     }
