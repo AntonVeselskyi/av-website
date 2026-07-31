@@ -42,6 +42,47 @@ function hash01(n) {
 }
 
 /**
+ * Continuous suit identity along the logarithmic descent. At integer ring
+ * boundaries the outgoing suit has fully become the incoming one, so wrapping
+ * the Droste stack cannot replace the whole field in a single frame.
+ */
+export function royaleSuitTransition(level) {
+  const base = Math.floor(level);
+  const phase = level - base;
+  const mix = phase * phase * phase * (phase * (phase * 6 - 15) + 10);
+  const modulo = (value) => ((value % 4) + 4) % 4;
+  return {
+    from: modulo(base),
+    to: modulo(base + 1),
+    fromAlpha: 1 - mix,
+    toAlpha: mix,
+    warp: Math.sin(Math.PI * phase),
+  };
+}
+
+/** Keeps ring ornament identity attached to geometry when the stack wraps. */
+export function royaleRingIdentity(cycle, ring) {
+  const logical = ring - cycle;
+  return ((logical % 4096) + 4096) % 4096;
+}
+
+/** Continuous audio-band and rotation assignment for a travelling ring. */
+export function royaleRingStyle(level, ringCount = RINGS) {
+  const transition = royaleSuitTransition(level);
+  const spinAt = (index) => {
+    const direction = ((index % 2) + 2) % 2 ? -1 : 1;
+    const family = ((index % 3) + 3) % 3;
+    return direction * (0.4 + family * 0.22);
+  };
+  const denominator = Math.max(1, ringCount - 1);
+  return {
+    bandPosition: Math.min(0.85, Math.max(0, (level / denominator) * 0.85)),
+    spinCoefficient: spinAt(Math.floor(level)) * transition.fromAlpha
+      + spinAt(Math.floor(level) + 1) * transition.toAlpha,
+  };
+}
+
+/**
  * The four suits as unit paths centred on the origin, roughly 2 units across.
  * Built from the same primitives a card printer would use: a heart is two arcs
  * meeting at a point, a spade is that inverted with a stem, a club is three
@@ -110,6 +151,7 @@ export default class RoyaleFractalScene {
     this.suits = buildSuits();
     this.bloom = new kit.Bloom({ scale: 0.3 });
     this.feedback = new kit.FeedbackWarp({ scale: 0.55 });
+    this.suitLayer = new kit.Layer({ scale: 1 });
 
     this.phase = 0;        // 0..1 within one ring-to-ring descent
     this.cycle = 0;        // how many rings have passed the camera
@@ -249,6 +291,15 @@ export default class RoyaleFractalScene {
     const detail = frame.detail;
     const suitsPerRing = Math.max(5, Math.round(SUITS_PER_RING * detail));
     const maxR = Math.hypot(cx, cy) * 1.15;
+    const layer = this.suitLayer;
+    layer.match(frame.width, frame.height);
+    layer.clear();
+    const incoming = layer.ctx;
+    if (incoming) {
+      incoming.setTransform(1, 0, 0, 1, 0, 0);
+      incoming.globalAlpha = 1;
+      incoming.globalCompositeOperation = "source-over";
+    }
 
     for (let ring = 0; ring < RINGS; ring += 1) {
       // Continuous level: the ring index plus the sub-ring descent. As `phase`
@@ -263,22 +314,29 @@ export default class RoyaleFractalScene {
       const presence = Math.min(near, far);
       if (presence <= 0.02) continue;
 
-      const cycleIndex = this.cycle + ring;
-      const suitIndex = cycleIndex % 4;
-      const band = frame.band((ring / RINGS) * 0.85);
-      const spinDir = ring % 2 ? -1 : 1;
-      const ringSpin = this.spin * spinDir * (0.4 + (ring % 3) * 0.22);
+      const cycleIndex = royaleRingIdentity(this.cycle, ring);
+      const transition = royaleSuitTransition(level);
+      const ringStyle = royaleRingStyle(level);
+      const band = frame.band(ringStyle.bandPosition);
+      const ringSpin = this.spin * ringStyle.spinCoefficient;
       const size = radius * 0.22 * (0.86 + band * 0.26 + this.deal * 0.07);
 
       this.drawGuilloche(frame, cx, cy, radius, presence * (0.05 + band * 0.13), cycleIndex);
 
       // Red suits are blood, black suits are bone-on-void so they stay legible
       // against the dark; gold is reserved for the ornament.
-      const red = suitIndex === 1 || suitIndex === 2;
       const lift = presence * (0.16 + band * 0.32 + this.deal * 0.1);
-      const fill = red ? palette.blood(Math.min(0.55, lift)) : palette.bone(Math.min(0.4, lift * 0.66));
-      const edge = red ? palette.amber(presence * 0.24) : palette.violet(presence * 0.2);
       const depth = detail > 0.8 && radius > short * 0.12 ? 1 : 0;
+
+      const paint = (suitIndex) => {
+        const red = suitIndex === 1 || suitIndex === 2;
+        return {
+          fill: red ? palette.blood(Math.min(0.55, lift)) : palette.bone(Math.min(0.4, lift * 0.66)),
+          edge: red ? palette.amber(presence * 0.24) : palette.violet(presence * 0.2),
+        };
+      };
+      const fromPaint = paint(transition.from);
+      const toPaint = paint(transition.to);
 
       for (let i = 0; i < suitsPerRing; i += 1) {
         const a = (i / suitsPerRing) * Math.PI * 2 + ringSpin;
@@ -288,10 +346,50 @@ export default class RoyaleFractalScene {
         if (x < -size * 2 || x > frame.width + size * 2 || y < -size * 2 || y > frame.height + size * 2) continue;
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(a + Math.PI * 0.5 + Math.sin(this.t * 0.4 + i) * 0.05);
-        this.stampSuit(ctx, suitIndex, size, depth, frame, fill, edge);
+        const baseRotation = a + Math.PI * 0.5 + Math.sin(this.t * 0.4 + i) * 0.05;
+        const chroma = transition.warp * (0.08 + band * 0.1);
+
+        // A low-opacity chromatic echo blooms only while identities overlap.
+        // It makes the morph feel hallucinatory without smearing the stable
+        // parts of the descent or introducing random one-frame discontinuity.
+        if (incoming && transition.warp > 0.03 && (detail > 0.72 || ((i + ring) & 1) === 0)) {
+          incoming.save();
+          incoming.translate(x, y);
+          incoming.globalCompositeOperation = "lighter";
+          incoming.globalAlpha = transition.warp * presence * 0.2;
+          incoming.rotate(baseRotation + chroma * 1.7);
+          incoming.scale(1 + chroma * 1.8, 1 - chroma * 0.55);
+          this.stampSuit(incoming, transition.to, size * 1.06, 0, frame, palette.violet(0.2), palette.wire(0.28));
+          incoming.restore();
+        }
+
+        if (transition.fromAlpha > 0.004) {
+          ctx.save();
+          ctx.globalAlpha = transition.fromAlpha;
+          ctx.rotate(baseRotation - chroma * 0.75);
+          ctx.scale(1 + chroma * 0.7, 1 - chroma * 0.24);
+          this.stampSuit(ctx, transition.from, size * (1 + transition.warp * 0.08), depth, frame, fromPaint.fill, fromPaint.edge);
+          ctx.restore();
+        }
+        if (incoming && transition.toAlpha > 0.004) {
+          incoming.save();
+          incoming.translate(x, y);
+          incoming.globalAlpha = transition.toAlpha;
+          incoming.rotate(baseRotation + chroma * 0.9);
+          incoming.scale(1 - chroma * 0.32, 1 + chroma * 0.82);
+          this.stampSuit(incoming, transition.to, size * (0.9 + transition.toAlpha * 0.1), depth, frame, toPaint.fill, toPaint.edge);
+          incoming.restore();
+        }
         ctx.restore();
       }
+    }
+    if (incoming) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.drawImage(layer.canvas, 0, 0, frame.width, frame.height);
+      ctx.restore();
     }
     void audio;
   }
@@ -336,5 +434,6 @@ export default class RoyaleFractalScene {
   suspend() {
     this.bloom.release();
     this.feedback.release();
+    this.suitLayer.release();
   }
 }

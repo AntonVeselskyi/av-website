@@ -9,6 +9,7 @@ import {
 import { tunnelTempoScale } from "../js/visual/modes/wired-tunnel.js";
 import { orbitZoomCycle } from "../js/visual/modes/serial-orbit.js";
 import { crowFlight, preacherPresence, spectrumRungs } from "../js/visual/modes/warped-shrine.js";
+import { royaleRingIdentity, royaleRingStyle, royaleSuitTransition } from "../js/visual/modes/royale-fractal.js";
 
 test("visualizer exposes the projected wired and serial orbit scenes", () => {
   assert.equal(SPELL_VISUALIZER_MODE_ALIASES.wired, SPELL_VISUALIZER_MODES.WIRED_TUNNEL);
@@ -65,4 +66,33 @@ test("orbit galaxy shells continuously recede and fade before recycling", () => 
   assert.ok(near.alpha > 0);
   assert.ok(far.alpha > 0);
   assert.equal(orbitZoomCycle(0).alpha, 0);
+});
+
+test("royale suit morph remains continuous across every Droste wrap", () => {
+  const before = royaleSuitTransition(2.999999);
+  const after = royaleSuitTransition(3);
+  assert.equal(before.to, after.from);
+  assert.ok(before.toAlpha > 0.999999);
+  assert.equal(after.fromAlpha, 1);
+  assert.equal(after.toAlpha, 0);
+
+  const middle = royaleSuitTransition(5.5);
+  assert.equal(middle.from, 1);
+  assert.equal(middle.to, 2);
+  assert.ok(Math.abs(middle.fromAlpha - middle.toAlpha) < 1e-9);
+  assert.ok(middle.warp > 0.99);
+
+  for (let cycle = 0; cycle < 12; cycle += 1) {
+    for (let ring = 0; ring < 9; ring += 1) {
+      assert.equal(
+        royaleRingIdentity(cycle, ring),
+        royaleRingIdentity(cycle + 1, ring + 1),
+      );
+    }
+  }
+
+  const styleBefore = royaleRingStyle(2.999999);
+  const styleAfter = royaleRingStyle(3);
+  assert.ok(Math.abs(styleBefore.bandPosition - styleAfter.bandPosition) < 1e-6);
+  assert.ok(Math.abs(styleBefore.spinCoefficient - styleAfter.spinCoefficient) < 1e-9);
 });
