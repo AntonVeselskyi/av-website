@@ -49,6 +49,22 @@ function hash01(n) {
   return (x >>> 0) / 4294967296;
 }
 
+export function lavaInternalLightCount(detail = 1, blobCount = BLOB_COUNT) {
+  const requested = Math.max(6, Math.round(12 * Math.max(0, Number(detail) || 0)));
+  return Math.min(Math.max(0, Math.floor(blobCount)), 12, requested);
+}
+
+export function lavaInternalLightPose(blob, time = 0, energy = 0) {
+  const phase = Number(time) * (0.34 + (Number(blob?.mass) || 1) * 0.09) + (Number(blob?.wobble) || 0);
+  const orbit = 0.12 + (0.5 + 0.5 * Math.sin(phase * 0.73)) * 0.16;
+  return {
+    dx: Math.cos(phase) * orbit,
+    dy: Math.sin(phase * 1.17) * orbit * 0.72,
+    radius: 0.2 + Math.min(1, Math.max(0, Number(energy) || 0)) * 0.12,
+    alpha: 0.1 + Math.min(2, Math.max(0, Number(energy) || 0)) * 0.07,
+  };
+}
+
 export default class LavaLampScene {
   static id = "lava-lamp";
   static label = "lava // lamp";
@@ -282,6 +298,69 @@ export default class LavaLampScene {
         shade.ctx.globalCompositeOperation = "source-over";
       }
     }
+
+    this.paintInternalLights(frame);
+  }
+
+  /** Warm motes remain geometrically clipped inside their parent wax cells. */
+  paintInternalLights(frame) {
+    const ctx = this.shade.ctx;
+    if (!ctx) return;
+    const width = this.shade.width;
+    const height = this.shade.height;
+    const count = lavaInternalLightCount(frame.detail, this.blobs.length);
+    const short = Math.min(width, height);
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < count; i += 1) {
+      const b = this.blobs[i];
+      const speed = Math.hypot(b.vx, b.vy);
+      const stretch = 1 + Math.min(1.1, speed * 5.5);
+      const heading = Math.atan2(b.vy, b.vx);
+      const energy = frame.band(b.band);
+      const radius = b.r * (0.8 + energy * 0.38 + this.pinch * 0.14) * short * 1.2;
+      const pose = lavaInternalLightPose(b, this.t, energy + frame.audio.sustain * 0.45);
+      const x = b.x * width;
+      const y = b.y * height;
+      const lightX = pose.dx * radius;
+      const lightY = pose.dy * radius;
+      const lightR = Math.max(2, pose.radius * radius);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(heading);
+      ctx.scale(stretch, 1 / Math.sqrt(stretch));
+      ctx.beginPath();
+      // The cel threshold ends well inside the radial field's mathematical
+      // edge; this conservative mask keeps additive light inside visible wax.
+      ctx.arc(0, 0, radius * 0.62, 0, Math.PI * 2);
+      ctx.clip();
+
+      const glow = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, lightR);
+      glow.addColorStop(0, `rgba(255,239,174,${Math.min(0.34, pose.alpha * 1.55).toFixed(3)})`);
+      glow.addColorStop(0.28, `rgba(233,168,91,${Math.min(0.25, pose.alpha).toFixed(3)})`);
+      glow.addColorStop(0.68, `rgba(177,140,255,${Math.min(0.12, pose.alpha * 0.52).toFixed(3)})`);
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(lightX - lightR, lightY - lightR, lightR * 2, lightR * 2);
+
+      // Three tiny dispersing cells orbit the main light and dissolve before
+      // reaching the wax edge; deterministic phase keeps the cel stable.
+      for (let mote = 0; mote < 3; mote += 1) {
+        const seed = hash01(i * 19 + mote * 7 + 3);
+        const phase = ((this.t * (0.11 + seed * 0.09) + seed + mote / 3) % 1 + 1) % 1;
+        const angle = b.wobble + mote * 2.094 + this.t * (0.28 + seed * 0.2);
+        const distance = radius * (0.08 + phase * 0.48);
+        const alpha = Math.sin(Math.PI * phase) ** 2 * pose.alpha * 0.75;
+        const moteR = Math.max(0.8, radius * (0.018 + (1 - phase) * 0.026));
+        ctx.fillStyle = `rgba(255,220,136,${Math.min(0.2, alpha).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * distance, Math.sin(angle) * distance, moteR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
   }
 
   // ---------------------------------------------------------------------------

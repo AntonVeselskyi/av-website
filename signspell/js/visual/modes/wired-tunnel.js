@@ -50,6 +50,14 @@ export function tunnelTempoScale(bpm = 120) {
   return Math.min(1.85, Math.max(0.5, safe / 120));
 }
 
+/** Keeps the authored codec failure legible without overwhelming the tunnel. */
+export function wiredCorruptionProfile(corrupt = 0, turn = 0) {
+  return {
+    strength: Math.min(0.55, Math.max(0, Number(corrupt) || 0) * 0.45),
+    slide: 0.05 + Math.min(0.08, Math.abs(Number(turn) || 0) * 0.25),
+  };
+}
+
 /** Allocation-free integer hash — `mulberry32` builds a closure per call. */
 function hash01(n) {
   let x = Math.imul(n | 0, 0x27d4eb2d) ^ 0x9e3779b9;
@@ -79,7 +87,7 @@ export default class WiredTunnelScene {
   static label = "wired // tunnel";
   // The corridor makes its own atmosphere, so grain and dither stay low and the
   // vignette runs hot — it keeps the corners black and pushes the eye inward.
-  static post = { grain: 0.07, scanlines: 0.13, dither: 0.05, vignette: 0.58, bar: 0.03, curve: 0.016 };
+  static post = { grain: 0.07, scanlines: 0.13, dither: 0.05, vignette: 0.58, bar: 0.03, curve: 0.016, tear: false };
 
   constructor(kit) {
     this.kit = kit;
@@ -363,14 +371,14 @@ export default class WiredTunnelScene {
     // thrown sideways so consecutive hits do not stack into a vertical judder.
     this.kick = Math.max(0, this.kick - dt * 3.2);
     const kickAmp = this.kick * this.kick;
-    this.kickX = Math.sin(this.lastBeat * 2.399) * kickAmp * 0.045;
-    this.kickY = (Math.cos(this.lastBeat * 1.117) * 0.4 - 0.9) * kickAmp * 0.05;
+    this.kickX = Math.sin(this.lastBeat * 2.399) * kickAmp * 0.018;
+    this.kickY = (Math.cos(this.lastBeat * 1.117) * 0.4 - 0.9) * kickAmp * 0.022;
 
     this.prevRoll = this.roll;
     const rollTarget = Math.sin(t * 0.19) * 0.075 + Math.sin(t * 0.071) * 0.045
       + (audio.stereoDrift || 0) * 0.03
       + this.turnSmooth * 2.6                       // bank into the corner
-      + kickAmp * Math.sin(this.lastBeat * 3.7) * 0.05;
+      + kickAmp * Math.sin(this.lastBeat * 3.7) * 0.018;
     this.roll = approach(this.roll, rollTarget, 1.4, dt);
     void climb;
 
@@ -1115,11 +1123,12 @@ export default class WiredTunnelScene {
     // something the bloom then papers back over. The source is the copy the
     // feedback pass already took, so this costs no extra full-frame read.
     if (!frame.reducedMotion && this.corrupt > 0.02 && this.feedback.layer.canvas) {
+      const corruption = wiredCorruptionProfile(this.corrupt, this.turnSmooth);
       frame.kit.blockGlitch(ctx, this.feedback.layer.canvas, width, height, {
-        strength: Math.min(1, this.corrupt),
+        strength: corruption.strength,
         size: Math.max(12, Math.round(26 * frame.ratio)),
-        count: 20,
-        slide: 0.1 + Math.abs(this.turnSmooth) * 0.6,
+        count: 14,
+        slide: corruption.slide,
         seed: this.lastBeat * 131 + (frame.frameIndex >> 2),
       });
       ctx.globalAlpha = 1;

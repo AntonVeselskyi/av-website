@@ -6,9 +6,22 @@ import {
   SPELL_VISUALIZER_MODE_LABELS,
   SPELL_VISUALIZER_MODES,
 } from "../js/visual/visualizer.js";
-import { tunnelTempoScale } from "../js/visual/modes/wired-tunnel.js";
-import { orbitZoomCycle } from "../js/visual/modes/serial-orbit.js";
-import { crowFlight, preacherPresence, spectrumRungs } from "../js/visual/modes/warped-shrine.js";
+import { tunnelTempoScale, wiredCorruptionProfile } from "../js/visual/modes/wired-tunnel.js";
+import {
+  orbitAuroraEdgeOffset,
+  orbitAuroraPoint,
+  orbitAuroraSegmentCount,
+  orbitZoomCycle,
+} from "../js/visual/modes/serial-orbit.js";
+import {
+  crowFlight,
+  preacherPresence,
+  spectrumRungs,
+  wallFallBurstSize,
+  wallFallMotion,
+  wallFallRungs,
+} from "../js/visual/modes/warped-shrine.js";
+import { lavaInternalLightCount, lavaInternalLightPose } from "../js/visual/modes/lava-lamp.js";
 import { royaleRingIdentity, royaleRingStyle, royaleSuitTransition } from "../js/visual/modes/royale-fractal.js";
 
 test("visualizer exposes the projected wired and serial orbit scenes", () => {
@@ -46,6 +59,23 @@ test("the shrine celebrant arrives and leaves without ever popping", () => {
   assert.equal(preacherPresence(-27), preacherPresence(20));
 });
 
+test("ritual wall falls are musical, accelerated and bounded", () => {
+  assert.equal(wallFallBurstSize({ silent: true, transient: 1, flux: 1 }), 0);
+  assert.equal(wallFallBurstSize({ transient: 0.1, flux: 0.1 }), 1);
+  assert.equal(wallFallBurstSize({ transient: 0.65, flux: 0.4 }), 2);
+  assert.equal(wallFallBurstSize({ transient: 0.9, flux: 0.8 }), 3);
+  const early = wallFallMotion(0.2, 1);
+  const late = wallFallMotion(0.8, 1);
+  assert.ok(late.progress > early.progress);
+  assert.ok(late.progress - early.progress > 0.6);
+  assert.equal(wallFallMotion(0, 1).alpha, 0);
+  assert.equal(wallFallMotion(1, 1).alpha, 0);
+  const pierBands = spectrumRungs([1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9]);
+  const rungs = wallFallRungs(pierBands);
+  assert.equal(rungs.length, 9);
+  for (const rung of rungs) assert.ok(pierBands.filter((band) => Math.abs(band - rung) < 0.001).length >= 2);
+});
+
 test("a departing crow closes on the camera and fades at both ends", () => {
   assert.equal(crowFlight(0).depth, 1);
   assert.equal(crowFlight(1).depth, 0);
@@ -66,6 +96,38 @@ test("orbit galaxy shells continuously recede and fade before recycling", () => 
   assert.ok(near.alpha > 0);
   assert.ok(far.alpha > 0);
   assert.equal(orbitZoomCycle(0).alpha, 0);
+});
+
+test("orbit aurora remains subtle, continuous and in camera space", () => {
+  assert.ok(orbitAuroraSegmentCount(0.2) >= 20);
+  assert.ok(orbitAuroraSegmentCount(2) <= 36);
+  const a = orbitAuroraPoint(0.3, 1, 2, 0.5);
+  const b = orbitAuroraPoint(0.31, 1, 2, 0.5);
+  for (const value of Object.values(a)) assert.ok(Number.isFinite(value));
+  assert.ok(a.z > 1.4);
+  assert.ok(Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 0.5);
+  const edge = orbitAuroraEdgeOffset(3, 2, 1, 2);
+  assert.ok(Math.hypot(edge.dx, edge.dy) <= 1.61);
+});
+
+test("lava internal light remains clipped near its parent blob", () => {
+  assert.equal(lavaInternalLightCount(0, 40), 6);
+  assert.ok(lavaInternalLightCount(2, 40) <= 12);
+  assert.equal(lavaInternalLightCount(2, 4), 4);
+  const blob = { seed: 0.37 };
+  const a = lavaInternalLightPose(blob, 1, 0.5);
+  const b = lavaInternalLightPose(blob, 2, 0.5);
+  for (const value of Object.values(a)) assert.ok(Number.isFinite(value));
+  assert.ok(Math.hypot(a.dx, a.dy) < 0.5);
+  assert.notDeepEqual(a, b);
+});
+
+test("wired corruption stays restrained even on hard transients", () => {
+  const low = wiredCorruptionProfile(0.2, 0.05);
+  const high = wiredCorruptionProfile(3, 2);
+  assert.ok(low.strength < high.strength);
+  assert.ok(high.strength <= 0.55);
+  assert.ok(high.slide <= 0.13);
 });
 
 test("royale suit morph remains continuous across every Droste wrap", () => {

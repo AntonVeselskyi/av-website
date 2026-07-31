@@ -127,6 +127,7 @@ const IDOL_FRONT = 1.95;
 
 const DUST_MAX = 176;
 const SPARK_MAX = 84;
+const WALL_FALL_MAX = 16;
 const SPRITE = 128;
 const STONE_SEED = 0x5b1d3;
 
@@ -258,6 +259,31 @@ export function spectrumRungs(depths) {
   return depths.map((depth) => rungs.indexOf(depth) / span);
 }
 
+export function wallFallBurstSize({ silent = false, transient = 0, flux = 0 } = {}) {
+  if (silent) return 0;
+  return 1 + (transient > 0.3 ? 1 : 0) + (transient > 0.68 || flux > 0.5 ? 1 : 0);
+}
+
+export function wallFallMotion(age, duration) {
+  const safeDuration = Math.max(0.001, Number(duration) || 0.001);
+  const phase = Math.min(1, Math.max(0, (Number(age) || 0) / safeDuration));
+  return {
+    progress: phase * phase,
+    alpha: smooth01(0, 0.08, phase) * (1 - smooth01(0.72, 1, phase)),
+  };
+}
+
+/** The wall itself decides which analyser rungs can produce visible falls. */
+export function wallFallRungs(pierBands = []) {
+  const rungs = [];
+  for (const value of pierBands) {
+    const band = Number(value);
+    if (!Number.isFinite(band)) continue;
+    if (!rungs.some((existing) => Math.abs(existing - band) < 0.001)) rungs.push(band);
+  }
+  return rungs.sort((a, b) => a - b);
+}
+
 export default class WarpedShrineScene {
   static id = "warped-shrine";
   static label = "warped // shrine";
@@ -314,6 +340,16 @@ export default class WarpedShrineScene {
     }
     this.flare = new Float32Array(this.votives.length);
     this.braziers = [this.votives.length - 2, this.votives.length - 1];
+
+    // Violet analyser discharges falling down the wall arrises. Fixed storage
+    // keeps violent passages visually dense without ever allocating per beat.
+    this.wallFallBand = new Float32Array(WALL_FALL_MAX);
+    this.wallFallAge = new Float32Array(WALL_FALL_MAX);
+    this.wallFallDuration = new Float32Array(WALL_FALL_MAX);
+    this.wallFallStrength = new Float32Array(WALL_FALL_MAX);
+    this.wallFallActive = new Uint8Array(WALL_FALL_MAX);
+    this.wallFallCursor = 0;
+    this.lastWallFallAt = -Infinity;
 
     // Dust field.  x/z are fixed per mote so recycling never pops laterally;
     // only the rise wraps, and it cross-fades at both ends of the column.
@@ -392,6 +428,7 @@ export default class WarpedShrineScene {
     this.hazeGradient = null;
     this.hazeKey = "";
     this.dirty = true;
+    this.wallFallActive.fill(0);
   }
 
   // -- projection ---------------------------------------------------------
@@ -1065,6 +1102,8 @@ export default class WarpedShrineScene {
       const fresh = this.lastBeatCount >= 0;
       this.lastBeatCount = beats;
       if (fresh && !still) {
+        this.spawnWallFalls(frame, beats);
+        this.lastWallFallAt = time;
         if (beats % 4 === 0) {
           // Downbeat lights both braziers; off-beats walk down the aisle.
           for (let index = this.votives.length - 2; index < this.votives.length; index += 1) this.flare[index] = 1;
@@ -1095,12 +1134,14 @@ export default class WarpedShrineScene {
       this.preacher.presence = 1;
       this.preacher.blink = 0;
       this.preacher.glitch = 0;
+      this.wallFallActive.fill(0);
     } else {
       const decay = Math.exp(-dt * 2.6);
       for (let index = 0; index < this.flare.length; index += 1) this.flare[index] *= decay;
       this.desecrate *= Math.exp(-dt * 1.1);
       this.scan *= Math.exp(-dt * 1.5);
       this.wordFade = Math.min(1, this.wordFade + dt * 1.4);
+      this.advanceWallFalls(dt);
       this.spin += dt * (0.016 + audio.midAtt * 0.012);
       if (this.spin > TAU) this.spin -= TAU;
       this.advanceCrows(dt, audio);
@@ -1111,6 +1152,10 @@ export default class WarpedShrineScene {
       // beat count, and cannot retrigger until the last one has nearly gone —
       // it should feel like the room being struck, not like a strobe.
       if (this.desecrate < 0.12 && audio.transient > 0.7 && audio.bassAtt > 1.5) this.desecrate = 1;
+    }
+    if (!still && !audio.silent && time - this.lastWallFallAt > 0.9) {
+      this.spawnWallFalls(frame, Math.floor(time * 2));
+      this.lastWallFallAt = time;
     }
 
     // Idle life so a silent shrine still breathes: candles and haze run off
@@ -1251,6 +1296,83 @@ export default class WarpedShrineScene {
    * It is drawn inside the arch layer's own parallax transform, which is what
    * keeps the light registered inside the stone frames it belongs to.
    */
+  spawnWallFalls(frame, beat) {
+    const count = wallFallBurstSize(frame.audio);
+    if (!count) return;
+    const rungBands = wallFallRungs(this.piers.map((pier) => pier.band));
+    const rungCount = rungBands.length;
+    if (!rungCount) return;
+    const used = new Set();
+    for (let fall = 0; fall < count; fall += 1) {
+      let bestRung = (beat * 3 + fall * 5) % rungCount;
+      let bestEnergy = -1;
+      for (let offset = 0; offset < rungCount; offset += 1) {
+        const rung = (beat + fall * 3 + offset) % rungCount;
+        if (used.has(rung)) continue;
+        const energy = frame.band(rungBands[rung]);
+        if (energy > bestEnergy) { bestEnergy = energy; bestRung = rung; }
+      }
+      used.add(bestRung);
+      const slot = this.wallFallCursor;
+      this.wallFallCursor = (slot + 1) % WALL_FALL_MAX;
+      this.wallFallBand[slot] = rungBands[bestRung];
+      this.wallFallAge[slot] = 0;
+      this.wallFallDuration[slot] = 0.26 + fall * 0.07 + (1 - Math.min(1, frame.audio.transient)) * 0.15;
+      this.wallFallStrength[slot] = Math.min(1, 0.62 + frame.audio.transient * 0.32 + fall * 0.08);
+      this.wallFallActive[slot] = 1;
+    }
+  }
+
+  advanceWallFalls(dt) {
+    for (let index = 0; index < WALL_FALL_MAX; index += 1) {
+      if (!this.wallFallActive[index]) continue;
+      this.wallFallAge[index] += dt;
+      if (this.wallFallAge[index] >= this.wallFallDuration[index]) this.wallFallActive[index] = 0;
+    }
+  }
+
+  paintWallFalls(frame) {
+    const { ctx, ratio, palette } = frame;
+    if (!this.piers?.length) return;
+    ctx.lineCap = "round";
+    for (let fall = 0; fall < WALL_FALL_MAX; fall += 1) {
+      if (!this.wallFallActive[fall]) continue;
+      const motion = wallFallMotion(this.wallFallAge[fall], this.wallFallDuration[fall]);
+      if (motion.alpha <= 0.002) continue;
+      const targetBand = this.wallFallBand[fall];
+      const strength = this.wallFallStrength[fall];
+      for (const pier of this.piers) {
+        if (Math.abs(pier.band - targetBand) > 0.025) continue;
+        const travel = pier.base - pier.top;
+        const headY = pier.top + travel * motion.progress;
+        const trail = Math.abs(travel) * (0.16 + strength * 0.28) * (1 - motion.progress * 0.52);
+        const tailY = Math.max(pier.top, headY - trail);
+
+        ctx.strokeStyle = palette.violet(motion.alpha * (0.34 + strength * 0.5) * pier.fog);
+        ctx.lineWidth = Math.max(1, ratio * (1.8 + strength * 3.2) * pier.fog);
+        ctx.beginPath();
+        ctx.moveTo(pier.x, tailY);
+        ctx.lineTo(pier.x, headY);
+        ctx.stroke();
+
+        // A delayed spectral echo and a hot head make the fall read as an
+        // event travelling down stone, not another static analyser bar.
+        const echoY = pier.top + travel * Math.max(0, motion.progress - 0.12);
+        ctx.strokeStyle = palette.violet(motion.alpha * 0.18 * pier.fog);
+        ctx.lineWidth = Math.max(1, ratio * 1.1);
+        ctx.beginPath();
+        ctx.moveTo(pier.x, Math.max(pier.top, echoY - trail * 0.45));
+        ctx.lineTo(pier.x, echoY);
+        ctx.stroke();
+
+        ctx.fillStyle = palette.bone(motion.alpha * (0.36 + strength * 0.45) * pier.fog);
+        const head = Math.max(1.5, ratio * (1.8 + strength * 2.2));
+        ctx.fillRect(pier.x - head * 0.5, headY - head * 0.5, head, head);
+      }
+    }
+    ctx.lineCap = "butt";
+  }
+
   paintClerestory(frame, blit) {
     const { ctx, ratio, bands, bandPeaks, palette, audio } = frame;
     const windows = this.windows;
@@ -1347,6 +1469,8 @@ export default class WarpedShrineScene {
         ctx.stroke();
       }
     }
+
+    this.paintWallFalls(frame);
 
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";

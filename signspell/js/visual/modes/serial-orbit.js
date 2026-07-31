@@ -117,6 +117,32 @@ export function orbitZoomCycle(beatTravel, offset = 0) {
   };
 }
 
+/** Sparse enough to remain an atmosphere, dense enough to read as a ribbon. */
+export function orbitAuroraSegmentCount(detail = 1) {
+  return Math.max(20, Math.min(36, Math.round(28 * Math.max(0.72, Number(detail) || 0))));
+}
+
+/**
+ * A continuous ribbon through camera space. Keeping this pure makes the
+ * aurora's motion testable without coupling it to canvas or the analyser.
+ */
+export function orbitAuroraPoint(u, ribbon = 0, time = 0, energy = 0) {
+  const phase = u * Math.PI * 2 + ribbon * 2.37 + time * (0.055 + ribbon * 0.012);
+  const pulse = Math.min(1, Math.max(0, Number(energy) || 0));
+  return {
+    x: Math.sin(phase) * (1.9 + ribbon * 0.24) + Math.sin(phase * 2.3 + time * 0.08) * (0.18 + pulse * 0.08),
+    y: Math.cos(phase * 0.58 + ribbon) * 0.76 + Math.sin(phase * 1.7 - time * 0.04) * 0.18,
+    z: 2.15 + u * 1.3 + Math.sin(phase * 0.72 + ribbon) * 0.32,
+  };
+}
+
+/** Very small opposing RGB edge drift — an optical aura, never a glitch. */
+export function orbitAuroraEdgeOffset(time = 0, index = 0, band = 0, ratio = 1) {
+  const amount = Math.min(1.6, Math.max(0.35, Number(ratio) || 1) * (0.42 + band * 0.15));
+  const angle = time * 0.13 + index * 1.7 + band * 0.71;
+  return { dx: Math.cos(angle) * amount, dy: Math.sin(angle) * amount };
+}
+
 function hash01(n) {
   let x = Math.imul(n | 0, 0x27d4eb2d) ^ 0x9e3779b9;
   x = Math.imul(x ^ (x >>> 15), 0x85ebca6b);
@@ -166,6 +192,12 @@ export default class SerialOrbitScene {
       this.gj[i] = (hash01(i * 5 + 9) - 0.5) * 0.42 * (1 - t * 0.55);
     }
     this.galaxyTravel = 1.7;
+
+    // Project aurora centerlines once, then replay them for the three subtle
+    // color passes. Fixed buffers avoid adding a per-frame GC pulse.
+    this.auroraX = new Float32Array(2 * 37);
+    this.auroraY = new Float32Array(2 * 37);
+    this.auroraOk = new Uint8Array(2 * 37);
 
     // Per-solid state.
     this.bodies = SOLIDS.map((geometry, index) => ({
@@ -291,13 +323,13 @@ export default class SerialOrbitScene {
       if (bright <= 0.01) continue;
       const size = (0.6 + this.gj[i] * 0.4 + bright * 2 * (0.5 + nearness)) * frame.ratio;
       ctx.fillStyle = i % 11 === 0
-        ? palette.wire(Math.min(0.5, bright * 0.55))
-        : `hsla(${hue.toFixed(0)}, 82%, 74%, ${Math.min(0.4, bright * 0.4).toFixed(3)})`;
+        ? palette.wire(Math.min(0.65, bright * 0.68))
+        : `hsla(${hue.toFixed(0)}, 84%, 77%, ${Math.min(0.56, bright * 0.55).toFixed(3)})`;
       ctx.fillRect(x, y, size, size);
     }
     const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(2, scale * 0.3));
-    core.addColorStop(0, palette.bone((0.2 + audio.sustain * 0.18) * alpha));
-    core.addColorStop(0.4, palette.violet(0.1 * alpha));
+    core.addColorStop(0, palette.bone((0.28 + audio.sustain * 0.22) * alpha));
+    core.addColorStop(0.4, palette.violet(0.14 * alpha));
     core.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = core;
     ctx.fillRect(cx - scale * 0.3, cy - scale * 0.3, scale * 0.6, scale * 0.6);
@@ -315,6 +347,67 @@ export default class SerialOrbitScene {
       const cycle = Math.floor((this.galaxyTravel / 8 + offset)) + shell * 101;
       this.drawGalaxyShell(frame, cx, cy, base * zoom.scale, zoom.alpha, cycle);
     }
+  }
+
+  /**
+   * Two translucent ribbons inhabit the same projected space as the figures.
+   * They sit behind the solids and remain deliberately sparse so the original
+   * black field and hard wire geometry keep their authority.
+   */
+  drawAuroraVeils(frame) {
+    const { ctx, width, height, audio, kit } = frame;
+    const focal = Math.min(width, height) * 1.05;
+    const segments = orbitAuroraSegmentCount(frame.detail);
+    const energy = Math.min(1, audio.sustain * 0.55 + audio.trebRel * 0.16);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let ribbon = 0; ribbon < 2; ribbon += 1) {
+      const start = ribbon * 37;
+      for (let i = 0; i <= segments; i += 1) {
+        const source = orbitAuroraPoint(i / segments, ribbon, this.t, energy);
+        const point = kit.project3D(source, width, height, focal);
+        const slot = start + i;
+        this.auroraOk[slot] = point ? 1 : 0;
+        if (point) {
+          this.auroraX[slot] = point.x;
+          this.auroraY[slot] = point.y;
+        }
+      }
+      for (let pass = 0; pass < 3; pass += 1) {
+        const shift = pass === 1 ? 0.75 * frame.ratio : pass === 2 ? -0.6 * frame.ratio : 0;
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i <= segments; i += 1) {
+          const slot = start + i;
+          if (!this.auroraOk[slot]) {
+            started = false;
+            continue;
+          }
+          const x = this.auroraX[slot] + shift;
+          const y = this.auroraY[slot] + (pass === 2 ? shift * 0.45 : 0);
+          if (!started) {
+            ctx.moveTo(x, y);
+            started = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        if (pass === 0) {
+          ctx.strokeStyle = ribbon
+            ? `rgba(118,64,255,${(0.026 + energy * 0.018).toFixed(3)})`
+            : `rgba(74,255,202,${(0.022 + energy * 0.016).toFixed(3)})`;
+          ctx.lineWidth = (6.5 + energy * 4) * frame.ratio;
+        } else if (pass === 1) {
+          ctx.strokeStyle = `rgba(82,255,220,${(0.045 + energy * 0.025).toFixed(3)})`;
+          ctx.lineWidth = 1.1 * frame.ratio;
+        } else {
+          ctx.strokeStyle = `rgba(190,74,255,${(0.038 + energy * 0.022).toFixed(3)})`;
+          ctx.lineWidth = 0.9 * frame.ratio;
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   /** Motes integrated against the central mass. */
@@ -492,6 +585,66 @@ export default class SerialOrbitScene {
     ctx.restore();
   }
 
+  /**
+   * Live optical edge only. This is intentionally drawn after feedback is
+   * stored so the cyan/violet fringe cannot accumulate into colored ghosts.
+   */
+  drawBodyAura(frame, body, index) {
+    const { ctx, audio } = frame;
+    const edges = body.geometry.e;
+    const dominant = index === this.dominant;
+    let live = 0;
+    for (let i = 0; i < edges.length; i += 1) {
+      const [a, b] = edges[i];
+      if (!body.pok[a] || !body.pok[b]) continue;
+      this.edgeOrder[live] = i;
+      this.edgeDepth[live] = (body.pd[a] + body.pd[b]) * 0.5;
+      live += 1;
+    }
+    for (let i = 1; i < live; i += 1) {
+      const oi = this.edgeOrder[i];
+      const od = this.edgeDepth[i];
+      let j = i - 1;
+      while (j >= 0 && this.edgeDepth[j] < od) {
+        this.edgeOrder[j + 1] = this.edgeOrder[j];
+        this.edgeDepth[j + 1] = this.edgeDepth[j];
+        j -= 1;
+      }
+      this.edgeOrder[j + 1] = oi;
+      this.edgeDepth[j + 1] = od;
+    }
+    const ease = body.enter * body.enter * (3 - 2 * body.enter);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let band = 0; band < 3; band += 1) {
+      const from = Math.floor((band / 3) * live);
+      const to = Math.floor(((band + 1) / 3) * live);
+      if (to <= from) continue;
+      const near = band / 2;
+      const alpha = (0.07 + near * 0.26) * (dominant ? 1 : 0.6)
+        * (0.55 + Math.min(2, audio.midRel) * 0.22) * (0.25 + ease * 0.75);
+      const aura = orbitAuroraEdgeOffset(this.t, index, band, frame.ratio);
+      ctx.lineWidth = (0.6 + near * 1.5) * frame.ratio * (dominant ? 1.2 : 0.85) * 0.72;
+      ctx.strokeStyle = `hsla(166, 96%, 72%, ${Math.min(0.08, alpha * 0.15).toFixed(3)})`;
+      ctx.beginPath();
+      for (let i = from; i < to; i += 1) {
+        const [a, b] = edges[this.edgeOrder[i]];
+        ctx.moveTo(body.px[a] + aura.dx, body.py[a] + aura.dy);
+        ctx.lineTo(body.px[b] + aura.dx, body.py[b] + aura.dy);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = `hsla(286, 96%, 72%, ${Math.min(0.07, alpha * 0.12).toFixed(3)})`;
+      ctx.beginPath();
+      for (let i = from; i < to; i += 1) {
+        const [a, b] = edges[this.edgeOrder[i]];
+        ctx.moveTo(body.px[a] - aura.dx * 0.72, body.py[a] - aura.dy * 0.72);
+        ctx.lineTo(body.px[b] - aura.dx * 0.72, body.py[b] - aura.dy * 0.72);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // ---------------------------------------------------------------------------
   // Frame
   // ---------------------------------------------------------------------------
@@ -537,6 +690,7 @@ export default class SerialOrbitScene {
     const gx = width * (0.5 + Math.sin(this.t * 0.03) * 0.06);
     const gy = height * (0.46 + Math.cos(this.t * 0.024) * 0.05);
     this.drawGalaxies(frame, gx, gy, Math.min(width, height) * 0.52);
+    this.drawAuroraVeils(frame);
     this.drawField(frame, dt);
 
     // Solids and their light trails, on their own buffer.
@@ -561,12 +715,14 @@ export default class SerialOrbitScene {
       }
       for (let i = 0; i < this.bodies.length; i += 1) this.drawBody(inner, this.bodies[i], i);
       if (!reduced) this.feedback.store(inner);
+      for (let i = 0; i < this.bodies.length; i += 1) this.drawBodyAura(inner, this.bodies[i], i);
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
       ctx.drawImage(trail.canvas, 0, 0, width, height);
       ctx.restore();
     } else {
       for (let i = 0; i < this.bodies.length; i += 1) this.drawBody(frame, this.bodies[i], i);
+      for (let i = 0; i < this.bodies.length; i += 1) this.drawBodyAura(frame, this.bodies[i], i);
     }
 
     kit.darkenCenter(ctx, width, height, 0.26);
@@ -576,7 +732,7 @@ export default class SerialOrbitScene {
       passes: 2,
     });
     if (!reduced && audio.transient > 0.3) {
-      this.rgb.apply(ctx, ctx.canvas, { amount: 1.4 * frame.ratio * audio.transient, alpha: 0.16, angle: this.t * 0.4 });
+      this.rgb.apply(ctx, ctx.canvas, { amount: 0.65 * frame.ratio * audio.transient, alpha: 0.06, angle: this.t * 0.4 });
     }
     this.drawReadouts(frame);
   }

@@ -21,6 +21,7 @@ const staticHints = {
   "calibrate-button": "Opens the saved, step-by-step hand calibration ritual.",
   "camera-toggle": "Turns webcam hand tracking on or off. Video stays on this device.",
   "fullscreen-visualizer": "Expands the visualizer to fill the screen.",
+  "maximize-visualizer": "Maximizes the visualizer inside this browser window; press Escape to restore it.",
   "generate-loop": "Writes an eerie pattern into the outlined line and starts playback immediately.",
   "export-wav": "Renders the current loops to a downloadable WAV file.",
   "reduced-motion": "Reduces moving visual effects for comfort.",

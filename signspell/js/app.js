@@ -31,7 +31,7 @@ import {
   saveCalibrationDraft,
   saveProject,
 } from "./storage.js?v=7";
-import { createSpellVisualizer } from "./visual/visualizer.js?v=8";
+import { createSpellVisualizer } from "./visual/visualizer.js?v=9";
 
 const ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const COLLECTION_REFERENCES = Object.freeze({
@@ -61,7 +61,7 @@ const dom = {
   master: $("#master-volume"), sub: $("#sub-boost"), grit: $("#distortion"), reverb: $("#master-reverb"), generate: $("#generate-loop"), lanes: $("#loop-lanes"), laneTemplate: $("#lane-template"),
   focusedPanel: $(".focused-editor-panel"), focusedSummary: $("#focused-lane-summary"), focusedRoll: $("#focused-lane-roll"), focusedEmpty: $("#focused-roll-empty"), focusedLength: $("#focused-roll-length"), focusedRecord: $("#focused-record"), stepInput: $("#step-input"), recordNext: $("#record-next"), focusedOverdub: $("#focused-overdub"), focusedMute: $("#focused-mute"), focusedSolo: $("#focused-solo"), focusedClear: $("#focused-clear"),
   laneCount: $("#lane-count"),
-  export: $("#export-wav"), exportProject: $("#export-project"), restoreProject: $("#restore-project"), restoreProjectFile: $("#restore-project-file"), visualCanvas: $("#visualizer-canvas"), visualLabel: $("#visualizer-label"), fullVisual: $("#fullscreen-visualizer"), captureAudio: $("#capture-audio"), reduceMotion: $("#reduced-motion"),
+  export: $("#export-wav"), exportProject: $("#export-project"), restoreProject: $("#restore-project"), restoreProjectFile: $("#restore-project-file"), visualCanvas: $("#visualizer-canvas"), visualLabel: $("#visualizer-label"), fullVisual: $("#fullscreen-visualizer"), maxVisual: $("#maximize-visualizer"), captureAudio: $("#capture-audio"), reduceMotion: $("#reduced-motion"),
   calibrationButton: $("#calibrate-button"), calibrationDialog: $("#calibration-dialog"), calibrationCameraMount: $("#calibration-camera-mount"), calibrationDiagnosticMount: $("#calibration-diagnostic-mount"), calibrationHeading: $("#calibration-heading"), calibrationInstruction: $("#calibration-instruction"), calibrationOrientation: $("#calibration-orientation"), calibrationGlyph: $("#calibration-glyph"), calibrationStatus: $("#calibration-status"), calibrationCount: $("#calibration-count"), calibrationProgress: $("#calibration-progress"), calibrationChecklist: $("#calibration-checklist"), calibrationBack: $("#calibration-back"), calibrationReset: $("#calibration-reset"), calibrationNext: $("#calibration-next"),
 };
 
@@ -1978,6 +1978,35 @@ async function copyDiagnosticLog() {
   showToast("LOCAL DIAGNOSTIC LOG COPIED");
 }
 
+function setVisualizerMaximized(enabled) {
+  const panel = $(".visualizer-panel");
+  const active = Boolean(enabled && panel);
+  panel?.classList.toggle("is-maximized", active);
+  document.body.classList.toggle("visualizer-maximized", active);
+  dom.maxVisual?.setAttribute("aria-pressed", String(active));
+  if (dom.maxVisual) dom.maxVisual.textContent = active ? "RESTORE" : "MAXIMIZE";
+  requestAnimationFrame(() => visualizer?.resize());
+}
+
+async function toggleVisualizerFullscreen() {
+  const panel = $(".visualizer-panel");
+  if (!panel?.requestFullscreen) {
+    showToast("NATIVE FULLSCREEN IS NOT AVAILABLE IN THIS BROWSER", 3600);
+    return;
+  }
+  const wasMaximized = document.body.classList.contains("visualizer-maximized");
+  try {
+    if (document.fullscreenElement === panel) await document.exitFullscreen();
+    else {
+      setVisualizerMaximized(false);
+      await panel.requestFullscreen();
+    }
+  } catch (error) {
+    if (wasMaximized) setVisualizerMaximized(true);
+    showToast(`FULLSCREEN FAILED: ${error?.message || "REQUEST REJECTED"}`, 4200);
+  }
+}
+
 function wireEvents() {
   dom.start.addEventListener("click", async () => {
     dom.start.disabled = true;
@@ -2095,10 +2124,25 @@ function wireEvents() {
   dom.calibrationBack.addEventListener("click", () => { if (calibrationSession?.step > 0) { calibrationSession.step -= 1; renderCalibrationStep(); } });
   dom.calibrationReset.addEventListener("click", resetCalibrationProgress);
   for (const button of $$(".visual-mode")) button.addEventListener("click", () => { $$(".visual-mode").forEach((item) => item.classList.remove("active")); button.classList.add("active"); visualizer?.setMode(button.dataset.mode); project.ui.visualizerMode = button.dataset.mode; markChanged(); });
-  dom.fullVisual.addEventListener("click", () => $(".visualizer-panel")?.requestFullscreen?.());
+  dom.maxVisual?.addEventListener("click", async () => {
+    if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+    setVisualizerMaximized(!document.body.classList.contains("visualizer-maximized"));
+  });
+  dom.fullVisual.addEventListener("click", toggleVisualizerFullscreen);
+  document.addEventListener("fullscreenchange", () => {
+    const active = document.fullscreenElement === $(".visualizer-panel");
+    dom.fullVisual.setAttribute("aria-pressed", String(active));
+    dom.fullVisual.textContent = active ? "EXIT FULLSCREEN" : "FULLSCREEN";
+    requestAnimationFrame(() => visualizer?.resize());
+  });
   dom.captureAudio.addEventListener("click", toggleSystemAudioCapture);
   dom.reduceMotion.addEventListener("click", () => { project.ui.reducedMotion = !project.ui.reducedMotion; dom.reduceMotion.setAttribute("aria-pressed", String(project.ui.reducedMotion)); document.body.classList.toggle("reduced-motion", project.ui.reducedMotion); visualizer?.setReducedMotion(project.ui.reducedMotion); markChanged(); });
   window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.body.classList.contains("visualizer-maximized")) {
+      event.preventDefault();
+      setVisualizerMaximized(false);
+      return;
+    }
     if (event.defaultPrevented || isEditableTarget(event.target)) return;
     if (event.ctrlKey || event.altKey || event.metaKey || dom.calibrationDialog.open || !dom.boot.hidden) return;
     const pedalAction = loopPedalActionFromKeyEvent(event);

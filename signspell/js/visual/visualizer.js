@@ -19,12 +19,12 @@
  */
 
 import * as kit from "./scene-kit.js?v=7";
-import WiredTunnelScene from "./modes/wired-tunnel.js?v=7";
+import WiredTunnelScene from "./modes/wired-tunnel.js?v=8";
 import SpectralFireScene from "./modes/spectral-fire.js?v=7";
 import CruciformScopeScene from "./modes/cruciform-scope.js?v=7";
-import WarpedShrineScene from "./modes/warped-shrine.js?v=7";
-import SerialOrbitScene from "./modes/serial-orbit.js?v=7";
-import LavaLampScene from "./modes/lava-lamp.js?v=7";
+import WarpedShrineScene from "./modes/warped-shrine.js?v=8";
+import SerialOrbitScene from "./modes/serial-orbit.js?v=8";
+import LavaLampScene from "./modes/lava-lamp.js?v=8";
 import RoyaleFractalScene from "./modes/royale-fractal.js?v=8";
 
 const MODES = Object.freeze({

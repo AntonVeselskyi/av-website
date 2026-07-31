@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Share+Tech+Mono&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/sign-spell.css?v=15">
+  <link rel="stylesheet" href="css/sign-spell.css?v=16">
 </head>
 <body class="sign-spell">
   <div class="noise" aria-hidden="true"></div>
@@ -126,7 +126,8 @@
           <button class="visual-mode" data-mode="lava" type="button">LAVA</button>
           <button class="visual-mode" data-mode="royale" type="button">ROYALE</button>
           <button id="capture-audio" type="button" aria-pressed="false" data-hint="Feeds audio playing on this machine into the visualizer. Chrome asks you to pick a screen or tab and to tick its share-audio box; nothing is recorded, uploaded, or played back.">PC AUDIO</button>
-          <button id="fullscreen-visualizer" type="button">FULLSCREEN</button>
+          <button id="maximize-visualizer" type="button" aria-pressed="false">MAXIMIZE</button>
+          <button id="fullscreen-visualizer" type="button" aria-pressed="false">FULLSCREEN</button>
         </footer>
       </article>
 
@@ -236,7 +237,7 @@
   </template>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="js/hints.js?v=5"></script>
-  <script type="module" src="js/app.js?v=37"></script>
+  <script type="module" src="js/hints.js?v=6"></script>
+  <script type="module" src="js/app.js?v=38"></script>
 </body>
 </html>

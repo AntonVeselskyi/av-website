@@ -84,7 +84,11 @@ button { -webkit-tap-highlight-color: transparent; }
 .backdrop-pantheon i { border:1px solid rgba(225,72,88,.65); border-radius:50%; height:9rem; position:absolute; top:26%; transform:rotate(45deg); width:9rem; }.backdrop-pantheon i::before,.backdrop-pantheon i::after { background:currentColor; content:""; left:50%; opacity:.65; position:absolute; top:12%; transform:translateX(-50%); }.backdrop-pantheon i::before { height:76%; width:1px; }.backdrop-pantheon i::after { height:1px; top:50%; width:76%; }.backdrop-pantheon .sigil-b { border-color:rgba(177,140,255,.55); height:14rem; opacity:.45; top:14%; transform:rotate(22deg); width:14rem; }
 .backdrop-terminal { bottom:2.3rem; color:rgba(239,230,208,.11); font:.76rem/1.35 var(--spell-mono); letter-spacing:.12em; position:absolute; right:1.2rem; text-align:right; }
 .serial-diagnostics[data-expanded="false"] pre,.serial-diagnostics[data-expanded="false"] footer { display:none; }.serial-diagnostics[data-expanded="false"] { padding-block:.36rem; }.serial-diagnostics #serial-log-toggle { font:.66rem/1 var(--spell-mono); min-height:1.55rem; padding:.22rem .42rem; }.serial-diagnostics[data-expanded="true"] #serial-log-toggle { border-color:var(--spell-wire); color:var(--spell-wire); }
-.visualizer-panel:fullscreen { background:#030306; grid-template-rows:auto 1fr auto; height:100dvh; width:100vw; }.visualizer-panel:fullscreen canvas { min-height:0; }
+.visualizer-panel:is(:fullscreen,.is-maximized) { background:#030306; grid-template-rows:auto minmax(0,1fr) auto; min-height:0; }.visualizer-panel:is(:fullscreen,.is-maximized) canvas { min-height:0; }
+.visualizer-panel:fullscreen { height:100dvh; width:100vw; }
+.visualizer-panel.is-maximized { height:auto; inset:clamp(.35rem,1vw,.8rem); position:fixed; width:auto; z-index:70; }
+body.visualizer-maximized { overflow:hidden; }
+body.visualizer-maximized .desktop-grid { z-index:65; }
 @keyframes serial-rain { 0% { opacity:.16; transform:translate3d(0,-5vh,0); } 45% { opacity:.8; } 100% { opacity:.1; transform:translate3d(0,23vh,0); } }
 @keyframes backdrop-breathe { 0%,100% { translate:0 0; } 50% { translate:0 10px; } }
 
