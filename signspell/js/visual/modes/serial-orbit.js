@@ -478,19 +478,32 @@ export default class SerialOrbitScene {
       const speed = Math.hypot(this.svx[i], this.svy[i]);
       const fade = kit.depthFade(point.depth, 0.8, 4.2);
       if (fade <= 0.02) continue;
-      const bright = fade * (0.3 + this.sSeed[i] * 0.62 + audio.trebRel * 0.14);
-      const size = Math.max(0.8, (0.6 + this.sSeed[i]) * point.scale * 0.0028 * frame.ratio);
-      // Fast motes streak: the trail direction is the actual velocity vector.
-      if (speed > 0.85 && !frame.reducedMotion) {
-        ctx.strokeStyle = palette.bone(Math.min(0.5, bright * 0.7));
+      // The field used to be entirely bone, capped at 0.65, a pixel across, and
+      // streaking only above a speed most motes never reached — so passing
+      // through it read as grey static rather than as travel. Brighter, bigger,
+      // tinted, and streaking far sooner.
+      const bright = fade * (0.42 + this.sSeed[i] * 0.72 + audio.trebRel * 0.2);
+      const size = Math.max(1, (0.6 + this.sSeed[i]) * point.scale * 0.0042 * frame.ratio);
+      const tinted = this.sSeed[i];
+      const ink = tinted > 0.88 ? palette.violet : tinted > 0.76 ? palette.wire : tinted > 0.68 ? palette.amber : palette.bone;
+      if (speed > 0.32 && !frame.reducedMotion) {
+        // Trail length follows the velocity, so the fastest motes rake past and
+        // the slow ones barely smear — the parallax reads as depth.
+        const rake = kit.clamp(speed * 6, 4, 15) * frame.ratio;
+        ctx.strokeStyle = ink(Math.min(0.72, bright * 0.85));
         ctx.lineWidth = size;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(point.x, point.y);
-        ctx.lineTo(point.x - this.svx[i] * 9 * frame.ratio, point.y - this.svy[i] * 9 * frame.ratio);
+        ctx.lineTo(point.x - this.svx[i] * rake, point.y - this.svy[i] * rake);
         ctx.stroke();
+        ctx.lineCap = "butt";
+        // A hot head, so a streak still resolves to a star.
+        ctx.fillStyle = ink(Math.min(0.95, bright * 1.25));
+        ctx.fillRect(point.x - size * 0.5, point.y - size * 0.5, size, size);
       } else {
-        ctx.fillStyle = palette.bone(Math.min(0.65, bright));
-        ctx.fillRect(point.x, point.y, size, size);
+        ctx.fillStyle = ink(Math.min(0.88, bright));
+        ctx.fillRect(point.x - size * 0.5, point.y - size * 0.5, size, size);
       }
     }
     ctx.restore();
