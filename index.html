@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Anton Veselskyi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Michroma&family=Poiret+One&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel+Decorative:wght@900&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Michroma&family=Poiret+One&family=Stick+No+Bills:wght@600&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="title.css">
     <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico"/>
@@ -101,6 +101,17 @@
       .proj-tab[data-theme="signspell"]:is(:hover, :focus-visible, .is-tapped) .proj-tab__label { color:#efe6d0; font-family:"Old English Text MT",Georgia,serif; font-size:31px; letter-spacing:1px; text-shadow:2px 2px #8f243d,-1px 0 #a5ff9d; }
       .proj-tab[data-theme="signspell"] .signspell-dagger { color:#a5ff9d; font-family:Georgia,serif; margin:0 .12em; }
       .proj-tab[data-theme="stonks"] .proj-tab__label { font-size: 15px; letter-spacing: 3px; }
+      /* Typo: the sterile room. Stripe is near-white — with the difference
+         blend the label simply stays black, which IS the theme. */
+      .proj-tab[data-theme="typo"] { --stripe:#fcfcfc; --tab-particle:#c9c9c9; }
+      .proj-tab[data-theme="typo"]:is(:hover, :focus-visible, .is-tapped) { border-color:#141414; }
+      .proj-tab[data-theme="typo"]:is(:hover, :focus-visible, .is-tapped) .proj-tab__label {
+        font-family: "Stick No Bills", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 600;
+        font-size: 40px;
+        letter-spacing: 2px;
+      }
       .proj-tab[data-theme="wander"] {
         width: 252px;
         --stripe:#001219;
@@ -452,6 +463,7 @@
         </span>
       </a>
       <a class="proj-tab" data-theme="concerts" href="concerts/index.html"><span class="proj-tab__label">concerts</span></a>
+      <a class="proj-tab" data-theme="typo"     href="typo/index.html"><span class="proj-tab__label">Typo</span></a>
     </nav>
 
     <p class="cursive" id="wavyText">

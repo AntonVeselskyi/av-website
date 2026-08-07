@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typo</title>
+<link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Stick+No+Bills:wght@600&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
+<style>
+  /* ============ TYPO — a sterile room for letters ============
+     Nothing in here is allowed to compete with the type itself:
+     one near-white surface, one ink, no rules, no cards, no
+     shadows. Space does all the separating. */
+  :root {
+    --paper: #fcfcfc;
+    --ink: #141414;
+    --faint: #9a9a9a;         /* labels, links — quiet furniture */
+    --ui: "Stick No Bills", sans-serif;
+  }
+  html {
+    color-scheme: light;
+    background: var(--paper);
+    scroll-behavior: smooth;
+    scroll-snap-type: y mandatory;   /* one specimen = one page, turned by the scroll */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--ui);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .stick-no-bills-ui {
+    font-family: "Stick No Bills", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  /* ---- Title: present only at the very top of the room.
+     One scroll down and it withdraws; it returns when you come
+     back up to the top. ---- */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: clamp(48px, 12vh, 120px) 24px 0;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity .6s ease, transform .6s ease;
+    z-index: 10;
+  }
+  header h1 {
+    font-family: var(--ui);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    font-size: clamp(64px, 14vw, 160px);
+    line-height: .9;
+    letter-spacing: .02em;
+  }
+  header p {
+    margin-top: 18px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  header.gone {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+
+  /* "view all" — sits top-right, fades with the rest of the header. */
+  .view-all-btn {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    z-index: 20;
+    pointer-events: auto;   /* header itself has pointer-events: none */
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--ink);
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background .3s ease, color .3s ease;
+  }
+  .view-all-btn:hover { background: var(--ink); color: var(--paper); }
+
+  /* AV monogram — sits at the very top, above the title, and scrolls
+     away with the page like the title does. */
+  .av-monogram {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    pointer-events: auto;   /* header itself has pointer-events: none */
+    display: inline-grid;
+    place-items: center;
+    font-family: 'Major Mono Display', monospace;
+    font-size: clamp(32px, 7vw, 80px);   /* about half the Typo title */
+    line-height: 1;
+    color: var(--ink);
+    text-decoration: none;
+    -webkit-text-stroke: 0 var(--ink);
+    transition: color .3s ease, -webkit-text-stroke .3s ease, transform 1.3s ease-in-out;
+  }
+  .av-monogram span { grid-area: 1 / 1; text-align: center; }
+  .av-monogram:hover {
+    transform: translateX(-50%) scale(1.08) rotate(-183deg);
+    color: var(--paper);
+    -webkit-text-stroke: 1.5px var(--ink);
+  }
+
+  /* footer mark: the glyph and the home link fused into one clickable
+     unit, closing the page the way the header mark opens it. */
+  .footer-mark {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+  }
+  .footer-mark__glyph {
+    display: inline-grid;
+    place-items: center;
+    font-family: 'Major Mono Display', monospace;
+    font-size: clamp(26px, 5vw, 56px);
+    line-height: 1;
+    color: var(--ink);
+    -webkit-text-stroke: 0 var(--ink);
+    transition: color .3s ease, -webkit-text-stroke .3s ease, transform 1.3s ease-in-out;
+  }
+  .footer-mark__glyph span { grid-area: 1 / 1; text-align: center; }
+  .footer-mark__label {
+    padding-bottom: 3px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--faint);
+    border-bottom: 1px solid #dcdcdc;
+    transition: color .3s ease, border-color .3s ease;
+  }
+  .footer-mark:hover .footer-mark__glyph {
+    transform: scale(1.08) rotate(-183deg);
+    color: var(--paper);
+    -webkit-text-stroke: 1.5px var(--ink);
+  }
+  .footer-mark:hover .footer-mark__label {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ---- Specimens. One per page. ---- Each is a full viewport tall
+     and vertically centers its content, so scrolling reads like
+     turning to the next page rather than a continuous feed. The
+     reveal transition lives on .specimen-inner (just the text), not
+     the section itself — the section's own height would otherwise
+     satisfy the intersection threshold on its own, firing the reveal
+     while the actual words are still off-screen. */
+  section.specimen {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 14vh 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+  .specimen-inner {
+    opacity: 0;
+    transform: translateY(36px);
+    transition: opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1);
+  }
+  .specimen-inner.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .specimen .name {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 16px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: .38em;
+    text-transform: uppercase;
+    color: #6e6e6e;
+  }
+  .specimen .name::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 30px;
+    height: 2px;
+    background: var(--ink);
+    transform: translateX(-50%);
+  }
+  .specimen .pangram {
+    margin-top: clamp(28px, 6vh, 56px);
+    font-size: clamp(36px, 5.6vw, 68px);
+    line-height: 1.18;
+    font-weight: 400;
+  }
+  .specimen .line {
+    margin-top: clamp(24px, 5vh, 44px);
+    font-size: clamp(26px, 3.6vw, 42px);
+    line-height: 1.2;
+    color: #3c3c3c;
+  }
+  .specimen .seen {
+    margin-top: clamp(26px, 5vh, 46px);
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .specimen .seen a {
+    color: var(--faint);
+    text-decoration: none;
+    border-bottom: 1px solid #dcdcdc;
+    padding-bottom: 2px;
+    transition: color .3s ease, border-color .3s ease;
+  }
+  .specimen .seen a:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* per-font faces */
+  .f-stick     { font-family: "Stick No Bills", sans-serif; font-optical-sizing: auto; font-weight: 600; }
+  .f-mono      { font-family: "Major Mono Display", monospace; }
+  .f-poiret    { font-family: "Poiret One", cursive; }
+  .f-cinzel    { font-family: "Cinzel", serif; font-weight: 500; }
+  .f-megrim    { font-family: "Megrim", system-ui; }
+  .f-jura      { font-family: "Jura", sans-serif; }
+  .f-cinzdec   { font-family: "Cinzel Decorative", serif; font-weight: 700; }
+  .f-metam     { font-family: "Metamorphous", serif; }
+  .f-nova      { font-family: "Nova Script", system-ui; }
+  .f-jet       { font-family: "JetBrains Mono", monospace; }
+  .f-unifrak   { font-family: "UnifrakturCook", serif; font-weight: 700; }
+  .f-fell      { font-family: "IM Fell DW Pica", serif; }
+  .f-tinos     { font-family: "Tinos", serif; }
+  .f-bodoni    { font-family: "Bodoni Moda", serif; font-optical-sizing: auto; font-weight: 700; }
+  .f-anton     { font-family: "Anton", sans-serif; }
+  .f-metal     { font-family: "Metal Mania", system-ui; }
+  .f-michroma  { font-family: "Michroma", sans-serif; }
+  .f-vt        { font-family: "VT323", monospace; }
+  .f-share     { font-family: "Share Tech Mono", monospace; }
+  .f-rubik     { font-family: "Rubik Dirt", system-ui; }
+
+  /* a couple of faces render optically small/large — nudge them
+     so every specimen reads the same visual size */
+  .f-vt .pangram                   { font-size: clamp(46px, 6.8vw, 82px); }
+  .f-vt .line                      { font-size: clamp(32px, 4.2vw, 50px); }
+  .f-bodoni .pangram               { line-height: 1.3; }
+
+  footer {
+    min-height: 40vh;
+    padding: 10vh 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--faint);
+    scroll-snap-align: end;
+  }
+  /* ---- View All overlay: a tiled index of every face, each tile
+     set in its own font. Picking one teleports straight to its
+     page — no scrolling through the deck to get there. ---- */
+  .view-all-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .35s ease, visibility .35s ease;
+  }
+  .view-all-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .view-all-overlay__bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+  }
+  .view-all-overlay__title {
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .38em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .view-all-overlay__close {
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--ink);
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background .3s ease, color .3s ease;
+  }
+  .view-all-overlay__close:hover { background: var(--ink); color: var(--paper); }
+  .view-all-grid {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1px;
+    background: #e6e6e6;      /* the gap itself draws the hairline grid */
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .view-all-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    padding: 20px;
+    background: var(--paper);
+    border: none;
+    color: var(--ink);
+    font-size: clamp(20px, 2.2vw, 28px);
+    line-height: 1.15;
+    text-align: center;
+    cursor: pointer;
+    transition: background .25s ease, transform .25s ease;
+  }
+  .view-all-tile:hover {
+    background: #f5f5f5;
+    transform: scale(1.04);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    header { transition: opacity .2s ease; }
+    header.gone { transform: none; }
+    html { scroll-behavior: auto; scroll-snap-type: none; }
+    .specimen-inner { opacity: 1; transform: none; transition: none; }
+    .view-all-tile:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header id="title">
+  <a class="av-monogram" href="../index.html" aria-label="Anton Veselskyi"><span>A</span><span>V</span></a>
+  <button type="button" class="view-all-btn" id="viewAllBtn" aria-haspopup="true" aria-expanded="false">View All</button>
+  <h1>Typo</h1>
+  <p>fonts I use and like</p>
+</header>
+
+<div class="view-all-overlay" id="viewAllOverlay" role="dialog" aria-modal="true" aria-label="All fonts">
+  <div class="view-all-overlay__bar">
+    <span class="view-all-overlay__title">All Fonts</span>
+    <button type="button" class="view-all-overlay__close" id="viewAllClose">Close</button>
+  </div>
+  <div class="view-all-grid">
+    <button type="button" class="view-all-tile f-stick"    data-target="font-stick">Stick No Bills</button>
+    <button type="button" class="view-all-tile f-mono"     data-target="font-mono">Major Mono Display</button>
+    <button type="button" class="view-all-tile f-poiret"   data-target="font-poiret">Poiret One</button>
+    <button type="button" class="view-all-tile f-cinzel"   data-target="font-cinzel">Cinzel</button>
+    <button type="button" class="view-all-tile f-megrim"   data-target="font-megrim">Megrim</button>
+    <button type="button" class="view-all-tile f-jura"     data-target="font-jura">Jura</button>
+    <button type="button" class="view-all-tile f-cinzdec"  data-target="font-cinzdec">Cinzel Decorative</button>
+    <button type="button" class="view-all-tile f-metam"    data-target="font-metam">Metamorphous</button>
+    <button type="button" class="view-all-tile f-nova"     data-target="font-nova">Nova Script</button>
+    <button type="button" class="view-all-tile f-jet"      data-target="font-jet">JetBrains Mono</button>
+    <button type="button" class="view-all-tile f-unifrak"  data-target="font-unifrak">UnifrakturCook</button>
+    <button type="button" class="view-all-tile f-fell"     data-target="font-fell">IM Fell DW Pica</button>
+    <button type="button" class="view-all-tile f-tinos"    data-target="font-tinos">Tinos</button>
+    <button type="button" class="view-all-tile f-bodoni"   data-target="font-bodoni">Bodoni Moda</button>
+    <button type="button" class="view-all-tile f-anton"    data-target="font-anton">Anton</button>
+    <button type="button" class="view-all-tile f-metal"    data-target="font-metal">Metal Mania</button>
+    <button type="button" class="view-all-tile f-michroma" data-target="font-michroma">Michroma</button>
+    <button type="button" class="view-all-tile f-vt"       data-target="font-vt">VT323</button>
+    <button type="button" class="view-all-tile f-share"    data-target="font-share">Share Tech Mono</button>
+    <button type="button" class="view-all-tile f-rubik"    data-target="font-rubik">Rubik Dirt</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- ============ this site ============ -->
+  <section class="specimen f-stick" id="font-stick">
+    <p class="name">Stick No Bills · SemiBold 600</p>
+    <p class="pangram">Amazingly few discotheques provide jukeboxes.</p>
+    <p class="line">Typo</p>
+    <p class="seen">seen on — this very site</p>
+  </section>
+
+  <!-- ============ the signature ============ -->
+  <section class="specimen f-mono" id="font-mono">
+    <p class="name">Major Mono Display</p>
+    <p class="pangram">sphinx of black quartz, judge my vow</p>
+    <p class="line">Anton Veselskyi</p>
+    <p class="seen">seen on — <a href="../index.html">antonveselskyi.com</a> · the AV monogram &amp; every title band</p>
+  </section>
+
+  <!-- ============ tier lists ============ -->
+  <section class="specimen f-poiret" id="font-poiret">
+    <p class="name">Poiret One</p>
+    <p class="pangram">Pack my box with five dozen liquor jugs.</p>
+    <p class="line">AV Game Tier List</p>
+    <p class="seen">seen on — <a href="../gamelist.html">game list</a> · <a href="../showlist.html">show list</a></p>
+  </section>
+
+  <section class="specimen f-cinzel" id="font-cinzel">
+    <p class="name">Cinzel</p>
+    <p class="pangram">Jackdaws love my big sphinx of quartz.</p>
+    <p class="line">Inspiration</p>
+    <p class="seen">seen on — <a href="../gamelist.html">game list</a> · the inspiration view</p>
+  </section>
+
+  <!-- ============ wanderlust ============ -->
+  <section class="specimen f-megrim" id="font-megrim">
+    <p class="name">Megrim</p>
+    <p class="pangram">Jived fox nymph grabs quick waltz.</p>
+    <p class="line">wanderlust</p>
+    <p class="seen">seen on — <a href="../wanderlust/index.html">wanderlust</a></p>
+  </section>
+
+  <section class="specimen f-jura" id="font-jura">
+    <p class="name">Jura</p>
+    <p class="pangram">A wizard&rsquo;s job is to vex chumps quickly in fog.</p>
+    <p class="line">countries · cities · routes</p>
+    <p class="seen">seen on — <a href="../wanderlust/index.html">wanderlust</a></p>
+  </section>
+
+  <!-- ============ shrt ============ -->
+  <section class="specimen f-cinzdec" id="font-cinzdec">
+    <p class="name">Cinzel Decorative</p>
+    <p class="pangram">Waltz, bad nymph, for quick jigs vex.</p>
+    <p class="line">SHRT</p>
+    <p class="seen">seen on — <a href="../shrt.html">shrt</a></p>
+  </section>
+
+  <section class="specimen f-metam" id="font-metam">
+    <p class="name">Metamorphous</p>
+    <p class="pangram">Grumpy wizards make toxic brew for the evil queen and Jack.</p>
+    <p class="line">C++ syntax sugar</p>
+    <p class="seen">seen on — <a href="../shrt.html">shrt</a></p>
+  </section>
+
+  <section class="specimen f-nova" id="font-nova">
+    <p class="name">Nova Script</p>
+    <p class="pangram">My girl wove six dozen plaid jackets before she quit.</p>
+    <p class="line">a gentler way to write it</p>
+    <p class="seen">seen on — <a href="../shrt.html">shrt</a></p>
+  </section>
+
+  <section class="specimen f-jet" id="font-jet">
+    <p class="name">JetBrains Mono</p>
+    <p class="pangram">The quick brown fox jumps over the lazy dog;</p>
+    <p class="line">auto shrt = sugar(cpp);</p>
+    <p class="seen">seen on — <a href="../shrt.html">shrt</a> · every code block</p>
+  </section>
+
+  <!-- ============ concerts ============ -->
+  <section class="specimen f-unifrak" id="font-unifrak">
+    <p class="name">UnifrakturCook</p>
+    <p class="pangram">How vexingly quick daft zebras jump!</p>
+    <p class="line">Concerts</p>
+    <p class="seen">seen on — <a href="../concerts/index.html">concerts</a></p>
+  </section>
+
+  <section class="specimen f-fell" id="font-fell">
+    <p class="name">IM Fell DW Pica</p>
+    <p class="pangram">Crazy Fredrick bought many very exquisite opal jewels.</p>
+    <p class="line">A Sketchbook</p>
+    <p class="seen">seen on — <a href="../concerts/index.html">concerts</a></p>
+  </section>
+
+  <section class="specimen f-tinos" id="font-tinos">
+    <p class="name">Tinos</p>
+    <p class="pangram">The five boxing wizards jump quickly.</p>
+    <p class="line">notes from the crowd</p>
+    <p class="seen">seen on — <a href="../concerts/index.html">concerts</a></p>
+  </section>
+
+  <section class="specimen f-bodoni" id="font-bodoni">
+    <p class="name">Bodoni Moda</p>
+    <p class="pangram">Glib jocks quiz nymph to vex dwarf.</p>
+    <p class="line">live, loud, in print</p>
+    <p class="seen">seen on — <a href="../concerts/index.html">concerts</a></p>
+  </section>
+
+  <!-- ============ cherry ============ -->
+  <section class="specimen f-anton" id="font-anton">
+    <p class="name">Anton</p>
+    <p class="pangram">BIG FJORDS VEX QUICK WALTZ NYMPH.</p>
+    <p class="line">WASHED AWAY CHERRY</p>
+    <p class="seen">seen on — <a href="../cherry/index.html">washed away cherry</a> · <a href="../concerts/index.html">concerts</a></p>
+  </section>
+
+  <section class="specimen f-metal" id="font-metal">
+    <p class="name">Metal Mania</p>
+    <p class="pangram">Quick zephyrs blow, vexing daft Jim.</p>
+    <p class="line">Washed Away</p>
+    <p class="seen">seen on — <a href="../cherry/index.html">washed away cherry</a></p>
+  </section>
+
+  <!-- ============ sandstorm ============ -->
+  <section class="specimen f-michroma" id="font-michroma">
+    <p class="name">Michroma</p>
+    <p class="pangram">Sixty zippers were quickly picked from the woven jute bag.</p>
+    <p class="line">sandstorm</p>
+    <p class="seen">seen on — <a href="../sandstorm/sandstorm_compare.html">sandstorm</a></p>
+  </section>
+
+  <!-- ============ stonks / rebellion ============ -->
+  <section class="specimen f-vt" id="font-vt">
+    <p class="name">VT323</p>
+    <p class="pangram">Watch &ldquo;Jeopardy!&rdquo;, Alex Trebek&rsquo;s fun TV quiz game.</p>
+    <p class="line">STONKS DEFIED</p>
+    <p class="seen">seen on — <a href="../stonks-defied/index.html">stonks defied</a> · hacking side project</p>
+  </section>
+
+  <section class="specimen f-share" id="font-share">
+    <p class="name">Share Tech Mono</p>
+    <p class="pangram">Cwm fjord bank glyphs vext quiz.</p>
+    <p class="line">// YOUR EYES ONLY</p>
+    <p class="seen">seen on — hacking side project</p>
+  </section>
+
+  <!-- ============ signspell ============ -->
+  <section class="specimen f-rubik" id="font-rubik">
+    <p class="name">Rubik Dirt</p>
+    <p class="pangram">Foxy diva Jennifer Lopez wasn&rsquo;t baking my quiche.</p>
+    <p class="line">$IGN⸸$PELL</p>
+    <p class="seen">seen on — <a href="../signspell/index.html">$ign⸸$pell</a></p>
+  </section>
+
+</main>
+
+<footer>
+  <a class="footer-mark" href="../index.html" aria-label="Anton Veselskyi — antonveselskyi.com">
+    <span class="footer-mark__glyph"><span>A</span><span>V</span></span>
+    <span class="footer-mark__label">antonveselskyi.com</span>
+  </a>
+</footer>
+
+<script>
+  // The title lives only at the very top: one scroll down and it
+  // fades away; it comes back when you return to the top.
+  (function () {
+    var title = document.getElementById('title');
+    var gone = false;
+    function update() {
+      var shouldGo = window.scrollY > 80;
+      if (shouldGo !== gone) {
+        gone = shouldGo;
+        title.classList.toggle('gone', gone);
+      }
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+  })();
+
+  // Each specimen swipes into view the first time it's scrolled to.
+  // The section itself carries big top/bottom padding for breathing
+  // room between specimens — observing the section directly means
+  // that empty padding alone can satisfy the threshold before the
+  // actual words are on screen, so instead wrap each specimen's real
+  // content and observe just that.
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sections = document.querySelectorAll('section.specimen');
+    var inners = [];
+    sections.forEach(function (section) {
+      var inner = document.createElement('div');
+      inner.className = 'specimen-inner';
+      while (section.firstChild) inner.appendChild(section.firstChild);
+      section.appendChild(inner);
+      inners.push(inner);
+    });
+
+    if (reduce || !('IntersectionObserver' in window)) {
+      inners.forEach(function (el) { el.classList.add('in-view'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05, rootMargin: '0px 0px -8% 0px' });
+    inners.forEach(function (el) { io.observe(el); });
+  })();
+
+  // "View All" — a tiled index of every face. Picking a tile
+  // teleports straight to that font's page, no smooth-scroll travel.
+  (function () {
+    var btn     = document.getElementById('viewAllBtn');
+    var overlay = document.getElementById('viewAllOverlay');
+    var closeBtn = document.getElementById('viewAllClose');
+    var grid    = overlay.querySelector('.view-all-grid');
+
+    function open() {
+      overlay.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      overlay.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+
+    btn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+    });
+
+    grid.addEventListener('click', function (e) {
+      var tile = e.target.closest('.view-all-tile');
+      if (!tile) return;
+      var target = document.getElementById(tile.dataset.target);
+      if (!target) return;
+
+      close();
+
+      // Teleport: jump instantly, bypassing the page's smooth scroll.
+      var html = document.documentElement;
+      var prevBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
+      target.scrollIntoView({ block: 'center', behavior: 'auto' });
+      requestAnimationFrame(function () {
+        html.style.scrollBehavior = prevBehavior;
+      });
+    });
+  })();
+</script>
+</body>
+</html>
