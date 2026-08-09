@@ -372,8 +372,14 @@
     cursor: pointer;
     pointer-events: auto;
     touch-action: manipulation;   /* tap responds immediately, no delay/ambiguity */
+    overflow: hidden;             /* clip rather than spill into the next tile */
+    overflow-wrap: break-word;
     transition: background .25s ease, transform .25s ease;
   }
+  /* Cinzel Decorative in particular runs wide (bold + uppercase);
+     ease it down so "DECORATIVE" wraps inside its own tile instead
+     of pushing past the edge into its neighbor. */
+  .view-all-tile.f-cinzdec { font-size: clamp(18px, 2.1vw, 27px); }
   .view-all-tile:hover {
     background: #f5f5f5;
     transform: scale(1.04);
