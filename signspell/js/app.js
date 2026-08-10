@@ -1433,6 +1433,27 @@ function diagnosticNumber(value, digits = 2) {
   return Number.isFinite(value) ? Number(value).toFixed(digits) : "--";
 }
 
+/**
+ * The pose side of a motion line: why the classifier landed where it did.
+ *
+ * The stroke numbers alone cannot explain a lost sign, because the finger
+ * pattern now backs the classifier, the marginal rescue, the override of a
+ * wrong rejection and the stabilizer's hold. Without these fields a log shows a
+ * note that did not play and no reason for it.
+ *
+ * `fx` is one digit per finger, thumb first, of how straight that finger reads
+ * — so a three that will not register can be read off the line directly. No
+ * coordinates are included, only the derived scores.
+ */
+function poseTrace(pose = {}) {
+  const fingers = Array.isArray(pose.fingers)
+    ? pose.fingers.map((value) => Math.max(0, Math.min(9, Math.round(value * 9)))).join("")
+    : "-----";
+  const marks = `${pose.patternOverride ? "!" : ""}${pose.provisional ? "*" : ""}`;
+  return `pose=${pose.reason || "unknown"}${marks} digit=${pose.digit ?? "-"} pat=${pose.patternDigit ?? "-"}`
+    + ` fx=${fingers} hold=${pose.stabilizationPhase || "-"} conf=${diagnosticNumber(pose.confidence, 2)}`;
+}
+
 function logGestureDiagnostics(diagnostic) {
   if (!diagnostic?.hand?.detected) {
     diagnosticLog.state("pose", "no hand", { key: "gesture:pose" });
@@ -1446,7 +1467,7 @@ function logGestureDiagnostics(diagnostic) {
   diagnosticLog.state("pose", `digit=${pose.digit ?? "-"}; gate=${pose.accepted ? "ready" : "wait"}; mode=${poseMode}; reason=${pose.rawReason || pose.reason || "unknown"}`, { key: "gesture:pose" });
   diagnosticLog.state("stroke", `state=${stroke.state || "unknown"}; digit=${stroke.lockedDigit ?? stroke.stableDigit ?? "-"}; candidate=${stroke.strikeCandidate ? 1 : 0}`, { key: "gesture:stroke" });
   if (!serialLogExpanded) return;
-  diagnosticLog.add("motion", `pose=${diagnosticNumber(pose.distance)}/${diagnosticNumber(pose.effectiveThreshold)} r=${diagnosticNumber(pose.thresholdRatio)} sep=${diagnosticNumber(pose.separation)} view=${diagnosticNumber(pose.viewDistance)}; tilt=${diagnosticNumber(stroke.palmVerticality, 3)} ready≥${diagnosticNumber(stroke.readyVerticality, 2)} hit≤${diagnosticNumber(stroke.hitVerticality, 2)}; y=${diagnosticNumber(diagnostic.palmScreenY, 3)} m=${diagnosticNumber(stroke.filteredY, 3)} v=${diagnosticNumber(stroke.velocity)} d=${diagnosticNumber(stroke.displacement, 3)}; recover=${diagnosticNumber(stroke.recovery, 3)}/${diagnosticNumber(stroke.recoveryThreshold, 3)} frames=${stroke.recoveryFrames || 0}/${stroke.recoveryFramesRequired || "-"} ms=${Math.round(stroke.recoveryMs || 0)}/${stroke.recoveryMsRequired || "-"}; reason=${stroke.reason || "unknown"}`, { key: "gesture:motion", throttleMs: 350 });
+  diagnosticLog.add("motion", `pose=${diagnosticNumber(pose.distance)}/${diagnosticNumber(pose.effectiveThreshold)} r=${diagnosticNumber(pose.thresholdRatio)} sep=${diagnosticNumber(pose.separation)} view=${diagnosticNumber(pose.viewDistance)}; tilt=${diagnosticNumber(stroke.palmVerticality, 3)} ready≥${diagnosticNumber(stroke.readyVerticality, 2)} hit≤${diagnosticNumber(stroke.hitVerticality, 2)}; y=${diagnosticNumber(diagnostic.palmScreenY, 3)} m=${diagnosticNumber(stroke.filteredY, 3)} v=${diagnosticNumber(stroke.velocity)} d=${diagnosticNumber(stroke.displacement, 3)}; recover=${diagnosticNumber(stroke.recovery, 3)}/${diagnosticNumber(stroke.recoveryThreshold, 3)} frames=${stroke.recoveryFrames || 0}/${stroke.recoveryFramesRequired || "-"} ms=${Math.round(stroke.recoveryMs || 0)}/${stroke.recoveryMsRequired || "-"}; reason=${stroke.reason || "unknown"}; ${poseTrace(pose)}`, { key: "gesture:motion", throttleMs: 350 });
 }
 
 function updateLiveGestureReadout(diagnostic) {

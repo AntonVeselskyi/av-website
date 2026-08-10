@@ -360,6 +360,33 @@ at frame 6 and two arrives at 7, four at 19 after 18, five at 19 after 17.
   Everything after this needs real camera traces rather than synthetic
   trajectories — the synthetic ones have stopped finding faults.
 
+## Reading a trace
+
+The serial log's `motion` line carries the stroke numbers and, since the pattern
+reader began backing four separate decisions, the pose side too:
+
+```
+pose=finger-pattern* digit=3 pat=3 fx=19990 hold=- conf=0.40
+```
+
+- `pose` — why the classifier landed there: `accepted`, `outside-calibration`,
+  `ambiguous-pose`, `wrong-hand-side`, `finger-pattern`, `stable-nearest`.
+- `!` — geometry overruled a rejection. `*` — no profile, running on geometry.
+- `digit` — nearest calibrated class. `pat` — what the finger pattern read.
+  When these disagree, that disagreement is the story.
+- `fx` — how straight each finger reads, thumb first, 0 to 9. `19990` is thumb
+  down with index, middle and ring up: the open three. `99900` is ASL three.
+- `hold` — the stabilizer's phase: `enter`, `hold`, or `hold-pattern` when the
+  pattern is the only thing keeping the sign alive.
+- `conf` — 0.96 is a calibrated match, 0.45 an override, 0.40 uncalibrated.
+
+No coordinates appear anywhere in this, only derived scores, so the log stays
+safe to copy out of the page.
+
+To diagnose a lost sign: open the serial log, play until it fails, press COPY.
+The line at the moment of failure says whether the pose was rejected and why,
+what the geometry thought, and whether the stabilizer was still holding.
+
 ## Testing
 
 ```bash
