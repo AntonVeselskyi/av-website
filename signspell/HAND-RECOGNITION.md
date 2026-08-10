@@ -30,8 +30,8 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 | Symptom | Status | Cause |
 | --- | --- | --- |
 | Three can only be made one way | **fixed** | one prototype per digit |
-| Hand lost mid-sign on 1–5 | **partly addressed** | see below |
-| Fast repeated notes dropped | open | not yet investigated |
+| Hand lost mid-sign on 1–5 | **partly addressed** | see variants below |
+| Fast repeated notes dropped | **improved** | recovery clock missed by 3ms |
 
 ## Increment log
 
@@ -71,12 +71,54 @@ Two mistakes worth not repeating, both found by measuring rather than reading:
 Backward compatible: profiles saved before variants existed have no `variants`
 array and are treated as a single variant, so nobody has to recalibrate.
 
+### Fast repeated notes (downstroke.js)
+
+Measured before touching anything, by driving `DownstrokeRecognizer` with a
+synthetic performer at a sweep of note periods. The failure was not gradual: at
+a 250ms period all eight notes registered, and at 220ms **one** did. It fired
+once and then never re-armed.
+
+Tracing the state machine showed why, and it was not what the constants suggest.
+The recogniser sat in `awaiting-recovery` forever. `recoveryFrames` reached its
+required three on every upstroke — but `recoverySince` starts at the *first*
+qualifying frame and the gate then wants another 70ms, so elapsed came to 67ms
+and missed by three. The hand began its next descent, the counter reset, and the
+same near-miss repeated every cycle. A gate that is 3ms short is indistinguishable
+from a gate that is broken.
+
+Two changes, both sized to what a fast upstroke actually affords:
+
+- `recoveryMs` 70 -> 52. The clock starts at the first upward frame, so it is
+  already several frames into the recovery before it begins counting.
+- The arm-relative recovery target moves from `armY + minDisplacement * 0.35` to
+  `* 0.5`. The old target sat just below where the smoother reaches on a quick
+  upstroke, so frames counted only intermittently.
+
+Result at both 30fps and 60fps: the cliff moves from a 220ms period to 180ms.
+A 200ms period went from 1 note in 8 to 8 in 8. Slow deliberate playing is
+unchanged at exactly one note per strike, and long lazy strokes do not double
+fire.
+
+Also fixed while in there: the evidence gates read `N frames AND M milliseconds`,
+which looks like belt and braces but is not. At 30fps three frames is 100ms, so
+the frame count silently overrode the millisecond budget and every gate waited
+43% longer than designed. The count is now capped at what the time window
+affords — never below two, so one noisy sample still cannot satisfy a gate, and
+never above the configured count, so a fast camera keeps all the evidence it can
+afford. On its own this moved nothing at 30fps, which is how the recovery clock
+turned out to be the real blocker; it does help at 60fps and it removes an
+unintended frame-rate dependence.
+
+The remaining 180ms limit is no longer obviously a tuning fault. At that period a
+70ms strike plus a 70ms return leaves 40ms of rest, and the arm gate alone wants
+`stableMs` 65. Going faster needs the arm gate reconsidered, not nudged.
+
 ## Next
 
-- **Fast repeated notes get dropped.** Suspect the stabilizer's consistency
-  requirement or the downstroke recovery gate: a second strike arriving before
-  the first has recovered may be swallowed. Measure the frame budget between
-  two fast notes before changing any threshold.
+- **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
+  elapse at rest before a strike can arm, which a genuinely fast performance
+  never provides. Consider arming on a settled *velocity* rather than a settled
+  dwell, so a player who never fully stops can still re-arm.
 - **Hand lost mid-sign**, remaining cases. Once variants are in use, check
   whether the losses that remain are classification (distance ratio crossing
   the threshold) or tracking (MediaPipe dropping the hand entirely) — the

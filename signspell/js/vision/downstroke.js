@@ -24,13 +24,38 @@ export class DownstrokeRecognizer {
       candidateFlowMs: thresholds.candidateFlowMs ?? 110,
       candidateFlowConfidence: thresholds.candidateFlowConfidence ?? 0.18,
       recoveryFrames: thresholds.recoveryFrames ?? 3,
-      recoveryMs: thresholds.recoveryMs ?? 70,
+      recoveryMs: thresholds.recoveryMs ?? 52,
       metric: thresholds.metric === "palm-tilt" ? "palm-tilt" : "screen-y",
       readyVerticality: thresholds.readyVerticality ?? 0.68,
       hitVerticality: thresholds.hitVerticality ?? 0.42,
       lockedMissingReleaseMs: thresholds.lockedMissingReleaseMs ?? 190,
     };
+    // Camera cadence, learned from the stream. The evidence gates below are
+    // designed in milliseconds; without this they silently become frame-rate
+    // dependent and cost far more time than intended on a slow camera.
+    this.frameIntervalMs = 33.3;
+    this.previousUpdateAt = null;
     this.reset();
+  }
+
+  /**
+   * How many frames of evidence a gate should require.
+   *
+   * The gates are written as "N frames AND M milliseconds", which reads as
+   * belt and braces but is not: at 30fps three frames is 100ms, so the frame
+   * count quietly overrides the millisecond budget and the wait is 43% longer
+   * than designed. Since both must hold, requiring more frames than fit inside
+   * the time window can only ever delay the gate past its own deadline.
+   *
+   * So the count is capped at what the window affords — never below two, so a
+   * single noisy sample can still never satisfy a gate, and never above the
+   * configured count, so a fast camera keeps every frame of evidence it can
+   * afford. The millisecond budget then governs at every frame rate, which is
+   * what it was always meant to do.
+   */
+  evidenceFrames(configuredFrames, requiredMs) {
+    const affordable = Math.floor(requiredMs / Math.max(1, this.frameIntervalMs));
+    return Math.max(2, Math.min(configuredFrames, affordable));
   }
 
   reset() {
@@ -118,6 +143,13 @@ export class DownstrokeRecognizer {
       this.reset();
       return { hit: null, state: this.state, velocity: 0, reason: "tilt-unavailable" };
     }
+    // Learn the camera's cadence from consecutive samples. Ignore the gaps
+    // that follow a dropout so a lost hand cannot inflate the estimate.
+    if (Number.isFinite(this.previousUpdateAt)) {
+      const delta = timestamp - this.previousUpdateAt;
+      if (delta > 0 && delta < 80) this.frameIntervalMs += (delta - this.frameIntervalMs) * 0.2;
+    }
+    this.previousUpdateAt = timestamp;
     this.palmVerticality = Number.isFinite(palmTilt) ? palmTilt : null;
     const readyOrientation = !tiltMode || palmTilt >= this.thresholds.readyVerticality;
     const hitOrientation = !tiltMode || palmTilt <= this.thresholds.hitVerticality;
@@ -260,7 +292,7 @@ export class DownstrokeRecognizer {
       this.hitY = Math.max(this.hitY, palmY);
       const recoveryThreshold = Math.max(0.025, this.thresholds.recoveryDisplacement);
       const returnLine = Number.isFinite(this.armY)
-        ? Math.min(this.hitY - recoveryThreshold, this.armY + this.thresholds.minDisplacement * 0.35)
+        ? Math.min(this.hitY - recoveryThreshold, this.armY + this.thresholds.minDisplacement * 0.5)
         : this.hitY - recoveryThreshold;
       if (palmY <= returnLine && readyOrientation) {
         this.recoveryFrames += 1;
@@ -270,7 +302,8 @@ export class DownstrokeRecognizer {
         this.recoverySince = null;
       }
       const recoveryMs = this.recoverySince == null ? 0 : timestamp - this.recoverySince;
-      if (this.recoveryFrames >= this.thresholds.recoveryFrames && recoveryMs >= this.thresholds.recoveryMs) {
+      const recoveryEvidence = this.evidenceFrames(this.thresholds.recoveryFrames, this.thresholds.recoveryMs);
+      if (this.recoveryFrames >= recoveryEvidence && recoveryMs >= this.thresholds.recoveryMs) {
         this.state = "neutral";
         // The recovery swipe is intentionally abrupt. Rebase the smoother on
         // the recovered hand position so its residual velocity cannot prevent
@@ -355,7 +388,8 @@ export class DownstrokeRecognizer {
     }
 
     if (this.state === "neutral") {
-      const stable = this.stableFrames >= this.thresholds.stableFrames
+      const stableEvidence = this.evidenceFrames(this.thresholds.stableFrames, this.thresholds.stableMs);
+      const stable = this.stableFrames >= stableEvidence
         && timestamp - this.stableSince >= this.thresholds.stableMs;
       if (!stable || Math.abs(this.velocity) > this.thresholds.neutralVelocity) {
         return { hit: null, state: this.state, velocity: this.velocity, reason: stable ? "awaiting-rest" : "stabilizing" };

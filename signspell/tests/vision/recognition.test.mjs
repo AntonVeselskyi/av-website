@@ -912,3 +912,53 @@ test("a digit made two ways is learned as two shapes, and one made one way is no
   assert.equal(classifyPose(legacy, one).digit, 1);
   assert.equal(classifyPose(legacy, one).accepted, true);
 });
+
+test("a fast performance re-arms between strikes", () => {
+  // Drives the recognizer with a synthetic performer: strike down, recover up,
+  // rest, repeat. The gate that used to fail here was three milliseconds short
+  // of its own deadline, which looks exactly like a gate that does not work.
+  const play = (periodMs, notes, fps) => {
+    const stroke = new DownstrokeRecognizer();
+    const step = 1000 / fps;
+    const strikeMs = 70;
+    const returnMs = 70;
+    const restY = 0.4;
+    const downY = 0.52;
+    let hits = 0;
+    for (let time = 0; time < periodMs * notes; time += step) {
+      const phase = time % periodMs;
+      let palmY = restY;
+      if (phase < strikeMs) palmY = restY + (downY - restY) * (phase / strikeMs);
+      else if (phase < strikeMs + returnMs) palmY = downY - (downY - restY) * ((phase - strikeMs) / returnMs);
+      const result = stroke.update({
+        timestamp: time,
+        palmY,
+        pose: { digit: 3, accepted: true, confidence: 0.9, reason: "accepted" },
+      });
+      if (result.hit) hits += 1;
+    }
+    return hits;
+  };
+
+  // Eighth notes at 150bpm, on a 30fps camera: every strike must register.
+  assert.equal(play(200, 8, 30), 8);
+  assert.equal(play(220, 8, 30), 8);
+  assert.equal(play(200, 8, 60), 8);
+  // Deliberate playing must still be exactly one note per strike, never two.
+  assert.equal(play(600, 6, 30), 6);
+  assert.equal(play(900, 6, 30), 6);
+});
+
+test("evidence gates are capped by their own millisecond budget", () => {
+  const stroke = new DownstrokeRecognizer({ stableFrames: 3, stableMs: 65 });
+  // A slow camera cannot afford three frames inside 65ms, so the gate asks for
+  // the two it can — the millisecond budget governs, not the frame count.
+  stroke.frameIntervalMs = 33.3;
+  assert.equal(stroke.evidenceFrames(3, 65), 2);
+  // A fast camera keeps all the evidence it can afford.
+  stroke.frameIntervalMs = 16.7;
+  assert.equal(stroke.evidenceFrames(3, 65), 3);
+  // Never below two, so a single noisy sample can never satisfy a gate.
+  stroke.frameIntervalMs = 80;
+  assert.equal(stroke.evidenceFrames(3, 65), 2);
+});
