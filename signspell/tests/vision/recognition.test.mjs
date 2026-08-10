@@ -1212,3 +1212,56 @@ test("geometry recovers a sign the profile never saw, without taking over", () =
   }
   assert.equal(notes, 0);
 });
+
+test("geometry vouches for a held sign, and lets go the moment it changes", () => {
+  const shape = (thumb, index, middle, ring, pinky) => [
+    thumb ? 0.95 : 0.2, thumb ? 0.95 : 0.2, thumb ? 1.2 : 0.6,
+    index ? 0.95 : 0.2, index ? 0.95 : 0.2, index ? 1.6 : 0.9,
+    middle ? 0.95 : 0.2, middle ? 0.95 : 0.2, middle ? 1.7 : 0.9,
+    ring ? 0.95 : 0.2, ring ? 0.95 : 0.2, ring ? 1.6 : 0.9,
+    pinky ? 0.95 : 0.2, pinky ? 0.95 : 0.2, pinky ? 1.5 : 0.8,
+  ];
+  const one = shape(0, 1, 0, 0, 0);
+  const two = shape(0, 1, 1, 0, 0);
+  const three = shape(0, 1, 1, 1, 0);
+  const four = shape(0, 1, 1, 1, 1);
+  const five = shape(1, 1, 1, 1, 1);
+  const spread = (vector, count) => Array.from({ length: count }, (_, step) =>
+    vector.map((value, index) => value + Math.sin(step * 7.3 + index * 1.7) * 0.03));
+  const profile = buildPoseProfile({
+    1: spread(one, 14), 2: spread(two, 14), 3: spread(three, 14),
+    4: spread(four, 14), 5: spread(five, 14),
+  });
+  const blend = (a, b, t) => a.map((value, index) => value + (b[index] - value) * t);
+
+  // Holding a three while a neighbouring finger creeps out and back. The
+  // calibrated distance gives up part way through; the pattern does not.
+  for (const neighbour of [four, two]) {
+    const stabilizer = new PoseStabilizer();
+    let held = 0;
+    for (let frame = 0; frame < 90; frame += 1) {
+      const drift = 0.5 - 0.5 * Math.cos((frame / 89) * Math.PI * 2);
+      const pose = classifyPose(profile, blend(three, neighbour, drift * 0.55));
+      if (stabilizer.update(pose, frame * 33.3).accepted) held += 1;
+    }
+    assert.equal(held, 90);
+  }
+
+  // The pattern is its own guard: a real change of sign changes the pattern,
+  // which releases the hold at once rather than stranding the old digit.
+  for (const [target, digit] of [[two, 2], [four, 4], [five, 5]]) {
+    const stabilizer = new PoseStabilizer();
+    let lastThree = null;
+    let switched = null;
+    for (let frame = 0; frame < 70; frame += 1) {
+      const pose = classifyPose(profile, blend(three, target, Math.min(1, frame / 25)));
+      const result = stabilizer.update(pose, frame * 33.3);
+      if (result.accepted && result.digit === 3) lastThree = frame;
+      if (result.accepted && result.digit === digit && switched === null) switched = frame;
+    }
+    assert.ok(switched !== null);
+    assert.ok(switched > lastThree);
+    // Within a couple of frames of the old sign being let go, not seconds.
+    assert.ok(switched - lastThree <= 3);
+  }
+});

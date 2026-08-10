@@ -31,7 +31,7 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 | --- | --- | --- |
 | Three can only be made one way | **fixed** | one prototype per digit |
 | Three only the way you calibrated it | **fixed** | geometry overrides a rejection |
-| Hand lost mid-sign on 1–5 | **improved** | drift limits; camera distance |
+| Hand lost mid-sign on 1–5 | **fixed for drift** | distance gave up; geometry did not |
 | Hand lost to dropouts or blur | **not a fault** | measured healthy, see below |
 | Fast repeated notes dropped | **fixed to 140ms** | recovery needed frames it never had |
 
@@ -284,6 +284,37 @@ strike produces exactly one, on the correct digit. If spurious notes ever do
 appear on transitions, the fix belongs in the stabilizer — promoting an override
 only after several consistent frames — not in the classifier.
 
+### Geometry vouches for a held sign (pose-stabilizer.js)
+
+Holding a three while a neighbouring finger creeps out and back still lost the
+hand: 81 frames of 90 with the pinky drifting toward four, and 72 of 90 with the
+ring relaxing toward two. Two distinct causes, only one of them a fault.
+
+The genuine one: separation collapsing to 0.008, where the two nearest classes
+are equally distant. Dropping there is correct — nothing can tell them apart.
+The fault: a frame at ratio 1.71 against an allowance of 1.658, missing by five
+hundredths, while the finger pattern still read three perfectly clearly.
+
+The stabilizer had never been shown the pattern. It is now: while the pattern
+still reads the held digit, the sign survives a distance the calibrated envelope
+has given up on — including the case where the *nearest calibrated class has
+become the wrong one*, which the previous separation floor could never allow.
+No separation floor is needed on that path, because the pattern supplies exactly
+the disambiguation separation was there to measure.
+
+It cannot strand a stale digit, and that is the point: the pattern is its own
+guard. When the performer really changes sign the pattern changes with them and
+the hold ends on that frame.
+
+| holding a three while | before | after |
+| --- | --- | --- |
+| the pinky creeps toward four | 81/90 | 90/90 |
+| the ring relaxes toward two | 72/90 | 90/90 |
+| the middle relaxes toward one | — | 88/90 |
+
+And a real change of sign still switches within a frame or two: three is let go
+at frame 6 and two arrives at 7, four at 19 after 18, five at 19 after 17.
+
 ## Next
 
 - **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
@@ -304,6 +335,9 @@ only after several consistent frames — not in the classifier.
   recovery: a 70ms strike sampled every 33ms is two frames, which is the
   minimum the velocity estimate needs. This is the end of what tuning can
   reach on a 30fps camera.
+- The pattern now backs the classifier, the rescue, the override and the hold.
+  Everything after this needs real camera traces rather than synthetic
+  trajectories — the synthetic ones have stopped finding faults.
 
 ## Testing
 

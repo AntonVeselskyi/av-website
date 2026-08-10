@@ -5,6 +5,10 @@ const HOLD_RATIO = 1.55;
 const ENTER_SEPARATION = 0.11;
 const HOLD_SEPARATION = 0.05;
 const HOLD_RATIO_MAX = 2.25;
+// Geometry vouching for a sign is worth more slack than distance alone, but it
+// is still bounded: a hand that has travelled this far from every calibrated
+// shape is no longer holding anything.
+const PATTERN_HOLD_RATIO = 2.8;
 
 /**
  * How far a held sign is allowed to drift before it is given up.
@@ -96,11 +100,27 @@ export class PoseStabilizer {
 
     const ratio = finiteRatio(pose);
     const separation = Number(pose.separation) || 0;
-    if (this.acceptedDigit === pose.digit
-      && pose.reason === "outside-calibration"
+
+    // The finger pattern is what the sign *is*, so while it still reads the
+    // held digit the sign survives a distance the calibrated envelope has
+    // already given up on — including the case where the nearest calibrated
+    // class has become the wrong one. This needs no separation floor because
+    // the pattern supplies the very disambiguation separation was measuring.
+    //
+    // It cannot strand a stale digit: when the performer really changes sign
+    // the pattern changes with them, and the hold ends on that same frame.
+    const patternHolds = Number.isInteger(pose.patternDigit)
+      && pose.patternDigit === this.acceptedDigit
+      && ratio <= PATTERN_HOLD_RATIO;
+
+    const distanceHolds = this.acceptedDigit === pose.digit
       && ratio <= holdRatioFor(separation)
-      && separation >= HOLD_SEPARATION) {
-      return promotedPose(pose, ratio, "hold");
+      && separation >= HOLD_SEPARATION;
+
+    if (this.acceptedDigit != null
+      && pose.reason !== "wrong-hand-side"
+      && (patternHolds || distanceHolds)) {
+      return promotedPose(pose, ratio, patternHolds && !distanceHolds ? "hold-pattern" : "hold");
     }
 
     if (!promotable(pose, ratio, separation)) {
