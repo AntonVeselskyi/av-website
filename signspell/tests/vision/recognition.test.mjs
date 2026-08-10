@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildCalibrationProfile,
+  buildPoseProfile,
   calibrationFromStorage,
   calibrationToStorage,
   classifyPose,
@@ -859,4 +860,55 @@ test("cancelling just after a recapture settles still restores saved checkpoint 
   const draft = messages.findLast((message) => message.type === "calibration-draft").draft;
   assert.equal(draft.data.poseSamples[1].length, 6);
   assert.equal(draft.data.completed.pose[1], true);
+});
+
+test("a digit made two ways is learned as two shapes, and one made one way is not", () => {
+  // Three is the sign people genuinely make more than one way: ASL three is
+  // thumb, index and middle; the other common three is index, middle and ring.
+  const aslThree = [0.9, 0.9, 1.2, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.8, 0.8, 0.9, 0.9, 0.9, 0.8];
+  const openThree = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.1, 0.1, 1.6, 0.9, 0.9, 0.8];
+  const one = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.8];
+  const two = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.9, 0.9, 0.9, 0.9, 0.9, 0.8];
+  const four = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.5];
+  const five = [0.9, 0.9, 1.2, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.5];
+  const spread = (vector, count, amount) => Array.from({ length: count }, (_, step) =>
+    vector.map((value, index) => value + Math.sin(step * 7.3 + index * 1.7) * amount));
+
+  const profile = buildPoseProfile({
+    1: spread(one, 14, 0.055),
+    2: spread(two, 14, 0.055),
+    3: [...spread(aslThree, 8, 0.02), ...spread(openThree, 8, 0.02)],
+    4: spread(four, 14, 0.055),
+    5: spread(five, 14, 0.055),
+  });
+
+  assert.equal(profile.valid, true);
+  assert.equal(profile.classes[3].variants.length, 2);
+  // A digit performed one way, wobble and all, must not be split into two.
+  assert.equal(profile.classes[1].variants.length, 1);
+
+  // Both shapes of three are accepted, and each matches its own variant.
+  const asl = classifyPose(profile, aslThree);
+  const open = classifyPose(profile, openThree);
+  assert.equal(asl.digit, 3);
+  assert.equal(open.digit, 3);
+  assert.ok(asl.accepted && open.accepted);
+  assert.notEqual(asl.variant, open.variant);
+  // Matching a variant rather than the pooled centre is what buys the headroom
+  // that stops a drifting hand falling out of the class.
+  assert.ok(asl.thresholdRatio < 0.2);
+  assert.ok(open.thresholdRatio < 0.2);
+
+  // The two-shape three must not swallow its neighbours.
+  for (const [vector, digit] of [[one, 1], [two, 2], [four, 4], [five, 5]]) {
+    const result = classifyPose(profile, vector);
+    assert.equal(result.digit, digit);
+    assert.equal(result.accepted, true);
+  }
+
+  // Profiles saved before variants existed still classify.
+  const legacy = JSON.parse(JSON.stringify(profile));
+  for (const entry of Object.values(legacy.classes)) delete entry.variants;
+  assert.equal(classifyPose(legacy, one).digit, 1);
+  assert.equal(classifyPose(legacy, one).accepted, true);
 });

@@ -41,6 +41,97 @@ function vectorStats(samples) {
   return { center, spread };
 }
 
+/** Acceptance radius for a cluster, from how far its own samples scatter. */
+function clusterThreshold(distances) {
+  return Math.max(1.35, Math.min(3.5, (Math.max(...distances) || 0) * 1.45 + 0.15));
+}
+
+function describeCluster(samples) {
+  const { center, spread } = vectorStats(samples);
+  const distances = samples.map((sample) => vectorDistance(sample, center, spread));
+  return { center, spread, threshold: clusterThreshold(distances), samples: samples.length };
+}
+
+/**
+ * Splits a digit's calibration samples into two shapes when they are genuinely
+ * bimodal, and returns a single shape when they are not.
+ *
+ * One prototype per digit cannot represent a sign that people make in more than
+ * one way — three is the obvious case, made either as ASL three (thumb, index,
+ * middle) or as index, middle and ring. Averaging those two into one prototype
+ * is worse than picking either: the centre lands on a shape the performer never
+ * makes, and the spread widens to cover both, so the class simultaneously stops
+ * accepting the real poses and starts bleeding into its neighbours. Keeping the
+ * modes apart fixes the ambiguity and tightens both classes at once.
+ *
+ * The split is deterministic: two-means seeded from the furthest-apart pair.
+ */
+function splitVariants(samples) {
+  const whole = describeCluster(samples);
+  if (samples.length < 10) return [whole];
+
+  const pooled = vectorStats(samples);
+  const metric = (a, b) => vectorDistance(a, b, pooled.spread);
+
+  // Seed on the two most distant samples, so the result never depends on
+  // capture order or on a random draw.
+  let seedA = samples[0];
+  let seedB = samples[1];
+  let widest = -1;
+  for (let i = 0; i < samples.length; i += 1) {
+    for (let j = i + 1; j < samples.length; j += 1) {
+      const gap = metric(samples[i], samples[j]);
+      if (gap > widest) { widest = gap; seedA = samples[i]; seedB = samples[j]; }
+    }
+  }
+
+  let groupA = [];
+  let groupB = [];
+  for (let pass = 0; pass < 8; pass += 1) {
+    groupA = [];
+    groupB = [];
+    for (const sample of samples) {
+      (metric(sample, seedA) <= metric(sample, seedB) ? groupA : groupB).push(sample);
+    }
+    if (!groupA.length || !groupB.length) return [whole];
+    const nextA = vectorStats(groupA).center;
+    const nextB = vectorStats(groupB).center;
+    const settled = metric(nextA, seedA) < 1e-6 && metric(nextB, seedB) < 1e-6;
+    seedA = nextA;
+    seedB = nextB;
+    if (settled) break;
+  }
+
+  // Both shapes must be properly attested.
+  const MIN_SAMPLES = 4;
+  if (groupA.length < MIN_SAMPLES || groupB.length < MIN_SAMPLES) return [whole];
+
+  const first = describeCluster(groupA);
+  const second = describeCluster(groupB);
+
+  // Separation is measured against how much each cluster wobbles on its own,
+  // never against the spread of the two combined. The pooled spread is widened
+  // by the very bimodality being tested for, so scoring against it is circular:
+  // the further apart the two shapes sit, the wider the pooled spread grows and
+  // the *smaller* the gap appears. Within-cluster scatter is the honest
+  // denominator, and it is what makes the test mean "these are further apart
+  // than either one's own jitter".
+  const within = first.spread.map((value, index) => Math.max(
+    featureSpreadFloor(index),
+    (value + second.spread[index]) / 2,
+  ));
+  const MIN_MODE_GAP = 2.2;
+  if (vectorDistance(first.center, second.center, within) < MIN_MODE_GAP) return [whole];
+  return [first, second];
+}
+
+/** Saved profiles predate variants, so the legacy shape is still a variant. */
+function variantsOf(prototype) {
+  return Array.isArray(prototype?.variants) && prototype.variants.length
+    ? prototype.variants
+    : [prototype];
+}
+
 function sampleParts(sample) {
   if (Array.isArray(sample)) return { features: sample, view: null };
   if (Array.isArray(sample?.features)) return { features: sample.features, view: Number.isFinite(sample.view) ? sample.view : null };
@@ -79,12 +170,17 @@ export function buildPoseProfile(samplesByDigit) {
     const { center, spread } = vectorStats(samples);
     const distances = samples.map((sample) => vectorDistance(sample, center, spread));
     const views = descriptors.map((sample) => sample.view).filter(Number.isFinite);
+    // A digit may legitimately be made more than one way; three usually is.
+    const variants = splitVariants(samples);
     classes[digit] = {
       center,
       spread,
       // Generous enough for small performance movement, but bounded so a
       // different digit cannot become an accepted pose merely by being noisy.
-      threshold: Math.max(1.35, Math.min(3.5, (Math.max(...distances) || 0) * 1.45 + 0.15)),
+      threshold: clusterThreshold(distances),
+      // Each accepted shape for this digit. The pooled centre above stays for
+      // saved profiles and for callers that only read the legacy fields.
+      variants,
       // Old profiles and callers that only supply vectors stay supported.
       view: views.length >= 5 ? scalarStats(views) : null,
     };
@@ -105,11 +201,22 @@ export function classifyPose(profile, featureVector, view = null) {
   }
   const candidates = Object.entries(profile.classes)
     .filter(([, prototype]) => prototype.center.length === featureVector.length)
-    .map(([digit, prototype]) => ({
-      digit: Number(digit),
-      distance: vectorDistance(featureVector, prototype.center, prototype.spread),
-      threshold: prototype.threshold,
-    }))
+    .map(([digit, prototype]) => {
+      // A digit matches if ANY of its shapes matches. Scoring the best variant
+      // rather than a pooled average is what lets three be made two ways
+      // without widening the class enough to swallow two or four.
+      let best = null;
+      variantsOf(prototype).forEach((variant, index) => {
+        if (!Array.isArray(variant?.center) || variant.center.length !== featureVector.length) return;
+        const distance = vectorDistance(featureVector, variant.center, variant.spread);
+        if (!best || distance < best.distance) {
+          best = { distance, threshold: variant.threshold ?? prototype.threshold, variant: index };
+        }
+      });
+      if (!best) return null;
+      return { digit: Number(digit), distance: best.distance, threshold: best.threshold, variant: best.variant };
+    })
+    .filter(Boolean)
     .sort((a, b) => a.distance - b.distance);
   if (!candidates.length) return { digit: null, accepted: false, confidence: 0, reason: "feature-width" };
 
@@ -133,6 +240,8 @@ export function classifyPose(profile, featureVector, view = null) {
     digit: best.digit,
     accepted: inClass && separated && viewAccepted,
     confidence,
+    // Which shape of that digit matched, for the diagnostics bus.
+    variant: best.variant ?? 0,
     distance: best.distance,
     separation,
     viewDistance,
