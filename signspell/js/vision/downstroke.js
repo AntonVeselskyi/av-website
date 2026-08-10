@@ -312,8 +312,18 @@ export class DownstrokeRecognizer {
       // total, so that requirement can never be met and the note never releases.
       const decisivelyRecovered = Number.isFinite(this.hitY)
         && this.filteredY <= this.hitY - recoveryThreshold * 2.5;
-      if (this.recoveryFrames >= recoveryEvidence
-        && (recoveryMs >= this.thresholds.recoveryMs || decisivelyRecovered)) {
+      // At 30fps a strike and its return span roughly four frames, which leaves
+      // the recovery detector two — and it needs two. A single frame carrying a
+      // decisive upward whip is as much evidence that the stroke is over as two
+      // frames of displacement are, and unlike them it is actually available
+      // when the camera is slow. The velocity floor is high enough that jitter
+      // cannot reach it, so a note still cannot be ended by one noisy sample.
+      const whippedBack = this.velocity <= -this.thresholds.strokeVelocity * 0.6
+        && Number.isFinite(this.hitY)
+        && this.filteredY <= this.hitY - recoveryThreshold;
+      if (whippedBack
+        || (this.recoveryFrames >= recoveryEvidence
+          && (recoveryMs >= this.thresholds.recoveryMs || decisivelyRecovered))) {
         this.state = "neutral";
         // The recovery swipe is intentionally abrupt. Rebase the smoother on
         // the recovered hand position so its residual velocity cannot prevent

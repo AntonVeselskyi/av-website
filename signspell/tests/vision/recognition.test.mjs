@@ -1108,3 +1108,46 @@ test("a decisive return ends a stroke without waiting out the recovery clock", (
     assert.equal(play(period, 6, 30), 6);
   }
 });
+
+test("a decisive upward whip releases a stroke on a single frame", () => {
+  const pose = { digit: 3, accepted: true, confidence: 0.9, reason: "accepted" };
+  const play = (periodMs, notes, fps) => {
+    const stroke = new DownstrokeRecognizer();
+    const step = 1000 / fps;
+    const strikeMs = Math.min(70, periodMs * 0.45);
+    const returnMs = Math.min(70, periodMs * 0.45);
+    const restY = 0.4;
+    const downY = 0.52;
+    let hits = 0;
+    for (let time = 0; time < periodMs * notes; time += step) {
+      const phase = time % periodMs;
+      let palmY = restY;
+      if (phase < strikeMs) palmY = restY + (downY - restY) * (phase / strikeMs);
+      else if (phase < strikeMs + returnMs) palmY = downY - (downY - restY) * ((phase - strikeMs) / returnMs);
+      if (stroke.update({ timestamp: time, palmY, pose }).hit) hits += 1;
+    }
+    return hits;
+  };
+
+  // A 30fps camera gives about four frames for a strike and its return, which
+  // leaves the displacement test too few. Velocity carries it instead.
+  for (const period of [180, 160, 150, 140]) {
+    assert.equal(play(period, 10, 30), 10);
+  }
+  // Deliberate playing is still exactly one note per strike.
+  for (const period of [400, 600, 900]) {
+    assert.equal(play(period, 6, 30), 6);
+  }
+
+  // A resting hand with tremor and noise must never release itself into notes:
+  // the velocity floor has to sit above anything jitter can produce.
+  for (const amplitude of [0.004, 0.008, 0.014]) {
+    const stroke = new DownstrokeRecognizer();
+    let spurious = 0;
+    for (let index = 0, time = 0; index < 300; index += 1, time += 1000 / 30) {
+      const palmY = 0.4 + Math.sin((time / 1000) * Math.PI * 2 * 6) * amplitude;
+      if (stroke.update({ timestamp: time, palmY, pose }).hit) spurious += 1;
+    }
+    assert.equal(spurious, 0);
+  }
+});

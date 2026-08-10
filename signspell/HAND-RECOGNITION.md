@@ -32,7 +32,7 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 | Three can only be made one way | **fixed** | one prototype per digit |
 | Hand lost mid-sign on 1–5 | **improved** | drift limits; camera distance |
 | Hand lost to dropouts or blur | **not a fault** | measured healthy, see below |
-| Fast repeated notes dropped | **improved** | recovery clock missed by 3ms |
+| Fast repeated notes dropped | **fixed to 140ms** | recovery needed frames it never had |
 
 ## Increment log
 
@@ -223,6 +223,36 @@ Strike duration is roughly constant for a player; only the rest between notes
 varies. The table above uses a fixed strike, which is both realistic and
 comparable with the earlier measurements.
 
+### Velocity as recovery evidence (downstroke.js)
+
+The note above closed by saying the 30fps limit was a sampling problem needing
+either a faster camera or a recovery test that could work from one frame's
+velocity. It was the second one.
+
+The recogniser already computes a smoothed velocity. A decisive upward whip is
+as much evidence that a stroke is over as two frames of displacement are, and
+unlike them it exists when the camera is slow. Recovery now also completes on a
+single frame whose velocity is at least 60% of the stroke threshold upward, with
+the hand back past the recovery displacement.
+
+| period | 30fps before | 30fps after |
+| --- | --- | --- |
+| 180ms | 6/10 | 10/10 |
+| 160ms | 6/10 | 10/10 |
+| 150ms | 1/10 | 10/10 |
+| 140ms | 1/10 | 10/10 |
+
+The 30fps cliff moves from 180ms to 125ms, and 60fps now carries every period
+down to 110ms, the end of the sweep. A 140ms period is sixteenths at 107bpm.
+
+The velocity floor is what keeps this safe. It sits far above anything a resting
+hand produces: a tremor at 6Hz with amplitudes up to 0.014 in palm units, plus
+random noise, releases nothing at all across 300 frames. Deliberate playing is
+still exactly one note per strike from 400ms to 900ms, a single strike still
+produces exactly one note, and the dropout and motion-blur behaviour measured
+earlier is unchanged — gaps up to eight frames still fire, and a strike still
+reports the right digit with pose confidence down to 0.05.
+
 ## Next
 
 - **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
@@ -238,11 +268,10 @@ comparable with the earlier measurements.
   own that it could seed calibration — offering a usable profile before the
   performer has calibrated anything, then letting the calibrated distances
   refine it.
-- **At 30fps the gesture is close to the sampling limit.** Four frames for a
-  strike and return leaves the recovery detector two. Nothing in the thresholds
-  will fix that; it needs either a higher camera frame rate or a recovery test
-  that can work from a single frame's velocity rather than a displacement held
-  across two.
+- **Below about 125ms at 30fps the strike itself is the limit**, not the
+  recovery: a 70ms strike sampled every 33ms is two frames, which is the
+  minimum the velocity estimate needs. This is the end of what tuning can
+  reach on a 30fps camera.
 
 ## Testing
 
