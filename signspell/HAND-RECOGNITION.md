@@ -37,6 +37,27 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 
 ## Increment log
 
+### The numbers work before calibration (recognizer.js, pose-classifier.js)
+
+`SignSpellRecognizer` used to return `calibration-required` and stop, so an
+uncalibrated performer got nothing at all — and a badly calibrated one was not
+much better off. The pattern reader needs nothing recorded, so it now serves as
+the classifier when there is no profile, and the stroke detector runs on its
+defaults.
+
+Measured through the whole path, landmarks to note, with no calibration: all
+five numbers play, including *both* threes, a closed fist stays silent, and
+holding a sign without striking plays nothing.
+
+Contacts stay off in this mode on purpose. Signs 6 to 9 are thumb-to-fingertip
+distances, which mean nothing without the performer's own measurements — there
+is no geometric shortcut for those.
+
+This changes an asserted contract: the old test expected
+`pose.reason === "calibration-required"` and an unavailable stroke detector.
+That expectation was the bug, so it has been updated to the new behaviour
+rather than removed.
+
 ### Multi-shape digits (pose-classifier.js)
 
 A digit is no longer a single prototype. `classes[digit].variants` holds one or

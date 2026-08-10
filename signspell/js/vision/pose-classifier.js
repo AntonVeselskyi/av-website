@@ -269,8 +269,45 @@ export function digitFromFingers(scores, margin = 0.42) {
 
 /** Returns a candidate on every frame; `accepted` is the safety gate. */
 export function classifyPose(profile, featureVector, view = null) {
-  if (!profile?.valid || !Array.isArray(featureVector)) {
+  if (!Array.isArray(featureVector)) {
     return { digit: null, accepted: false, confidence: 0, reason: "profile-unavailable" };
+  }
+  if (!profile?.valid) {
+    // No profile at all: fall back to geometry. The pattern reader needs
+    // nothing to have been recorded, so the numbers 1 to 5 work before anyone
+    // has calibrated — including both threes, which is the one thing a
+    // calibrated prototype could never have covered on its own.
+    const openFingers = fingerExtension(featureVector);
+    const openDigit = digitFromFingers(openFingers);
+    if (openDigit == null) {
+      return {
+        digit: null, accepted: false, confidence: 0, reason: "profile-unavailable",
+        fingers: openFingers, patternDigit: null, provisional: true,
+      };
+    }
+    return {
+      digit: openDigit,
+      accepted: true,
+      // Below any calibrated match: this is a shape read, not a personal fit.
+      confidence: 0.4,
+      provisional: true,
+      variant: 0,
+      distance: 0,
+      separation: 1,
+      viewDistance: null,
+      threshold: 1,
+      effectiveThreshold: 1,
+      thresholdRatio: 0,
+      inClass: true,
+      separated: true,
+      viewAccepted: true,
+      candidates: [],
+      fingers: openFingers,
+      patternDigit: openDigit,
+      patternRescue: true,
+      patternOverride: false,
+      reason: "finger-pattern",
+    };
   }
   const candidates = Object.entries(profile.classes)
     .filter(([, prototype]) => prototype.center.length === featureVector.length)

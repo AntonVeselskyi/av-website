@@ -548,13 +548,15 @@ test("downstroke predictor does not fire on drift or a shallow aborted dip", () 
 test("recognizer exposes derived hand, contact, pose, and downstroke diagnostics before calibration", () => {
   const recognizer = new SignSpellRecognizer();
   const result = recognizer.process({ timestamp: 100, confidence: 0.81, landmarks: hand({ digit: 1 }) });
+  // A pose alone is never a note, calibrated or not.
   assert.equal(result.hit, null);
   assert.equal(result.diagnostics.hand.detected, true);
   assert.equal(result.diagnostics.hand.confidence, 0.81);
   assert.ok(Number.isFinite(result.diagnostics.orientation.cameraFacing));
   assert.ok(Number.isFinite(result.diagnostics.fingertips.distances[6]));
-  assert.equal(result.diagnostics.pose.reason, "calibration-required");
-  assert.equal(result.diagnostics.downstroke.state, "unavailable");
+  // The numbers now read from the geometry of the hand before anyone has
+  // calibrated, so the stroke detector is live rather than unavailable.
+  assert.notEqual(result.diagnostics.downstroke.state, "unavailable");
   assert.equal(recognizer.process({ timestamp: 120, landmarks: null }).diagnostics.hand.detected, false);
 });
 
@@ -1264,4 +1266,52 @@ test("geometry vouches for a held sign, and lets go the moment it changes", () =
     // Within a couple of frames of the old sign being let go, not seconds.
     assert.ok(switched - lastThree <= 3);
   }
+});
+
+test("the numbers play before anyone has calibrated", () => {
+  // Folded fingers must actually curl back toward the palm, which is what
+  // bends the joint angles — a shorter straight finger is still straight.
+  const shape = (out, drop = 0) => {
+    const points = [];
+    const at = (x, y) => points.push({ x, y: y + drop, z: 0 });
+    at(0.5, 0.86);
+    if (out[0]) { at(0.42, 0.8); at(0.36, 0.74); at(0.3, 0.69); at(0.25, 0.64); }
+    else { at(0.42, 0.8); at(0.38, 0.76); at(0.4, 0.73); at(0.44, 0.72); }
+    const columns = [0.44, 0.5, 0.56, 0.62];
+    for (let finger = 0; finger < 4; finger += 1) {
+      const x = columns[finger];
+      if (out[finger + 1]) { at(x, 0.72); at(x, 0.63); at(x, 0.56); at(x, 0.5); }
+      else { at(x, 0.72); at(x, 0.65); at(x + 0.01, 0.68); at(x + 0.02, 0.72); }
+    }
+    return points;
+  };
+  const strike = (out) => {
+    const recognizer = new SignSpellRecognizer();
+    let hit = null;
+    for (let frame = 0, time = 0; frame < 70; frame += 1, time += 1000 / 30) {
+      const drop = frame >= 34 && frame < 38 ? 0.14 * ((frame - 34) / 4)
+        : frame >= 38 && frame < 42 ? 0.14 * (1 - (frame - 38) / 4) : 0;
+      const result = recognizer.process({ timestamp: time, landmarks: shape(out, drop), confidence: 0.95 });
+      if (!hit && result.hit) hit = result.hit;
+    }
+    return hit ? hit.digit : null;
+  };
+
+  assert.equal(strike([0, 1, 0, 0, 0]), 1);
+  assert.equal(strike([0, 1, 1, 0, 0]), 2);
+  // Both threes, with nothing calibrated at all.
+  assert.equal(strike([1, 1, 1, 0, 0]), 3);
+  assert.equal(strike([0, 1, 1, 1, 0]), 3);
+  assert.equal(strike([0, 1, 1, 1, 1]), 4);
+  assert.equal(strike([1, 1, 1, 1, 1]), 5);
+  // A closed fist is not a number and must stay silent.
+  assert.equal(strike([0, 0, 0, 0, 0]), null);
+
+  // Holding a sign still is not playing it.
+  const holding = new SignSpellRecognizer();
+  let notes = 0;
+  for (let frame = 0, time = 0; frame < 90; frame += 1, time += 1000 / 30) {
+    if (holding.process({ timestamp: time, landmarks: shape([0, 1, 1, 1, 0]), confidence: 0.95 }).hit) notes += 1;
+  }
+  assert.equal(notes, 0);
 });

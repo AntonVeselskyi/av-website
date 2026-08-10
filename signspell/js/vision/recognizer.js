@@ -19,7 +19,12 @@ export class SignSpellRecognizer {
   setProfile(profile) {
     this.profile = isCalibrationProfile(profile) ? profile : null;
     if (this.profile) this.handedness = this.profile.handedness;
-    this.downstroke = this.profile ? new DownstrokeRecognizer(this.profile.downstroke) : null;
+    // Without a profile the numbers still work, read from the geometry of the
+    // hand rather than from a personal fit, so the instrument plays before
+    // anyone has calibrated. The stroke detector runs on its defaults.
+    // Contacts stay off: 6 to 9 are thumb-to-fingertip distances, which are
+    // meaningless without the performer's own measurements.
+    this.downstroke = new DownstrokeRecognizer(this.profile ? this.profile.downstroke : undefined);
     this.contacts = this.profile ? new ContactRecognizer(this.profile.contacts) : null;
     this.poseStabilizer = new PoseStabilizer();
   }
@@ -48,26 +53,17 @@ export class SignSpellRecognizer {
     }
     const confidence = Number.isFinite(frame.confidence) ? frame.confidence : 1;
     const distances = contactDistances(normalized);
-    if (!this.profile) {
-      return {
-        hit: null,
-        diagnostics: createDiagnostics({
-          reason: "calibration-required", normalized, confidence, distances,
-          pose: unavailablePose("calibration-required"), contact: null, stroke: null,
-        }),
-      };
-    }
     const pose = this.poseStabilizer.update(
-      classifyPose(this.profile.pose, poseFeatures(normalized), normalized.cameraFacing),
+      classifyPose(this.profile?.pose, poseFeatures(normalized), normalized.cameraFacing),
       frame.timestamp,
     );
-    const contact = this.contacts.update({
+    const contact = this.contacts ? this.contacts.update({
       timestamp: frame.timestamp,
       distances,
       view: normalized.cameraFacing,
       confidence,
       latencyMs: frame.latencyMs,
-    });
+    }) : null;
     const stroke = this.downstroke.update({
       timestamp: frame.timestamp,
       palmY: normalized.palmScreenY,
@@ -77,11 +73,11 @@ export class SignSpellRecognizer {
     });
     // Contacts take precedence; a thumb-contact pose must never also strike a
     // 1–5 note from incidental downward movement in the same video frame.
-    const hit = contact.hit || stroke.hit;
+    const hit = contact?.hit || stroke.hit;
     return {
       hit: hit ? { ...hit, timestamp: frame.timestamp } : null,
       diagnostics: createDiagnostics({
-        reason: hit ? "hit" : pose.reason,
+        reason: hit ? "hit" : (this.profile ? pose.reason : pose.reason || "calibration-required"),
         normalized, confidence, distances, pose, contact, stroke,
         profile: this.profile, strokeRecognizer: this.downstroke,
       }),
