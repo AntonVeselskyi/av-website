@@ -4,6 +4,29 @@ const ENTER_RATIO = 1.35;
 const HOLD_RATIO = 1.55;
 const ENTER_SEPARATION = 0.11;
 const HOLD_SEPARATION = 0.05;
+const HOLD_RATIO_MAX = 2.25;
+
+/**
+ * How far a held sign is allowed to drift before it is given up.
+ *
+ * Distance and separation answer different questions. Distance says how far the
+ * hand has wandered from the calibrated shape; separation says how sure we are
+ * it is still *this* sign rather than another. A fixed distance limit throws a
+ * sign away on drift alone even when nothing else is remotely close — measured
+ * on a ring finger relaxing out of a three, the hold was dropped at a ratio of
+ * 1.56 while the runner-up was still 32% further away. Nothing was competing
+ * for that frame; the hand had simply moved.
+ *
+ * So the allowance grows with the margin. When a sign is clearly the only
+ * candidate it may drift much further, and when the field is tight it is held
+ * to the original limit. The cap keeps a genuinely wrong pose from being held
+ * for ever, and the digit must still be the nearest class, so changing sign
+ * releases the hold immediately regardless of this.
+ */
+function holdRatioFor(separation) {
+  const margin = Math.max(0, (Number(separation) || 0) - HOLD_SEPARATION);
+  return Math.min(HOLD_RATIO_MAX, HOLD_RATIO + margin * 2.2);
+}
 
 function finiteRatio(pose) {
   const threshold = Number(pose?.effectiveThreshold);
@@ -75,7 +98,7 @@ export class PoseStabilizer {
     const separation = Number(pose.separation) || 0;
     if (this.acceptedDigit === pose.digit
       && pose.reason === "outside-calibration"
-      && ratio <= HOLD_RATIO
+      && ratio <= holdRatioFor(separation)
       && separation >= HOLD_SEPARATION) {
       return promotedPose(pose, ratio, "hold");
     }

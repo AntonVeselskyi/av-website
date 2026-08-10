@@ -962,3 +962,53 @@ test("evidence gates are capped by their own millisecond budget", () => {
   stroke.frameIntervalMs = 80;
   assert.equal(stroke.evidenceFrames(3, 65), 2);
 });
+
+test("a held sign survives drift when nothing else is close, and yields when it is", () => {
+  const three = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.1, 0.1, 1.6, 0.9, 0.9, 0.8];
+  const two = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.9, 0.9, 0.9, 0.9, 0.9, 0.8];
+  const one = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.8];
+  const four = [0.2, 0.2, 0.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.5];
+  const five = [0.9, 0.9, 1.2, 0.1, 0.1, 1.6, 0.1, 0.1, 1.7, 0.1, 0.1, 1.6, 0.1, 0.1, 1.5];
+  const spread = (vector, count) => Array.from({ length: count }, (_, step) =>
+    vector.map((value, index) => value + Math.sin(step * 7.3 + index * 1.7) * 0.03));
+  const profile = buildPoseProfile({
+    1: spread(one, 14), 2: spread(two, 14), 3: spread(three, 14),
+    4: spread(four, 14), 5: spread(five, 14),
+  });
+  const blend = (a, b, t) => a.map((value, index) => value + (b[index] - value) * t);
+
+  // A ring finger relaxing out of a three and returning: real drift, but no
+  // other sign ever becomes a serious candidate.
+  const stabilizer = new PoseStabilizer();
+  let held = 0;
+  for (let frame = 0; frame < 90; frame += 1) {
+    const drift = 0.5 - 0.5 * Math.cos((frame / 89) * Math.PI * 2);
+    const pose = classifyPose(profile, blend(three, two, drift * 0.42));
+    if (stabilizer.update(pose, frame * 33.3).accepted) held += 1;
+  }
+  assert.equal(held, 90);
+
+  // Drifting the whole way into a two must not be held as a three.
+  const deep = new PoseStabilizer();
+  let heldAsThreeAtPeak = 0;
+  for (let frame = 0; frame < 90; frame += 1) {
+    const drift = 0.5 - 0.5 * Math.cos((frame / 89) * Math.PI * 2);
+    const pose = classifyPose(profile, blend(three, two, drift));
+    const result = deep.update(pose, frame * 33.3);
+    if (frame >= 40 && frame < 50 && result.accepted && result.digit === 3) heldAsThreeAtPeak += 1;
+  }
+  assert.equal(heldAsThreeAtPeak, 0);
+
+  // And a deliberate change of sign still switches.
+  const changing = new PoseStabilizer();
+  let lastThree = null;
+  let firstTwo = null;
+  for (let frame = 0; frame < 60; frame += 1) {
+    const pose = classifyPose(profile, blend(three, two, Math.min(1, frame / 25)));
+    const result = changing.update(pose, frame * 33.3);
+    if (result.accepted && result.digit === 3) lastThree = frame;
+    if (result.accepted && result.digit === 2 && firstTwo === null) firstTwo = frame;
+  }
+  assert.ok(firstTwo !== null);
+  assert.ok(firstTwo > lastThree);
+});

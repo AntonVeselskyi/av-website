@@ -30,7 +30,7 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 | Symptom | Status | Cause |
 | --- | --- | --- |
 | Three can only be made one way | **fixed** | one prototype per digit |
-| Hand lost mid-sign on 1–5 | **partly addressed** | see variants below |
+| Hand lost mid-sign on 1–5 | **improved** | held signs dropped on drift alone |
 | Fast repeated notes dropped | **improved** | recovery clock missed by 3ms |
 
 ## Increment log
@@ -113,16 +113,45 @@ The remaining 180ms limit is no longer obviously a tuning fault. At that period 
 70ms strike plus a 70ms return leaves 40ms of rest, and the arm gate alone wants
 `stableMs` 65. Going faster needs the arm gate reconsidered, not nudged.
 
+### Holding a sign through drift (pose-stabilizer.js)
+
+Measured by driving a ring finger slowly out of a three and back — the ordinary
+droop that happens while holding a sign — through `classifyPose` into the
+stabilizer. The hold broke for 22 of 90 frames, about three quarters of a second
+at 30fps, which is exactly the reported symptom.
+
+The reason was not what it looked like. There were no `ambiguous-pose` frames at
+all: the hold was released purely because the distance ratio crossed 1.55, while
+the runner-up was still 32% further away. Nothing was competing for that frame.
+The hand had simply moved.
+
+Distance and separation answer different questions. Distance says how far the
+hand has wandered from the calibrated shape; separation says how sure we are it
+is still *this* sign rather than another. A fixed distance limit discards a sign
+on drift alone even when it is unmistakably the only candidate. The hold
+allowance now grows with the separation margin, capped at 2.25, so a sign with
+a clear field may drift much further while a sign in a crowded field is held to
+the original limit.
+
+This is safe because the held digit must still be the nearest class. Changing
+sign makes another digit nearest, which releases the hold on the same frame
+regardless of the allowance.
+
+Measured after: the drift holds for 90 of 90 frames; drifting the whole way into
+a neighbouring sign is still not held (0 of 10 frames at the peak); and a
+deliberate change of sign still releases and re-enters on the new digit.
+
 ## Next
 
 - **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
   elapse at rest before a strike can arm, which a genuinely fast performance
   never provides. Consider arming on a settled *velocity* rather than a settled
   dwell, so a player who never fully stops can still re-arm.
-- **Hand lost mid-sign**, remaining cases. Once variants are in use, check
-  whether the losses that remain are classification (distance ratio crossing
-  the threshold) or tracking (MediaPipe dropping the hand entirely) — the
-  diagnostics bus distinguishes them and they need opposite fixes.
+- **Hand loss from tracking**, not classification. The classification side has
+  now been addressed twice; what remains is MediaPipe dropping the hand
+  outright. `markMissing` already carries an armed strike across a dropout —
+  check against the diagnostics bus whether real losses are landing there or in
+  the `maxReacquireMs` timeout.
 - Consider a geometric fallback keyed on which fingers are extended, for frames
   where the calibrated distance is marginal but the finger pattern is decisive.
 
