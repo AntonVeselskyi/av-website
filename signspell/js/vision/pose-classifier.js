@@ -194,6 +194,79 @@ export function buildPoseProfile(samplesByDigit) {
   };
 }
 
+// A finger is straight when both of its joint angles are near flat. The angle
+// helper returns radians over pi, so 1 is a straight joint and a fist is far
+// below. Thumbs never straighten as far as fingers do, hence their own floor.
+const STRAIGHT_FLOOR = 0.62;
+const STRAIGHT_CEIL = 0.88;
+const THUMB_STRAIGHT_FLOOR = 0.52;
+const THUMB_STRAIGHT_CEIL = 0.80;
+
+/**
+ * Which fingers are straight, read directly off the feature vector.
+ *
+ * This is deliberately independent of calibration. The calibrated distance
+ * answers "how close is this to the shape you recorded", which drifts as the
+ * wrist rolls or the hand moves toward the camera; the extension pattern
+ * answers "which fingers are out", which is what the sign actually is and
+ * barely moves at all.
+ */
+export function fingerExtension(featureVector) {
+  if (!Array.isArray(featureVector) || featureVector.length < 15) return null;
+  const scores = [];
+  for (let finger = 0; finger < 5; finger += 1) {
+    const base = finger * 3;
+    const straightness = Math.min(featureVector[base], featureVector[base + 1]);
+    const floor = finger === 0 ? THUMB_STRAIGHT_FLOOR : STRAIGHT_FLOOR;
+    const ceiling = finger === 0 ? THUMB_STRAIGHT_CEIL : STRAIGHT_CEIL;
+    scores.push(Math.max(0, Math.min(1, (straightness - floor) / (ceiling - floor))));
+  }
+  return scores;
+}
+
+/**
+ * The digit a finger pattern implies, or null when it is not decisive.
+ *
+ * Three is listed twice on purpose: ASL three is thumb, index and middle, and
+ * the other common three is index, middle and ring. Both are three, and no
+ * amount of calibration distance will tell you that — only the pattern will.
+ */
+const FINGER_PATTERNS = [
+  { digit: 1, out: [0, 1, 0, 0, 0] },
+  { digit: 2, out: [0, 1, 1, 0, 0] },
+  { digit: 3, out: [1, 1, 1, 0, 0] },
+  { digit: 3, out: [0, 1, 1, 1, 0] },
+  { digit: 4, out: [0, 1, 1, 1, 1] },
+  { digit: 5, out: [1, 1, 1, 1, 1] },
+];
+
+export function digitFromFingers(scores, margin = 0.42) {
+  if (!Array.isArray(scores) || scores.length !== 5) return null;
+  let best = null;
+  let bestScore = -Infinity;
+  let runnerUp = -Infinity;
+  for (const pattern of FINGER_PATTERNS) {
+    // Agreement with the pattern: extended fingers should score high and
+    // folded ones low, so a mismatch on either side counts against it.
+    // A closed fist agrees with "one" on four of its five fingers, so the
+    // fingers the pattern says are out must genuinely be out before the
+    // average is worth anything at all.
+    let score = 0;
+    let weakestExtended = 1;
+    for (let finger = 0; finger < 5; finger += 1) {
+      score += pattern.out[finger] ? scores[finger] : 1 - scores[finger];
+      if (pattern.out[finger]) weakestExtended = Math.min(weakestExtended, scores[finger]);
+    }
+    score /= 5;
+    if (weakestExtended < 0.5) continue;
+    if (score > bestScore) { runnerUp = bestScore; bestScore = score; best = pattern.digit; }
+    else if (score > runnerUp) runnerUp = score;
+  }
+  // Decisive only when the winning pattern is clearly ahead and actually good.
+  if (bestScore < 0.78 || bestScore - runnerUp < (1 - margin) * 0.08) return null;
+  return best;
+}
+
 /** Returns a candidate on every frame; `accepted` is the safety gate. */
 export function classifyPose(profile, featureVector, view = null) {
   if (!profile?.valid || !Array.isArray(featureVector)) {
@@ -230,7 +303,18 @@ export function classifyPose(profile, featureVector, view = null) {
   // Also relax profiles already saved with the previous, fingertip-heavy
   // classifier so people do not have to repeat calibration.
   const effectiveThreshold = best.threshold * 1.22;
-  const inClass = best.distance <= effectiveThreshold;
+  const withinCalibration = best.distance <= effectiveThreshold;
+  // Geometry gets a vote when the calibrated distance is marginal. The pattern
+  // of straight fingers is what the sign *is*, and it survives the wrist roll
+  // and camera distance that push a hand outside its recorded envelope. It can
+  // only rescue a pose that is already nearest and already close — it never
+  // overrides the winner, and it cannot reach a pose that is plainly wrong.
+  const fingers = fingerExtension(featureVector);
+  const patternDigit = digitFromFingers(fingers);
+  const patternRescue = !withinCalibration
+    && patternDigit === best.digit
+    && best.distance <= effectiveThreshold * 1.5;
+  const inClass = withinCalibration || patternRescue;
   const separated = separation >= Math.min(profile.minSeparation ?? 0.11, 0.11);
   const confidence = Math.max(0, Math.min(1,
     (1 - best.distance / Math.max(effectiveThreshold, 0.001)) * 0.6 + Math.min(1, separation / 0.35) * 0.4,
@@ -252,6 +336,9 @@ export function classifyPose(profile, featureVector, view = null) {
     separated,
     viewAccepted,
     candidates,
-    reason: !inClass ? "outside-calibration" : !separated ? "ambiguous-pose" : !viewAccepted ? "wrong-hand-side" : "accepted",
+    fingers,
+    patternDigit,
+    patternRescue,
+    reason: !inClass ? "outside-calibration" : !separated ? "ambiguous-pose" : !viewAccepted ? "wrong-hand-side" : patternRescue ? "finger-pattern" : "accepted",
   };
 }

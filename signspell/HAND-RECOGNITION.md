@@ -30,7 +30,8 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 | Symptom | Status | Cause |
 | --- | --- | --- |
 | Three can only be made one way | **fixed** | one prototype per digit |
-| Hand lost mid-sign on 1–5 | **improved** | held signs dropped on drift alone |
+| Hand lost mid-sign on 1–5 | **improved** | drift limits; camera distance |
+| Hand lost to dropouts or blur | **not a fault** | measured healthy, see below |
 | Fast repeated notes dropped | **improved** | recovery clock missed by 3ms |
 
 ## Increment log
@@ -141,6 +142,45 @@ Measured after: the drift holds for 90 of 90 frames; drifting the whole way into
 a neighbouring sign is still not held (0 of 10 frames at the peak); and a
 deliberate change of sign still releases and re-enters on the new digit.
 
+### Geometry as a second opinion (pose-classifier.js)
+
+Before adding anything, three hypotheses about the remaining hand loss were
+measured and all three were wrong. The downstroke path is healthy:
+
+- **Dropouts.** A hand lost mid-strike still fires the note for gaps up to about
+  270ms at both 30fps and 60fps, and dropouts while resting produce no spurious
+  hits. `markMissing` clears its state correctly on the hand's return, so a
+  flickering hand does not accumulate a phantom gap.
+- **Motion blur.** A strike still fires the correct digit when the pose stops
+  being accepted mid-strike, down to a confidence of 0.05, and even when a
+  *different* digit becomes nearest for those frames. `poseGraceMs` works.
+- **Tremor.** Arming survives a hand shake of 0.022 in palm units at 6Hz, far
+  beyond a steady hand.
+
+So what remains is classification, and specifically the case a calibrated
+distance cannot handle: the hand moving toward or away from the camera while
+making the *same* sign. That changes every fingertip distance in the feature
+vector and pushes the pose outside its recorded envelope, even though which
+fingers are out has not changed at all.
+
+`fingerExtension` reads straightness per finger straight off the feature
+vector, and `digitFromFingers` maps the pattern to a digit. It is listed twice
+for three — thumb-index-middle and index-middle-ring — because that is the one
+thing no calibrated distance can ever express. The reader identifies all five
+signs, and both threes, with no calibration whatsoever.
+
+It is wired in only as a rescue: a pose that is already the nearest class and
+already within 1.5x of its threshold may be accepted when the finger pattern
+agrees. It cannot override the winner and it cannot reach a pose that is plainly
+wrong. Measured on a three held while the hand moves: the tolerated range grows
+from 1.48x to 1.72x moving closer, and from 0.53x to 0.41x moving away.
+
+One trap worth recording. A closed fist agrees with the pattern for "one" on
+four fingers out of five, and scored 0.8 on it — enough to pass a naive average.
+The fingers a pattern says are *out* must genuinely be out before the average
+means anything, so the weakest extended finger now gates the whole match. The
+fist reads as nothing, which is correct.
+
 ## Next
 
 - **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
@@ -152,8 +192,11 @@ deliberate change of sign still releases and re-enters on the new digit.
   outright. `markMissing` already carries an armed strike across a dropout —
   check against the diagnostics bus whether real losses are landing there or in
   the `maxReacquireMs` timeout.
-- Consider a geometric fallback keyed on which fingers are extended, for frames
-  where the calibrated distance is marginal but the finger pattern is decisive.
+- The finger pattern is currently only a rescue. It is accurate enough on its
+  own that it could seed calibration — offering a usable profile before the
+  performer has calibrated anything, then letting the calibrated distances
+  refine it.
+- **Below a 180ms note period the arm gate is still the wall** (see above).
 
 ## Testing
 

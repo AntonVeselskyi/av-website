@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   buildCalibrationProfile,
   buildPoseProfile,
+  digitFromFingers,
+  fingerExtension,
   calibrationFromStorage,
   calibrationToStorage,
   classifyPose,
@@ -1011,4 +1013,65 @@ test("a held sign survives drift when nothing else is close, and yields when it 
   }
   assert.ok(firstTwo !== null);
   assert.ok(firstTwo > lastThree);
+});
+
+test("the finger pattern reads a sign without any calibration, and knows both threes", () => {
+  const shape = (thumb, index, middle, ring, pinky) => [
+    thumb ? 0.95 : 0.2, thumb ? 0.95 : 0.2, thumb ? 1.2 : 0.6,
+    index ? 0.95 : 0.2, index ? 0.95 : 0.2, index ? 1.6 : 0.9,
+    middle ? 0.95 : 0.2, middle ? 0.95 : 0.2, middle ? 1.7 : 0.9,
+    ring ? 0.95 : 0.2, ring ? 0.95 : 0.2, ring ? 1.6 : 0.9,
+    pinky ? 0.95 : 0.2, pinky ? 0.95 : 0.2, pinky ? 1.5 : 0.8,
+  ];
+  const read = (...fingers) => digitFromFingers(fingerExtension(shape(...fingers)));
+
+  assert.equal(read(0, 1, 0, 0, 0), 1);
+  assert.equal(read(0, 1, 1, 0, 0), 2);
+  // Both threes, which is the whole point: no calibrated distance can tell you
+  // that thumb-index-middle and index-middle-ring are the same sign.
+  assert.equal(read(1, 1, 1, 0, 0), 3);
+  assert.equal(read(0, 1, 1, 1, 0), 3);
+  assert.equal(read(0, 1, 1, 1, 1), 4);
+  assert.equal(read(1, 1, 1, 1, 1), 5);
+  // A closed fist agrees with "one" on four fingers out of five. It must not
+  // be read as a one on that basis.
+  assert.equal(read(0, 0, 0, 0, 0), null);
+});
+
+test("geometry rescues a drifting sign but never invents one", () => {
+  const three = [0.2, 0.2, 0.7, 0.95, 0.95, 1.6, 0.95, 0.95, 1.7, 0.95, 0.95, 1.6, 0.2, 0.2, 0.8];
+  const two = [0.2, 0.2, 0.7, 0.95, 0.95, 1.6, 0.95, 0.95, 1.7, 0.2, 0.2, 0.9, 0.2, 0.2, 0.8];
+  const one = [0.2, 0.2, 0.7, 0.95, 0.95, 1.6, 0.2, 0.2, 0.9, 0.2, 0.2, 0.9, 0.2, 0.2, 0.8];
+  const four = [0.2, 0.2, 0.7, 0.95, 0.95, 1.6, 0.95, 0.95, 1.7, 0.95, 0.95, 1.6, 0.95, 0.95, 1.5];
+  const five = [0.9, 0.9, 1.2, 0.95, 0.95, 1.6, 0.95, 0.95, 1.7, 0.95, 0.95, 1.6, 0.95, 0.95, 1.5];
+  const spread = (vector, count) => Array.from({ length: count }, (_, step) =>
+    vector.map((value, index) => value + Math.sin(step * 7.3 + index * 1.7) * 0.03));
+  const profile = buildPoseProfile({
+    1: spread(one, 14), 2: spread(two, 14), 3: spread(three, 14),
+    4: spread(four, 14), 5: spread(five, 14),
+  });
+
+  // The hand moves toward the camera: fingertip distances grow, but the same
+  // fingers stay out. Geometry should carry the sign further than distance can.
+  const reach = (vector, factor) => vector.map((value, index) => index % 3 === 2 ? value * factor : value);
+  const far = classifyPose(profile, reach(three, 1.6));
+  assert.equal(far.digit, 3);
+  assert.equal(far.accepted, true);
+  assert.equal(far.patternRescue, true);
+  assert.equal(far.reason, "finger-pattern");
+
+  // Every sign still reads as itself, without needing the rescue.
+  for (const [vector, digit] of [[one, 1], [two, 2], [three, 3], [four, 4], [five, 5]]) {
+    const result = classifyPose(profile, vector);
+    assert.equal(result.digit, digit);
+    assert.equal(result.accepted, true);
+    assert.equal(result.patternRescue, false);
+  }
+
+  // A fist is not close to anything and its pattern is not decisive, so it
+  // cannot be rescued into a sign.
+  const fist = [0.2, 0.2, 0.5, 0.2, 0.2, 0.6, 0.2, 0.2, 0.6, 0.2, 0.2, 0.6, 0.2, 0.2, 0.6];
+  const closed = classifyPose(profile, fist);
+  assert.equal(closed.patternDigit, null);
+  assert.equal(closed.accepted, false);
 });
