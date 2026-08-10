@@ -320,9 +320,53 @@ export function classifyPose(profile, featureVector, view = null) {
     (1 - best.distance / Math.max(effectiveThreshold, 0.001)) * 0.6 + Math.min(1, separation / 0.35) * 0.4,
   ));
 
+  const calibrationAccepted = inClass && separated && viewAccepted;
+
+  // When calibration is going to reject the frame outright and the fingers are
+  // unambiguous, the choice is between nothing and the geometry's answer — so
+  // take the geometry. This is the case a per-digit prototype cannot reach at
+  // all: a performer who calibrated three as thumb-index-middle and then makes
+  // it as index-middle-ring lands nearest to *two*, at three and a half times
+  // its threshold, and the sign is simply lost. The pattern reads it correctly
+  // without having been told anything.
+  //
+  // It can only ever replace a rejection, never a calibrated accept, so a good
+  // profile is always in charge of its own digits.
+  if (!calibrationAccepted && patternDigit != null && patternDigit !== best.digit) {
+    const overrideView = profile.classes?.[patternDigit]?.view;
+    const overrideViewOk = !overrideView || !Number.isFinite(view)
+      || Math.abs(view - overrideView.center) / Math.max(MIN_VIEW_SPREAD, overrideView.spread)
+        <= overrideView.threshold * 1.35;
+    if (overrideViewOk) {
+      return {
+        digit: patternDigit,
+        accepted: true,
+        // Deliberately below a calibrated accept: this is a rescue, and the
+        // rest of the pipeline should treat it as the weaker evidence it is.
+        confidence: 0.45,
+        variant: 0,
+        distance: best.distance,
+        separation,
+        viewDistance,
+        threshold: best.threshold,
+        effectiveThreshold,
+        thresholdRatio: best.distance / Math.max(effectiveThreshold, 0.001),
+        inClass: false,
+        separated,
+        viewAccepted: true,
+        candidates,
+        fingers,
+        patternDigit,
+        patternRescue: true,
+        patternOverride: true,
+        reason: "finger-pattern",
+      };
+    }
+  }
+
   return {
     digit: best.digit,
-    accepted: inClass && separated && viewAccepted,
+    accepted: calibrationAccepted,
     confidence,
     // Which shape of that digit matched, for the diagnostics bus.
     variant: best.variant ?? 0,

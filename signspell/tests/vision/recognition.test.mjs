@@ -1151,3 +1151,64 @@ test("a decisive upward whip releases a stroke on a single frame", () => {
     assert.equal(spurious, 0);
   }
 });
+
+test("geometry recovers a sign the profile never saw, without taking over", () => {
+  const shape = (thumb, index, middle, ring, pinky) => [
+    thumb ? 0.95 : 0.2, thumb ? 0.95 : 0.2, thumb ? 1.2 : 0.6,
+    index ? 0.95 : 0.2, index ? 0.95 : 0.2, index ? 1.6 : 0.9,
+    middle ? 0.95 : 0.2, middle ? 0.95 : 0.2, middle ? 1.7 : 0.9,
+    ring ? 0.95 : 0.2, ring ? 0.95 : 0.2, ring ? 1.6 : 0.9,
+    pinky ? 0.95 : 0.2, pinky ? 0.95 : 0.2, pinky ? 1.5 : 0.8,
+  ];
+  const one = shape(0, 1, 0, 0, 0);
+  const two = shape(0, 1, 1, 0, 0);
+  const aslThree = shape(1, 1, 1, 0, 0);
+  const openThree = shape(0, 1, 1, 1, 0);
+  const four = shape(0, 1, 1, 1, 1);
+  const five = shape(1, 1, 1, 1, 1);
+  const spread = (vector, count) => Array.from({ length: count }, (_, step) =>
+    vector.map((value, index) => value + Math.sin(step * 7.3 + index * 1.7) * 0.03));
+  const withThree = (three) => buildPoseProfile({
+    1: spread(one, 14), 2: spread(two, 14), 3: spread(three, 14),
+    4: spread(four, 14), 5: spread(five, 14),
+  });
+
+  // Whichever three was calibrated, both are playable. The uncalibrated one
+  // lands nearest to *two* and well outside it, so only geometry can save it.
+  for (const [calibrated, other] of [[aslThree, openThree], [openThree, aslThree]]) {
+    const profile = withThree(calibrated);
+    const known = classifyPose(profile, calibrated);
+    assert.equal(known.digit, 3);
+    assert.equal(known.accepted, true);
+    assert.equal(known.reason, "accepted");
+
+    const unknown = classifyPose(profile, other);
+    assert.equal(unknown.digit, 3);
+    assert.equal(unknown.accepted, true);
+    assert.equal(unknown.patternOverride, true);
+    // A rescue must carry less weight than a calibrated match.
+    assert.ok(unknown.confidence < known.confidence);
+  }
+
+  // Every other digit stays owned by its calibration.
+  const profile = withThree(aslThree);
+  for (const [vector, digit] of [[one, 1], [two, 2], [four, 4], [five, 5]]) {
+    const result = classifyPose(profile, vector);
+    assert.equal(result.digit, digit);
+    assert.equal(result.reason, "accepted");
+    assert.equal(!!result.patternOverride, false);
+  }
+
+  // A half-made shape can pattern as a clean digit, because half-bent fingers
+  // genuinely read as folded. Nothing static can tell that from a real sign —
+  // the strike is what does, so changing sign without striking makes no note.
+  const blend = (a, b, t) => a.map((value, index) => value + (b[index] - value) * t);
+  const stroke = new DownstrokeRecognizer();
+  let notes = 0;
+  for (let frame = 0, time = 0; frame < 90; frame += 1, time += 1000 / 30) {
+    const morph = frame < 30 ? 0 : frame > 45 ? 1 : (frame - 30) / 15;
+    const pose = classifyPose(profile, blend(one, openThree, morph));
+    if (stroke.update({ timestamp: time, palmY: 0.4, pose }).hit) notes += 1;
+  }
+  assert.equal(notes, 0);
+});

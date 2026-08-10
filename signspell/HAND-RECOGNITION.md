@@ -30,6 +30,7 @@ stay trustworthy. Recognition leans on which fingers are *straight*.
 | Symptom | Status | Cause |
 | --- | --- | --- |
 | Three can only be made one way | **fixed** | one prototype per digit |
+| Three only the way you calibrated it | **fixed** | geometry overrides a rejection |
 | Hand lost mid-sign on 1–5 | **improved** | drift limits; camera distance |
 | Hand lost to dropouts or blur | **not a fault** | measured healthy, see below |
 | Fast repeated notes dropped | **fixed to 140ms** | recovery needed frames it never had |
@@ -253,6 +254,36 @@ produces exactly one note, and the dropout and motion-blur behaviour measured
 earlier is unchanged — gaps up to eight frames still fire, and a strike still
 reports the right digit with pose confidence down to 0.05.
 
+### Geometry may overrule a rejection (pose-classifier.js)
+
+The rescue added earlier only fires when the pattern agrees with the nearest
+calibrated candidate. That leaves the case it was most needed for untouched: a
+performer who calibrated three as thumb-index-middle and then makes it as
+index-middle-ring lands nearest to **two**, at three and a half times its
+threshold. The pattern reads three correctly, but it was never consulted because
+it disagreed with the winner.
+
+So when calibration is going to reject the frame outright and the fingers are
+unambiguous, the pattern's answer is taken. The choice there is between nothing
+and the geometry, never between the geometry and a good calibrated match — an
+override can only ever replace a rejection, so a healthy profile stays in charge
+of its own digits. The result carries a deliberately lower confidence, because
+it is weaker evidence and the rest of the pipeline should treat it that way.
+
+Measured: whichever three is calibrated, both are now playable — the calibrated
+one through calibration at 0.96 confidence, the other through the override at
+0.45. Digits one, two, four and five are untouched and still resolve through
+calibration. A fist is still nothing.
+
+**A known trade-off, measured rather than argued.** A half-made shape between
+two signs can pattern as a clean digit, because half-bent fingers genuinely read
+as folded, and no static test can separate that from a real sign. The protection
+is temporal and already exists: a pose alone never makes a note. Morphing from
+one to three at rest produces zero notes; the same morph with a deliberate
+strike produces exactly one, on the correct digit. If spurious notes ever do
+appear on transitions, the fix belongs in the stabilizer — promoting an override
+only after several consistent frames — not in the classifier.
+
 ## Next
 
 - **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
@@ -264,10 +295,11 @@ reports the right digit with pose confidence down to 0.05.
   outright. `markMissing` already carries an armed strike across a dropout —
   check against the diagnostics bus whether real losses are landing there or in
   the `maxReacquireMs` timeout.
-- The finger pattern is currently only a rescue. It is accurate enough on its
-  own that it could seed calibration — offering a usable profile before the
-  performer has calibrated anything, then letting the calibrated distances
-  refine it.
+- **Work before calibration at all.** The pattern reader is accurate enough
+  standalone, but `SignSpellRecognizer.observe` returns `calibration-required`
+  before the classifier is ever reached, so this needs the recogniser to run a
+  provisional path with default stroke thresholds — a change to the app's
+  gating, not just the classifier.
 - **Below about 125ms at 30fps the strike itself is the limit**, not the
   recovery: a 70ms strike sampled every 33ms is two frames, which is the
   minimum the velocity estimate needs. This is the end of what tuning can
