@@ -1075,3 +1075,36 @@ test("geometry rescues a drifting sign but never invents one", () => {
   assert.equal(closed.patternDigit, null);
   assert.equal(closed.accepted, false);
 });
+
+test("a decisive return ends a stroke without waiting out the recovery clock", () => {
+  const pose = { digit: 3, accepted: true, confidence: 0.9, reason: "accepted" };
+  // Fixed strike and return, as a player actually performs: the gesture takes
+  // the same time and only the gap between notes changes.
+  const play = (periodMs, notes, fps) => {
+    const stroke = new DownstrokeRecognizer();
+    const step = 1000 / fps;
+    const strikeMs = Math.min(70, periodMs * 0.45);
+    const returnMs = Math.min(70, periodMs * 0.45);
+    const restY = 0.4;
+    const downY = 0.52;
+    let hits = 0;
+    for (let time = 0; time < periodMs * notes; time += step) {
+      const phase = time % periodMs;
+      let palmY = restY;
+      if (phase < strikeMs) palmY = restY + (downY - restY) * (phase / strikeMs);
+      else if (phase < strikeMs + returnMs) palmY = downY - (downY - restY) * ((phase - strikeMs) / returnMs);
+      if (stroke.update({ timestamp: time, palmY, pose }).hit) hits += 1;
+    }
+    return hits;
+  };
+
+  // A 60fps camera carries sixteenths at 100bpm.
+  assert.equal(play(180, 10, 60), 10);
+  // A 30fps camera still carries a 200ms period exactly.
+  assert.equal(play(200, 10, 30), 10);
+  // Deliberate playing must remain exactly one note per strike at every tempo,
+  // which is what the recovery clock was protecting in the first place.
+  for (const period of [400, 500, 600, 700, 900]) {
+    assert.equal(play(period, 6, 30), 6);
+  }
+});

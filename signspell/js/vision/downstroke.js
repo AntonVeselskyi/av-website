@@ -303,7 +303,17 @@ export class DownstrokeRecognizer {
       }
       const recoveryMs = this.recoverySince == null ? 0 : timestamp - this.recoverySince;
       const recoveryEvidence = this.evidenceFrames(this.thresholds.recoveryFrames, this.thresholds.recoveryMs);
-      if (this.recoveryFrames >= recoveryEvidence && recoveryMs >= this.thresholds.recoveryMs) {
+      // A hand that has come a long way back up has finished its stroke, and
+      // waiting out the rest of a clock cannot make that more true. The clock
+      // exists so a single twitch cannot end a note early, and the frame count
+      // already covers that — but it is measured from the *first* upward frame,
+      // so it also demands the player keep travelling upward for another 52ms
+      // after they have already returned. A fast upstroke lasts about 60ms in
+      // total, so that requirement can never be met and the note never releases.
+      const decisivelyRecovered = Number.isFinite(this.hitY)
+        && this.filteredY <= this.hitY - recoveryThreshold * 2.5;
+      if (this.recoveryFrames >= recoveryEvidence
+        && (recoveryMs >= this.thresholds.recoveryMs || decisivelyRecovered)) {
         this.state = "neutral";
         // The recovery swipe is intentionally abrupt. Rebase the smoother on
         // the recovered hand position so its residual velocity cannot prevent

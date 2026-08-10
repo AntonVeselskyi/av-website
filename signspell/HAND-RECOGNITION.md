@@ -110,9 +110,8 @@ afford. On its own this moved nothing at 30fps, which is how the recovery clock
 turned out to be the real blocker; it does help at 60fps and it removes an
 unintended frame-rate dependence.
 
-The remaining 180ms limit is no longer obviously a tuning fault. At that period a
-70ms strike plus a 70ms return leaves 40ms of rest, and the arm gate alone wants
-`stableMs` 65. Going faster needs the arm gate reconsidered, not nudged.
+The remaining 180ms limit was written up here as the arm gate. That was wrong,
+and tracing it later disproved it — see below.
 
 ### Holding a sign through drift (pose-stabilizer.js)
 
@@ -181,6 +180,49 @@ The fingers a pattern says are *out* must genuinely be out before the average
 means anything, so the weakest extended finger now gates the whole match. The
 fist reads as nothing, which is correct.
 
+### The recovery clock again, at speed (downstroke.js)
+
+The note above blamed the remaining 180ms wall on the arm gate. Tracing a 160ms
+performance disproved that immediately: the state machine never reaches `neutral`
+at all, so the arm gate is never consulted. It sits in `awaiting-recovery` for
+the entire run.
+
+The recovery clock was still the wall, one level deeper than the last fix. The
+clock starts at the *first* upward frame and then wants another 52ms, so the
+player must keep travelling upward for 52ms after they have already come back.
+A fast upstroke lasts about 60ms in total, so the requirement cannot be met and
+the note never releases.
+
+The clock exists so a single twitch cannot end a note early, and the frame count
+already covers that. A hand that has come a long way back up has finished its
+stroke, and waiting out a clock cannot make that more true. So the recovery may
+now also complete on displacement: two frames of upward motion plus a return of
+two and a half times the recovery threshold releases the stroke immediately.
+
+Measured, with a fixed strike and return and only the gap between notes varying:
+
+| period | 30fps before | 30fps after | 60fps before | 60fps after |
+| --- | --- | --- | --- | --- |
+| 180ms | 1/10 | 6/10 | 1/10 | 10/10 |
+| 160ms | 1/10 | 6/10 | 1/10 | 9/10 |
+
+At 60fps the cliff moves from 180ms to 150ms. At 30fps the same band improves
+but does not clear: a 70ms strike and a 70ms return sampled every 33ms is about
+four frames for the whole gesture, and the recovery needs two of them to be
+upward. That is a sampling limit rather than a threshold, and it will not yield
+to tuning.
+
+Deliberate playing is unchanged at exactly one note per strike from 400ms to
+900ms, and long lazy strokes do not double fire.
+
+**A measurement trap worth recording.** The first sweep for this change scaled
+the strike duration with the note period, which made a 900ms note a 342ms strike
+— too slow to exceed the stroke velocity at all. It reported zero hits at slow
+tempos and looked like a severe regression, and it also flattered the fast end.
+Strike duration is roughly constant for a player; only the rest between notes
+varies. The table above uses a fixed strike, which is both realistic and
+comparable with the earlier measurements.
+
 ## Next
 
 - **Below a 180ms note period the arm gate is the wall.** `stableMs` 65 must
@@ -196,7 +238,11 @@ fist reads as nothing, which is correct.
   own that it could seed calibration — offering a usable profile before the
   performer has calibrated anything, then letting the calibrated distances
   refine it.
-- **Below a 180ms note period the arm gate is still the wall** (see above).
+- **At 30fps the gesture is close to the sampling limit.** Four frames for a
+  strike and return leaves the recovery detector two. Nothing in the thresholds
+  will fix that; it needs either a higher camera frame rate or a recovery test
+  that can work from a single frame's velocity rather than a displacement held
+  across two.
 
 ## Testing
 
