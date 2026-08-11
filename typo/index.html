@@ -7,7 +7,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@600&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&family=Yanone+Kaffeesatz:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@400;600;700&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&family=Yanone+Kaffeesatz:wght@700&display=swap" rel="stylesheet">
 <style>
   /* ============ TYPO — a sterile room for letters ============
      Nothing in here is allowed to compete with the type itself:
@@ -302,7 +302,19 @@
   .f-fe        { font-family: "FE-Schrift Local", "Yanone Kaffeesatz", sans-serif; font-weight: 400; }
 
   /* ---- IRL entries: same specimen skeleton, plus a location tag
-     and a block of running copy about where the font came from. ---- */
+     and a block of running copy about where the font came from. ----
+     Unlike the default-tab specimens, IRL content is taller than
+     100vh (photo + copy + forgery demo), so the section's own height
+     grows to fit it and justify-content:center has no slack left to
+     push content below the fixed header — it lands flush against the
+     14vh top padding, same as a short entry, with no buffer. Give it
+     an explicit top padding that tracks the header's own clamp()
+     formula (padding-top + h1 height + tabs row) plus a fixed gap, so
+     it clears the header at every viewport size instead of just the
+     ones where centering happened to leave enough room. */
+  .specimen.irl-entry {
+    padding-top: calc(clamp(48px, 12vh, 120px) + (0.9 * clamp(64px, 14vw, 160px)) + 74px);
+  }
   .irl-entry .location-tag {
     display: inline-block;
     margin-bottom: 22px;
@@ -319,7 +331,8 @@
     max-width: 64ch;
     margin: clamp(28px, 6vh, 48px) auto 0;
     text-align: left;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Stick No Bills", sans-serif;
+    font-optical-sizing: auto;
     font-weight: 400;
     font-size: clamp(15px, 1.6vw, 17px);
     line-height: 1.75;
@@ -476,16 +489,25 @@
     align-self: center;
   }
   /* each altered glyph carries a small pink label showing what it
-     used to be, plus a matching underline marking the added stroke */
+     used to be, plus a matching underline marking the added stroke.
+     The label sits above the letter via a negative offset, but
+     .plate clips overflow (needed to keep the blue euro-band's
+     corners inside the plate's own border-radius) — at the default
+     10px plate-text padding the label's top edge landed a hair above
+     that clip line and got its top sliced off. .plate-forged gives
+     just this plate the extra top padding the annotation needs; the
+     offset itself is also trimmed slightly so there's margin to
+     spare rather than clipping down to the pixel. */
+  .plate-forged .plate-text { padding-top: 22px; }
   .altered {
     position: relative;
-    border-bottom: 3px solid #e0457b;
+    border-bottom: 2px solid rgba(224, 69, 123, .75);
     padding-bottom: 1px;
   }
   .altered::after {
     content: attr(data-was);
     position: absolute;
-    top: -1.15em;
+    top: -1.05em;
     left: 50%;
     transform: translateX(-50%);
     font-family: var(--ui);
@@ -542,12 +564,19 @@
 
   /* IRL hero lines are demonstrating a real wordmark, not a type
      sample — they need to dominate the card over the origin-story
-     copy beneath, bigger than a regular pangram/line specimen gets. */
-  .irl-entry .pangram { font-size: clamp(48px, 8vw, 96px); }
-  .irl-entry .line    { font-size: clamp(40px, 6.4vw, 76px); }
+     copy beneath, bigger than a regular pangram/line specimen gets.
+     Both hero lines ("the bentway" / "bathurst st") share one size so
+     neither reads as the "real" headline over the other. */
+  .irl-entry .pangram,
+  .irl-entry .line { font-size: clamp(48px, 8vw, 96px); }
+  /* The actual pangram sentence, content-wise, lives here (the
+     .pangram/.line slots above are repurposed for the hero wordmark
+     demo) — so this is what needs to match the default tab's pangram
+     size exactly, not render as a shrunken afterthought. */
   .irl-entry .fun-pangram {
     margin-top: clamp(18px, 3vh, 28px);
-    font-size: clamp(20px, 2.4vw, 26px);
+    font-size: clamp(36px, 5.6vw, 68px);
+    line-height: 1.18;
     color: #3c3c3c;
   }
 
@@ -560,11 +589,31 @@
   /* ---- End page: the last scroll-snap page, after every specimen in
      both categories (it lives outside the .category divs, so it's
      unaffected by which tab is active). It's a plain .specimen — same
-     full-viewport centering and scroll-in reveal as every font page —
-     wearing the same overlapping-letter AV mark from the header and
-     the av-monogram skill, just given the whole screen instead of a
-     corner: a closing title card, not a nav footer. ---- */
-  .end-page { scroll-snap-align: end; }
+     full-viewport centering as every font page — wearing the same
+     overlapping-letter AV mark from the header and the av-monogram
+     skill, just given the whole screen instead of a corner: a closing
+     title card, not a nav footer.
+
+     Two fixes over the font-page baseline:
+     - `.end-page` alone was losing the cascade to the base
+       `section.specimen` rule (same 1-class specificity, but
+       section.specimen also matches the element type, so it won);
+       `scroll-snap-align: end` was silently dead. `section.end-page`
+       matches that specificity and wins on source order instead.
+     - unlike every font specimen, this page shouldn't depend on the
+       scroll-triggered reveal (IntersectionObserver adding
+       `.in-view`) to become visible — it's the terminal page users
+       land on however they get here (snap, keyboard End, scrollbar
+       drag), and it should just always be there, not a fade-in that
+       can be missed. */
+  section.end-page { scroll-snap-align: end; }
+  .end-page .specimen-inner {
+    opacity: 1;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   .end-mark {
     display: inline-flex;
     flex-direction: column;
@@ -613,6 +662,20 @@
     color: var(--ink);
     border-color: var(--ink);
   }
+  .end-top-link {
+    margin-top: clamp(28px, 4vh, 40px);
+    padding-bottom: 3px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--faint);
+    text-decoration: none;
+    border-bottom: 1px solid #dcdcdc;
+    transition: color .3s ease, border-color .3s ease;
+  }
+  .end-top-link:hover { color: var(--ink); border-color: var(--ink); }
   /* ---- View All overlay: a tiled index of every face, each tile
      set in its own font. Picking one teleports straight to its
      page — no scrolling through the deck to get there. ---- */
@@ -829,6 +892,14 @@
     <p class="seen">seen on — <a href="../shrt.html">shrt</a></p>
   </section>
 
+  <!-- ============ shrt, shouted ============ -->
+  <section class="specimen f-cinzdec" id="font-cinzdec-caps">
+    <p class="name">Cinzel Decorative — All Caps</p>
+    <p class="pangram">WALTZ, BAD NYMPH, FOR QUICK JIGS VEX.</p>
+    <p class="line">SHRT</p>
+    <p class="seen">seen on — this page · caps showcase</p>
+  </section>
+
   <section class="specimen f-metam" id="font-metam">
     <p class="name">Metamorphous</p>
     <p class="pangram">Grumpy wizards make toxic brew for the evil queen and Jack.</p>
@@ -942,9 +1013,9 @@
       <figcaption>bathurst st. underpass &mdash; photographed on site</figcaption>
     </figure>
     <div class="irl-copy">
-      <p>TBW Galeria is a custom cut of APK Galeria, a modern grotesque from APK Type Foundry, drawn for The Bentway&rsquo;s 2024 rebrand. Toronto studio SUPERFANTASTIC led the identity work and brought in Dutch type designer Peter Korsman of Autograph to adapt the base face into a bespoke system for the park.</p>
-      <p>APK Galeria itself is a monoline grotesque with a double-story humanist &ldquo;a&rdquo; and softly finished terminals. For The Bentway, Korsman&rsquo;s cut introduces sharp 45&deg;/90&deg; clipped corners on letters like &ldquo;g,&rdquo; &ldquo;e,&rdquo; and &ldquo;k&rdquo; &mdash; a nod to the hard concrete geometry of the Gardiner Expressway overhead, set against the warm, communal programming happening underneath it.</p>
-      <p>The whole system, wordmark included, is set entirely lowercase. Creative Director Mark Neil Balson put it simply: &ldquo;The lowercase wordmark reflects the earnest, open and friendly spirit of the non-profit organisation.&rdquo;</p>
+      <p>TBW Galeria is a custom cut of <strong>APK Galeria</strong>, a modern grotesque from APK Type Foundry, drawn for The Bentway&rsquo;s <strong>2024 rebrand</strong>. Toronto studio <strong>SUPERFANTASTIC</strong> led the identity work and brought in Dutch type designer Peter Korsman of Autograph to adapt the base face into a bespoke system for the park.</p>
+      <p>APK Galeria itself is a monoline grotesque with a double-story humanist &ldquo;a&rdquo; and softly finished terminals. For The Bentway, <strong>Peter Korsman&rsquo;s</strong> cut introduces sharp 45&deg;/90&deg; clipped corners on letters like &ldquo;g,&rdquo; &ldquo;e,&rdquo; and &ldquo;k&rdquo; &mdash; a nod to the hard concrete geometry of the Gardiner Expressway overhead, set against the warm, communal programming happening underneath it.</p>
+      <p>The whole system, wordmark included, is set entirely lowercase. Creative Director Mark Neil Balson put it simply: &ldquo;<strong>The lowercase wordmark</strong> reflects the earnest, open and friendly spirit of the non-profit organisation.&rdquo;</p>
     </div>
     <ul class="irl-links">
       <li><a href="https://www.thebentway.ca">The Bentway</a> &mdash; the park itself</li>
@@ -959,23 +1030,24 @@
     <p class="name">FE-Schrift &middot; f&auml;lschungserschwerende Schrift</p>
     <p class="pangram">B&middot;KM 1970</p>
     <p class="line">FE-SCHRIFT</p>
-    <p class="fun-pangram">Mr. Jock, TV quiz PhD, bags few lynx.</p>
+    <p class="fun-pangram">Waltz, bad nymph, for quick jigs vex 1234567890.</p>
     <p class="seen">seen on — every German vehicle registration plate since 2000</p>
     <figure class="irl-photo">
       <img src="photos/fe-schrift-plate.jpg" width="1600" height="510" loading="lazy" alt="A Bavarian &ldquo;N&middot;Y 420&rdquo; German vehicle registration plate photographed at an angle, showing the black FE-Schrift lettering on white reflective plate stock with the blue EU/D band on the left.">
       <figcaption>N&middot;Y 420, Nuremberg &mdash; photo by Jochen64 / <a href="https://commons.wikimedia.org/wiki/File:German_licence_plate_N-Y_420.jpg">Wikimedia Commons</a>, CC BY-SA 4.0</figcaption>
     </figure>
     <div class="irl-copy">
-      <p>Until the late 1990s, German plates were set in DIN 1451 &mdash; the same engineering typeface behind the country&rsquo;s road signs. Its plain, round letterforms read well at speed, but that same simplicity made them easy to doctor: sand down a stroke and a P passes for an R, an F for an E, a C for a G, an O for a Q, a 3 for an 8.</p>
-      <p>That wasn&rsquo;t just petty fraud. Through the 1970s and &rsquo;80s, altered plates on stolen cars turned up in attacks by the Red Army Faction, and West German authorities went looking for a typeface that couldn&rsquo;t be casually rewritten. Development started in 1978; the result, phased in from the mid-1990s and made mandatory nationwide by 2000, was FE-Schrift &mdash; f&auml;lschungserschwerende Schrift, &ldquo;script that makes forgery harder.&rdquo;</p>
+      <p>Until the late 1990s, German plates were set in <strong>DIN 1451</strong> &mdash; the same engineering typeface behind the country&rsquo;s road signs. Its plain, round letterforms read well at speed, but that same simplicity made them easy to doctor: sand down a stroke and a P passes for an R, an F for an E, a C for a G, an O for a Q, a 3 for an 8.</p>
+      <p>That wasn&rsquo;t just petty fraud. Through the 1970s and &rsquo;80s, altered plates on stolen cars turned up in attacks by the Red Army Faction, and West German authorities went looking for a typeface that couldn&rsquo;t be casually rewritten. Development started in 1978; the result, phased in from the mid-1990s and made mandatory nationwide by 2000, was <strong>FE-Schrift</strong> &mdash; <strong>f&auml;lschungserschwerende Schrift</strong>, &ldquo;script that makes forgery harder.&rdquo;</p>
       <p>Every character is drawn so no plausible knife-and-paint job turns it into a different one, and the counters are shaped to hold up under automatic number-plate cameras as well as a glance from a human eye. A national alphabet, redesigned entirely around a threat model &mdash; <a href="https://www.instagram.com/p/DbDkkZBiBRT/">a post from propaganda.institute</a> is what sent me down this rabbit hole.</p>
     </div>
 
     <div class="forgery-demo">
       <p class="forgery-intro">Try this: mentally add one stroke to each letter below and watch it turn into a different one. That&rsquo;s the exact trick a sanding block and some paint used to pull off on a stolen car&rsquo;s plate &mdash; and the whole reason this typeface exists.</p>
+      <p class="forgery-caption">DIN 1451 (1931), the typeface it replaced, was designed to be readable at speed &mdash; but not forgery-resistant.</p>
       <div class="forgery-plates">
         <figure class="plate-figure">
-          <figcaption class="plate-label">before &middot; plain plate lettering</figcaption>
+          <figcaption class="plate-label">before &middot; DIN 1451 (1931)</figcaption>
           <div class="plate">
             <span class="plate-euro">D</span>
             <span class="plate-text">PF&middot;CO 313</span>
@@ -984,7 +1056,7 @@
         <span class="forgery-arrow" aria-hidden="true">&rarr;</span>
         <figure class="plate-figure">
           <figcaption class="plate-label">forged &middot; same lettering</figcaption>
-          <div class="plate">
+          <div class="plate plate-forged">
             <span class="plate-euro">D</span>
             <span class="plate-text"><span class="altered" data-was="P">R</span><span class="altered" data-was="F">E</span>&middot;<span class="altered" data-was="C">G</span><span class="altered" data-was="O">Q</span> <span class="altered" data-was="3">8</span>1<span class="altered" data-was="3">8</span></span>
           </div>
@@ -996,7 +1068,7 @@
           <span class="plate-euro">D</span>
           <span class="plate-text">PF&middot;CO 313</span>
         </div>
-        <figcaption class="forgery-caption">the same tricks don&rsquo;t work &mdash; every letter has intentional asymmetries and gaps that break under alteration.</figcaption>
+        <figcaption class="forgery-caption"><strong>the same tricks don&rsquo;t work</strong> &mdash; every letter has intentional asymmetries and gaps that break under alteration.</figcaption>
       </figure>
       <ul class="forgery-legend">
         <li><span class="legend-swap">P&rarr;R</span> add a leg</li>
@@ -1030,6 +1102,7 @@
     <span class="end-mark__glyph"><span>A</span><span>V</span></span>
     <span class="end-mark__label">back to antonveselskyi.com</span>
   </a>
+  <a class="end-top-link" href="#" aria-label="Back to top of this page">back to top &uarr;</a>
 </section>
 
 </main>
