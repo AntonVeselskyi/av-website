@@ -7,7 +7,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Stick+No+Bills:wght@600&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@600&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
 <style>
   /* ============ TYPO — a sterile room for letters ============
      Nothing in here is allowed to compete with the type itself:
@@ -74,6 +74,50 @@
     opacity: 0;
     transform: translateY(-24px);
   }
+
+  /* ---- Category tabs: switch between the curated "fonts I use and
+     like" deck and the "IRL fonts" deck (fonts spotted out in the
+     world, with more backstory per entry). Lives where the old
+     single subtitle line used to sit. ---- */
+  .category-tabs {
+    margin-top: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 28px;
+    pointer-events: auto;   /* header itself has pointer-events: none */
+  }
+  .category-tab {
+    position: relative;
+    padding-bottom: 8px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color .3s ease;
+  }
+  .category-tab::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--ink);
+    transform: scaleX(0);
+    transition: transform .3s ease;
+  }
+  .category-tab:hover { color: var(--ink); }
+  .category-tab.active { color: var(--ink); }
+  .category-tab.active::after { transform: scaleX(1); }
+
+  /* Category sections: only the active one is in flow/visible. */
+  .category { display: none; }
+  .category.active { display: block; }
 
   /* "view all" — sits top-right, fades with the rest of the header. */
   .view-all-btn {
@@ -269,6 +313,57 @@
   .f-vt        { font-family: "VT323", monospace; }
   .f-share     { font-family: "Share Tech Mono", monospace; }
   .f-rubik     { font-family: "Rubik Dirt", system-ui; }
+  /* TBW Galeria (custom cut of APK Galeria) has no free web version —
+     substituting Space Grotesk, a geometric-humanist grotesque with a
+     similar monoline/double-story-a character, as the closest free stand-in. */
+  .f-bentway   { font-family: "Space Grotesk", "Inter", sans-serif; font-weight: 500; }
+
+  /* ---- IRL entries: same specimen skeleton, plus a location tag
+     and a block of running copy about where the font came from. ---- */
+  .irl-entry .location-tag {
+    display: inline-block;
+    margin-bottom: 22px;
+    padding: 6px 14px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  .irl-entry .irl-copy {
+    max-width: 620px;
+    margin: clamp(28px, 6vh, 48px) auto 0;
+    text-align: left;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 400;
+    font-size: clamp(15px, 1.6vw, 17px);
+    line-height: 1.7;
+    color: #3c3c3c;
+  }
+  .irl-entry .irl-copy p + p { margin-top: 1.1em; }
+  .irl-entry .irl-links {
+    max-width: 620px;
+    margin: clamp(20px, 4vh, 32px) auto 0;
+    text-align: left;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .irl-entry .irl-links a {
+    color: var(--faint);
+    text-decoration: none;
+    border-bottom: 1px solid #dcdcdc;
+    padding-bottom: 2px;
+    transition: color .3s ease, border-color .3s ease;
+  }
+  .irl-entry .irl-links a:hover { color: var(--ink); border-color: var(--ink); }
+  .irl-entry .irl-links li { list-style: none; margin-top: 8px; }
+  .irl-entry .irl-links li:first-child { margin-top: 0; }
 
   /* a couple of faces render optically small/large — nudge them
      so every specimen reads the same visual size */
@@ -384,6 +479,11 @@
     background: #f5f5f5;
     transform: scale(1.04);
   }
+  /* View All respects the active category: IRL tiles are the only
+     ones tagged data-category="irl", so the default deck is simply
+     "everything that isn't tagged IRL". */
+  .view-all-grid[data-active="irl"] .view-all-tile:not([data-category="irl"]) { display: none; }
+  .view-all-grid[data-active="default"] .view-all-tile[data-category="irl"] { display: none; }
 
   @media (prefers-reduced-motion: reduce) {
     header { transition: opacity .2s ease; }
@@ -400,7 +500,10 @@
   <a class="av-monogram" href="../index.html" aria-label="Anton Veselskyi"><span>A</span><span>V</span></a>
   <button type="button" class="view-all-btn" id="viewAllBtn" aria-haspopup="true" aria-expanded="false">View All</button>
   <h1>Typo</h1>
-  <p>fonts I use and like</p>
+  <div class="category-tabs" id="categoryTabs" role="tablist" aria-label="Font categories">
+    <button type="button" class="category-tab active" data-category="default" role="tab" aria-selected="true">fonts I use and like</button>
+    <button type="button" class="category-tab" data-category="irl" role="tab" aria-selected="false">IRL fonts</button>
+  </div>
 </header>
 
 <div class="view-all-overlay" id="viewAllOverlay" role="dialog" aria-modal="true" aria-label="All fonts">
@@ -429,10 +532,13 @@
     <button type="button" class="view-all-tile f-vt"       data-target="font-vt">VT323</button>
     <button type="button" class="view-all-tile f-share"    data-target="font-share">Share Tech Mono</button>
     <button type="button" class="view-all-tile f-rubik"    data-target="font-rubik">Rubik Dirt</button>
+    <button type="button" class="view-all-tile f-bentway"  data-target="font-bentway" data-category="irl">TBW Galeria</button>
   </div>
 </div>
 
 <main>
+
+<div class="category active" id="categoryDefault" data-category="default">
 
   <!-- ============ this site ============ -->
   <section class="specimen f-stick" id="font-stick">
@@ -592,6 +698,31 @@
     <p class="seen">seen on — <a href="../signspell/index.html">$ign⸸$pell</a></p>
   </section>
 
+</div>
+
+<div class="category" id="categoryIrl" data-category="irl">
+
+  <!-- ============ IRL: fonts spotted out in the world ============ -->
+  <section class="specimen f-bentway irl-entry" id="font-bentway">
+    <p class="location-tag">Toronto, Canada</p>
+    <p class="name">TBW Galeria &middot; custom cut of APK Galeria</p>
+    <p class="pangram">the bentway</p>
+    <p class="line">bathurst st</p>
+    <p class="seen">seen on — <a href="https://www.thebentway.ca">The Bentway</a> wayfinding, including the Bathurst Street signage</p>
+    <div class="irl-copy">
+      <p>TBW Galeria is a custom cut of APK Galeria, a modern grotesque from APK Type Foundry, drawn for The Bentway&rsquo;s 2024 rebrand. Toronto studio SUPERFANTASTIC led the identity work and brought in Dutch type designer Peter Korsman of Autograph to adapt the base face into a bespoke system for the park.</p>
+      <p>APK Galeria itself is a monoline grotesque with a double-story humanist &ldquo;a&rdquo; and softly finished terminals. For The Bentway, Korsman&rsquo;s cut introduces sharp 45&deg;/90&deg; clipped corners on letters like &ldquo;g,&rdquo; &ldquo;e,&rdquo; and &ldquo;k&rdquo; &mdash; a nod to the hard concrete geometry of the Gardiner Expressway overhead, set against the warm, communal programming happening underneath it.</p>
+      <p>The whole system, wordmark included, is set entirely lowercase. Creative Director Mark Neil Balson put it simply: &ldquo;The lowercase wordmark reflects the earnest, open and friendly spirit of the non-profit organisation.&rdquo;</p>
+    </div>
+    <ul class="irl-links">
+      <li><a href="https://www.thebentway.ca">The Bentway</a> &mdash; the park itself</li>
+      <li><a href="https://superfantastic.design/work/the-bentway-brand-identity/">SUPERFANTASTIC</a> &mdash; brand identity project page</li>
+      <li><a href="https://apk-type.com/family/apk-galeria/">APK Galeria</a> &mdash; the base typeface at APK Type</li>
+    </ul>
+  </section>
+
+</div>
+
 </main>
 
 <footer>
@@ -694,6 +825,36 @@
         });
       });
     });
+  })();
+
+  // Category tabs — switch between the curated deck and the IRL
+  // deck. Selection is tracked on <main data-active> and mirrored
+  // onto the View All grid so it only ever surfaces tiles from the
+  // category currently on screen.
+  (function () {
+    var tabs = document.querySelectorAll('.category-tab');
+    var categories = document.querySelectorAll('.category');
+    var main = document.querySelector('main');
+    var grid = document.querySelector('.view-all-grid');
+
+    function setActive(category) {
+      main.dataset.active = category;
+      if (grid) grid.dataset.active = category;
+      tabs.forEach(function (tab) {
+        var isActive = tab.dataset.category === category;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      categories.forEach(function (section) {
+        section.classList.toggle('active', section.dataset.category === category);
+      });
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () { setActive(tab.dataset.category); });
+    });
+
+    setActive('default');
   })();
 </script>
 </body>
