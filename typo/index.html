@@ -292,6 +292,20 @@
   }
   .specimen .seen a:hover { color: var(--ink); border-color: var(--ink); }
 
+  /* FE-Schrift, hosted locally. This is GL-Nummernschild-Mtl by Gutenberg
+     Labo (github.com/Gutenberg-Labo/GL-Nummernschild) — a free-software
+     recreation of the actual German plate typeface originally drawn by
+     Karlgeorg Hoefer, not a lookalike substitute. License: "unlimited
+     permission... commercially and noncommercially", no attribution
+     required. Converted from their TTF to woff2 for this page. */
+  @font-face {
+    font-family: "FE-Schrift Local";
+    src: url("fonts/fe-schrift.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
   /* per-font faces */
   .f-stick     { font-family: "Stick No Bills", sans-serif; font-optical-sizing: auto; font-weight: 600; }
   .f-mono      { font-family: "Major Mono Display", monospace; }
@@ -313,15 +327,20 @@
   .f-vt        { font-family: "VT323", monospace; }
   .f-share     { font-family: "Share Tech Mono", monospace; }
   .f-rubik     { font-family: "Rubik Dirt", system-ui; }
-  /* TBW Galeria (custom cut of APK Galeria) has no free web version —
-     substituting Space Grotesk, a geometric-humanist grotesque with a
-     similar monoline/double-story-a character, as the closest free stand-in. */
+  /* TBW Galeria is served directly from thebentway.ca as
+     TBW-Galeria-Regular.woff2 — no CDN, straight @font-face. Pulled it
+     down and inspected the embedded name table: it carries a full APK
+     Type EULA (name ID 13) that sells Web Licenses per-domain and
+     explicitly prohibits reusing the webfont files outside the licensed
+     site. thebentway.ca's own license doesn't extend to this site, so
+     it isn't hosted here — substituting Space Grotesk, a geometric-
+     humanist grotesque with a similar monoline/double-story-a
+     character, as the closest free stand-in. */
   .f-bentway   { font-family: "Space Grotesk", "Inter", sans-serif; font-weight: 500; }
-  /* FE-Schrift (the actual German license-plate face) has no free web
-     version — substituting Yanone Kaffeesatz, itself modeled on the
-     lettering of 1950s-60s German roadside signage, as the closest free
-     stand-in with the right utilitarian, engineered feel. */
-  .f-fe        { font-family: "Yanone Kaffeesatz", sans-serif; font-weight: 700; }
+  /* FE-Schrift — see the @font-face above. "FE-Schrift Local" is the
+     real plate typeface (GL-Nummernschild-Mtl), hosted locally and free
+     to use; Yanone Kaffeesatz stays as the fallback while it loads. */
+  .f-fe        { font-family: "FE-Schrift Local", "Yanone Kaffeesatz", sans-serif; font-weight: 400; }
 
   /* ---- IRL entries: same specimen skeleton, plus a location tag
      and a block of running copy about where the font came from. ---- */
@@ -338,16 +357,23 @@
     border: 1px solid var(--ink);
   }
   .irl-entry .irl-copy {
-    max-width: 620px;
+    max-width: 64ch;
     margin: clamp(28px, 6vh, 48px) auto 0;
     text-align: left;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-weight: 400;
     font-size: clamp(15px, 1.6vw, 17px);
-    line-height: 1.7;
-    color: #3c3c3c;
+    line-height: 1.75;
+    color: #2b2b2b;
   }
-  .irl-entry .irl-copy p + p { margin-top: 1.1em; }
+  .irl-entry .irl-copy p + p { margin-top: 1.15em; }
+  /* lead-in: the opening line of the origin story gets a quiet weight
+     bump so the paragraph block has an entry point, same idea as a
+     drop cap without the drop cap. */
+  .irl-entry .irl-copy p:first-of-type::first-line {
+    font-weight: 600;
+    color: var(--ink);
+  }
   .irl-entry .irl-links {
     max-width: 620px;
     margin: clamp(20px, 4vh, 32px) auto 0;
@@ -369,6 +395,191 @@
   .irl-entry .irl-links a:hover { color: var(--ink); border-color: var(--ink); }
   .irl-entry .irl-links li { list-style: none; margin-top: 8px; }
   .irl-entry .irl-links li:first-child { margin-top: 0; }
+
+  /* ---- IRL photo: a small matted print sitting between the "seen
+     on" line and the origin-story copy — the physical evidence
+     before the explanation. ---- */
+  .irl-entry .irl-photo {
+    margin: clamp(28px, 5vh, 44px) auto 0;
+    max-width: 420px;
+  }
+  .irl-entry .irl-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 10px solid var(--paper);
+    outline: 1px solid #dcdcdc;
+    box-shadow: 0 3px 22px rgba(0, 0, 0, .1);
+  }
+  .irl-entry .irl-photo figcaption {
+    margin-top: 10px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .irl-entry .irl-photo figcaption a { color: var(--faint); }
+  .irl-entry .irl-photo figcaption a:hover { color: var(--ink); }
+
+  /* ---- Bentway wayfinding yellow. Sampled from the user's own
+     bathurst-st photo (overcast-light average landed near #F0BF4F on
+     the paint) and pushed back up to the fully-lit, saturated yellow
+     the beams actually read as in person — squarely in the
+     CN-yellow / Bentway wayfinding family. ---- */
+  .irl-entry .yellow-tag {
+    display: inline-block;
+    background: #F7D000;
+    color: #111;
+    padding: .06em .32em;
+    border-radius: 2px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* ---- FE-Schrift forgery demo: the entry's signature gimmick.
+     Two plates in a plain sans (standing in for un-webfonted DIN
+     1451) show a P/F/C/O/3 plate before and after a knife-and-paint
+     forgery; a third plate repeats the same string in the real
+     FE-Schrift face to show why the trick stops working. ---- */
+  .forgery-demo {
+    max-width: 620px;
+    margin: clamp(36px, 6vh, 56px) auto 0;
+    text-align: center;
+  }
+  .forgery-intro {
+    max-width: 60ch;
+    margin: 0 auto clamp(22px, 4vh, 32px);
+    text-align: left;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: clamp(14px, 1.5vw, 16px);
+    line-height: 1.7;
+    color: #2b2b2b;
+  }
+  .forgery-plates {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .plate-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .plate-label {
+    margin-bottom: 10px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .plate {
+    display: inline-flex;
+    align-items: stretch;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+  }
+  .plate-euro {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    background: #039;
+    color: #fff;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .plate-text {
+    padding: 10px 16px;
+    font-size: clamp(24px, 3.2vw, 34px);
+    letter-spacing: .04em;
+    font-weight: 700;
+    color: var(--ink);
+    font-family: Arial, Helvetica, sans-serif;
+    white-space: nowrap;
+  }
+  .plate-fe .plate-text {
+    font-family: "FE-Schrift Local", "Yanone Kaffeesatz", sans-serif;
+    font-weight: 400;
+  }
+  .forgery-arrow {
+    font-size: 26px;
+    color: var(--faint);
+    align-self: center;
+  }
+  /* each altered glyph carries a small pink label showing what it
+     used to be, plus a matching underline marking the added stroke */
+  .altered {
+    position: relative;
+    border-bottom: 3px solid #e0457b;
+    padding-bottom: 1px;
+  }
+  .altered::after {
+    content: attr(data-was);
+    position: absolute;
+    top: -1.15em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 12px;
+    color: #e0457b;
+  }
+  .plate-figure--fe { margin-top: clamp(30px, 5vh, 44px); }
+  .forgery-caption {
+    margin-top: 14px;
+    max-width: 44ch;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #3c3c3c;
+  }
+  .forgery-legend {
+    margin: clamp(26px, 4vh, 38px) auto 0;
+    max-width: 440px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 9px 22px;
+    text-align: left;
+    list-style: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    color: #3c3c3c;
+  }
+  .legend-swap {
+    display: inline-block;
+    min-width: 48px;
+    font-family: var(--ui);
+    font-weight: 600;
+    color: var(--ink);
+    margin-right: 6px;
+  }
+
+  /* ---- more FE-Schrift plate examples, stacked as a strip ---- */
+  .plate-strip {
+    margin: clamp(26px, 4vh, 38px) auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    max-width: 620px;
+  }
+  .plate-strip .plate-text {
+    font-size: clamp(18px, 2.4vw, 24px);
+    padding: 7px 12px;
+  }
+  .plate-strip .plate-euro { font-size: 10px; }
 
   /* IRL hero lines are demonstrating a real wordmark, not a type
      sample — they need to dominate the card over the origin-story
@@ -723,10 +934,14 @@
   <section class="specimen f-bentway irl-entry" id="font-bentway">
     <p class="location-tag">Toronto, Canada</p>
     <p class="name">TBW Galeria &middot; custom cut of APK Galeria</p>
-    <p class="pangram">the bentway</p>
-    <p class="line">bathurst st</p>
+    <p class="pangram"><span class="yellow-tag">the bentway</span></p>
+    <p class="line"><span class="yellow-tag">bathurst st</span></p>
     <p class="fun-pangram">Bright vixens jump; dozy fowl quack.</p>
     <p class="seen">seen on — <a href="https://www.thebentway.ca">The Bentway</a> wayfinding, including the Bathurst Street signage</p>
+    <figure class="irl-photo">
+      <img src="photos/bentway-bathurst-st.jpg" width="1600" height="2125" loading="lazy" alt="Looking up at the underside of the Gardiner Expressway overpass at Bathurst Street, with a black lowercase &ldquo;bathurst st&rdquo; sign in TBW Galeria mounted on a concrete beam, next to columns painted Bentway yellow.">
+      <figcaption>bathurst st. underpass &mdash; photographed on site</figcaption>
+    </figure>
     <div class="irl-copy">
       <p>TBW Galeria is a custom cut of APK Galeria, a modern grotesque from APK Type Foundry, drawn for The Bentway&rsquo;s 2024 rebrand. Toronto studio SUPERFANTASTIC led the identity work and brought in Dutch type designer Peter Korsman of Autograph to adapt the base face into a bespoke system for the park.</p>
       <p>APK Galeria itself is a monoline grotesque with a double-story humanist &ldquo;a&rdquo; and softly finished terminals. For The Bentway, Korsman&rsquo;s cut introduces sharp 45&deg;/90&deg; clipped corners on letters like &ldquo;g,&rdquo; &ldquo;e,&rdquo; and &ldquo;k&rdquo; &mdash; a nod to the hard concrete geometry of the Gardiner Expressway overhead, set against the warm, communal programming happening underneath it.</p>
@@ -747,14 +962,63 @@
     <p class="line">FE-SCHRIFT</p>
     <p class="fun-pangram">Mr. Jock, TV quiz PhD, bags few lynx.</p>
     <p class="seen">seen on — every German vehicle registration plate since 2000</p>
+    <figure class="irl-photo">
+      <img src="photos/fe-schrift-plate.jpg" width="1600" height="510" loading="lazy" alt="A Bavarian &ldquo;N&middot;Y 420&rdquo; German vehicle registration plate photographed at an angle, showing the black FE-Schrift lettering on white reflective plate stock with the blue EU/D band on the left.">
+      <figcaption>N&middot;Y 420, Nuremberg &mdash; photo by Jochen64 / <a href="https://commons.wikimedia.org/wiki/File:German_licence_plate_N-Y_420.jpg">Wikimedia Commons</a>, CC BY-SA 4.0</figcaption>
+    </figure>
     <div class="irl-copy">
       <p>Until the late 1990s, German plates were set in DIN 1451 &mdash; the same engineering typeface behind the country&rsquo;s road signs. Its plain, round letterforms read well at speed, but that same simplicity made them easy to doctor: sand down a stroke and a P passes for an R, an F for an E, a C for a G, an O for a Q, a 3 for an 8.</p>
       <p>That wasn&rsquo;t just petty fraud. Through the 1970s and &rsquo;80s, altered plates on stolen cars turned up in attacks by the Red Army Faction, and West German authorities went looking for a typeface that couldn&rsquo;t be casually rewritten. Development started in 1978; the result, phased in from the mid-1990s and made mandatory nationwide by 2000, was FE-Schrift &mdash; f&auml;lschungserschwerende Schrift, &ldquo;script that makes forgery harder.&rdquo;</p>
       <p>Every character is drawn so no plausible knife-and-paint job turns it into a different one, and the counters are shaped to hold up under automatic number-plate cameras as well as a glance from a human eye. A national alphabet, redesigned entirely around a threat model &mdash; <a href="https://www.instagram.com/p/DbDkkZBiBRT/">a post from propaganda.institute</a> is what sent me down this rabbit hole.</p>
     </div>
+
+    <div class="forgery-demo">
+      <p class="forgery-intro">Try this: mentally add one stroke to each letter below and watch it turn into a different one. That&rsquo;s the exact trick a sanding block and some paint used to pull off on a stolen car&rsquo;s plate &mdash; and the whole reason this typeface exists.</p>
+      <div class="forgery-plates">
+        <figure class="plate-figure">
+          <figcaption class="plate-label">before &middot; plain plate lettering</figcaption>
+          <div class="plate">
+            <span class="plate-euro">D</span>
+            <span class="plate-text">PF&middot;CO 313</span>
+          </div>
+        </figure>
+        <span class="forgery-arrow" aria-hidden="true">&rarr;</span>
+        <figure class="plate-figure">
+          <figcaption class="plate-label">forged &middot; same lettering</figcaption>
+          <div class="plate">
+            <span class="plate-euro">D</span>
+            <span class="plate-text"><span class="altered" data-was="P">R</span><span class="altered" data-was="F">E</span>&middot;<span class="altered" data-was="C">G</span><span class="altered" data-was="O">Q</span> <span class="altered" data-was="3">8</span>1<span class="altered" data-was="3">8</span></span>
+          </div>
+        </figure>
+      </div>
+      <figure class="plate-figure plate-figure--fe">
+        <figcaption class="plate-label">same plate &middot; FE-Schrift</figcaption>
+        <div class="plate plate-fe">
+          <span class="plate-euro">D</span>
+          <span class="plate-text">PF&middot;CO 313</span>
+        </div>
+        <figcaption class="forgery-caption">the same tricks don&rsquo;t work &mdash; every letter has intentional asymmetries and gaps that break under alteration.</figcaption>
+      </figure>
+      <ul class="forgery-legend">
+        <li><span class="legend-swap">P&rarr;R</span> add a leg</li>
+        <li><span class="legend-swap">F&rarr;E</span> add a bottom bar</li>
+        <li><span class="legend-swap">C&rarr;G</span> close it, add a crossbar</li>
+        <li><span class="legend-swap">O&rarr;Q</span> add a tail</li>
+        <li><span class="legend-swap">3&rarr;8</span> close the openings</li>
+      </ul>
+      <div class="plate-strip" aria-label="more FE-Schrift plate examples">
+        <div class="plate plate-fe"><span class="plate-euro">D</span><span class="plate-text">B&middot;MW 4711</span></div>
+        <div class="plate plate-fe"><span class="plate-euro">D</span><span class="plate-text">M&middot;AC 8888</span></div>
+        <div class="plate plate-fe"><span class="plate-euro">D</span><span class="plate-text">HH&middot;PR 1337</span></div>
+        <div class="plate plate-fe"><span class="plate-euro">D</span><span class="plate-text">K&middot;GO 6969</span></div>
+        <div class="plate plate-fe"><span class="plate-euro">D</span><span class="plate-text">S&middot;OQ 3080</span></div>
+      </div>
+    </div>
+
     <ul class="irl-links">
       <li><a href="https://www.instagram.com/p/DbDkkZBiBRT/">propaganda.institute</a> &mdash; the post that started it</li>
       <li><a href="https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Germany">Vehicle registration plates of Germany</a> &mdash; Wikipedia, FE-Schrift &amp; DIN 1451 background</li>
+      <li><a href="https://github.com/Gutenberg-Labo/GL-Nummernschild">GL-Nummernschild</a> &mdash; the free FE-Schrift recreation used on this page</li>
     </ul>
   </section>
 
