@@ -7,7 +7,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@600&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@600&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&family=Yanone+Kaffeesatz:wght@700&display=swap" rel="stylesheet">
 <style>
   /* ============ TYPO — a sterile room for letters ============
      Nothing in here is allowed to compete with the type itself:
@@ -317,6 +317,11 @@
      substituting Space Grotesk, a geometric-humanist grotesque with a
      similar monoline/double-story-a character, as the closest free stand-in. */
   .f-bentway   { font-family: "Space Grotesk", "Inter", sans-serif; font-weight: 500; }
+  /* FE-Schrift (the actual German license-plate face) has no free web
+     version — substituting Yanone Kaffeesatz, itself modeled on the
+     lettering of 1950s-60s German roadside signage, as the closest free
+     stand-in with the right utilitarian, engineered feel. */
+  .f-fe        { font-family: "Yanone Kaffeesatz", sans-serif; font-weight: 700; }
 
   /* ---- IRL entries: same specimen skeleton, plus a location tag
      and a block of running copy about where the font came from. ---- */
@@ -364,6 +369,17 @@
   .irl-entry .irl-links a:hover { color: var(--ink); border-color: var(--ink); }
   .irl-entry .irl-links li { list-style: none; margin-top: 8px; }
   .irl-entry .irl-links li:first-child { margin-top: 0; }
+
+  /* IRL hero lines are demonstrating a real wordmark, not a type
+     sample — they need to dominate the card over the origin-story
+     copy beneath, bigger than a regular pangram/line specimen gets. */
+  .irl-entry .pangram { font-size: clamp(48px, 8vw, 96px); }
+  .irl-entry .line    { font-size: clamp(40px, 6.4vw, 76px); }
+  .irl-entry .fun-pangram {
+    margin-top: clamp(18px, 3vh, 28px);
+    font-size: clamp(20px, 2.4vw, 26px);
+    color: #3c3c3c;
+  }
 
   /* a couple of faces render optically small/large — nudge them
      so every specimen reads the same visual size */
@@ -533,6 +549,7 @@
     <button type="button" class="view-all-tile f-share"    data-target="font-share">Share Tech Mono</button>
     <button type="button" class="view-all-tile f-rubik"    data-target="font-rubik">Rubik Dirt</button>
     <button type="button" class="view-all-tile f-bentway"  data-target="font-bentway" data-category="irl">TBW Galeria</button>
+    <button type="button" class="view-all-tile f-fe"       data-target="font-fe" data-category="irl">FE-Schrift</button>
   </div>
 </div>
 
@@ -708,6 +725,7 @@
     <p class="name">TBW Galeria &middot; custom cut of APK Galeria</p>
     <p class="pangram">the bentway</p>
     <p class="line">bathurst st</p>
+    <p class="fun-pangram">Bright vixens jump; dozy fowl quack.</p>
     <p class="seen">seen on — <a href="https://www.thebentway.ca">The Bentway</a> wayfinding, including the Bathurst Street signage</p>
     <div class="irl-copy">
       <p>TBW Galeria is a custom cut of APK Galeria, a modern grotesque from APK Type Foundry, drawn for The Bentway&rsquo;s 2024 rebrand. Toronto studio SUPERFANTASTIC led the identity work and brought in Dutch type designer Peter Korsman of Autograph to adapt the base face into a bespoke system for the park.</p>
@@ -718,6 +736,25 @@
       <li><a href="https://www.thebentway.ca">The Bentway</a> &mdash; the park itself</li>
       <li><a href="https://superfantastic.design/work/the-bentway-brand-identity/">SUPERFANTASTIC</a> &mdash; brand identity project page</li>
       <li><a href="https://apk-type.com/family/apk-galeria/">APK Galeria</a> &mdash; the base typeface at APK Type</li>
+    </ul>
+  </section>
+
+  <!-- ============ IRL: German license-plate lettering ============ -->
+  <section class="specimen f-fe irl-entry" id="font-fe">
+    <p class="location-tag">Germany</p>
+    <p class="name">FE-Schrift &middot; f&auml;lschungserschwerende Schrift</p>
+    <p class="pangram">B&middot;KM 1970</p>
+    <p class="line">FE-SCHRIFT</p>
+    <p class="fun-pangram">Mr. Jock, TV quiz PhD, bags few lynx.</p>
+    <p class="seen">seen on — every German vehicle registration plate since 2000</p>
+    <div class="irl-copy">
+      <p>Until the late 1990s, German plates were set in DIN 1451 &mdash; the same engineering typeface behind the country&rsquo;s road signs. Its plain, round letterforms read well at speed, but that same simplicity made them easy to doctor: sand down a stroke and a P passes for an R, an F for an E, a C for a G, an O for a Q, a 3 for an 8.</p>
+      <p>That wasn&rsquo;t just petty fraud. Through the 1970s and &rsquo;80s, altered plates on stolen cars turned up in attacks by the Red Army Faction, and West German authorities went looking for a typeface that couldn&rsquo;t be casually rewritten. Development started in 1978; the result, phased in from the mid-1990s and made mandatory nationwide by 2000, was FE-Schrift &mdash; f&auml;lschungserschwerende Schrift, &ldquo;script that makes forgery harder.&rdquo;</p>
+      <p>Every character is drawn so no plausible knife-and-paint job turns it into a different one, and the counters are shaped to hold up under automatic number-plate cameras as well as a glance from a human eye. A national alphabet, redesigned entirely around a threat model &mdash; <a href="https://www.instagram.com/p/DbDkkZBiBRT/">a post from propaganda.institute</a> is what sent me down this rabbit hole.</p>
+    </div>
+    <ul class="irl-links">
+      <li><a href="https://www.instagram.com/p/DbDkkZBiBRT/">propaganda.institute</a> &mdash; the post that started it</li>
+      <li><a href="https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Germany">Vehicle registration plates of Germany</a> &mdash; Wikipedia, FE-Schrift &amp; DIN 1451 background</li>
     </ul>
   </section>
 
