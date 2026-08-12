@@ -11,6 +11,9 @@ from that array — you never touch the HTML/CSS, just add an object.
 
 ## 2. Concert object — fields
 
+> Adding a **game/match** rather than a gig? Skip to **§6.5 Sports events** —
+> those entries render a scoreboard and use a different field set.
+
 | field | required | what it is |
 |---|---|---|
 | `id` | ✅ | unique slug: `artist-city-YYYY-MM-DD`, e.g. `tame-impala-toronto-2026-07-26` |
@@ -105,6 +108,129 @@ top-level show info. Ordered **highest bill first** (direct support before opene
   }
 ]
 ```
+
+## 6.5 Sports events (the **Sports** tab)
+
+Set `"category": "sports"` and the entry renders a **scoreboard instead of a
+band panel** — no Spotify embed, no "Get familiar with the band", no setlist.
+(Category is otherwise auto-detected; only ids starting with `raptors` fall into
+sports on their own.) A sports entry needs: `id`, `artist`, `tourName`, `date`,
+`isoDate`, `venue`, `city`, `category`, `notes`, `photos`, `logo` — plus a
+`game` object, and optionally a `ticket` object. `setlist` / `spotifyEmbed` /
+`supports` are ignored, so leave them out.
+
+### `game` — the scoreboard
+Nothing in it is basketball-specific; the **column labels come from the data**,
+so the same panel does NBA quarters, a Dota Bo5, or tennis sets:
+
+| field | what it is |
+|---|---|
+| `home` / `away` | `{ team, abbr, logo, score, line: [...], win: true\|false, flag }` |
+| `periods` | column headers for the line score — `["1","2","3","4"]` (default), `["G1","G2","G3"]`, `["S1","S2","S3"]` |
+| `line` (per team) | one value per column: points, or `"W"`/`"L"` for a series |
+| `finalLabel` | last column header — `"F"` (default), `"S"` for a series |
+| `lineLabel` | left-column heading — `"Line Score"` (default), `"Series"` |
+| `leadersLabel` | right-column heading — `"Top Performers"` (default), `"Rosters"` |
+| `leadersHome` / `leadersAway` | `[{ name, line }]` — stat line, or a position for a roster. Omit both and the right column disappears |
+| `format` | small caps line under the score, e.g. `"Grand Final · Best of 5"` |
+| `statusLabel` | replaces `FINAL` in the tag line |
+| `nameStyle` | font for the drawn wordmarks — `"didone"` \| `"serif"` \| `"cond"`, blank = blackletter |
+| `notes` | text under the line score (a single-match `game` falls back to the entry's `notes`) |
+| `matches` | **several results on one ticket** — see below |
+| `status` | `"upcoming"` → see below |
+
+### One ticket, several results
+A session ticket often covers more than one match. Put them in `matches`, an
+array of objects each carrying its own `home`/`away`/`periods`/`leaders*`/
+`notes`/`format`, plus a `label` for the small heading above the face-off
+(`"Main event"`, `"Earlier on centre court"`). Anything set on `game` itself
+(`nameStyle`, `lineLabel`, `finalLabel`, `leadersLabel`, `periods`) is the
+default for every match in the list.
+
+**Order by what the evening meant, not by order of play** — the headline result
+goes first, and the label says where it actually sat on the schedule. Only the
+first block repeats the venue and date in its tag line.
+
+A `game` with `home`/`away` straight on it is treated as a one-match list, which
+is why the Raptors entries never changed.
+
+`logo` per team is a URL **or** a local `pics/logos/x.png`. Leave it `""` and
+the team's `abbr` is drawn as an ink wordmark instead (that's what TL / GG / OG
+and the tennis surnames do — no free logo art exists for esports orgs, and
+tennis has no team crests). The wordmark auto-shrinks past 4 and 8 characters,
+so a surname like `ŚWIĄTEK` still fits beside its opponent. Broken logo URLs
+fall back to the same wordmark automatically. `quarters` is still read as an
+alias for `line`, which is why the old Raptors entries keep working.
+
+Sports that aren't team-vs-team map on fine: for **tennis**, `home`/`away` are
+the two players (put the seed in `team`, the surname in `abbr`), `periods` are
+the sets, `line` the games in each set, `score` the sets won, and `leaders*`
+becomes a stat table (`{ name: "Unforced errors", line: "8" }`) under
+`leadersLabel: "Match Stats"`. Set `"nameStyle": "didone"` on the `game` so the
+names are set in the Bodoni rather than the blackletter.
+
+### Flags
+`"flag": "ua"` on a team/player draws a small flag beside the wordmark and
+beside their name in the stat column. Flags are **drawn as SVG, not emoji** —
+Windows renders regional-indicator emoji as bare letter pairs, so they'd show up
+as "UA" on half the machines that visit. Add new ones to the `FLAGS` map next to
+`flagSVG()` as `[topBandColour, bottomBandColour]`; anything other than a simple
+two-band flag needs its own SVG.
+
+Flags are **opt-in per player, and deliberately not on everyone** — the ones
+present are there because they mean something.
+
+### Upcoming events
+A ticket bought before the match has no result. Set
+`"game": { "status": "upcoming", "round": "…", "matchup": "…" }` and the panel
+shows the round + matchup + ticket stub instead of a score. Once it's played,
+delete `status`/`matchup` and fill in `home`/`away` as above.
+
+### `ticket` — the seat, drawn as a paper stub
+Optional on any event, past or upcoming:
+```js
+"ticket": {
+  "gate": "West", "level": "Level 100",
+  "section": "135", "row": "K", "seats": "5–6",
+  "time": "7:00 PM"
+}
+```
+
+### Sports template
+```js
+{
+  "id": "team-city-2026-01-01",
+  "artist": "Toronto Raptors",
+  "tourName": "vs. Miami Heat",
+  "date": "Wed · Jan 1, 2026",
+  "isoDate": "2026-01-01",
+  "venue": "Scotiabank Arena",
+  "city": "Toronto, ON",
+  "category": "sports",
+  "photos": [],
+  "logo": "https://a.espncdn.com/i/teamlogos/nba/500/tor.png",
+  "notes": "How the game went.",
+  "game": {
+    "periods": ["1", "2", "3", "4"],
+    "home": { "team": "Toronto Raptors", "abbr": "TOR", "logo": "…", "score": 103, "line": [32,34,18,19], "win": false },
+    "away": { "team": "Miami Heat",      "abbr": "MIA", "logo": "…", "score": 112, "line": [37,27,23,25], "win": true },
+    "leadersHome": [{ "name": "Pascal Siakam", "line": "30 PTS · 6 AST · 4 REB" }],
+    "leadersAway": [{ "name": "Caleb Martin",  "line": "24 PTS · 12 REB" }]
+  }
+}
+```
+
+NBA logos: `https://a.espncdn.com/i/teamlogos/nba/500/<abbr>.png` (lowercase).
+
+### Event / org logos
+The top-level `logo` is the **organiser's** mark (the tournament, the league) —
+`pics/logos/national-bank-open.png`, `ti2024.png`. Grab it from the official
+site and check you took the version made for a **light** background: vendors
+usually ship both, and the file is often named for the background it sits on,
+not its own colour (`NBO-Light.png` is the dark-ink one). Sanity-check the
+average brightness before committing, or just look at it on the cream page —
+a white logo vanishes. If only a dark-background version exists, keep it and
+set `"logoInvert": true`.
 
 ## 7. Finding the setlist
 Use **setlist.fm** (search the exact venue + date). Tip: the site's own search

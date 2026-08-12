@@ -968,6 +968,47 @@
       font-family: var(--ff-disp); font-size: 2.6rem; letter-spacing: .03em;
       color: var(--ink); will-change: transform; transform-origin: center center;
     }
+    /* Longer wordmarks (surnames rather than 2–3 letter team codes) step down */
+    .team-logo-fallback.wm-sm { font-size: 1.95rem; }
+    .team-logo-fallback.wm-xs { font-size: 1.5rem; }
+    /* Same wordmark styles the band banners use, so a player's name can be set
+       in the Didone rather than the blackletter. */
+    .team-logo-fallback.name-didone {
+      font-family: var(--ff-didone); font-weight: 700; letter-spacing: .02em;
+    }
+    .team-logo-fallback.name-serif { font-family: var(--ff-serif); }
+    .team-logo-fallback.name-cond  { font-family: var(--ff-cond); letter-spacing: .01em; }
+    .team-logo-fallback.name-didone.wm-xs { font-size: 1.75rem; }
+    .team-logo-fallback.name-didone.wm-sm { font-size: 2.15rem; }
+    /* Flags — drawn, not emoji (see flagSVG) */
+    .flag {
+      width: 1.45rem; height: .97rem; flex: 0 0 auto; margin-right: .55rem;
+      box-shadow: 1px 1px 0 rgba(21,17,13,.14);
+    }
+    .leaders-team .flag {
+      width: .95rem; height: .64rem; display: inline-block;
+      margin: 0 .4rem 0 0; vertical-align: baseline;
+    }
+    /* On a phone the face-off columns are ~120px wide, so a long surname has
+       to drop the flag onto its own line and shrink again to stay inside. */
+    @media (max-width: 560px) {
+      .team-logo-fallback { flex-direction: column; }
+      .flag { margin: 0 0 .35rem; width: 1.15rem; height: .77rem; }
+      .team-logo-fallback.wm-sm,
+      .team-logo-fallback.name-didone.wm-sm { font-size: 1.25rem; }
+      .team-logo-fallback.wm-xs,
+      .team-logo-fallback.name-didone.wm-xs { font-size: .95rem; }
+    }
+    /* Second and later results in a panel sit under a rule */
+    .match-block + .match-block {
+      margin-top: 2rem; padding-top: 1.6rem;
+      border-top: 1px dashed var(--ink-ghost);
+    }
+    .match-label {
+      text-align: center; font-family: var(--ff-body); font-style: italic;
+      font-size: .8rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--ink-ghost); margin-bottom: .9rem;
+    }
     .sb-score {
       font-family: var(--ff-disp); font-size: 3rem; line-height: 1; color: var(--ink);
     }
@@ -1002,6 +1043,62 @@
     .leader-row { display: flex; justify-content: space-between; gap: .6rem; padding: .12rem 0; }
     .leader-name { font-family: var(--ff-body); font-size: .92rem; color: var(--ink); }
     .leader-line { font-family: var(--ff-body); font-size: .82rem; color: var(--ink-soft); white-space: nowrap; }
+    /* Series/format line under the score ("Grand Final · Best of 5") */
+    .sb-format {
+      text-align: center; font-family: var(--ff-body);
+      font-size: .78rem; letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-ghost); margin: .1rem 0 .3rem;
+    }
+    /* Fixture that hasn't been played yet — round + matchup instead of a score */
+    .upcoming-head { text-align: center; padding: .5rem 0 1.4rem; }
+    .up-round {
+      font-family: var(--ff-body); font-size: .78rem; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--ink-ghost); margin-bottom: .5rem;
+    }
+    .up-match {
+      font-family: var(--ff-didone); font-size: 2rem; line-height: 1.05;
+      letter-spacing: .01em; color: var(--ink); margin-bottom: .7rem;
+    }
+    /* ── Ticket stub ─────────────────────────────────────────────────
+       The seat itself, drawn as a torn-off paper stub: body on the left,
+       perforated seat block on the right. */
+    .ticket-stub {
+      display: flex; align-items: stretch; gap: 0;
+      max-width: 30rem; margin: 0 auto;
+      background: var(--paper-deep);
+      border: 1.2px solid var(--ink);
+      box-shadow: 3px 4px 0 rgba(21,17,13,.16);
+    }
+    .ts-main { flex: 1 1 auto; min-width: 0; padding: .95rem 1.1rem; }
+    .ts-event {
+      font-family: var(--ff-didone); font-size: 1.35rem; line-height: 1.1;
+      color: var(--ink); margin-bottom: .15rem;
+    }
+    .ts-sub, .ts-when, .ts-where, .ts-gate {
+      font-family: var(--ff-body); font-size: .8rem; color: var(--ink-soft); line-height: 1.45;
+    }
+    .ts-sub  { font-style: italic; }
+    .ts-gate { letter-spacing: .1em; text-transform: uppercase; font-size: .7rem; color: var(--ink-ghost); margin-top: .35rem; }
+    .ts-perf {
+      flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center;
+      gap: .5rem; padding: .95rem 1.15rem;
+      border-left: 1.6px dashed var(--ink-ghost);
+    }
+    .ts-cell { display: flex; align-items: baseline; justify-content: space-between; gap: .7rem; }
+    .ts-k {
+      font-family: var(--ff-body); font-style: italic; font-size: .72rem;
+      letter-spacing: .08em; color: var(--ink-ghost);
+    }
+    .ts-v { font-family: var(--ff-didone); font-size: 1.3rem; line-height: 1; color: var(--ink); }
+    .sports-panel .ticket-stub { margin-top: 1.4rem; }
+    @media (max-width: 560px) {
+      .ticket-stub { flex-direction: column; }
+      .ts-perf {
+        flex-direction: row; justify-content: space-around;
+        border-left: 0; border-top: 1.6px dashed var(--ink-ghost);
+      }
+      .ts-cell { flex-direction: column; align-items: center; gap: .15rem; }
+    }
 
     /* ── Support acts in panel ───────────────────────────────────── */
     .panel-full { grid-column: 1 / -1; }
@@ -1153,6 +1250,97 @@
        spotifyEmbed: paste the src= URL from Spotify's embed dialog
     ═══════════════════════════════════════════════════════════════ */
     const concerts = [
+      {
+        "id": "national-bank-open-toronto-2026-08-10",
+        "artist": "National Bank Open",
+        "tourName": "WTA 1000 · Women's Singles Quarter-Finals",
+        "date": "Mon · Aug 10, 2026",
+        "isoDate": "2026-08-10",
+        "venue": "Sobeys Stadium",
+        "city": "Toronto, ON",
+        "category": "sports",
+        "photos": [],
+        "logo": "pics/logos/national-bank-open.png",
+        "game": {
+          "nameStyle": "didone",
+          "lineLabel": "Score by Set",
+          "finalLabel": "Sets",
+          "leadersLabel": "Match Stats",
+          "matches": [
+            {
+              "label": "Main event",
+              "format": "Women's Singles Quarter-Final · 93 minutes",
+              "periods": ["1", "2", "3"],
+              "home": {
+                "team": "Elina Svitolina (9)",
+                "abbr": "SVITOLINA",
+                "flag": "ua",
+                "logo": "",
+                "score": 2,
+                "line": [3, 6, 6],
+                "win": true
+              },
+              "away": {
+                "team": "Ekaterina Alexandrova (16)",
+                "abbr": "ALEXANDROVA",
+                "logo": "",
+                "score": 1,
+                "line": [6, 0, 3],
+                "win": false
+              },
+              "leadersHome": [
+                { "name": "Games won", "line": "15" },
+                { "name": "Breaks of serve", "line": "5" }
+              ],
+              "leadersAway": [
+                { "name": "Games won", "line": "9" },
+                { "name": "Breaks of serve", "line": "2" }
+              ],
+              "notes": "Alexandrova took the opening set on a single break at 3-2. Svitolina answered with a 24 minute shut-out of a second set, broke at the start of the third, got pegged back serving for the match at 5-2, then broke again in the very next game to finish it."
+            },
+            {
+              "label": "Earlier on centre court",
+              "format": "Women's Singles Quarter-Final · 64 minutes",
+              "periods": ["1", "2"],
+              "home": {
+                "team": "Iga Świątek (7)",
+                "abbr": "ŚWIĄTEK",
+                "flag": "pl",
+                "logo": "",
+                "score": 2,
+                "line": [6, 6],
+                "win": true
+              },
+              "away": {
+                "team": "Diana Shnaider (15)",
+                "abbr": "SHNAIDER",
+                "logo": "",
+                "score": 0,
+                "line": [2, 1],
+                "win": false
+              },
+              "leadersHome": [
+                { "name": "Games won", "line": "12" },
+                { "name": "Breaks of serve", "line": "5" },
+                { "name": "Unforced errors", "line": "8" }
+              ],
+              "leadersAway": [
+                { "name": "Games won", "line": "3" },
+                { "name": "Unforced errors", "line": "22" }
+              ],
+              "notes": "Świątek needed 64 minutes, breaking five times and making eight unforced errors in the whole match while Shnaider piled up 22 in 15 games. Her first Toronto semi-final, and she gets Svitolina in it."
+            }
+          ]
+        },
+        "ticket": {
+          "gate": "West",
+          "level": "Level 100",
+          "section": "135",
+          "row": "K",
+          "seats": "5–6",
+          "time": "7:00 PM"
+        }
+      },
       {
         "id": "tame-impala-toronto-2026-07-26",
         "artist": "Tame Impala",
@@ -2688,12 +2876,46 @@
         "venue": "Royal Arena",
         "city": "Copenhagen, Denmark",
         "category": "sports",
-        "setlist": [],
         "photos": [],
         "logo": "pics/logos/ti2024.png",
-        "spotifyEmbed": "",
-        "notes": "The International 13 — Dota 2's World Championship. Team Liquid swept Gaimin Gladiators 3–0 in the grand final to lift the Aegis of Champions.",
-        "supports": []
+        "notes": "The International 13, Dota 2's World Championship. Liquid dropped nothing on the main stage: they won every game of the playoffs, and swept Gaimin Gladiators to lift the Aegis of Champions.",
+        "game": {
+          "format": "Grand Final · Best of 5",
+          "lineLabel": "Series",
+          "periods": ["G1", "G2", "G3"],
+          "finalLabel": "S",
+          "leadersLabel": "Rosters",
+          "home": {
+            "team": "Team Liquid",
+            "abbr": "TL",
+            "logo": "",
+            "score": 3,
+            "line": ["W", "W", "W"],
+            "win": true
+          },
+          "away": {
+            "team": "Gaimin Gladiators",
+            "abbr": "GG",
+            "logo": "",
+            "score": 0,
+            "line": ["L", "L", "L"],
+            "win": false
+          },
+          "leadersHome": [
+            { "name": "miCKe", "line": "Carry" },
+            { "name": "Nisha", "line": "Mid" },
+            { "name": "33", "line": "Offlane" },
+            { "name": "Boxi", "line": "Soft support" },
+            { "name": "iNSaNiA", "line": "Hard support · captain" }
+          ],
+          "leadersAway": [
+            { "name": "dyrachyo", "line": "Carry" },
+            { "name": "Quinn", "line": "Mid" },
+            { "name": "Ace", "line": "Offlane" },
+            { "name": "tOfu", "line": "Soft support" },
+            { "name": "Seleri", "line": "Hard support · captain" }
+          ]
+        }
       },
       {
         "id": "hanabie-toronto-2024-05-19",
@@ -4225,12 +4447,46 @@
         "venue": "Hovet",
         "city": "Stockholm, Sweden",
         "category": "sports",
-        "setlist": [],
         "photos": [],
         "logo": "pics/logos/eslone_stockholm_2022.jpg",
-        "spotifyEmbed": "",
-        "notes": "The first Dota 2 Major I attended. OG beat TSM 3–1 in the grand final on the main stage at Hovet.",
-        "supports": []
+        "notes": "The first Dota 2 Major I attended. TSM took the opening game at Hovet, then OG, a rebuilt roster nobody had picked, won three straight for their fifth Major.",
+        "game": {
+          "format": "Grand Final · Best of 5",
+          "lineLabel": "Series",
+          "periods": ["G1", "G2", "G3", "G4"],
+          "finalLabel": "S",
+          "leadersLabel": "Rosters",
+          "home": {
+            "team": "OG",
+            "abbr": "OG",
+            "logo": "",
+            "score": 3,
+            "line": ["L", "W", "W", "W"],
+            "win": true
+          },
+          "away": {
+            "team": "TSM FTX",
+            "abbr": "TSM",
+            "logo": "",
+            "score": 1,
+            "line": ["W", "L", "L", "L"],
+            "win": false
+          },
+          "leadersHome": [
+            { "name": "Yuragi", "line": "Carry" },
+            { "name": "bzm", "line": "Mid" },
+            { "name": "ATF", "line": "Offlane" },
+            { "name": "Taiga", "line": "Soft support" },
+            { "name": "Misha", "line": "Hard support · captain" }
+          ],
+          "leadersAway": [
+            { "name": "Timado", "line": "Carry" },
+            { "name": "Bryle", "line": "Mid" },
+            { "name": "SabeRLight-", "line": "Offlane" },
+            { "name": "MoonMeander", "line": "Soft support" },
+            { "name": "DuBu", "line": "Hard support · captain" }
+          ]
+        }
       },
       {
         "id": "slipknot-budapest-2020-02-04",
@@ -4574,50 +4830,153 @@
               </div>`;
     }
 
-    /* Sports scoreboard panel — two team logos facing off (shaken by GSAP),
-       final score, quarter-by-quarter line score, and top performers. */
+    /* Small inline flag, drawn rather than pulled from emoji: Windows renders
+       regional-indicator flag emoji as bare letter pairs, so the mark has to
+       be an SVG to show up everywhere. */
+    const FLAGS = {
+      ua: ['#0057b7', '#ffd700'],   // blue over yellow
+      pl: ['#ffffff', '#dc143c'],   // white over red
+    };
+    function flagSVG(code) {
+      const f = FLAGS[code];
+      if (!f) return '';
+      return `<svg class="flag" viewBox="0 0 18 12" aria-hidden="true">
+        <rect x="0" y="0" width="18" height="6" fill="${f[0]}"/>
+        <rect x="0" y="6" width="18" height="6" fill="${f[1]}"/>
+        <rect x=".35" y=".35" width="17.3" height="11.3" fill="none" stroke="var(--ink)" stroke-width=".7" opacity=".55"/>
+      </svg>`;
+    }
+
+    /* Ticket stub — the physical seat, drawn as a torn-off paper stub. Rendered
+       for any event that carries a `ticket` object; the perforated right-hand
+       block holds section / row / seats. */
+    function ticketStubHTML(c) {
+      const t = c.ticket;
+      if (!t) return '';
+      const cell = (k, v) => v
+        ? `<div class="ts-cell"><span class="ts-k">${esc(k)}</span><span class="ts-v">${esc(v)}</span></div>`
+        : '';
+      const line = [t.gate, t.level].filter(Boolean).join(' · ');
+      return `<div class="ticket-stub">
+        <div class="ts-main">
+          <p class="ts-event">${esc(c.artist)}</p>
+          ${c.tourName ? `<p class="ts-sub">${esc(c.tourName)}</p>` : ''}
+          <p class="ts-when">${esc(c.date)}${t.time ? ` &middot; ${esc(t.time)}` : ''}</p>
+          <p class="ts-where">${esc(c.venue)} &middot; ${esc(c.city)}</p>
+          ${line ? `<p class="ts-gate">${esc(line)}</p>` : ''}
+        </div>
+        <div class="ts-perf">
+          ${cell('Sec', t.section)}${cell('Row', t.row)}${cell('Seats', t.seats)}
+        </div>
+      </div>`;
+    }
+
+    /* Sports panel — a scoreboard instead of a setlist. Nothing here is
+       basketball-specific: the line-score columns are named by `game.periods`
+       (NBA quarters, a Bo5's maps, tennis sets), `game.finalLabel` names the
+       total column, and `game.leadersLabel` retitles the right-hand column
+       (top performers / rosters). Two team logos face off (shaken by GSAP);
+       a team with no logo art falls back to its abbreviation as a wordmark.
+       An event with `game.status: "upcoming"` has no result yet, so it shows
+       the matchup + ticket stub in place of the score. */
     function sportsPanelHTML(c) {
-      const g = c.game;
+      const g = c.game || {};
+      const hasResult = !!(g.home && g.away) || !!(g.matches && g.matches.length);
+      const played = hasResult && g.status !== 'upcoming';
+      const media  = mediaItems(c).length
+        ? `<div class="panel-full"><p class="panel-h">Media</p>${mediaHTML(c)}</div>` : '';
+
+      if (!played) {
+        return `<div class="sports-panel">
+          <div class="upcoming-head">
+            ${g.round ? `<p class="up-round">${esc(g.round)}</p>` : ''}
+            <p class="up-match">${esc(g.matchup || 'Matchup to be drawn')}</p>
+            <p class="sb-final-tag">${esc(g.statusLabel || 'UPCOMING')} &middot; ${esc(c.venue)} &middot; ${esc(c.date)}</p>
+          </div>
+          ${ticketStubHTML(c)}
+          ${c.notes ? `<p class="panel-notes" style="margin-top:1.1rem">${esc(c.notes)}</p>` : ''}
+          ${media}
+        </div>`;
+      }
+
+      // One ticket can cover several results (a session's two matches, a
+      // double-header). `game.matches` holds them, headline act first; a plain
+      // `game` is treated as a single match so the older entries still work.
+      const matches = (g.matches && g.matches.length) ? g.matches : [g];
+      const single  = matches.length === 1;
+      const body = matches.map((m, i) => matchBlockHTML(m, c, g, i, single)).join('');
+
+      return `<div class="sports-panel">
+        ${body}
+        ${ticketStubHTML(c)}
+        ${media}
+      </div>`;
+    }
+
+    /* One result inside a sports panel: the face-off, the line score and the
+       stat column. `m` is the match, `g` the parent game (for shared labels),
+       `first` gates the venue/date tag so it isn't repeated per match. */
+    function matchBlockHTML(m, c, g, idx, single) {
+      const periods    = m.periods    || g.periods    || ['1', '2', '3', '4'];
+      const finalLabel = m.finalLabel || g.finalLabel || 'F';
+      const wmStyle    = nameStyleClass(m.nameStyle || g.nameStyle);
+      // A long wordmark (a surname rather than a 2–3 letter team code) steps
+      // down a size or two so both still fit side by side.
+      const wmSize = s => s.length > 7 ? ' wm-xs' : s.length > 4 ? ' wm-sm' : '';
       const teamCol = (t, win) => `
         <div class="sb-team ${win ? 'win' : 'lose'}">
-          <img class="team-logo" src="${esc(t.logo)}" alt="${esc(t.team)}" data-win="${win ? 1 : 0}" data-abbr="${esc(t.abbr)}" loading="lazy">
+          ${t.logo
+            ? `<img class="team-logo" src="${esc(t.logo)}" alt="${esc(t.team)}" data-win="${win ? 1 : 0}" data-abbr="${esc(t.abbr)}" loading="lazy">`
+            : `<span class="team-logo team-logo-fallback${wmSize(t.abbr)}${wmStyle}" data-win="${win ? 1 : 0}">${flagSVG(t.flag)}${esc(t.abbr)}</span>`}
           <span class="sb-score">${t.score}</span>
         </div>`;
-      const lsRow = (t, win) => `
+      const lsRow = (t, win) => {
+        const line = t.line || t.quarters || [];
+        return `
         <tr class="${win ? 'is-win' : 'is-lose'}">
           <td class="team-cell">${esc(t.abbr)}</td>
-          ${t.quarters.map(q => `<td>${q}</td>`).join('')}
+          ${periods.map((_, i) => `<td>${esc(String(line[i] ?? '·'))}</td>`).join('')}
           <td class="final-cell">${t.score}</td>
         </tr>`;
-      const leaders = (title, arr) => `
+      };
+      const leaders = (t, arr) => !arr || !arr.length ? '' : `
         <div class="leaders-group">
-          <p class="leaders-team">${esc(title)}</p>
+          <p class="leaders-team">${flagSVG(t.flag)}${esc(t.team)}</p>
           ${arr.map(p => `<div class="leader-row"><span class="leader-name">${esc(p.name)}</span><span class="leader-line">${esc(p.line)}</span></div>`).join('')}
         </div>`;
-      return `<div class="sports-panel">
+      const right = (m.leadersHome || m.leadersAway) ? `
+        <div>
+          <p class="panel-h">${esc(m.leadersLabel || g.leadersLabel || 'Top Performers')}</p>
+          ${leaders(m.home, m.leadersHome)}
+          ${leaders(m.away, m.leadersAway)}
+        </div>` : '';
+      const notes = m.notes || (single ? c.notes : '');
+      const tag   = idx === 0
+        ? `${esc(m.statusLabel || g.statusLabel || 'FINAL')} &middot; ${esc(c.venue)} &middot; ${esc(c.date)}`
+        : esc(m.statusLabel || g.statusLabel || 'FINAL');
+
+      return `<div class="match-block">
+        ${m.label ? `<p class="match-label">${esc(m.label)}</p>` : ''}
         <div class="scoreboard">
-          ${teamCol(g.home, g.home.win)}
+          ${teamCol(m.home, m.home.win)}
           <span class="sb-vs">VS</span>
-          ${teamCol(g.away, g.away.win)}
+          ${teamCol(m.away, m.away.win)}
         </div>
-        <p class="sb-final-tag">FINAL &middot; ${esc(c.venue)} &middot; ${esc(c.date)}</p>
+        <p class="sb-final-tag">${tag}</p>
+        ${m.format ? `<p class="sb-format">${esc(m.format)}</p>` : ''}
         <div class="stop-panel-inner">
           <div>
-            <p class="panel-h">Line Score</p>
+            <p class="panel-h">${esc(m.lineLabel || g.lineLabel || 'Line Score')}</p>
             <table class="linescore">
-              <thead><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>F</th></tr></thead>
+              <thead><tr><th></th>${periods.map(p => `<th>${esc(p)}</th>`).join('')}<th>${esc(finalLabel)}</th></tr></thead>
               <tbody>
-                ${lsRow(g.home, g.home.win)}
-                ${lsRow(g.away, g.away.win)}
+                ${lsRow(m.home, m.home.win)}
+                ${lsRow(m.away, m.away.win)}
               </tbody>
             </table>
-            ${c.notes ? `<p class="panel-notes" style="margin-top:.9rem">${esc(c.notes)}</p>` : ''}
+            ${notes ? `<p class="panel-notes" style="margin-top:.9rem">${esc(notes)}</p>` : ''}
           </div>
-          <div>
-            <p class="panel-h">Top Performers</p>
-            ${leaders(g.home.team, g.leadersHome)}
-            ${leaders(g.away.team, g.leadersAway)}
-          </div>
+          ${right}
         </div>
       </div>`;
     }
@@ -4715,7 +5074,7 @@
             </div>
           </button>
           <div class="stop-panel" id="panel-${esc(c.id)}" aria-hidden="true">
-            ${cat === 'sports' && c.game
+            ${cat === 'sports'
               ? sportsPanelHTML(c)
               : `${bandBlockHTML(c, true)}${(c.supports || []).map(s => bandBlockHTML(s, false)).join('')}`}
           </div>`;
@@ -4748,10 +5107,10 @@
       gsap.utils.toArray('.team-logo').forEach(logo => {
         const k = logo.dataset.win === '1' ? 1 : 0.7;
         const tween = gsap.to(logo, {
-          x: () => gsap.utils.random(-1.8, 1.8) * k,
-          y: () => gsap.utils.random(-1.3, 1.3) * k,
-          rotation: () => gsap.utils.random(-1.4, 1.4) * k,
-          duration: 0.11,
+          x: () => gsap.utils.random(-0.7, 0.7) * k,
+          y: () => gsap.utils.random(-0.5, 0.5) * k,
+          rotation: () => gsap.utils.random(-0.5, 0.5) * k,
+          duration: 0.22,
           repeat: -1,
           repeatRefresh: true,
           ease: 'sine.inOut',
