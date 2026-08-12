@@ -499,6 +499,29 @@
      offset itself is also trimmed slightly so there's margin to
      spare rather than clipping down to the pixel. */
   .plate-forged .plate-text { padding-top: 22px; }
+  /* the FE-Schrift forgery attempt gets the same lettering swapped in,
+     but stamped as caught — a rubber-stamp overlay rather than a
+     redrawn glyph, since CSS can't fake a botched knife-and-paint job
+     any more convincingly than that. */
+  .plate-rejected { position: relative; }
+  .rejected-stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-9deg);
+    padding: 3px 12px;
+    border: 3px solid #c81652;
+    border-radius: 4px;
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: clamp(11px, 1.8vw, 15px);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #c81652;
+    background: rgba(255, 255, 255, .85);
+    white-space: nowrap;
+    pointer-events: none;
+  }
   .altered {
     position: relative;
     border-bottom: 2px solid rgba(224, 69, 123, .75);
@@ -1062,14 +1085,25 @@
           </div>
         </figure>
       </div>
-      <figure class="plate-figure plate-figure--fe">
-        <figcaption class="plate-label">same plate &middot; FE-Schrift</figcaption>
-        <div class="plate plate-fe">
-          <span class="plate-euro">D</span>
-          <span class="plate-text">PF&middot;CO 313</span>
-        </div>
-        <figcaption class="forgery-caption"><strong>the same tricks don&rsquo;t work</strong> &mdash; every letter has intentional asymmetries and gaps that break under alteration.</figcaption>
-      </figure>
+      <div class="forgery-plates plate-figure--fe">
+        <figure class="plate-figure">
+          <figcaption class="plate-label">same plate &middot; FE-Schrift</figcaption>
+          <div class="plate plate-fe">
+            <span class="plate-euro">D</span>
+            <span class="plate-text">PF&middot;CO 313</span>
+          </div>
+        </figure>
+        <span class="forgery-arrow" aria-hidden="true">&rarr;</span>
+        <figure class="plate-figure">
+          <figcaption class="plate-label">same forgery attempt &middot; FE-Schrift</figcaption>
+          <div class="plate plate-fe plate-forged plate-rejected">
+            <span class="plate-euro">D</span>
+            <span class="plate-text"><span class="altered" data-was="P">R</span><span class="altered" data-was="F">E</span>&middot;<span class="altered" data-was="C">G</span><span class="altered" data-was="O">Q</span> <span class="altered" data-was="3">8</span>1<span class="altered" data-was="3">8</span></span>
+            <span class="rejected-stamp" aria-hidden="true">caught</span>
+          </div>
+        </figure>
+      </div>
+      <p class="forgery-caption"><strong>the same tricks don&rsquo;t work</strong> &mdash; every letter has intentional asymmetries and gaps that break under alteration, so the same graft that passed above gets caught on sight here.</p>
       <ul class="forgery-legend">
         <li><span class="legend-swap">P&rarr;R</span> add a leg</li>
         <li><span class="legend-swap">F&rarr;E</span> add a bottom bar</li>
