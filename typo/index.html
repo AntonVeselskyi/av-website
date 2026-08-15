@@ -499,29 +499,6 @@
      offset itself is also trimmed slightly so there's margin to
      spare rather than clipping down to the pixel. */
   .plate-forged .plate-text { padding-top: 22px; }
-  /* the FE-Schrift forgery attempt gets the same lettering swapped in,
-     but stamped as caught — a rubber-stamp overlay rather than a
-     redrawn glyph, since CSS can't fake a botched knife-and-paint job
-     any more convincingly than that. */
-  .plate-rejected { position: relative; }
-  .rejected-stamp {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-9deg);
-    padding: 3px 12px;
-    border: 3px solid #c81652;
-    border-radius: 4px;
-    font-family: var(--ui);
-    font-weight: 600;
-    font-size: clamp(11px, 1.8vw, 15px);
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: #c81652;
-    background: rgba(255, 255, 255, .85);
-    white-space: nowrap;
-    pointer-events: none;
-  }
   .altered {
     position: relative;
     border-bottom: 2px solid rgba(224, 69, 123, .75);
@@ -579,11 +556,6 @@
     gap: 12px;
     max-width: 620px;
   }
-  .plate-strip .plate-text {
-    font-size: clamp(18px, 2.4vw, 24px);
-    padding: 7px 12px;
-  }
-  .plate-strip .plate-euro { font-size: 10px; }
 
   /* IRL hero lines are demonstrating a real wordmark, not a type
      sample — they need to dominate the card over the origin-story
@@ -787,6 +759,11 @@
      ease it down so "DECORATIVE" wraps inside its own tile instead
      of pushing past the edge into its neighbor. */
   .view-all-tile.f-cinzdec { font-size: clamp(18px, 2.1vw, 27px); }
+  /* Metamorphous runs wide too — same fix as Cinzel Decorative above,
+     plus overflow-wrap: anywhere (break-word only breaks as a last
+     resort and still let this single unbroken word clip at the tile
+     edge) so "Metamorphous" wraps inside its tile instead of clipping. */
+  .view-all-tile.f-metam   { font-size: clamp(16px, 1.9vw, 24px); overflow-wrap: anywhere; }
   .view-all-tile:hover {
     background: #f5f5f5;
     transform: scale(1.04);
@@ -930,6 +907,14 @@
     <p class="seen">seen on — <a href="../shrt.html">shrt</a></p>
   </section>
 
+  <!-- ============ shrt, shouted ============ -->
+  <section class="specimen f-metam" id="font-metam-caps">
+    <p class="name">Metamorphous — All Caps</p>
+    <p class="pangram">GRUMPY WIZARDS MAKE TOXIC BREW FOR THE EVIL QUEEN AND JACK.</p>
+    <p class="line">C++ SYNTAX SUGAR</p>
+    <p class="seen">seen on — this page · caps showcase</p>
+  </section>
+
   <section class="specimen f-nova" id="font-nova">
     <p class="name">Nova Script</p>
     <p class="pangram">My girl wove six dozen plaid jackets before she quit.</p>
@@ -950,6 +935,14 @@
     <p class="pangram">How vexingly quick daft zebras jump!</p>
     <p class="line">Concerts</p>
     <p class="seen">seen on — <a href="../concerts/index.html">concerts</a></p>
+  </section>
+
+  <!-- ============ concerts, shouted ============ -->
+  <section class="specimen f-unifrak" id="font-unifrak-caps">
+    <p class="name">UnifrakturCook — All Caps</p>
+    <p class="pangram">HOW VEXINGLY QUICK DAFT ZEBRAS JUMP!</p>
+    <p class="line">CONCERTS</p>
+    <p class="seen">seen on — this page · caps showcase</p>
   </section>
 
   <section class="specimen f-fell" id="font-fell">
@@ -1096,10 +1089,9 @@
         <span class="forgery-arrow" aria-hidden="true">&rarr;</span>
         <figure class="plate-figure">
           <figcaption class="plate-label">same forgery attempt &middot; FE-Schrift</figcaption>
-          <div class="plate plate-fe plate-forged plate-rejected">
+          <div class="plate plate-fe plate-forged">
             <span class="plate-euro">D</span>
             <span class="plate-text"><span class="altered" data-was="P">R</span><span class="altered" data-was="F">E</span>&middot;<span class="altered" data-was="C">G</span><span class="altered" data-was="O">Q</span> <span class="altered" data-was="3">8</span>1<span class="altered" data-was="3">8</span></span>
-            <span class="rejected-stamp" aria-hidden="true">caught</span>
           </div>
         </figure>
       </div>
