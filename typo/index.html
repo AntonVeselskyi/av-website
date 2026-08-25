@@ -7,7 +7,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@400;600;700&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=VT323&family=Yanone+Kaffeesatz:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Astloch:wght@400;700&family=BBH+Bartle&family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;1,6..96,700&family=Chokokutai&family=Cinzel:wght@500&family=Cinzel+Decorative:wght@700&family=Datatype:wdth,wght@50..150,100..900&family=Fascinate+Inline&family=Faster+One&family=IM+Fell+DW+Pica:ital@0;1&family=Jacquard+12+Charted&family=Jacquarda+Bastarda+9&family=JetBrains+Mono:wght@400;500&family=Jura:wght@400;500&family=Major+Mono+Display&family=Megrim&family=Metal+Mania&family=Metamorphous&family=Michroma&family=Nova+Script&family=Poiret+One&family=Rock+3D&family=Rubik+Dirt&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=Stick+No+Bills:wght@400;600;700&family=Tinos:wght@400;700&family=UnifrakturCook:wght@700&family=UnifrakturMaguntia&family=Varela&family=VT323&family=Yanone+Kaffeesatz:wght@700&display=swap" rel="stylesheet">
 <style>
   /* ============ TYPO — a sterile room for letters ============
      Nothing in here is allowed to compete with the type itself:
@@ -114,6 +114,28 @@
   .category-tab:hover { color: var(--ink); }
   .category-tab.active { color: var(--ink); }
   .category-tab.active::after { transform: scaleX(1); }
+  /* Three tabs no longer fit one phone-width line at the full 13px/.32em
+     setting, and letting them wrap makes the fixed header tall enough to
+     sit on top of the first specimen. Tighten the type instead so the row
+     stays a single line all the way down. */
+  @media (max-width: 560px) {
+    .category-tabs { gap: 14px; flex-wrap: nowrap; }
+    .category-tab { font-size: 11px; letter-spacing: .12em; white-space: nowrap; }
+    /* 12vh of a tall phone is ~97px of header padding, which pushed the
+       title block far enough down that the first specimen of a deck ran
+       into it at scroll 0. Phones get a flat, smaller value instead —
+       the specimens themselves need that room more than the title does.
+       .specimen.irl-entry reserves header clearance by re-deriving the
+       header's own formula, so it has to follow the same number here. */
+    header { padding-top: 60px; }
+    .specimen.irl-entry {
+      padding-top: calc(60px + (0.9 * clamp(64px, 14vw, 160px)) + 66px);
+    }
+  }
+  @media (max-width: 380px) {
+    .category-tabs { gap: 10px; }
+    .category-tab { font-size: 10px; letter-spacing: .08em; }
+  }
 
   /* Category sections: only the active one is in flow/visible. */
   .category { display: none; }
@@ -221,15 +243,20 @@
     background: var(--ink);
     transform: translateX(-50%);
   }
+  /* The clamp floors are what a phone actually gets (5.6vw of a 375px
+     screen is only ~21px, well under the minimum), so the floor — not
+     the vw term — is the mobile size. They're set high enough that a
+     specimen still fills a phone screen the way it fills a laptop one;
+     above ~750px the vw term takes over and desktop is unaffected. */
   .specimen .pangram {
     margin-top: clamp(28px, 6vh, 56px);
-    font-size: clamp(36px, 5.6vw, 68px);
+    font-size: clamp(42px, 5.6vw, 68px);
     line-height: 1.18;
     font-weight: 400;
   }
   .specimen .line {
     margin-top: clamp(24px, 5vh, 44px);
-    font-size: clamp(26px, 3.6vw, 42px);
+    font-size: clamp(30px, 3.6vw, 42px);
     line-height: 1.2;
     color: #3c3c3c;
   }
@@ -300,6 +327,19 @@
      real plate typeface (GL-Nummernschild-Mtl), hosted locally and free
      to use; Yanone Kaffeesatz stays as the fallback while it loads. */
   .f-fe        { font-family: "FE-Schrift Local", "Yanone Kaffeesatz", sans-serif; font-weight: 400; }
+
+  /* ---- the wishlist deck: faces not used anywhere yet ---- */
+  .f-rock3d    { font-family: "Rock 3D", system-ui; }
+  .f-unimag    { font-family: "UnifrakturMaguntia", serif; }
+  .f-jacqbast  { font-family: "Jacquarda Bastarda 9", system-ui; }
+  .f-jacq12    { font-family: "Jacquard 12 Charted", system-ui; }
+  .f-fascinate { font-family: "Fascinate Inline", system-ui; }
+  .f-astloch   { font-family: "Astloch", system-ui; }
+  .f-faster    { font-family: "Faster One", system-ui; }
+  .f-varela    { font-family: "Varela", sans-serif; }
+  .f-bbh       { font-family: "BBH Bartle", sans-serif; text-transform: uppercase; }
+  .f-choko     { font-family: "Chokokutai", system-ui; }
+  .f-datatype  { font-family: "Datatype", monospace; }
 
   /* ---- IRL entries: same specimen skeleton, plus a location tag
      and a block of running copy about where the font came from. ----
@@ -570,7 +610,7 @@
      size exactly, not render as a shrunken afterthought. */
   .irl-entry .fun-pangram {
     margin-top: clamp(18px, 3vh, 28px);
-    font-size: clamp(36px, 5.6vw, 68px);
+    font-size: clamp(42px, 5.6vw, 68px);
     line-height: 1.18;
     color: #3c3c3c;
   }
@@ -580,6 +620,51 @@
   .f-vt .pangram                   { font-size: clamp(46px, 6.8vw, 82px); }
   .f-vt .line                      { font-size: clamp(32px, 4.2vw, 50px); }
   .f-bodoni .pangram               { line-height: 1.3; }
+  /* the wishlist display faces run wide, heavy or both — Rock 3D's
+     extrusion, Faster One's italic speed lines, BBH Bartle's expanded
+     caps and Chokokutai's brush mass all eat far more line than a text
+     face does, so their pangrams get eased down to sit at the same
+     visual weight as the rest of the deck. */
+  .f-rock3d .pangram               { font-size: clamp(34px, 3.6vw, 46px); line-height: 1.35; }
+  .f-rock3d .line                  { font-size: clamp(30px, 3vw, 38px); }
+  .f-faster .pangram               { font-size: clamp(27px, 3vw, 40px); line-height: 1.45; }
+  .f-faster .line                  { font-size: clamp(26px, 3vw, 36px); }
+  .f-bbh .pangram                  { font-size: clamp(29px, 3.4vw, 44px); line-height: 1.35; }
+  .f-bbh .line                     { font-size: clamp(24px, 2.8vw, 34px); }
+  .f-choko .pangram                { font-size: clamp(38px, 4.2vw, 54px); line-height: 1.35; }
+  .f-astloch .pangram              { font-size: clamp(46px, 6.2vw, 76px); }
+  .f-jacqbast .pangram             { line-height: 1.3; }
+  .f-jacq12 .pangram               { line-height: 1.3; }
+  .f-datatype .pangram             { font-size: clamp(30px, 3.4vw, 42px); line-height: 1.4; }
+
+  /* ---- Datatype's party trick: {b:...} / {l:...} / {p:...} written as
+     plain text get substituted by OpenType ligatures into a bar chart,
+     a sparkline and a pie. Left column shows the literal source in a
+     normal mono (which renders it as-is), right column shows the same
+     characters set in Datatype, where they turn into the chart. ---- */
+  .chart-demo {
+    margin: clamp(24px, 4vh, 36px) auto 0;
+    max-width: 560px;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: center;
+    gap: 12px 26px;
+    text-align: left;
+  }
+  .chart-src {
+    font-family: "JetBrains Mono", monospace;
+    font-size: clamp(13px, 1.4vw, 15px);
+    color: var(--faint);
+    white-space: nowrap;
+  }
+  .chart-out {
+    font-family: "Datatype", monospace;
+    font-size: clamp(34px, 4vw, 46px);
+    line-height: 1;
+    color: var(--ink);
+    white-space: nowrap;
+  }
 
   /* ---- End page: the last scroll-snap page, after every specimen in
      both categories (it lives outside the .category divs, so it's
@@ -764,15 +849,26 @@
      resort and still let this single unbroken word clip at the tile
      edge) so "Metamorphous" wraps inside its tile instead of clipping. */
   .view-all-tile.f-metam   { font-size: clamp(16px, 1.9vw, 24px); overflow-wrap: anywhere; }
+  /* same treatment for the wishlist's wide/heavy faces and its two
+     very long family names. */
+  .view-all-tile.f-rock3d,
+  .view-all-tile.f-faster,
+  .view-all-tile.f-bbh,
+  .view-all-tile.f-choko    { font-size: clamp(15px, 1.8vw, 23px); overflow-wrap: anywhere; }
+  .view-all-tile.f-unimag,
+  .view-all-tile.f-jacqbast,
+  .view-all-tile.f-jacq12,
+  .view-all-tile.f-fascinate { font-size: clamp(16px, 1.9vw, 25px); overflow-wrap: anywhere; }
   .view-all-tile:hover {
     background: #f5f5f5;
     transform: scale(1.04);
   }
-  /* View All respects the active category: IRL tiles are the only
-     ones tagged data-category="irl", so the default deck is simply
-     "everything that isn't tagged IRL". */
-  .view-all-grid[data-active="irl"] .view-all-tile:not([data-category="irl"]) { display: none; }
-  .view-all-grid[data-active="default"] .view-all-tile[data-category="irl"] { display: none; }
+  /* View All respects the active category: every non-default tile
+     carries its own data-category, so the default deck is simply
+     "everything that isn't tagged at all". */
+  .view-all-grid[data-active="irl"]  .view-all-tile:not([data-category="irl"])  { display: none; }
+  .view-all-grid[data-active="want"] .view-all-tile:not([data-category="want"]) { display: none; }
+  .view-all-grid[data-active="default"] .view-all-tile[data-category] { display: none; }
 
   @media (prefers-reduced-motion: reduce) {
     header { transition: opacity .2s ease; }
@@ -792,6 +888,7 @@
   <div class="category-tabs" id="categoryTabs" role="tablist" aria-label="Font categories">
     <button type="button" class="category-tab active" data-category="default" role="tab" aria-selected="true">fonts I use and like</button>
     <button type="button" class="category-tab" data-category="irl" role="tab" aria-selected="false">IRL fonts</button>
+    <button type="button" class="category-tab" data-category="want" role="tab" aria-selected="false">fonts I want to use</button>
   </div>
 </header>
 
@@ -823,6 +920,17 @@
     <button type="button" class="view-all-tile f-rubik"    data-target="font-rubik">Rubik Dirt</button>
     <button type="button" class="view-all-tile f-bentway"  data-target="font-bentway" data-category="irl">TBW Galeria</button>
     <button type="button" class="view-all-tile f-fe"       data-target="font-fe" data-category="irl">FE-Schrift</button>
+    <button type="button" class="view-all-tile f-rock3d"    data-target="font-rock3d"    data-category="want">Rock 3D</button>
+    <button type="button" class="view-all-tile f-unimag"    data-target="font-unimag"    data-category="want">UnifrakturMaguntia</button>
+    <button type="button" class="view-all-tile f-jacqbast"  data-target="font-jacqbast"  data-category="want">Jacquarda Bastarda 9</button>
+    <button type="button" class="view-all-tile f-jacq12"    data-target="font-jacq12"    data-category="want">Jacquard 12 Charted</button>
+    <button type="button" class="view-all-tile f-fascinate" data-target="font-fascinate" data-category="want">Fascinate Inline</button>
+    <button type="button" class="view-all-tile f-astloch"   data-target="font-astloch"   data-category="want">Astloch</button>
+    <button type="button" class="view-all-tile f-faster"    data-target="font-faster"    data-category="want">Faster One</button>
+    <button type="button" class="view-all-tile f-varela"    data-target="font-varela"    data-category="want">Varela</button>
+    <button type="button" class="view-all-tile f-bbh"       data-target="font-bbh"       data-category="want">BBH Bartle</button>
+    <button type="button" class="view-all-tile f-choko"     data-target="font-choko"     data-category="want">Chokokutai</button>
+    <button type="button" class="view-all-tile f-datatype"  data-target="font-datatype"  data-category="want">Datatype</button>
   </div>
 </div>
 
@@ -1117,6 +1225,93 @@
       <li><a href="https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Germany">Vehicle registration plates of Germany</a> &mdash; Wikipedia, FE-Schrift &amp; DIN 1451 background</li>
       <li><a href="https://github.com/Gutenberg-Labo/GL-Nummernschild">GL-Nummernschild</a> &mdash; the free FE-Schrift recreation used on this page</li>
     </ul>
+  </section>
+
+</div>
+
+<div class="category" id="categoryWant" data-category="want">
+
+  <!-- ============ the wishlist: faces with no home on the site yet.
+       Same specimen skeleton as the default deck, minus the "seen on"
+       line — nothing here has been seen anywhere yet. ============ -->
+
+  <section class="specimen f-rock3d" id="font-rock3d">
+    <p class="name">Rock 3D</p>
+    <p class="pangram">Five extruded quartz blocks vex a jumpy wizard hosting garage night.</p>
+    <p class="line">TURN IT UP</p>
+  </section>
+
+  <section class="specimen f-unimag" id="font-unimag">
+    <p class="name">UnifrakturMaguntia</p>
+    <p class="pangram">Jovial monks quaffed dark elixirs, vexing the chapel&rsquo;s zealous pigs by dawn.</p>
+    <p class="line">Concerts</p>
+  </section>
+
+  <section class="specimen f-jacqbast" id="font-jacqbast">
+    <p class="name">Jacquarda Bastarda 9</p>
+    <p class="pangram">A blocky pixel knight quaffed mead, then vexed sixty jumbo wizards.</p>
+    <p class="line">shrt</p>
+  </section>
+
+  <section class="specimen f-jacq12" id="font-jacq12">
+    <p class="name">Jacquard 12 Charted</p>
+    <p class="pangram">Grandma Jean&rsquo;s kit wove a cheeky &ldquo;BUZZ OFF&rdquo; in vexingly quaint pixels.</p>
+    <p class="line">wanderlust</p>
+  </section>
+
+  <section class="specimen f-fascinate" id="font-fascinate">
+    <p class="name">Fascinate Inline</p>
+    <p class="pangram">Jazzy deco vamps quickly waltz off, boxing the prim night.</p>
+    <p class="line">washed away cherry</p>
+  </section>
+
+  <section class="specimen f-astloch" id="font-astloch">
+    <p class="name">Astloch</p>
+    <p class="pangram">A frail black ghost quickly wove six jazzy vampire dance demos.</p>
+    <p class="line">$ign&#11832;$pell</p>
+  </section>
+
+  <section class="specimen f-astloch" id="font-astloch-caps">
+    <p class="name">Astloch &mdash; All Caps</p>
+    <p class="pangram">A FRAIL BLACK GHOST QUICKLY WOVE SIX JAZZY VAMPIRE DANCE DEMOS.</p>
+    <p class="line">$IGN&#11832;$PELL</p>
+  </section>
+
+  <section class="specimen f-faster" id="font-faster">
+    <p class="name">Faster One</p>
+    <p class="pangram">Zippy jockeys vroom past six quaking flatbed wagons hauling cargo.</p>
+    <p class="line">STONKS DEFIED</p>
+  </section>
+
+  <section class="specimen f-varela" id="font-varela">
+    <p class="name">Varela</p>
+    <p class="pangram">Just a calm quiet box of vowels; nothing zaps, nobody flexes or kicks.</p>
+    <p class="line">just the words, please</p>
+  </section>
+
+  <section class="specimen f-bbh" id="font-bbh">
+    <p class="name">BBH Bartle &middot; the expanded one of three</p>
+    <p class="pangram">Expand my box: five wide caps flexed, quizzing the grumpy jocks.</p>
+    <p class="line">Wide Load</p>
+  </section>
+
+  <section class="specimen f-choko" id="font-choko">
+    <p class="name">Chokokutai &middot; &#36229;&#26997;&#22826;</p>
+    <p class="pangram">A chunky blob of wax squished the zippy kanji, vexing my proud grandma.</p>
+    <p class="line">no such thing as too bold</p>
+  </section>
+
+  <section class="specimen f-datatype" id="font-datatype">
+    <p class="name">Datatype &middot; charts as ligatures</p>
+    <p class="pangram">Jumpy quartz gizmos vexed my bold chart, freaking six wonks.</p>
+    <div class="chart-demo" aria-label="Datatype chart ligature examples">
+      <span class="chart-src">{b:15,45,80,30,60,90,20}</span>
+      <span class="chart-out">{b:15,45,80,30,60,90,20}</span>
+      <span class="chart-src">{l:10,40,25,70,50,90,35,60}</span>
+      <span class="chart-out">{l:10,40,25,70,50,90,35,60}</span>
+      <span class="chart-src">{p:62}</span>
+      <span class="chart-out">{p:62}</span>
+    </div>
   </section>
 
 </div>
