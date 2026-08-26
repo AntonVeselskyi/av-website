@@ -143,4 +143,5 @@ const showMasterList = [
   { name: "Loki",                            tier: "A",   category: "live-action",  watched_year: 2023, score: 0,  comment: ``,                                                                                     tmdb_id: 84958  },
   { name: "X-Men: Evolution",               tier: "S",   category: "cartoon",      watched_year: 2008, score: 0,  comment: ``,                                                                                     tmdb_id: 668    },
   { name: "Rooster",                        tier: "C",   category: "sitcom",       watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 254953 },
+  { name: "The Afterparty",                 tier: "B",   category: "sitcom",       watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 106454 },
 ];
