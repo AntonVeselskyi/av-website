@@ -3014,11 +3014,14 @@ function shrtToCpp(src)
     s = s.replace(/=>\s*p\s+([^;{}\n)]+)/g,                  '[&]()\n{\n    std::cout << $1 << std::endl;\n}');
 
     // p expr;  — match anywhere p appears as a statement-position keyword.
-    // Keep the expression from swallowing a closing `}` so block lambdas like
-    // `=> {foo(); p "str"};` and `=> {foo(); p "str"}();` survive long enough
-    // for the later `=> {` rewrite to turn them into lambdas.
-    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;{}\n]+?);/g, 'std::cout << $1 << std::endl;');
-    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+([^;{}\n]+?)\s*(?=\})/g, 'std::cout << $1 << std::endl;');
+    // The argument capture allows balanced `{...}` brace-initialisers
+    // (`p $vector<int>{1, 2};`, `p $string{"z"};`, `p Point{x, y}`) — a bare
+    // `[^;{}\n]+?` stopped at the opening `{` and never reached the terminator,
+    // leaving `p` untransposed. Unbalanced `{`/`}` are still excluded so a block
+    // lambda like `=> {foo(); p "str"};` (and the block-final form before a
+    // closing `}`) survives for the later `=> {` rewrite.
+    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+((?:[^;{}\n]|\{(?:[^{}\n]|\{[^{}\n]*\})*\})+?);/g, 'std::cout << $1 << std::endl;');
+    s = s.replace(/(?<![a-zA-Z0-9_$])p\s+((?:[^;{}\n]|\{(?:[^{}\n]|\{[^{}\n]*\})*\})+?)\s*(?=\})/g, 'std::cout << $1 << std::endl;');
 
     // ?. chains and ?. chain ?? fallback
     // The old iterative regex only handled one hop because the first rewrite injected
