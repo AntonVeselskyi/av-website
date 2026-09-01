@@ -2964,9 +2964,9 @@ function shrtToCpp(src)
     // nil → nullptr — early, after strings are protected, before any structural rewrites
     s = s.replace(/\bnil\b/g, 'nullptr');
 
-    // includes
+    // includes — `li` and `il` are interchangeable aliases for a local include.
     s = s.replace(/^[ \t]*i[ \t]+([a-zA-Z_][\w./]*)[ \t]*$/gm, '#include <$1>');
-    s = s.replace(/^[ \t]*li[ \t]+"?([\w./]+)"?[ \t]*$/gm, '#include "$1"');
+    s = s.replace(/^[ \t]*(?:li|il)[ \t]+"?([\w./]+)"?[ \t]*$/gm, '#include "$1"');
 
     // $Ident → std::Ident
     s = s.replace(/\$([a-zA-Z_]\w*)/g, 'std::$1');
