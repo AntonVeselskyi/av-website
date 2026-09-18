@@ -946,8 +946,16 @@ async function bootSequence() {
 
   // 6. Start streaming loot in
   startLootStream();
-  // 7. Focus the prompt
-  cmdEl.focus();
+  // 7. Restore a completed reveal, or focus the invitation.
+  let savedReveal = null;
+  try { savedReveal = JSON.parse(sessionStorage.getItem('rebellion:v1:reveal')); } catch {}
+  if (savedReveal && typeof savedReveal.output === 'string' && typeof savedReveal.date === 'string') {
+    revealShown = true;
+    lockInput();
+    await revealEnd(savedReveal);
+  } else {
+    cmdEl.focus();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -1090,13 +1098,18 @@ function flash() {
 }
 
 async function fetchReveal() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const res = await fetch(API_URL, {
+      signal: controller.signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ server: 'node083', raw: RESISTANCE_COMMAND, state: { cwd: '/root', prevCwd: '/root' } })
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const payload = await res.json();
+    if (!payload || payload.ok === false) throw new Error('Reveal unavailable');
     const output = String(payload.output || '');
     const lines = output.split('\n').filter(Boolean);
     const dateLine = lines.find(line => line.includes('at this date')) || '';
@@ -1107,12 +1120,15 @@ async function fetchReveal() {
       output: 'we got all your data, it\'s "safe" with us',
       date: FALLBACK_REVEAL_DATE
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
-async function revealEnd() {
+async function revealEnd(savedReveal = null) {
   await sleep(400);
-  const reveal = await fetchReveal();
+  const reveal = savedReveal || await fetchReveal();
+  try { sessionStorage.setItem('rebellion:v1:reveal', JSON.stringify(reveal)); } catch {}
   const e = document.createElement('div');
   e.style.cssText = 'text-align:center; margin: 24px auto; padding: 18px;';
   const safeLine = escapeHTML(reveal.output.split('\n')[0] || 'good.');

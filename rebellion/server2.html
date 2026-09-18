@@ -517,6 +517,42 @@ const S = {
 };
 let lastSubmitAt = 0;
 let commandInFlight = false;
+let completionGeneration = 0;
+let followOutput = true;
+out.addEventListener('scroll', () => {
+  followOutput = out.scrollHeight - out.clientHeight - out.scrollTop < 48;
+});
+const SESSION_KEY = 'rebellion:v1:' + SERVER_ID;
+function saveSession() {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      state: remoteState(), hist: S.hist.slice(-200), draft: cmdEl.value,
+      lines: Array.from(out.children).slice(-600).map(el => ({ text: el.textContent, cls: el.className })),
+      scrollTop: out.scrollTop, followOutput
+    }));
+  } catch {} // Storage can be unavailable or full; the shell still works.
+}
+function restoreSession() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY));
+    if (!saved || !saved.state || !Array.isArray(saved.lines)) return false;
+    applyRemoteState(saved.state);
+    S.hist = Array.isArray(saved.hist) ? saved.hist.filter(x => typeof x === 'string') : [];
+    out.replaceChildren();
+    for (const line of saved.lines) {
+      const el = document.createElement('div');
+      el.className = typeof line.cls === 'string' ? line.cls : 'line';
+      el.textContent = line.text;
+      out.appendChild(el);
+    }
+    followOutput = saved.followOutput !== false;
+    showShell();
+    setCmd(typeof saved.draft === 'string' ? saved.draft : '');
+    out.scrollTop = followOutput ? out.scrollHeight : (saved.scrollTop || 0);
+    return true;
+  } catch { return false; }
+}
+window.addEventListener('pagehide', saveSession);
 
 function syncTyped() {
   const pos = cmdEl.selectionStart ?? cmdEl.value.length;
@@ -524,6 +560,7 @@ function syncTyped() {
   afterEl.textContent = cmdEl.value.slice(pos);
 }
 function setCmd(v) {
+  completionGeneration++;
   cmdEl.value = v;
   cmdEl.setSelectionRange(v.length, v.length);
   syncTyped();
@@ -557,7 +594,7 @@ function visibleCommandValue() {
 function recentlySubmitted() {
   return performance.now() - lastSubmitAt < 800;
 }
-cmdEl.addEventListener('input', syncTyped);
+cmdEl.addEventListener('input', () => { completionGeneration++; syncTyped(); });
 cmdEl.addEventListener('keyup', syncTyped);
 cmdEl.addEventListener('click', syncTyped);
 cmdEl.addEventListener('select', syncTyped);
@@ -597,10 +634,10 @@ document.addEventListener('keyup', async (e) => {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function scrollBottom() {
+  if (!followOutput) return;
   out.scrollTop = out.scrollHeight;
   requestAnimationFrame(() => {
-    out.scrollTop = out.scrollHeight;
-    requestAnimationFrame(() => { out.scrollTop = out.scrollHeight; });
+    if (followOutput) out.scrollTop = out.scrollHeight;
   });
 }
 const GLITCH_CHARS = ['-','-','-','-','¦','¦','+','+','+','+','-','-','?','?'];
@@ -668,6 +705,11 @@ async function progressBar(label, duration, w = 20, errAt = -1) {
 }
 
 function updatePrompt() {
+  if (S.sshWait) {
+    promptEl.textContent = 'Continue connecting? [y/N] ';
+    promptEl.className = 'o';
+    return;
+  }
   if (SERVER_ID === 'node083' && S.sqliteMode) {
     promptEl.textContent = 'sqlite> ';
     promptEl.className = 'sql-mode';
@@ -727,8 +769,11 @@ function applyRemoteState(state) {
   if (typeof state.ledgerSeen === 'boolean') S.ledgerSeen = state.ledgerSeen;
 }
 async function remoteCommand(raw) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const res = await fetch(API_URL, {
+      signal: controller.signal,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ server: SERVER_ID, raw, state: remoteState() })
@@ -736,17 +781,21 @@ async function remoteCommand(raw) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const payload = await res.json();
     if (!payload || payload.ok === false) {
-      return { output: payload?.message || 'remote shell rejected request', state: remoteState() };
+      return { ok: false, output: payload?.message || 'remote shell rejected request', state: remoteState() };
     }
     return payload;
   } catch (err) {
-    return { ok: false, output: `shell transport offline: ${err.message}`, state: remoteState() };
+    return { ok: false, output: `shell transport offline: ${err.name === 'AbortError' ? 'request timed out' : err.message}. Press Enter to retry.`, state: remoteState() };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 async function submitCommand() {
   if (commandInFlight) return;
   commandInFlight = true;
+  completionGeneration++;
+  followOutput = true;
   lastSubmitAt = performance.now();
   try {
     const raw = visibleCommandValue();
@@ -755,7 +804,7 @@ async function submitCommand() {
 
     if (SERVER_ID === 'core01' && S.sshWait) {
       addLine(promptEl.textContent + raw, 'dim');
-      if (raw.trim().toLowerCase() === 'y') {
+      if (['y', 'yes'].includes(raw.trim().toLowerCase())) {
         inpRow.style.display = 'none';
         await sshGo();
       } else {
@@ -774,6 +823,7 @@ async function submitCommand() {
 
     const result = await remoteCommand(raw);
     applyRemoteState(result.state);
+    if (result.ok === false) setCmd(raw);
     if (result.action === 'clear') { clearScreen(); showShell(); return; }
     if (result.action === 'ssh') { await sshGo(result.target); return; }
     if (result.action === 'decrypt') { fireReactions(result.reactions); await decryptSequence(result.output); return; }
@@ -782,6 +832,8 @@ async function submitCommand() {
     showShell();
   } finally {
     commandInFlight = false;
+    if (inpRow.style.display === 'none') showShell();
+    saveSession();
   }
 }
 
@@ -892,7 +944,10 @@ async function onShellKeydown(e) {
   if (e.key === 'Tab') {
     e.preventDefault();
     const v = cmdEl.value;
+    const cursor = cmdEl.selectionStart;
+    const generation = ++completionGeneration;
     const { prefix, after, word, cands } = await getCompletionsFor(v);
+    if (generation !== completionGeneration || cmdEl.value !== v || cmdEl.selectionStart !== cursor || commandInFlight) return;
     if (cands.length === 1) {
       const done = cands[0] + (!after && !cands[0].endsWith('/') ? ' ' : '');
       setCmd(prefix + done);
@@ -1085,7 +1140,8 @@ async function boot() {
   startLiveAlerts();
 }
 
-boot();
+if (!restoreSession()) boot();
+else startLiveAlerts();
 </script>
 </body>
 </html>

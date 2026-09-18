@@ -330,6 +330,13 @@ function sshRouteFor(store, args) {
 
 // ════════════════════════════════════════════════════════════════════════
 function runShell({ store, raw, state }) {
+  // Per-request virtual files: never mutate the shared Lambda store.
+  if (store.SERVER === 'node083' && state.decrypted) {
+    store = { ...store, FS: { ...store.FS,
+      '/tmp': { ...store.FS['/tmp'], ch: [...new Set([...store.FS['/tmp'].ch, 'db_017.sql'])] },
+      '/tmp/db_017.sql': { type: 'file' }
+    }, FILES: { ...store.FILES, '/tmp/db_017.sql': store.DB017_SQL } };
+  }
   // SSH y/N wait flow
   if (state.sshWait) {
     const ans = raw.trim().toLowerCase();
@@ -679,13 +686,19 @@ Change: ${meta.ctime}
     return { output: rest.length ? '' : 'readlink: missing operand' };
   }
 
-  if ((cmd === 'openssl' || cmd === 'decrypt') && raw.includes('db_017')) {
-    // Accept both the real openssl incantation and the `decrypt` shorthand.
-    // The real form needs the key material; reward players who supply it.
-    const usesKey = /key\.pem|-kfile|-k\b|-pass|-in\b/.test(raw);
-    if (cmd === 'openssl' && !usesKey) {
-      return { output: `openssl: enc: AES-256-CBC requires a key — pass -kfile /tmp/.hidden/key.pem` };
-    }
+  if (cmd === 'openssl' || cmd === 'decrypt') {
+    const option = flag => { const i = rest.indexOf(flag); return i >= 0 ? rest[i + 1] : undefined; };
+    const input = cmd === 'decrypt' ? rest[1] : option('-in');
+    const key = cmd === 'decrypt' ? rest[0] : option('-kfile');
+    const output = cmd === 'decrypt' ? '/tmp/db_017.sql' : option('-out');
+    if (store.SERVER !== 'node083' || !input || resolvePath(state, input, store.SERVER) !== '/root/databases/db_017.enc')
+      return { output: 'decrypt: supply the encrypted file /root/databases/db_017.enc' };
+    if (!key || resolvePath(state, key, store.SERVER) !== '/tmp/.hidden/key.pem')
+      return { output: 'decrypt: valid recovery key required: /tmp/.hidden/key.pem (openssl: use -kfile)' };
+    if (cmd === 'openssl' && (!rest.includes('enc') || !rest.includes('-d') || !rest.includes('-aes-256-cbc')))
+      return { output: 'usage: openssl enc -d -aes-256-cbc -in <file> -out /tmp/db_017.sql -kfile <keyfile>' };
+    if (output && resolvePath(state, output, store.SERVER) !== '/tmp/db_017.sql')
+      return { output: 'decrypt: supported output path is /tmp/db_017.sql' };
     const firstTime = !state.decrypted;
     state.decrypted = true;
     const reactions = firstTime ? [
@@ -693,8 +706,6 @@ Change: ${meta.ctime}
     ] : [];
     return { action: 'decrypt', output: 'Output written: /tmp/db_017.sql', reactions, state };
   }
-  if (cmd === 'decrypt') return { output: 'Usage: decrypt <keyfile> <encrypted_file>\n  e.g. decrypt /tmp/.hidden/key.pem /root/databases/db_017.enc' };
-  if (cmd === 'openssl') return { output: 'usage: openssl enc -d -aes-256-cbc -in <file> -out <outfile> -kfile <keyfile>' };
 
   if (cmd === 'sqlite3') {
     const f = rest[0];
