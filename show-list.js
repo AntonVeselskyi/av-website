@@ -133,7 +133,7 @@ const showMasterList = [
   { name: "The Penguins of Madagascar",      tier: "B",   category: "cartoon",      watched_year: 2010, score: 0,  comment: ``,                                                                                     tmdb_id: 7869   },
   { name: "Oggy and the Cockroaches",        tier: "C",   category: "cartoon",      watched_year: 2008, score: 0,  comment: ``,                                                                                     tmdb_id: 2777   },
   { name: "Serial Experiments Lain",         tier: "A",   category: "anime",        watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 1087   },
-  { name: "Haibane Renmei",                  tier: "A",   category: "anime",        watched_year: null, score: 0,  comment: ``,                                                                                     tmdb_id: 34164  },
+  { name: "Haibane Renmei",                  tier: "A",   category: "anime",        watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 34164  },
   { name: "The Studio",                      tier: "SS",  category: "sitcom",       watched_year: 2025, score: 0,  comment: ``,                                                                                     tmdb_id: 247767 },
   { name: "Chowder",                         tier: "B",   category: "cartoon",      watched_year: 2008, score: 0,  comment: ``,                                                                                     tmdb_id: 9907   },
   { name: "Johnny Bravo",                    tier: "B",   category: "cartoon",      watched_year: 2007, score: 0,  comment: ``,                                                                                     tmdb_id: 2405   },
@@ -144,4 +144,6 @@ const showMasterList = [
   { name: "X-Men: Evolution",               tier: "S",   category: "cartoon",      watched_year: 2008, score: 0,  comment: ``,                                                                                     tmdb_id: 668    },
   { name: "Rooster",                        tier: "C",   category: "sitcom",       watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 254953 },
   { name: "The Afterparty",                 tier: "B",   category: "sitcom",       watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 106454 },
+  { name: "Dark Matter",                    tier: "B",   category: "live-action",  watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 196322 },
+  { name: "The Pitt",                       tier: "A",   category: "live-action",  watched_year: 2026, score: 0,  comment: ``,                                                                                     tmdb_id: 250307 },
 ];
