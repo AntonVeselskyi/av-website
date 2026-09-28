@@ -223,6 +223,46 @@ body::after {
   opacity: 0; transition: opacity .25s ease;
 }
 .sea-label.show { opacity: 1; }
+
+/* Canadian provinces — Canada wears frost maple outlines; provinces I've been
+   to turn autumn (gold leaves on a caramel wash, see #wl-pat-prov-autumn) and
+   get a pill label. Dashed custard borders with an ink halo between them. */
+.provinces { transition: opacity .35s ease; }
+.province { fill: none; stroke: none; }                      /* not yet: frost shows through */
+.province.is-visited { fill: url(#wl-pat-prov-autumn); }     /* been: leaves coloured in */
+.province-borders {
+  fill: none;
+  stroke: rgba(233,216,166,.8);
+  stroke-width: 1.3;
+  stroke-dasharray: 4 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.province-borders.halo {
+  stroke: rgba(0,18,25,.7);
+  stroke-width: 3.2;
+  stroke-dasharray: none;
+}
+.province-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 2.5px;
+  color: rgba(212,233,239,.78);
+  text-shadow: 0 0 2px var(--ink-black), 0 0 5px var(--ink-black), 0 1px 3px var(--ink-black);
+}
+.province-label.is-visited {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 3px 10px 3px 8px;
+  font-size: 12px; font-weight: 700; letter-spacing: 2px;
+  color: var(--vanilla-custard);
+  background: rgba(0,18,25,.66);
+  border: 1px solid rgba(238,155,0,.55);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  text-shadow: none;
+}
+.province-label.is-visited::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--golden-orange); box-shadow: 0 0 6px var(--golden-orange);
+}
 .arcs { transition: opacity .25s ease; }
 .arcs.hidden { opacity: 0; pointer-events: none; }
 
@@ -509,6 +549,19 @@ body::after {
   border-radius: 8px;
 }
 .ci-item.wide { grid-column: 1 / -1; }
+/* stat tiles open a ranked list of all visited countries */
+.ci-rankable { cursor: pointer; transition: border-color .18s ease, background-color .18s ease, transform .18s ease; }
+.ci-rankable:hover,
+.ci-rankable:focus-visible {
+  border-color: rgba(238,155,0,.6);
+  background-color: rgba(238,155,0,.08);
+  outline: none;
+}
+.ci-rankable:active { transform: translateY(1px); }
+.wl-dist-row.is-current {
+  box-shadow: inset 0 0 0 1px rgba(238,155,0,.75);
+  background: rgba(238,155,0,.12);
+}
 .ci-label {
   font-family: var(--font-ui);
   font-size: 9.5px;
@@ -699,6 +752,7 @@ body::after {
 /* ---------- travel stats ---------- */
 #wl-stats-panel,
 #wl-countries-panel,
+#wl-distances-panel,
 #wl-cities-panel,
 #wl-europe-panel {
   position: fixed;
@@ -715,6 +769,7 @@ body::after {
 }
 #wl-stats-panel[hidden],
 #wl-countries-panel[hidden],
+#wl-distances-panel[hidden],
 #wl-cities-panel[hidden],
 #wl-europe-panel[hidden] { display: none; }
 
@@ -772,6 +827,7 @@ body::after {
 }
 
 #wl-countries-panel,
+#wl-distances-panel,
 #wl-cities-panel,
 #wl-europe-panel {
   left: 50%;
@@ -785,6 +841,7 @@ body::after {
   overflow: hidden;
 }
 #wl-countries-list,
+#wl-distances-list,
 #wl-cities-list,
 #wl-europe-checklist {
   flex: 1 1 auto;
@@ -795,6 +852,7 @@ body::after {
 
 #wl-stats-panel h2,
 #wl-countries-panel h2,
+#wl-distances-panel h2,
 #wl-cities-panel h2,
 #wl-europe-panel h2 {
   margin: 0 50px 12px 0;
@@ -810,6 +868,7 @@ body::after {
 #wl-info-close,
 #wl-stats-close,
 #wl-countries-close,
+#wl-distances-close,
 #wl-cities-close,
 #wl-europe-close {
   position: absolute;
@@ -836,6 +895,7 @@ body::after {
 #wl-info-close:hover,
 #wl-stats-close:hover,
 #wl-countries-close:hover,
+#wl-distances-close:hover,
 #wl-cities-close:hover,
 #wl-europe-close:hover {
   color: var(--golden-orange);
@@ -845,6 +905,7 @@ body::after {
 #wl-info-close:hover,
 #wl-stats-close:hover,
 #wl-countries-close:hover,
+#wl-distances-close:hover,
 #wl-cities-close:hover,
 #wl-europe-close:hover {
   transform: rotate(7deg) scale(1.08);
@@ -1101,6 +1162,40 @@ button.wl-year-row {
 .wl-city-pop {
   color: rgba(148,210,189,.70);
   white-space: nowrap;
+}
+
+/* distances from Lviv — ranked rows with a relative-distance bar */
+.wl-dist-grid { column-count: 2; }
+.wl-dist-row {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  row-gap: 4px;
+  margin-bottom: 5px;
+  break-inside: avoid;
+}
+.wl-dist-rank {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: rgba(148,210,189,.55);
+  text-align: right;
+}
+.wl-dist-country {
+  margin-left: 6px;
+  font-size: 10px;
+  letter-spacing: .5px;
+  color: rgba(148,210,189,.62);
+}
+.wl-dist-track {
+  grid-column: 2 / 4;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(148,210,189,.10);
+  overflow: hidden;
+}
+.wl-dist-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--pearl-aqua), var(--golden-orange));
 }
 
 /* toggle switch */
@@ -1494,6 +1589,7 @@ button.wl-year-row {
     font-size: 12px;
   }
   #wl-countries-panel,
+  #wl-distances-panel,
   #wl-cities-panel,
   #wl-europe-panel {
     top: 54px;
@@ -1505,6 +1601,7 @@ button.wl-year-row {
   .wl-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .wl-year-row { grid-template-columns: 52px minmax(0, 1fr) 28px; gap: 7px; }
   .wl-europe-grid { column-count: 1; }
+  .wl-dist-grid { column-count: 1; }
   #wl-hint { display: none; }
   .wl-title { top: clamp(64px, 17vw, 120px); }
 }
@@ -1515,6 +1612,7 @@ button.wl-year-row {
     max-width: none;
   }
   #wl-countries-panel,
+  #wl-distances-panel,
   #wl-cities-panel,
   #wl-europe-panel {
     width: min(720px, calc(100vw - 36px));

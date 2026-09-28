@@ -31,22 +31,24 @@ window.WANDERLUST = {
                hello: { native: 'Hello', translit: 'heh-LOH', lang: 'en-CA' } },
   },
 
-  /* Year → pin / arc / legend colour. "Temperature timeline, distinct steps":
-     ordered cool → warm so hue reads as time, but every year is its own punchy
-     hue (no muddy neighbours). The three big years — 2014 / 2019 / 2024 — are
-     the most vivid stops, so they stand out by colour alone. */
+  /* Year → pin / arc / legend colour. 2014→2020 run cool → warm (teal … orange);
+     from 2021 every year takes its own hue from the free part of the wheel
+     (blues / violets / magenta / green) so recent arcs don't all read as red.
+     Every colour is mid-high lightness so arcs stay bright against the dark
+     teal map, and no two neighbours share a hue family. The big years —
+     2014 / 2019 / 2024 — are the most vivid stops. */
   yearColors: {
     2014: '#069aa0',  /* vivid teal    — big year */
     2015: '#5cc7a2',  /* mint          */
     2018: '#a7c64a',  /* lime          */
     2019: '#f6a700',  /* gold          — big year */
     2020: '#ef8a1f',  /* orange        */
-    2021: '#b5472f',  /* deep brick    */
-    2022: '#e76f51',  /* light coral   */
-    2023: '#8c2f2a',  /* dark maroon   */
+    2021: '#3fa9f5',  /* azure         */
+    2022: '#7b8cff',  /* periwinkle    */
+    2023: '#4ade80',  /* spring green  */
     2024: '#e51d2a',  /* vivid red     — big year */
-    2025: '#9a3350',  /* wine          */
-    2026: '#5f2b3a',  /* deep maroon   */
+    2025: '#ff5dd6',  /* fuchsia       */
+    2026: '#b57bff',  /* violet        */
   },
 
   /* Special grouped journeys — each its own legend filter + colour. */
@@ -89,6 +91,8 @@ window.WANDERLUST = {
     'Sharm El Sheikh|Egypt': 73000,
     'Stockholm|Sweden': 985000,
     'Punta Cana|Dominican Rep.': 54000,
+    'Mexico City|Mexico': 9209000,
+    'Puerto Escondido|Mexico': 45000,
     'Niagara Falls|Canada': 94400,
     'Tobermory|Canada': 4400,
     'Montreal|Canada': 1763000,
@@ -141,6 +145,7 @@ window.WANDERLUST = {
     Egypt: { population: 116000000, salaryUsd: 210 },
     Sweden: { population: 10600000, salaryUsd: 3000 },
     'Dominican Rep.': { population: 11400000, salaryUsd: 400 },
+    Mexico: { population: 133000000, salaryUsd: 550 },
     Portugal: { population: 10600000, salaryUsd: 1300 },
     Denmark: { population: 6000000, salaryUsd: 3600 },
     Italy: { population: 59000000, salaryUsd: 1800 },
@@ -250,6 +255,14 @@ window.WANDERLUST = {
       url: 'https://commons.wikimedia.org/wiki/File:De-hoi.ogg'
     },
     'es-DO|Hola': {
+      src: 'audio/hello/es-hola.oga',
+      source: 'Wikimedia Commons',
+      title: 'Es-hola.oga',
+      author: 'Josemoya',
+      license: 'CC BY-SA 3.0',
+      url: 'https://commons.wikimedia.org/wiki/File:Es-hola.oga'
+    },
+    'es-MX|Hola': {
       src: 'audio/hello/es-hola.oga',
       source: 'Wikimedia Commons',
       title: 'Es-hola.oga',
@@ -431,6 +444,14 @@ window.WANDERLUST = {
       year: 2023, from_date: '2023-11-04', to_date: '2023-11-15', purpose: 'Travel',
       hello: { native: 'Hola', translit: 'OH-lah', lang: 'es-DO' } },
 
+    // 2026 — Mexico (CDMX base, with a 2-day hop to the Oaxaca coast)
+    { from: 'Toronto', city: 'Mexico City', country: 'Mexico', coords: [-99.1332, 19.4326],
+      year: 2026, from_date: '2026-10-27', to_date: '2026-11-09', purpose: 'Travel',
+      hello: { native: 'Hola', translit: 'OH-lah', lang: 'es-MX' } },
+    { from: 'Mexico City', city: 'Puerto Escondido', country: 'Mexico', coords: [-97.0719, 15.8720],
+      year: 2026, from_date: '2026-10-29', to_date: '2026-10-31', purpose: 'Travel',
+      hello: { native: 'Hola', translit: 'OH-lah', lang: 'es-MX' } },
+
     // Canada — domestic trips from Toronto
     { from: 'Toronto', city: 'Niagara Falls', country: 'Canada', coords: [-79.0849, 43.0896],
       year: 2023, from_date: '2023-05-13', to_date: '2023-05-14', purpose: 'Travel',
@@ -571,6 +592,6 @@ window.WANDERLUST = {
     'Ukraine', 'Poland', 'France', 'Hungary', 'Montenegro', 'Egypt',
     'Canada', 'Georgia', 'Turkey', 'Sweden', 'Dominican Rep.', 'Malta',
     'Czechia', 'Austria', 'Liechtenstein', 'Switzerland', 'Germany',
-    'Bulgaria', 'Russia', 'Portugal', 'Denmark', 'Italy', 'Vatican',
+    'Bulgaria', 'Russia', 'Portugal', 'Denmark', 'Italy', 'Vatican', 'Mexico',
   ],
 };

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Megrim&family=Major+Mono+Display&family=Jura:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="wanderlust.css?v=206" />
+  <link rel="stylesheet" href="wanderlust.css?v=218" />
   <link rel="shortcut icon" type="image/x-icon" href="../img/favicon.ico" />
 
   <!-- mapping libs (CDN, like the existing GSAP usage) -->
@@ -63,6 +63,12 @@
     <button id="wl-cities-close" type="button" aria-label="Close cities visited">×</button>
     <h2>cities</h2>
     <div id="wl-cities-list"></div>
+  </section>
+
+  <section id="wl-distances-panel" aria-label="Distances from Lviv" hidden>
+    <button id="wl-distances-close" type="button" aria-label="Close distances from Lviv">×</button>
+    <h2>from Lviv</h2>
+    <div id="wl-distances-list"></div>
   </section>
 
   <section id="wl-europe-panel" aria-label="Europe checklist" hidden>
@@ -128,8 +134,9 @@
 
   <div id="wl-hint">flat ⇄ globe · play the journey</div>
 
-  <script defer src="wanderlust-data.js?v=206"></script>
-  <script defer src="wanderlust-detail.js?v=206"></script>
-  <script defer src="wanderlust.js?v=206"></script>
+  <script defer src="wanderlust-data.js?v=218"></script>
+  <script defer src="wanderlust-detail.js?v=218"></script>
+  <script defer src="wanderlust-provinces.js?v=218"></script>
+  <script defer src="wanderlust.js?v=218"></script>
 </body>
 </html>

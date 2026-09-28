@@ -29,7 +29,7 @@
   const TIMELINE_MARKER_HOLD_MS = 720 * TIMELINE_MARKER_SPEEDUP;
 
   /* ---- state ---- */
-  let svg, gZoom, gCountries, gGraticule, gArcs, gSphere, gMeasure, gGlobeTitle, defs, pinLayer, popup;
+  let svg, gZoom, gCountries, gProvinces, gGraticule, gArcs, gSphere, gMeasure, gGlobeTitle, defs, pinLayer, popup;
   let measureMode = false, measurePts = [], measureLabel = null, measureOverlay = null;
   let measurePointer = null, measureLastRelease = null;
   let width = 0, height = 0;
@@ -152,6 +152,7 @@
     gSphere    = gZoom.append('path').attr('class', 'wl-sphere');
     gGraticule = gZoom.append('path').attr('class', 'wl-graticule');
     gCountries = gZoom.append('g').attr('class', 'countries');
+    gProvinces = gZoom.append('g').attr('class', 'provinces');
     gGlobeTitle = gZoom.append('g').attr('class', 'globe-title');
     gArcs      = gZoom.append('g').attr('class', 'arcs');
     gMeasure   = gZoom.append('g').attr('class', 'measure');
@@ -161,6 +162,14 @@
      (userSpaceOnUse): line motifs connect across tile edges; filled motifs sit
      fully inside with a margin so nothing is clipped at the stitch. */
   const TILE = 20;
+  // stylised maple leaf (Canadian-flag silhouette), centred in the 20×20 tile;
+  // right half listed top → stem, mirrored for the left
+  const MAPLE_D = (() => {
+    const R = [[0, -1], [0.2, -0.6], [0.42, -0.7], [0.32, -0.2], [0.74, -0.4], [0.66, -0.16],
+      [0.98, -0.04], [0.5, 0.26], [0.56, 0.42], [0.06, 0.36], [0.05, 0.95]];
+    const pts = R.concat(R.slice(1).reverse().map(([x, y]) => [-x, y]));
+    return 'M' + pts.map(([x, y]) => `${(10 + x * 5.6).toFixed(2)} ${(10 + y * 5.6).toFixed(2)}`).join(' L') + ' Z';
+  })();
   const MOTIFS = {
     // continuous diamond lattice — vertices on edge midpoints connect tiles
     diamond: (g, c) => {
@@ -249,8 +258,68 @@
       g.append('path').attr('d', 'M10 4 V16 M6 7 H14');
       g.append('circle').attr('cx', 10).attr('cy', 10).attr('r', 5).attr('fill', 'none').attr('opacity', .5);
     },
+    // Mexico — cempasúchil (Día de Muertos marigold): 8 petals round a rosa
+    // mexicano heart; corner quarter-dots stitch into a second row of hearts
+    cempasuchil: (g, c, a = c) => {
+      const f = g.append('g').attr('fill', c);
+      for (let k = 0; k < 8; k++)
+        f.append('ellipse').attr('cx', 10).attr('cy', 6.2).attr('rx', 1.5).attr('ry', 3)
+          .attr('transform', `rotate(${k * 45} 10 10)`).attr('opacity', .9);
+      g.append('circle').attr('cx', 10).attr('cy', 10).attr('r', 1.9).attr('fill', a);
+      [[0, 0], [20, 0], [0, 20], [20, 20]].forEach(([x, y]) =>
+        g.append('circle').attr('cx', x).attr('cy', y).attr('r', 1.6).attr('fill', a));
+    },
+    // Canada — maple leaf. Frost = outlined (a province not yet "coloured in"),
+    // with snow dots stitched at the tile corners; autumn = the same leaf filled
+    // (a province I've been to). Same tile + transform, so autumn covers frost exactly.
+    mapleFrost: (g, c) => {
+      g.append('path').attr('d', MAPLE_D).attr('fill', 'none').attr('stroke', c)
+        .attr('stroke-width', .85).attr('stroke-linejoin', 'round');
+      [[0, 0], [20, 0], [0, 20], [20, 20]].forEach(([x, y]) =>
+        g.append('circle').attr('cx', x).attr('cy', y).attr('r', 1.1).attr('fill', c));
+    },
+    // Egypt — a tiny hieroglyph panel: ankh + Eye of Horus on top, the water
+    // ripple (n), bread loaf (t) and Maat's feather below; everything sits
+    // inside the tile so the glyph rows read like a carved wall
+    hieroglyphs: (g, c) => {
+      const s = g.append('g').attr('fill', 'none').attr('stroke', c).attr('stroke-width', .95)
+        .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      // ankh
+      s.append('ellipse').attr('cx', 4.6).attr('cy', 3.4).attr('rx', 1.5).attr('ry', 1.8);
+      s.append('path').attr('d', 'M2.2 6 H7 M4.6 5.2 V10');
+      // Eye of Horus: almond, brow, teardrop + spiral tail
+      s.append('path').attr('d', 'M10.6 5 Q14 2.6 17.6 5 Q14 7.2 10.6 5 Z');
+      s.append('path').attr('d', 'M10.8 2.6 Q14 1 17.8 2.8');
+      s.append('path').attr('d', 'M13.2 6.6 L12.6 9.4 M15.2 6.5 Q16 9 17.9 8.2');
+      g.append('circle').attr('cx', 14.1).attr('cy', 4.9).attr('r', 1).attr('fill', c);
+      // water ripple (n)
+      s.append('path').attr('d', 'M1.4 14 L2.8 12.8 L4.2 14 L5.6 12.8 L7 14 L8.4 12.8 L9.8 14');
+      // bread loaf (t)
+      g.append('path').attr('d', 'M2.4 18.6 A3.2 2.3 0 0 1 8.8 18.6 Z').attr('fill', c).attr('opacity', .9);
+      // feather of Maat
+      g.append('path').attr('d', 'M15.2 18.6 Q13.4 14 15.9 10.8 Q17.8 14.2 15.9 18.6 Z').attr('fill', c).attr('opacity', .9);
+      s.append('path').attr('d', 'M15.6 18.8 V12.4').attr('stroke', 'rgba(0,18,25,.55)').attr('stroke-width', .5);
+    },
+    mapleAutumn: (g, c, a = c) => {
+      g.append('path').attr('d', MAPLE_D).attr('fill', c);
+      [[0, 0], [20, 0], [0, 20], [20, 20]].forEach(([x, y]) =>
+        g.append('circle').attr('cx', x).attr('cy', y).attr('r', 1.3).attr('fill', a));
+    },
   };
-  const SPECIAL_MOTIF = { Portugal: 'azulejo', Italy: 'mosaic', Denmark: 'nordic', Vatican: 'cross' };
+  const SPECIAL_MOTIF = { Portugal: 'azulejo', Italy: 'mosaic', Denmark: 'nordic', Vatican: 'cross', Egypt: 'hieroglyphs' };
+
+  /* Countries with a fixed cultural palette: like the home countries they keep
+     their own colours instead of morphing with the year filter, so the year's
+     pins/arcs never sink into a same-hue fill. */
+  const FIXED_STYLE = {
+    // Mexico — jade ground, marigold blooms, rosa mexicano hearts
+    Mexico: { ground: '#00875a', groundOp: 0.32, motif: 'cempasuchil',
+              motifColor: '#ffa62b', accent: '#e4007c', stroke: '#ffa62b' },
+    // Egypt — sandstone ground, tomb-gold hieroglyphs
+    Egypt:  { ground: '#b8862b', groundOp: 0.30, motif: 'hieroglyphs',
+              motifColor: '#f2d27a', stroke: '#e9c46a' },
+  };
+  const hasFixedStyle = (name) => HOME_COUNTRIES.has(name) || !!FIXED_STYLE[name];
 
   function patId(name) { return 'wl-pat-' + name.replace(/[^a-z]/gi, ''); }
 
@@ -364,6 +433,8 @@
     population: { en: 'population', uk: 'населення' },
     totalVisits:{ en: 'total visits', uk: 'всього візитів' },
     fromLviv:   { en: 'from Lviv', uk: 'від Львова' },
+    daysThere:  { en: 'days spent', uk: 'днів там' },
+    homeDays:   { en: 'home ♥', uk: 'дім ♥' },
     countryPrompt: { en: 'hover a pin or focus a country', uk: 'наведи на шпильку або сфокусуй країну' },
     salaryNet:  { en: 'net salary / mo', uk: 'чиста зарплата / міс' },
     language:   { en: 'language', uk: 'мова' },
@@ -382,6 +453,8 @@
     countryList: { en: 'countries', uk: 'країни' },
     closeCountryList: { en: 'close countries visited', uk: 'закрити відвідані країни' },
     cityList: { en: 'cities', uk: 'міста' },
+    citiesFromLviv: { en: 'cities from Lviv', uk: 'міста від Львова' },
+    countriesFromLviv: { en: 'countries from Lviv', uk: 'країни від Львова' },
     closeCityList: { en: 'close cities visited', uk: 'закрити відвідані міста' },
     europeChecklist: { en: 'Europe checklist', uk: 'Європа чекліст' },
     closeEuropeChecklist: { en: 'close Europe checklist', uk: 'закрити чекліст Європи' },
@@ -444,6 +517,18 @@
     'Ligurian Sea': 'Лігурійське море', 'Bay of Biscay': 'Біскайська затока', 'English Channel': 'Ла-Манш',
     'Irish Sea': 'Ірландське море',
   };
+  const PROVINCE_UK = {
+    Ontario: 'Онтаріо', 'Québec': 'Квебек', 'British Columbia': 'Британська Колумбія', Alberta: 'Альберта',
+    Saskatchewan: 'Саскачеван', Manitoba: 'Манітоба', 'New Brunswick': 'Нью-Брансвік', 'Nova Scotia': 'Нова Шотландія',
+    'Prince Edward Island': 'Острів Принца Едуарда', 'Newfoundland and Labrador': 'Ньюфаундленд і Лабрадор',
+    Yukon: 'Юкон', 'Northwest Territories': 'Північно-Західні території', Nunavut: 'Нунавут',
+  };
+  // hand-placed label anchors where the centroid lands badly (sea / far north)
+  const PROVINCE_LABEL_AT = {
+    Ontario: [-85.5, 49.2], 'Québec': [-72.5, 50.5], Nunavut: [-95, 65], 'Newfoundland and Labrador': [-61.5, 53.3],
+    'Nova Scotia': [-63.2, 45.2], 'Prince Edward Island': [-63.2, 46.9],
+  };
+  const dispProvince = (name) => (lang === 'uk' ? (PROVINCE_UK[name] || name) : name);
   const PURPOSE_UK = { Travel: 'подорож', Business: 'робота', Stay: 'перебування', Moved: 'переїзд', Lived: 'життя', 'Day trip': 'одноденка' };
 
   const CITY_UK = {
@@ -452,6 +537,7 @@
     Mdina: 'Мдіна', Victoria: 'Вікторія', 'Ramla Beach': 'Рамла Біч', Sliema: 'Сліма', 'Comino Island': 'острів Коміно',
     Kotor: 'Котор', 'Porto Montenegro': 'Порто Монтенегро', Podgorica: 'Подгориця', 'Sveti Stefan': 'Светі-Стефан', 'Lake Skadar': 'Скадарське озеро',
     'Sharm El Sheikh': 'Шарм-ель-Шейх', Stockholm: 'Стокгольм', 'Punta Cana': 'Пунта-Кана',
+    'Mexico City': 'Мехіко', 'Puerto Escondido': 'Пуерто-Ескондідо',
     'Český Krumlov': 'Чеський Крумлов', Salzburg: 'Зальцбург', Vaduz: 'Вадуц', 'Zürich': 'Цюрих',
     Munich: 'Мюнхен', 'Niagara Falls': 'Ніагарський водоспад', Tobermory: 'Тоберморі', Montreal: 'Монреаль',
     Vancouver: 'Ванкувер', Obzor: 'Обзор', Uray: 'Урай', Mezhdurechensky: 'Междуреченський',
@@ -519,6 +605,26 @@
     const target = entry && entry.coords ? entry.coords : fallback && fallback.coords;
     if (!home || !target) return null;
     return Math.round(d3.geoDistance(home, target) * 6371);
+  }
+
+  // unique calendar days spent in a country, from dated trips — overlapping
+  // side trips (Rome → Florence) count once. Home countries return Infinity
+  // (shown as "home"); markers carry no dates, so marker-only countries = null.
+  function countryDays(country) {
+    if (HOME_COUNTRIES.has(country)) return Infinity;
+    const days = new Set();
+    DATA.trips.forEach((trip) => {
+      if (trip.country !== country || !trip.from_date) return;
+      const a = Date.parse(trip.from_date), b = Date.parse(trip.to_date || trip.from_date);
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+      for (let d = a; d <= b; d += 864e5) days.add(d);
+    });
+    return days.size || null;
+  }
+  function formatDays(n) {
+    if (n === Infinity) return t('homeDays');
+    if (n == null) return t('noData');
+    return lang === 'uk' ? `${n} дн.` : `${n} ${n === 1 ? 'day' : 'days'}`;
   }
 
   function formatDistanceKm(km) {
@@ -633,16 +739,18 @@
       }));
   }
 
-  function farthestPlaceFromLviv() {
+  // every visited place with its great-circle distance to Lviv, farthest first
+  function placesByDistanceFromLviv() {
     const home = DATA.places.Lviv && DATA.places.Lviv.coords;
-    if (!home) return null;
-    let farthest = null;
-    allVisitedPlaces().forEach((place) => {
-      if (place.city === 'Lviv' && place.country === 'Ukraine') return;
-      const km = d3.geoDistance(home, place.coords) * 6371;
-      if (!farthest || km > farthest.km) farthest = { ...place, km };
-    });
-    return farthest;
+    if (!home) return [];
+    return allVisitedPlaces()
+      .filter((place) => !(place.city === 'Lviv' && place.country === 'Ukraine'))
+      .map((place) => ({ ...place, km: d3.geoDistance(home, place.coords) * 6371 }))
+      .sort((a, b) => b.km - a.km || dispCity(a.city).localeCompare(dispCity(b.city)));
+  }
+
+  function farthestPlaceFromLviv() {
+    return placesByDistanceFromLviv()[0] || null;
   }
 
   function travelStats() {
@@ -692,14 +800,14 @@
     }).join('');
     const farthest = stats.farthestPlace;
     const farthestHtml = farthest ? `
-        <div class="wl-stat-card">
+        <button class="wl-stat-card" id="wl-distances-open" type="button">
           <div class="wl-stat-label">${esc(t('farthestFromLviv'))}</div>
           <div class="wl-stat-value">${esc(dispCity(farthest.city))}</div>
           <div class="wl-stat-sub">
             <span class="${countryNameClass(farthest.country).trim()}">${esc(dispCountry(farthest.country))}</span>
-            · ${esc(formatDistanceKm(Math.round(farthest.km)))}
+            · ${esc(formatDistanceKm(Math.round(farthest.km)))} · ${esc(t('clickForList'))}
           </div>
-        </div>` : '';
+        </button>` : '';
     wrap.innerHTML = `
       <div class="wl-stats-grid">
         <div class="wl-stat-split">
@@ -745,6 +853,11 @@
     if (citiesOpen) citiesOpen.addEventListener('click', (e) => {
       e.stopPropagation();
       setCitiesPanel(true);
+    });
+    const distancesOpen = $('#wl-distances-open');
+    if (distancesOpen) distancesOpen.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setDistancesPanel(true, 'places');
     });
     const distanceCycle = $('#wl-distance-cycle');
     if (distanceCycle) distanceCycle.addEventListener('click', (e) => {
@@ -819,6 +932,66 @@
                 </div>`).join('')}
             </div>
           </section>`).join('')}
+      </div>`;
+  }
+
+  /* Ranked lists (biggest first) shown in #wl-distances-panel:
+     'places' = every visited city by distance from Lviv (stats "farthest" card);
+     the rest rank visited countries by the country-info tile that was clicked. */
+  let rankMode = 'places';
+  const RANK_TITLE = {
+    places: 'citiesFromLviv', population: 'population', visits: 'totalVisits',
+    fromLviv: 'countriesFromLviv', salary: 'salaryNet', days: 'daysThere',
+  };
+  const numOrNull = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+  function rankRows(mode) {
+    if (mode === 'places') {
+      return placesByDistanceFromLviv().map((p) => ({
+        name: dispCity(p.city), country: p.country, sub: true,
+        value: p.km, text: formatDistanceKm(Math.round(p.km)),
+      }));
+    }
+    const value = {
+      population: (c) => numOrNull(countryInfoFor(c).population) || null,
+      visits: (c) => countryVisitCount(c),
+      fromLviv: (c) => distanceFromLviv(null, c),
+      salary: (c) => numOrNull(countryInfoFor(c).salaryUsd),
+      days: countryDays,
+    }[mode];
+    const fmt = {
+      population: formatPopulation,
+      visits: (n) => n.toLocaleString(lang === 'uk' ? 'uk-UA' : 'en-US'),
+      fromLviv: formatDistanceKm,
+      salary: (n) => `USD ${formatMoney(n, 1)}`,
+      days: formatDays,
+    }[mode];
+    return (DATA.visitedCountries || []).map((c) => {
+      const v = value(c);
+      return { name: dispCountry(c), country: c, value: v, text: v == null ? t('noData') : fmt(v) };
+    }).sort((a, b) => (b.value ?? -1) - (a.value ?? -1) || a.name.localeCompare(b.name));
+  }
+
+  function renderDistancesList() {
+    const wrap = $('#wl-distances-list');
+    if (!wrap) return;
+    const head = $('#wl-distances-panel h2');
+    if (head) head.textContent = t(RANK_TITLE[rankMode] || 'citiesFromLviv');
+    const rows = rankRows(rankMode);
+    const max = Math.max(1, ...rows.map((r) => (Number.isFinite(r.value) ? r.value : 0)));   // "home" (Infinity) = full bar
+    const current = rankMode !== 'places' && countryInfoState ? countryInfoState.country : null;
+    wrap.innerHTML = `
+      <div class="wl-europe-summary">${rows.length} ${esc(t('visited'))}</div>
+      <div class="wl-europe-grid wl-dist-grid">
+        ${rows.map((r, i) => `
+          <div class="wl-city-row wl-dist-row${r.country === current ? ' is-current' : ''}">
+            <span class="wl-dist-rank">${r.value == null ? '–' : i + 1}</span>
+            ${r.sub
+              ? `<span class="wl-city-name">${esc(r.name)}
+                  <span class="wl-dist-country${countryNameClass(r.country)}">${esc(dispCountry(r.country))}</span></span>`
+              : `<span class="wl-city-name${countryNameClass(r.country)}">${esc(r.name)}</span>`}
+            <span class="wl-city-pop">${esc(r.text)}</span>
+            <span class="wl-dist-track"><span style="width:${r.value == null ? 0 : Math.max(1.5, Math.min(100, (r.value / max) * 100)).toFixed(1)}%"></span></span>
+          </div>`).join('')}
       </div>`;
   }
 
@@ -898,25 +1071,36 @@
     panel.innerHTML = `
       <div class="ci-name${countryNameClass(country)}">${esc(dispCountry(country))}</div>
       <div class="ci-grid">
-        <div class="ci-item">
+        <div class="ci-item ci-rankable" data-rank="population" role="button" tabindex="0">
           <div class="ci-label">${esc(t('population'))}</div>
           <div class="ci-value">${pop ? esc(pop) : esc(t('noData'))}</div>
         </div>
-        <div class="ci-item">
+        <div class="ci-item ci-rankable" data-rank="visits" role="button" tabindex="0">
           <div class="ci-label">${esc(t('totalVisits'))}</div>
           <div class="ci-value">${visitCount.toLocaleString(lang === 'uk' ? 'uk-UA' : 'en-US')}</div>
         </div>
-        <div class="ci-item">
+        <div class="ci-item ci-rankable" data-rank="fromLviv" role="button" tabindex="0">
           <div class="ci-label">${esc(t('fromLviv'))}</div>
           <div class="ci-value">${esc(formatDistanceKm(fromHome))}</div>
         </div>
-        <div class="ci-item wide">
+        <div class="ci-item ci-rankable" data-rank="days" role="button" tabindex="0">
+          <div class="ci-label">${esc(t('daysThere'))}</div>
+          <div class="ci-value">${esc(formatDays(countryDays(country)))}</div>
+        </div>
+        <div class="ci-item wide ci-rankable" data-rank="salary" role="button" tabindex="0">
           <div class="ci-label">${esc(t('salaryNet'))}</div>
           <div class="ci-value">${salary}</div>
         </div>
         ${helloHtml}
       </div>`;
     panel.classList.add('active');
+    // each stat tile opens every visited country ranked by that stat
+    panel.querySelectorAll('.ci-rankable').forEach((tile) => {
+      const open = (e) => { e.stopPropagation(); cancelHide(); setDistancesPanel(true, tile.dataset.rank); };
+      tile.addEventListener('click', open);
+      tile.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); } });
+    });
+    if (!$('#wl-distances-panel')?.hidden && rankMode !== 'places') renderDistancesList();   // move the highlight
     const btn = panel.querySelector('.ci-play');
     if (btn) btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -960,8 +1144,9 @@
       return { ground: '#0057b7', groundOp: 0.34, motif: 'wheat', motifColor: '#ffd700', stroke: '#ffd700' };
     if (name === 'Poland')         // a home — Polish red & white
       return { ground: '#c1121f', groundOp: 0.30, motif: 'checks', motifColor: '#f4f1e8', stroke: '#f4f1e8' };
-    if (name === 'Canada')         // current home base
-      return { ground: '#94d2bd', groundOp: 0.24, motif: 'lattice', motifColor: '#cfeee4', stroke: '#94d2bd' };
+    if (name === 'Canada')         // current home base — frost maple; visited provinces turn autumn
+      return { ground: '#a9cfdc', groundOp: 0.14, motif: 'mapleFrost', motifColor: '#d4e9ef', stroke: '#cfe6ee' };
+    if (FIXED_STYLE[name]) return FIXED_STYLE[name];
     let c = DATA.yearColors[countryYear[name]];
     if (!c) {                                   // visited only in an era (e.g. russia, pre-2014)
       const ks = countryKeys[name];
@@ -1020,7 +1205,7 @@
   const lastPatternColor = {};
   function paintPattern(name, overrideColor) {
     const s = countryStyle(name);
-    const home = HOME_COUNTRIES.has(name);
+    const home = hasFixedStyle(name);
     const ground = home ? s.ground : (overrideColor || s.ground);
     const motifColor = home ? s.motifColor : (overrideColor || s.motifColor);
     const pat = defs.select('#' + patId(name));
@@ -1029,13 +1214,13 @@
     pat.append('rect').attr('width', TILE).attr('height', TILE)
       .attr('fill', ground).attr('opacity', s.groundOp);
     const mg = pat.append('g').attr('opacity', 0.95);
-    (MOTIFS[s.motif] || MOTIFS.diamond)(mg, motifColor);
+    (MOTIFS[s.motif] || MOTIFS.diamond)(mg, motifColor, s.accent);
     lastPatternColor[name] = overrideColor || null;
   }
 
   // which colour a country should currently wear (morphs with filter / timelapse)
   function countryDisplayColor(name) {
-    if (HOME_COUNTRIES.has(name)) return countryStyle(name).stroke;
+    if (hasFixedStyle(name)) return countryStyle(name).stroke;
     let key;
     if (timelapseActive && revealedYearByCountry[name] != null) key = revealedYearByCountry[name];
     else if (isolatedKey != null && countryHasKey(name, isolatedKey)) key = isolatedKey;
@@ -1052,6 +1237,7 @@
     gSphere.attr('d', path({ type: 'Sphere' }));
     gGraticule.attr('d', path(d3.geoGraticule10()));
     gCountries.selectAll('path').attr('d', path);
+    renderProvinces();
     positionGlobeTitle();
     renderArcs();
     positionPins();
@@ -1256,7 +1442,7 @@
       // active colour morphs with the filter / timelapse; repaint the pattern
       // only when its colour actually changes (home countries never morph)
       const col = countryDisplayColor(name);
-      if (!HOME_COUNTRIES.has(name)) {
+      if (!hasFixedStyle(name)) {
         const norm = (isolatedKey == null && !timelapseActive) ? null : col; // null = default latest year
         if (lastPatternColor[name] !== norm) paintPattern(name, norm);
       }
@@ -1268,6 +1454,81 @@
         .style('opacity', dim ? FOCUS_DIM.countryOpacity : null)
         .style('filter', dim ? FOCUS_DIM.countryFilter : strong ? `drop-shadow(0 0 6.5px ${hexToRgba(col, .82)})` : null);
     });
+    styleProvinces();
+  }
+
+  /* ---- Canadian provinces ----
+     Dashed interior borders over Canada's lattice; provinces I've set foot in
+     (auto-detected from Canadian place / trip / marker coords, plus any named
+     in DATA.visitedProvinces) get a brighter pearl wash + a glowing label.
+     The layer is clipped to Canada's own outline so the simplified province
+     coasts never double the basemap's coastline. */
+  const PROV = window.WANDERLUST_PROVINCES;
+  let provFeatures = [], provVisited = new Set(), provClip = null;
+  function buildProvinces() {
+    const canada = countries.find((f) => f.properties.name === 'Canada');
+    if (!PROV || !canada) return;
+    provFeatures = Object.entries(PROV.provinces)
+      .map(([name, geometry]) => ({ type: 'Feature', properties: { name }, geometry }));
+    provVisited = new Set(DATA.visitedProvinces || []);
+    const pts = [];
+    const note = (o) => { if (o && o.country === 'Canada' && o.coords) pts.push(o.coords); };
+    Object.values(DATA.places || {}).forEach(note);
+    DATA.trips.forEach(note);
+    (DATA.markers || []).forEach(note);
+    pts.forEach((c) => {
+      // shoreline / border cities (Toronto, Vancouver, Niagara) can sit just
+      // outside a simplified ring — fall back to the nearest province vertex
+      let hit = provFeatures.find((f) => d3.geoContains(f, c));
+      if (!hit) {
+        let best = Infinity;
+        provFeatures.forEach((f) => f.geometry.coordinates.forEach((poly) => poly[0].forEach((v) => {
+          const dd = d3.geoDistance(v, c);
+          if (dd < best) { best = dd; hit = f; }
+        })));
+      }
+      if (hit) provVisited.add(hit.properties.name);
+    });
+    // autumn maple for visited provinces — same tile + rotation as Canada's frost
+    // pattern, so each gold leaf lands exactly on a frost outline ("coloured in")
+    const frost = defs.select('#' + patId('Canada'));
+    const autumn = defs.append('pattern').attr('id', 'wl-pat-prov-autumn')
+      .attr('width', TILE).attr('height', TILE).attr('viewBox', `0 0 ${TILE} ${TILE}`)
+      .attr('patternUnits', 'userSpaceOnUse')
+      .attr('patternTransform', frost.empty() ? null : frost.attr('patternTransform'));
+    autumn.append('rect').attr('width', TILE).attr('height', TILE).attr('fill', '#ca6702').attr('opacity', 0.3);
+    MOTIFS.mapleAutumn(autumn.append('g').attr('opacity', 0.92), '#ee9b00', '#e9d8a6');
+    provClip = defs.append('clipPath').attr('id', 'wl-clip-canada')
+      .append('path').datum(canada);
+    gProvinces.attr('clip-path', 'url(#wl-clip-canada)').style('pointer-events', 'none');
+    gProvinces.selectAll('path.province')
+      .data(provFeatures)
+      .join('path').attr('class', (f) => 'province' + (provVisited.has(f.properties.name) ? ' is-visited' : ''));
+    // dark halo under the dashes so they read over Canada's lattice lines
+    gProvinces.append('path').datum(PROV.borders).attr('class', 'province-borders halo');
+    gProvinces.append('path').datum(PROV.borders).attr('class', 'province-borders');
+    provFeatures.forEach((f) => {
+      const el = document.createElement('div');
+      const been = provVisited.has(f.properties.name);
+      el.className = 'sea-label province-label' + (been ? ' is-visited' : '');
+      el.textContent = dispProvince(f.properties.name);
+      seaLayer.appendChild(el);
+      seaEls.push({ el, name: f.properties.name, coords: PROVINCE_LABEL_AT[f.properties.name] || d3.geoCentroid(f),
+        minK: been ? 1.3 : 2.4, disp: dispProvince });
+    });
+  }
+  function renderProvinces() {
+    if (!provClip) return;
+    provClip.attr('d', path);
+    gProvinces.selectAll('path').attr('d', path);
+  }
+  // follows Canada: faded when a filter / playback hides Canada's pattern
+  function styleProvinces() {
+    if (!provClip) return;
+    const vis = patternVisible('Canada');
+    const dim = countryContextDimmed('Canada');
+    gProvinces.style('opacity', !vis ? 0.35 : dim ? FOCUS_DIM.countryOpacity : null);
+    gProvinces.selectAll('path.province').style('display', vis ? null : 'none');
   }
   // back-compat alias (older call sites)
   const updateCountryHighlight = styleCountries;
@@ -2205,6 +2466,7 @@
     const target = isGlobe ? 0 : 1;     // alpha: 0 = flat, 1 = globe
     projection.clipAngle(null);         // no clip during the morph
     isGlobe = target === 1;             // pins follow immediately
+    updateGlobeBtn();                   // …and so does the button label
     resetZoom();                        // each mode starts at its own home view
     if (isGlobe) {
       recenterGlobe();                  // spin so the journeys face us
@@ -2230,7 +2492,6 @@
         applyFit(target);
         render();
         morphing = false;
-        updateGlobeBtn();
         applyPanBounds();
       }
     });
@@ -3154,6 +3415,7 @@
       setEuropePanel(false);
       setCountriesPanel(false);
       setCitiesPanel(false);
+      setDistancesPanel(false);
     }
     panel.hidden = !open;
     btn.classList.toggle('active', open);
@@ -3166,6 +3428,7 @@
     if (open) {
       setEuropePanel(false);
       setCitiesPanel(false);
+      setDistancesPanel(false);
       renderVisitedCountriesList();
     }
     panel.hidden = !open;
@@ -3177,7 +3440,21 @@
     if (open) {
       setCountriesPanel(false);
       setEuropePanel(false);
+      setDistancesPanel(false);
       renderVisitedCitiesList();
+    }
+    panel.hidden = !open;
+  }
+
+  function setDistancesPanel(open, mode) {
+    const panel = $('#wl-distances-panel');
+    if (!panel) return;
+    if (open) {
+      if (mode) rankMode = mode;
+      setCountriesPanel(false);
+      setCitiesPanel(false);
+      setEuropePanel(false);
+      renderDistancesList();
     }
     panel.hidden = !open;
   }
@@ -3188,6 +3465,7 @@
     if (open) {
       setCountriesPanel(false);
       setCitiesPanel(false);
+      setDistancesPanel(false);
       renderEuropeChecklist();
     }
     panel.hidden = !open;
@@ -3198,6 +3476,7 @@
       '#wl-stats-panel',
       '#wl-countries-panel',
       '#wl-cities-panel',
+      '#wl-distances-panel',
       '#wl-europe-panel',
       '#wl-info-panel',
       '#wl-stats-btn',
@@ -3209,6 +3488,7 @@
     if (floatingPanelTarget(e.target)) return;
     setInfoPanel(false);
     setStatsPanel(false);
+    setDistancesPanel(false);   // also when opened from a country-info tile
   }
 
   function applyLang() {
@@ -3226,6 +3506,7 @@
     set('#wl-stats-panel h2', t('stats'));
     set('#wl-countries-panel h2', t('countryList'));
     set('#wl-cities-panel h2', t('cityList'));
+    set('#wl-distances-panel h2', t(RANK_TITLE[rankMode] || 'citiesFromLviv'));
     set('#wl-europe-panel h2', t('europeChecklist'));
     set('#wl-info-panel h2', t('audioCredits'));
     set('#wl-info-panel p', t('audioCreditsText'));
@@ -3240,8 +3521,9 @@
     if (!$('#wl-stats-panel')?.hidden) renderStatsPanel();
     if (!$('#wl-countries-panel')?.hidden) renderVisitedCountriesList();
     if (!$('#wl-cities-panel')?.hidden) renderVisitedCitiesList();
+    if (!$('#wl-distances-panel')?.hidden) renderDistancesList();
     if (!$('#wl-europe-panel')?.hidden) renderEuropeChecklist();
-    seaEls.forEach((s) => { s.el.textContent = dispSea(s.name); });
+    seaEls.forEach((s) => { s.el.textContent = (s.disp || dispSea)(s.name); });
     pins.forEach((p) => { const l = p.el.querySelector('.pin-label'); if (l) l.textContent = dispCity(p.city); });
     if (popup.classList.contains('show') && popup.__owner) showPopup(popup.__owner);
     rerenderCountryInfo();
@@ -3335,6 +3617,7 @@
     const statsPanel = $('#wl-stats-panel');
     const countriesPanel = $('#wl-countries-panel');
     const citiesPanel = $('#wl-cities-panel');
+    const distancesPanel = $('#wl-distances-panel');
     const europePanel = $('#wl-europe-panel');
     if (statsBtn && statsPanel) {
       statsBtn.addEventListener('click', (e) => {
@@ -3354,6 +3637,14 @@
       if (countriesClose) countriesClose.addEventListener('click', (e) => {
         e.stopPropagation();
         setCountriesPanel(false);
+      });
+    }
+    if (distancesPanel) {
+      distancesPanel.addEventListener('click', (e) => e.stopPropagation());
+      const distancesClose = $('#wl-distances-close');
+      if (distancesClose) distancesClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setDistancesPanel(false);
       });
     }
     if (citiesPanel) {
@@ -3518,6 +3809,8 @@
     buildArcs();
     makePins();
     makeSeas();
+    buildProvinces();        // province borders + visited washes (needs seaLayer)
+    styleProvinces();
     wirePopupHover();
     enableInteractions();
     render();
