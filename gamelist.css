@@ -1657,4 +1657,45 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
   top: 8px;
   align-self: flex-start;   /* anchor to the top of the row so it has room to travel */
   z-index: 40;              /* above sibling cards, below hover overlays (100000) */
+}/* Phone layout is scoped to gamelist; desktop and the other lists retain their styles. */
+@media (max-width: 759px) {
+  body.game-list-page { --cardW: min(169px, calc((100vw - 34px) / 2)); }
+  .game-list-page .view-toggles { gap: 6px; padding: 10px 8px; }
+  .game-list-page .view-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 3px; font-size: 11px; min-height: 44px; }
+  .game-list-page .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px; align-items: center; justify-content: flex-start; }
+  .game-list-page .tab-buttons .secret-btn { font-size: 12px; letter-spacing: 1px; padding: 10px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; }
+  .game-list-page .sort-label { font-size: 12px; letter-spacing: 1px; padding: 4px 0; flex-basis: 100%; }
+  .game-list-page .search-input { font-size: 16px; width: min(220px, 65%); }
+  .game-list-page #result-count { font-size: 12px; letter-spacing: 1px; margin-left: 0; }
+  .game-list-page:not(.pillar-view-active) .tab-row-columns,
+  .game-list-page.pillar-view-active .tab-row-sort { display: none; }
+  .game-list-page #main-list { padding-bottom: 80px; }
+  .game-list-page .tier-row { display: block; padding: 0 12px; box-sizing: border-box; }
+  .game-list-page .tier-label { position: static !important; width: 100%; height: auto; padding: 8px 0; margin: 16px 0 12px; font-size: 28px !important; }
+  .game-list-page .row { min-width: 0; }
+  .game-list-page .game-card { box-sizing: border-box; }
+  .game-list-page .game-card-wrapper { will-change: auto; }
+  .game-list-page #main-list .game-card-wrapper > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: none; }
+  .game-list-page #main-list .game-card-wrapper:focus-visible { outline: 3px solid #9660be; outline-offset: 3px; }
+  .game-list-page .inspiration-subtitle { font-size: 28px; padding: 0 16px; margin: 28px 0; }
+  .game-list-page .inspiration-grid { display: grid; grid-template-columns: repeat(2, var(--cardW)); justify-content: center; gap: 24px 10px; padding: 0 12px; box-sizing: border-box; }
+  .game-list-page .inspiration-tile { position: relative; width: auto; margin: 0; animation: none; filter: none; }
+  .game-list-page .inspiration-tile .game-card-wrapper { transform: none !important; transition: none; }
+  .game-list-page .cloud-layer { animation: none; will-change: auto; }
+  .game-list-page .pillar-view.pillar-phone .pillar-ruler span { max-width: 80px; overflow-wrap: anywhere; font-size: 11px; }
+  .game-list-page .pillar-mini-card:hover { transform: none !important; }
+  .game-list-page #pillar-inspect-panel { display: none; }
+  .game-list-page .scroll-top-btn { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: 44px; height: 44px; }
+}
+.game-list-page.game-details-open { overflow: hidden; }
+#game-details-dialog { width: min(480px, calc(100vw - 24px)); max-height: 85vh; max-height: 85dvh; padding: 16px; box-sizing: border-box; border: 2px solid white; background: #111; color: white; overscroll-behavior: contain; }
+#game-details-dialog::backdrop { background: rgba(0,0,0,.65); }
+#game-details-dialog .details-close { display: block; margin: 0 0 12px auto; min-height: 44px; padding: 8px 18px; border: 1px solid white; background: black; color: white; font: 16px sans-serif; }
+#game-details-dialog .mobile-game-details > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: block; position: static; width: 100%; min-width: 0; max-width: none; min-height: 0; max-height: none; transform: none; opacity: 1; padding: 12px 0; font: 16px/1.5 sans-serif; overflow-wrap: anywhere; }
+#game-details-dialog .game-card { width: 130px; margin: 0 auto; }
+#game-details-dialog .game-comment { white-space: normal; font: 16px/1.5 sans-serif; }
+#game-details-dialog a { color: #8edfff; }
+#game-details-dialog .exp-spacer { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .game-list-page .cloud-layer, .game-list-page .inspiration-tile, .game-list-page .inspiration-tile-card { animation: none !important; }
 }

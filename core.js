@@ -2,6 +2,37 @@ let currentRenderId = 0;
 // ========== DOM ELEMENTS ==========
 const gameContainer = document.getElementById('main-list');
 
+// Keep game-specific phone changes out of the other lists sharing this engine.
+const isGameList = document.body.classList.contains('game-list-page');
+const phoneMedia = window.matchMedia('(max-width: 759px)');
+const finePointerMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
+const gamePhone = () => isGameList && phoneMedia.matches;
+
+function openGameDetails(wrapper) {
+  let dialog = document.getElementById('game-details-dialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'game-details-dialog';
+    dialog.setAttribute('aria-label', 'Game details');
+    document.body.appendChild(dialog);
+    dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', () => document.body.classList.remove('game-details-open'));
+  }
+  const close = document.createElement('button');
+  close.className = 'details-close';
+  close.textContent = 'Close';
+  close.addEventListener('click', () => dialog.close());
+  const content = document.createElement('div');
+  content.className = 'mobile-game-details';
+  for (const selector of ['.game-title-overlay', '.game-card', '.game-exp-overlay', '.game-details-overlay']) {
+    const source = wrapper.querySelector(selector);
+    if (source) content.appendChild(source.cloneNode(true));
+  }
+  dialog.replaceChildren(close, content);
+  document.body.classList.add('game-details-open');
+  dialog.showModal();
+}
+
 // ===== LOADER COUNTDOWN =====
 // Roman-ish glyphs from 10 down to 0
 const LOADER_SYMBOLS = {
@@ -116,6 +147,17 @@ function createGameCard(game)
   const wrapper = document.createElement('div');
   wrapper.className = 'game-card-wrapper';
   wrapper.dataset.key = gameKey(game);
+  if (gamePhone()) {
+    wrapper.setAttribute('role', 'button');
+    wrapper.tabIndex = 0;
+    wrapper.setAttribute('aria-label', game.name + ' — details');
+    wrapper.addEventListener('keydown', e => {
+      if (gamePhone() && e.target === wrapper && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        openGameDetails(wrapper);
+      }
+    });
+  }
 
   const titleOverlay = document.createElement('div');
   titleOverlay.className = 'game-title-overlay';
@@ -247,7 +289,7 @@ function createGameCard(game)
   return wrapper;
 }
 
-function buildTierSection(tierName, games)
+function buildTierSection(tierName, games, maxPerRow)
 {
     const section = document.createElement('div');
     section.className = 'tier-section';
@@ -266,7 +308,6 @@ function buildTierSection(tierName, games)
 const _yearKeys = LIST_CONFIG.yearSortKeys ?? ['played', 'released'];
 if (_yearKeys.includes(sortKey))
   {
-    const maxPerRow = calcMaxCardsPerRow();
 
     // helper to get the "year" string for a game based on current sort
     const getYear = (game) =>
@@ -350,6 +391,7 @@ if (_yearKeys.includes(sortKey))
 
 function calcMaxCardsPerRow()
 {
+  if (gamePhone()) return Math.max(1, Math.floor((window.innerWidth - 24 + 10) / (Math.min(169, (window.innerWidth - 34) / 2) + 10)));
   // Probe container to get real width + gap
   const probeRow = document.createElement('div');
   probeRow.className = 'row';
@@ -385,7 +427,8 @@ function calcMaxCardsPerRow()
 
 function renderGames(games)
 {
-    gameContainer.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const maxPerRow = (LIST_CONFIG.yearSortKeys ?? ['played', 'released']).includes(sortKey) ? calcMaxCardsPerRow() : 1;
     const tierMap = {};
     TIER_ORDER.forEach(tier => tierMap[tier] = []);
     games.forEach(game =>
@@ -397,11 +440,13 @@ function renderGames(games)
     {
         if (tierMap[tier].length)
         {
-            const [section, divider] = buildTierSection(tier, tierMap[tier]);
-            gameContainer.appendChild(section);
-            gameContainer.appendChild(divider);
+            const [section, divider] = buildTierSection(tier, tierMap[tier], maxPerRow);
+            fragment.appendChild(section);
+            fragment.appendChild(divider);
         }
     });
+
+  gameContainer.replaceChildren(fragment);
 
   // decide which side overlays should open on for this layout
   setupOverlaySides();
@@ -413,6 +458,14 @@ function renderGamesAnimated(games)
   currentRenderId++;
   const thisRenderId = currentRenderId;
   const container = gameContainer;
+
+  if (gamePhone()) {
+    if (globalRafId) cancelAnimationFrame(globalRafId);
+    globalRafId = null;
+    container.style.minHeight = '';
+    renderGames(games);
+    return;
+  }
 
   // --- 1. STOP THE WORLD & GARBAGE COLLECTION ---
   // Cancel any pending animation frame from a previous rapid click
@@ -446,7 +499,7 @@ function renderGamesAnimated(games)
     // If this card is staying, skip it
     if (!key || nextKeys.has(key)) continue;
 
-    const rect = el.getBoundingClientRect();
+    const rect = oldRectByKey.get(key);
 
     // Don't clone invisible elements
     if (rect.width === 0 || rect.height === 0) {
@@ -494,9 +547,11 @@ function renderGamesAnimated(games)
   // --- 5. CALCULATE INVERTS ---
   const newEls = Array.from(container.querySelectorAll('.game-card-wrapper'));
 
-  for (const el of newEls) {
+  // Read geometry together before transforms invalidate layout.
+  const newRects = newEls.map(el => el.getBoundingClientRect());
+  for (const [index, el] of newEls.entries()) {
     const key = el.dataset.key;
-    const newRect = el.getBoundingClientRect();
+    const newRect = newRects[index];
     const oldRect = oldRectByKey.get(key);
 
     if (oldRect) {
@@ -555,22 +610,14 @@ function renderGamesAnimated(games)
 
 function setupOverlaySides()
 {
-  const wrappers = document.querySelectorAll('.game-card-wrapper');
+  if (gamePhone() || viewMode === 'pillar') return;
+  const wrappers = Array.from(gameContainer.querySelectorAll('.game-card-wrapper'));
   // Inspiration mode scales the wrapper on hover, needs extra headroom.
   const isInspiration = document.body.classList.contains('inspiration-mode');
   const maxOverlayWidth = window.innerWidth * (isInspiration ? 0.38 : 0.32);
 
-  wrappers.forEach(wrapper => {
-    const rect = wrapper.getBoundingClientRect();
-    const spaceRight = window.innerWidth - rect.right;
-
-    if (spaceRight < maxOverlayWidth) {
-      // Not enough space on the right → always open this one to the left
-      wrapper.classList.add('exp-open-left');
-    } else {
-      wrapper.classList.remove('exp-open-left');
-    }
-  });
+  const openLeft = wrappers.map(wrapper => window.innerWidth - wrapper.getBoundingClientRect().right < maxOverlayWidth);
+  wrappers.forEach((wrapper, index) => wrapper.classList.toggle('exp-open-left', openLeft[index]));
 }
 
 // ===== INSPIRATION VIEW =====
@@ -615,9 +662,25 @@ function inspirationGroupOf(name)
 
 function renderInspirationView(games)
 {
+  currentRenderId++;
+  if (globalRafId) cancelAnimationFrame(globalRafId);
+  globalRafId = null;
   gameContainer.innerHTML = '';
   const grid = document.createElement('div');
   grid.className = 'inspiration-grid';
+
+  if (gamePhone()) {
+    // Normal document flow is stable across browser-bar and keyboard changes.
+    games.forEach(game => {
+      const tile = document.createElement('div');
+      tile.className = 'inspiration-tile';
+      tile.appendChild(createGameCard(game));
+      grid.appendChild(tile);
+    });
+    gameContainer.style.minHeight = '';
+    gameContainer.appendChild(grid);
+    return;
+  }
 
   // Responsive layout — tile width/spacing shrink on narrow (phone) viewports so
   // cards never have to overlap. Poster aspect is ~1.5, so height = width * 1.5.
@@ -918,7 +981,7 @@ function _updateMagnetic()
 
 window.addEventListener('mousemove', (e) =>
 {
-  if (!document.body.classList.contains('inspiration-mode')) return;
+  if (!document.body.classList.contains('inspiration-mode') || gamePhone() || !finePointerMedia.matches) return;
   _lastMouseEvt = e;
   if (!_magneticRaf) _magneticRaf = requestAnimationFrame(_updateMagnetic);
 }, { passive: true });
@@ -939,15 +1002,18 @@ document.addEventListener('mouseleave', () =>
 //    must re-render when the window crosses that threshold (e.g. narrowing the
 //    desktop browser to test the phone layout).
 let _inspirationResizeTimer = null;
+let _layoutWidth = window.innerWidth;
 window.addEventListener('resize', () =>
 {
-  const needsRelayout = document.body.classList.contains('inspiration-mode')
+  if (window.innerWidth === _layoutWidth) return;
+  _layoutWidth = window.innerWidth;
+  const needsRelayout = isGameList || document.body.classList.contains('inspiration-mode')
     || (typeof viewMode !== 'undefined' && viewMode === 'pillar');
-  if (!needsRelayout) return;
   clearTimeout(_inspirationResizeTimer);
   _inspirationResizeTimer = setTimeout(() =>
   {
-    if (typeof applyFilters === 'function') applyFilters();
+    if (needsRelayout) applyFilters();
+    else setupOverlaySides();
   }, 200);
 });
 
@@ -1305,7 +1371,6 @@ function setupTabs()
       {
         activePillarAxis = value;
         setActiveInGroup(document.querySelectorAll('[data-group="pillarAxis"]'), btn);
-        applyFilters();
       }
 
       applyFilters();
@@ -1380,7 +1445,7 @@ function setupTabs()
 function updatePillarInspect(game, isHovering, mouseX = 0)
 {
   const panel = document.getElementById('pillar-inspect-panel');
-  if (!panel) return;
+  if (!panel || gamePhone()) return;
 
   if (!isHovering)
   {
@@ -1484,16 +1549,20 @@ function renderPillarView(games)
   // ============================================================
   const getVal = (g) => {
     const fn = LIST_CONFIG.axisValueFns?.[activePillarAxis];
-    return fn ? fn(g) : 0;
+    const value = fn ? fn(g) : 0;
+    // Years can arrive as either numbers or strings; both belong to one bucket.
+    return typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)) ? Number(value) : value;
   };
 
-  const uniqueVals = [...new Set(games.map(getVal))];
+  const gameValues = games.map(getVal);
+  const uniqueVals = [...new Set(gameValues)];
   const presentValues = uniqueVals.sort((a, b) => {
     if (typeof a === 'string' && typeof b === 'string') return a.localeCompare(b);
     return a - b;
   });
 
   const colCount = presentValues.length;
+  const valueIndices = new Map(presentValues.map((value, index) => [value, index]));
 
   // --- DYNAMIC SPACING & CENTERING LOGIC ---
   const MAX_GAP = 18;       // Max distance (%) between columns. Lower = tighter packing.
@@ -1519,25 +1588,32 @@ function renderPillarView(games)
   // Dimensions
   const cardWidth = 30;
   const yOffset = 45;
-  const valCounts = {};
-  presentValues.forEach(v => { valCounts[v] = games.filter(g => getVal(g) === v).length; });
-  const maxStack = Math.max(...presentValues.map(v => valCounts[v]));
+  const valCounts = Object.create(null);
+  gameValues.forEach(value => { valCounts[value] = (valCounts[value] || 0) + 1; });
+  const maxStack = Math.max(0, ...presentValues.map(v => valCounts[v]));
 
   // On phones the axes flip: values run top→bottom (vertical scroll) and each
   // stack grows left→right, so the dense value-axis labels never overlap.
   const phone = window.innerWidth < 760;
-  const P_LABEL = 44, P_GAP = 16, P_CARDW = 34, P_TOP = 14;
+  const P_LABEL = gamePhone() && activePillarAxis === 'platform' ? 88 : 44, P_GAP = 16, P_CARDW = gamePhone() ? 44 : 34, P_TOP = 14;
   const P_CARDH = Math.round(P_CARDW * 1.5);
   const P_ROWH  = P_CARDH + P_GAP;
   const P_AVAIL = window.innerWidth - P_LABEL - 12;  // usable width for a row of cards
   // Per-row horizontal step: cards sit border-to-border (step == card width) and
   // ONLY a row that would overflow the screen gets compressed to fit. This stops
   // the densest row from forcing every other row to overlap needlessly.
-  const phoneStep = (count) => Math.min(P_CARDW, P_AVAIL / Math.max(1, count));
+  const phoneStep = (count) => Math.min(P_CARDW, (P_AVAIL - P_CARDW) / Math.max(1, count - 1));
 
+  const phoneColumns = Math.max(1, Math.floor(P_AVAIL / (P_CARDW + 4)));
+  const phoneRowTops = [];
+  let phoneHeight = P_TOP;
+  presentValues.forEach(value => {
+    phoneRowTops.push(phoneHeight);
+    phoneHeight += (gamePhone() ? Math.ceil(valCounts[value] / phoneColumns) : 1) * P_ROWH;
+  });
   if (phone) {
     container.classList.add('pillar-phone');
-    container.style.height = (P_TOP + colCount * P_ROWH + 40) + 'px';
+    container.style.height = (phoneHeight + 40) + 'px';
   } else {
     container.classList.remove('pillar-phone');
     container.style.height = `${(maxStack * yOffset) + 150}px`;
@@ -1552,24 +1628,27 @@ function renderPillarView(games)
   // Snapshot
   const existingCards = new Map();
   container.querySelectorAll('.game-card-wrapper').forEach(el => {
-    if(el.dataset.key) existingCards.set(el.dataset.key, el);
+    if (!el.dataset.key) return;
+    const queue = existingCards.get(el.dataset.key) || [];
+    queue.push(el);
+    existingCards.set(el.dataset.key, queue);
   });
 
-  const stacks = {};
-  const newKeys = new Set();
+  const stacks = Object.create(null);
+  const addedCards = document.createDocumentFragment();
+  const enteringCards = [];
 
   // ============================================================
   // 3. RENDER LOOP
   // ============================================================
-  games.forEach(game => {
+  games.forEach((game, gameIndex) => {
     const key = LIST_CONFIG.getKey(game);
     if (thisRenderId !== currentRenderId) return;
-    newKeys.add(key);
 
-    const val = getVal(game);
+    const val = gameValues[gameIndex];
     if (!stacks[val]) stacks[val] = 0;
 
-    const valIndex = presentValues.indexOf(val);
+    const valIndex = valueIndices.get(val);
 
     // ▼ USE DYNAMIC POSITION ▼
     const xPos = startX + (valIndex * spacing);
@@ -1577,7 +1656,7 @@ function renderPillarView(games)
     const yPos = stacks[val] * yOffset;
     const depth = 1000 + (valIndex * 100) + stacks[val];
 
-    let card = existingCards.get(key);
+    let card = existingCards.get(key)?.shift();
     let isNew = false;
     let isRevived = false;
 
@@ -1587,7 +1666,7 @@ function renderPillarView(games)
       card.classList.add('pillar-mini-card');
       card.addEventListener('mouseenter', (e) => updatePillarInspect(game, true, e.clientX));
       card.addEventListener('mouseleave', () => updatePillarInspect(game, false));
-      container.appendChild(card);
+      addedCards.appendChild(card);
     }
     else {
       if (card._removeTimer) {
@@ -1602,8 +1681,8 @@ function renderPillarView(games)
 
     card.style.position = 'absolute';
     if (phone) {
-      card.style.left = `${P_LABEL + stacks[val] * phoneStep(valCounts[val])}px`;
-      card.style.top = `${P_TOP + valIndex * P_ROWH}px`;
+      card.style.left = `${P_LABEL + (gamePhone() ? (stacks[val] % phoneColumns) * (P_CARDW + 4) : stacks[val] * phoneStep(valCounts[val]))}px`;
+      card.style.top = `${phoneRowTops[valIndex] + (gamePhone() ? Math.floor(stacks[val] / phoneColumns) * P_ROWH : 0)}px`;
       card.style.bottom = 'auto';
       card.style.width = `${P_CARDW}px`;
       card.style.zIndex = 1000 + (valIndex * 100) + stacks[val];
@@ -1617,12 +1696,11 @@ function renderPillarView(games)
       card.style.transform = 'translateX(-50%) translateZ(0)';
     }
 
-    if (isNew || isRevived) {
+    if ((isNew || isRevived) && !gamePhone()) {
       card.classList.remove('pillar-animate-in');
       card.style.animationDelay = '0s';
       card.style.opacity = '1';
-      void card.offsetWidth;
-      card.classList.add('pillar-animate-in');
+      enteringCards.push(card);
       const baseDelay = colStartTimes.get(val) || 0;
       const floorDelay = stacks[val] * 0.05;
       card.style.animationDelay = `${baseDelay + floorDelay}s`;
@@ -1636,14 +1714,22 @@ function renderPillarView(games)
     stacks[val]++;
   });
 
+  container.appendChild(addedCards);
+  if (enteringCards.length) {
+    // One flush restarts every entrance without forcing layout per card.
+    void container.offsetWidth;
+    enteringCards.forEach(card => card.classList.add('pillar-animate-in'));
+  }
+
   // ============================================================
   // 4. REMOVAL PHASE
   // ============================================================
-  existingCards.forEach((el, key) => {
-    if (!newKeys.has(key)) {
+  // Queues preserve duplicate IDs while reusing every matching card once.
+  existingCards.forEach(queue => queue.forEach(el => {
+      if (gamePhone()) { el.remove(); return; }
       if (thisRenderId !== currentRenderId) return;
-      if (el._removeTimer) clearTimeout(el._removeTimer);
       if (el.classList.contains('pillar-dissolve')) return;
+      if (el._removeTimer) clearTimeout(el._removeTimer);
 
       el.classList.add('pillar-dissolve');
       el._removeTimer = setTimeout(() => {
@@ -1651,8 +1737,7 @@ function renderPillarView(games)
         if (thisRenderId !== currentRenderId) return;
         el._removeTimer = null;
       }, 350);
-    }
-  });
+  }));
 
   // ============================================================
   // 5. RULER UPDATE (With Smart Text Alignment)
@@ -1662,6 +1747,7 @@ function renderPillarView(games)
 
   const ruler = document.createElement('div');
   ruler.className = 'pillar-ruler';
+  if (gamePhone()) ruler.style.width = P_LABEL + 'px';
 
   presentValues.forEach((tick, i) => {
     const marker = document.createElement('span');
@@ -1671,7 +1757,7 @@ function renderPillarView(games)
     if (phone) {
       // Vertical ruler down the left: one label per value row, centred on it.
       marker.style.left = '4px';
-      marker.style.top = `${P_TOP + (i * P_ROWH) + (P_CARDH / 2)}px`;
+      marker.style.top = `${phoneRowTops[i] + (P_CARDH / 2)}px`;
       marker.style.transform = 'translateY(-50%)';
       marker.style.textAlign = 'left';
       ruler.appendChild(marker);
@@ -1750,6 +1836,7 @@ function setupAppPolish()
   //   1/2/3    switch view (tierlist / histogram / inspiration)
   document.addEventListener('keydown', (e) =>
   {
+    if (e.target.closest('dialog')) return;
     const typing = e.target.matches('input, textarea');
 
     if (e.key === '/' && !typing)
@@ -1770,6 +1857,15 @@ function setupAppPolish()
       btns[Number(e.key) - 1]?.click();
     }
   });
+
+  document.addEventListener('click', e => {
+    if (!gamePhone() || e.target.closest('dialog')) return;
+    const wrapper = e.target.closest('#main-list .game-card-wrapper');
+    if (!wrapper) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    openGameDetails(wrapper);
+  }, true);
 
   // --- mobile: tap a card to reveal its overlays, tap again to open the link ---
   // PC keeps its hover behaviour untouched (this only binds on no-hover devices).
@@ -1822,11 +1918,6 @@ async function init()
       // enrichment failed, so the mark never stays stuck hidden).
       document.body.classList.add('content-ready');
     }
-
-    window.addEventListener('resize', () =>
-    {
-      setupOverlaySides();
-    });
 }
 
 init();
