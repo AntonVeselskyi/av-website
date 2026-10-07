@@ -391,7 +391,7 @@ if (_yearKeys.includes(sortKey))
 
 function calcMaxCardsPerRow()
 {
-  if (gamePhone()) return Math.max(1, Math.floor((window.innerWidth - 24 + 10) / (Math.min(169, (window.innerWidth - 34) / 2) + 10)));
+  if (gamePhone()) return Number(getComputedStyle(document.body).getPropertyValue('--tier-columns')) || 3;
   // Probe container to get real width + gap
   const probeRow = document.createElement('div');
   probeRow.className = 'row';
@@ -1288,7 +1288,7 @@ function setupTabs()
 
       if (group === 'category')
       {
-        if (value === 'all')
+        if (value === 'all' || (isGameList && filterCategory.includes(value)))
         {
           filterCategory = [];
         }
@@ -1297,7 +1297,7 @@ function setupTabs()
           // Single-select: replaces any previous selection (narrows from ALL)
           filterCategory = [value];
         }
-        setActiveInGroup(categoryButtons, btn);
+        setActiveInGroup(categoryButtons, filterCategory.length ? btn : categoryButtons.find(b => b.dataset.value === 'all'));
       }
       else if (group === 'decade')
       {

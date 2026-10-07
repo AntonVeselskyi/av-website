@@ -11,6 +11,7 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
     for (const width of [320, 390, 759, 1024, 1440]) {
       const phone = width < 760;
       const page = await browser.newPage({ viewport: { width, height: 844 }, isMobile: phone, hasTouch: phone });
+      await page.addInitScript(() => { let seed = 123456; Math.random = () => ((seed = seed * 16807 % 2147483647) - 1) / 2147483646; });
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       // Test actual local game data without depending on the enrichment service.
@@ -18,6 +19,28 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
       await page.route('https://fonts.googleapis.com/**', r => r.abort());
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('body.content-ready');
+      if (phone) {
+        const initialCount = await page.locator('#main-list .game-card-wrapper').count();
+        for (const [group, value, parameter] of [['category', 'indie', 'cat'], ['decade', '2010s', 'decade'], ['platform', 'pc', 'platform'], ['vibe', 'Epic', 'vibe'], ['ttb', 'Short', 'ttb']]) {
+          const button = page.locator(`[data-group="${group}"][data-value="${value}"]`);
+          await button.tap();
+          assert.ok(await button.evaluate(e => e.classList.contains('active')), `${group} selects`);
+          await button.tap();
+          await page.waitForTimeout(250);
+          assert.ok(!await button.evaluate(e => e.classList.contains('active')), `${group} deselects`);
+          assert.equal(await button.evaluate(e => getComputedStyle(e).backgroundColor), 'rgba(0, 0, 0, 0)', `${group} clears sticky hover`);
+          assert.ok(!new URL(page.url()).searchParams.has(parameter), `${group} clears URL state`);
+          assert.equal(await page.locator('#main-list .game-card-wrapper').count(), initialCount);
+        }
+        // Name sorting makes full rows independent of where year groups end.
+        await page.locator('[data-group="sort"][data-value="name"]').tap();
+        const columns = await page.locator('.tier-section .row').first().evaluate(e => {
+          const cards = [...e.querySelectorAll('.game-card-wrapper')];
+          const top = cards[0].getBoundingClientRect().top;
+          return cards.filter(c => Math.abs(c.getBoundingClientRect().top - top) < 1).length;
+        });
+        assert.equal(columns, width < 380 ? 3 : 4, 'Tierlist card density');
+      }
       for (const view of ['grid', 'pillar', 'inspiration']) {
         await page.locator(`[data-view="${view}"]`).click();
         await page.waitForTimeout(450);
@@ -27,6 +50,10 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
         await page.locator('#main-list .game-card-wrapper').first().click();
         await page.waitForSelector('#game-details-dialog[open]');
         assert.ok(await page.locator('#game-details-dialog .game-title-overlay').textContent());
+        assert.ok(await page.locator('#game-details-dialog').evaluate(e => {
+          const r = e.getBoundingClientRect();
+          return Math.abs((r.left + r.right) / 2 - innerWidth / 2) < 1 && Math.abs((r.top + r.bottom) / 2 - innerHeight / 2) < 1 && r.left >= 12 && r.right <= innerWidth - 12 && e.scrollWidth === e.clientWidth;
+        }), 'Detail panel is centered and content fits');
         await page.keyboard.press('Escape');
         assert.equal(await page.locator('#game-details-dialog[open]').count(), 0);
         await page.evaluate(() => { window.firstCard = document.querySelector('#main-list .game-card-wrapper'); });
@@ -66,7 +93,7 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
         assert.ok(await page.evaluate(() => Number.isFinite(parseFloat(document.querySelector('#main-list').style.height))));
       } else {
         // Pause drifting in this test so the pointer can land deterministically.
-        await page.addStyleTag({ content: '.inspiration-tile,.inspiration-tile-card { animation:none !important; }' });
+        await page.addStyleTag({ content: 'html { scroll-behavior:auto !important; } .inspiration-tile,.inspiration-tile-card { animation:none !important; }' });
         const card = page.locator('.inspiration-tile .game-card-wrapper').first();
         await card.locator('.game-card').hover({ force: true });
         await page.waitForTimeout(700);
