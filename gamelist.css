@@ -1629,6 +1629,11 @@ body.inspiration-mode #result-count { opacity: 0; }
   color: white;
 }
 .scroll-top-btn:active { transform: translateY(0) scale(0.93); }
+/* Desktop histogram: the button sits on top of the cards and the view
+   auto-scrolls anyway, so drop it there (the phone histogram keeps it). */
+@media (min-width: 760px) {
+  body.pillar-view-active .scroll-top-btn { display: none; }
+}
 /* on the dark inspiration sky, invert so it stays visible */
 body.inspiration-mode .scroll-top-btn {
   background: rgba(0, 0, 0, 0.55);

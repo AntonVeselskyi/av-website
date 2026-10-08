@@ -1749,9 +1749,20 @@ function renderPillarView(games)
   ruler.className = 'pillar-ruler';
   if (gamePhone()) ruler.style.width = P_LABEL + 'px';
 
+  // Desktop year axes are dense enough that 4-digit labels collide, so show
+  // just the last two digits there ('03' for 2003). The phone ruler has room.
+  const shortYears = !phone && (LIST_CONFIG.yearSortKeys ?? ['played', 'released']).includes(activePillarAxis);
+  // Narrow windows with many years: shrink the font so each label (~1.5em
+  // wide in Major Mono) keeps a few px clear of its neighbours.
+  const yearFontPx = shortYears && colCount > 1
+    ? Math.max(10, Math.min(18, ((spacing / 100) * container.clientWidth - 4) / 1.5))
+    : null;
+
   presentValues.forEach((tick, i) => {
     const marker = document.createElement('span');
-    marker.textContent = tick;
+    marker.textContent = shortYears && /^\d{4}$/.test(String(tick)) ? String(tick).slice(-2) : tick;
+    if (marker.textContent !== String(tick)) marker.title = tick;
+    if (yearFontPx) marker.style.fontSize = `${yearFontPx}px`;
     marker.style.position = 'absolute';
 
     if (phone) {
@@ -1771,8 +1782,12 @@ function renderPillarView(games)
     // ▼ SMART ALIGNMENT ▼
     // If the label is extremely close to the left edge (<10%), anchor it left.
     // If it's extremely close to the right edge (>90%), anchor it right.
-    // Otherwise, center it.
-    if (xPos < 10) {
+    // Otherwise, center it. Two-digit years fit inside the side padding, and
+    // nudging them would crowd their neighbours, so they always centre.
+    if (shortYears) {
+        marker.style.transform = 'translateX(-50%)';
+        marker.style.textAlign = 'center';
+    } else if (xPos < 10) {
         marker.style.transform = 'translateX(-15%)'; // Slight shift to keep first letter visible
         marker.style.textAlign = 'left';
     } else if (xPos > 90) {
