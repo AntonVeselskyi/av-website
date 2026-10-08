@@ -1673,8 +1673,8 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
   .game-list-page .view-toggles { gap: 6px; padding: 10px 8px; }
   .game-list-page .view-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 3px; font-size: 11px; min-height: 44px; }
   .game-list-page .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px; align-items: center; justify-content: center; }
-  .game-list-page .tab-buttons .secret-btn { font-size: 12px; letter-spacing: 1px; padding: 10px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; }
-  .game-list-page .sort-label { font-size: 12px; letter-spacing: 1px; padding: 4px 0; flex-basis: 100%; }
+  .game-list-page .tab-buttons .secret-btn { font-size: 14px; letter-spacing: 1.5px; padding: 11px 13px; min-height: 46px; box-sizing: border-box; display: inline-flex; align-items: center; }
+  .game-list-page .sort-label { font-size: 14px; letter-spacing: 1.5px; padding: 4px 0; flex-basis: 100%; }
   .game-list-page .search-input { font-size: 16px; width: min(220px, 65%); }
   .game-list-page #result-count { font-size: 12px; letter-spacing: 1px; margin-left: 0; }
   .game-list-page:not(.pillar-view-active) .tab-row-columns,
@@ -1728,6 +1728,30 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
 #game-details-dialog .game-card { width: 100%; box-sizing: border-box; border: 2px solid white; }
 #game-details-dialog .game-comment { margin-top: 12px; white-space: normal; font-size: 16px; line-height: 1.4; }
 #game-details-dialog .exp-spacer { display: none; }
+/* Regular (non-inspiration) details drip down from the top: a mask with a
+   drippy front edge slides down over the dialog, then the sections drop in. */
+#game-details-dialog:not(.inspire) {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 200' preserveAspectRatio='none'%3E%3Cg fill='white'%3E%3Crect width='100' height='101'/%3E%3Crect x='3.5' width='3' height='113'/%3E%3Ccircle cx='5' cy='113' r='2'/%3E%3Crect x='14.5' width='3' height='106'/%3E%3Ccircle cx='16' cy='106' r='2'/%3E%3Crect x='27.5' width='3' height='118'/%3E%3Ccircle cx='29' cy='118' r='2'/%3E%3Crect x='39.5' width='3' height='108'/%3E%3Ccircle cx='41' cy='108' r='2'/%3E%3Crect x='50.5' width='3' height='115'/%3E%3Ccircle cx='52' cy='115' r='2'/%3E%3Crect x='62.5' width='3' height='105'/%3E%3Ccircle cx='64' cy='105' r='2'/%3E%3Crect x='74.5' width='3' height='112'/%3E%3Ccircle cx='76' cy='112' r='2'/%3E%3Crect x='85.5' width='3' height='120'/%3E%3Ccircle cx='87' cy='120' r='2'/%3E%3Crect x='94.5' width='3' height='109'/%3E%3Ccircle cx='96' cy='109' r='2'/%3E%3C/g%3E%3C/svg%3E") 0 100% / 100% 200% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 200' preserveAspectRatio='none'%3E%3Cg fill='white'%3E%3Crect width='100' height='101'/%3E%3Crect x='3.5' width='3' height='113'/%3E%3Ccircle cx='5' cy='113' r='2'/%3E%3Crect x='14.5' width='3' height='106'/%3E%3Ccircle cx='16' cy='106' r='2'/%3E%3Crect x='27.5' width='3' height='118'/%3E%3Ccircle cx='29' cy='118' r='2'/%3E%3Crect x='39.5' width='3' height='108'/%3E%3Ccircle cx='41' cy='108' r='2'/%3E%3Crect x='50.5' width='3' height='115'/%3E%3Ccircle cx='52' cy='115' r='2'/%3E%3Crect x='62.5' width='3' height='105'/%3E%3Ccircle cx='64' cy='105' r='2'/%3E%3Crect x='74.5' width='3' height='112'/%3E%3Ccircle cx='76' cy='112' r='2'/%3E%3Crect x='85.5' width='3' height='120'/%3E%3Ccircle cx='87' cy='120' r='2'/%3E%3Crect x='94.5' width='3' height='109'/%3E%3Ccircle cx='96' cy='109' r='2'/%3E%3C/g%3E%3C/svg%3E") 0 100% / 100% 200% no-repeat;
+  animation: drip-reveal .85s cubic-bezier(.55,0,.4,1) forwards;
+}
+#game-details-dialog:not(.inspire) .mobile-game-details > * { animation: drip-drop .45s cubic-bezier(.3,1.4,.5,1) both; }
+#game-details-dialog:not(.inspire) .mobile-game-details > :nth-child(1) { animation-delay: .22s; }
+#game-details-dialog:not(.inspire) .mobile-game-details > :nth-child(2) { animation-delay: .32s; }
+#game-details-dialog:not(.inspire) .mobile-game-details > :nth-child(3) { animation-delay: .44s; }
+#game-details-dialog:not(.inspire) .mobile-game-details > :nth-child(4) { animation-delay: .56s; }
+@keyframes drip-reveal {
+  from { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
+  to   { -webkit-mask-position: 0 0;    mask-position: 0 0; }
+}
+@keyframes drip-drop {
+  from { transform: translateY(-16px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game-details-dialog:not(.inspire) { -webkit-mask: none; mask: none; animation: none; }
+  #game-details-dialog:not(.inspire) .mobile-game-details > * { animation: none; }
+}
 /* Phone inspiration: tap = desktop hover focus played as a short animation,
    then the details dialog unpacks with the same light stack. */
 @keyframes inspire-lift {
