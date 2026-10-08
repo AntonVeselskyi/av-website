@@ -1672,7 +1672,7 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
   .game-list-page .year-label { font-size: 11px; letter-spacing: 1px; }
   .game-list-page .view-toggles { gap: 6px; padding: 10px 8px; }
   .game-list-page .view-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 3px; font-size: 11px; min-height: 44px; }
-  .game-list-page .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px; align-items: center; justify-content: flex-start; }
+  .game-list-page .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px; align-items: center; justify-content: center; }
   .game-list-page .tab-buttons .secret-btn { font-size: 12px; letter-spacing: 1px; padding: 10px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; }
   .game-list-page .sort-label { font-size: 12px; letter-spacing: 1px; padding: 4px 0; flex-basis: 100%; }
   .game-list-page .search-input { font-size: 16px; width: min(220px, 65%); }
