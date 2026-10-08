@@ -729,7 +729,7 @@ h1
 
 /* NUMBER: same font + size as title */
 .loader-number {
-  font-family: 'Major Mono Display', monospace;
+  font-family: 'Cinzel', serif;
   font-size: 18vw;
   letter-spacing: 12px;
   margin-bottom: 6rem;
@@ -1698,15 +1698,18 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
   .game-list-page .scroll-top-btn { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: 44px; height: 44px; }
 }
 .game-list-page.game-details-open { overflow: hidden; }
-#game-details-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, calc(100% - 24px)); max-width: calc(100% - 24px); max-height: 85vh; max-height: 85dvh; padding: 16px; box-sizing: border-box; border: 2px solid white; background: #111; color: white; overscroll-behavior: contain; }
+/* Phone tap-to-open card details: same type and colours as the desktop hover
+   overlays (Major Mono Display labels, Consolas purple values, lilac comment). */
+#game-details-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, calc(100% - 24px)); max-width: calc(100% - 24px); max-height: 85vh; max-height: 85dvh; padding: 16px; box-sizing: border-box; border: 3px solid white; background: black; color: white; font-family: 'Major Mono Display', monospace; overscroll-behavior: contain; }
 #game-details-dialog::backdrop { background: rgba(0,0,0,.65); }
-#game-details-dialog .details-close { display: block; margin: 0 0 12px auto; min-height: 44px; padding: 8px 18px; border: 1px solid white; background: black; color: white; font: 16px sans-serif; }
-#game-details-dialog .mobile-game-details > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: block; position: static; width: 100%; min-width: 0; max-width: none; min-height: 0; max-height: none; transform: none; opacity: 1; padding: 12px 0; font: 16px/1.5 sans-serif; overflow-wrap: anywhere; }
+#game-details-dialog .details-close { display: block; margin: 0 0 12px auto; min-height: 44px; padding: 8px 18px; border: 3px solid white; background: black; color: white; font: bold 14px 'Major Mono Display', monospace; letter-spacing: 2px; cursor: pointer; }
+#game-details-dialog .details-close:active { background: white; color: black; }
+#game-details-dialog .mobile-game-details > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: block; position: static; width: 100%; min-width: 0; max-width: none; min-height: 0; max-height: none; transform: none; opacity: 1; padding: 12px 0; border: none; font-family: 'Major Mono Display', monospace; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+#game-details-dialog .mobile-game-details > .game-title-overlay { font-size: 17px; letter-spacing: 1px; }
+#game-details-dialog .game-title-overlay a { color: white; text-decoration: none; }
 #game-details-dialog .game-card { width: 130px; margin: 0 auto; box-sizing: border-box; }
 #game-details-dialog .mobile-game-details { min-width: 0; }
-#game-details-dialog .game-details-overlay p, #game-details-dialog .game-exp-overlay p { font-family: inherit; }
-#game-details-dialog .game-comment { white-space: normal; font: 16px/1.5 sans-serif; }
-#game-details-dialog a { color: #8edfff; }
+#game-details-dialog .game-comment { margin-top: 12px; white-space: normal; font-size: 16px; line-height: 1.4; }
 #game-details-dialog .exp-spacer { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .game-list-page .cloud-layer, .game-list-page .inspiration-tile, .game-list-page .inspiration-tile-card { animation: none !important; }

@@ -34,18 +34,20 @@ function openGameDetails(wrapper) {
 }
 
 // ===== LOADER COUNTDOWN =====
-// Roman-ish glyphs from 10 down to 0
+// Roman numerals from 10 down to 0. Plain letters rather than the Unicode
+// Ⅹ/Ⅸ glyphs: no loaded font has those, so each device drew them in its own
+// fallback font. As letters they render in Cinzel everywhere.
 const LOADER_SYMBOLS = {
-  10: 'Ⅹ',
-  9:  'Ⅸ',
-  8:  'Ⅷ',
-  7:  'Ⅶ',
-  6:  'Ⅵ',
-  5:  'Ⅴ',
-  4:  'Ⅳ',
-  3:  'Ⅲ',
-  2:  'Ⅱ',
-  1:  'Ⅰ',
+  10: 'X',
+  9:  'IX',
+  8:  'VIII',
+  7:  'VII',
+  6:  'VI',
+  5:  'V',
+  4:  'IV',
+  3:  'III',
+  2:  'II',
+  1:  'I',
   0:  '∞'   // you can swap for some funky glyph if you want
 };
 
