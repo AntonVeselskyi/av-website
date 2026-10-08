@@ -8,7 +8,9 @@ const phoneMedia = window.matchMedia('(max-width: 759px)');
 const finePointerMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
 const gamePhone = () => isGameList && phoneMedia.matches;
 
-function openGameDetails(wrapper) {
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function openGameDetails(wrapper, inspire = false) {
   let dialog = document.getElementById('game-details-dialog');
   if (!dialog) {
     dialog = document.createElement('dialog');
@@ -16,8 +18,15 @@ function openGameDetails(wrapper) {
     dialog.setAttribute('aria-label', 'Game details');
     document.body.appendChild(dialog);
     dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
-    dialog.addEventListener('close', () => document.body.classList.remove('game-details-open'));
+    dialog.addEventListener('close', () => {
+      document.body.classList.remove('game-details-open');
+      // Let a lit-up inspiration card settle back into the grid.
+      document.querySelectorAll('.inspiration-tile.unpacking')
+        .forEach(t => t.classList.remove('unpacking', 'magnetic-active'));
+      document.querySelector('.inspiration-grid')?.classList.remove('has-active');
+    });
   }
+  dialog.classList.toggle('inspire', inspire);
   const close = document.createElement('button');
   close.className = 'details-close';
   close.textContent = 'Close';
@@ -26,11 +35,45 @@ function openGameDetails(wrapper) {
   content.className = 'mobile-game-details';
   for (const selector of ['.game-title-overlay', '.game-card', '.game-exp-overlay', '.game-details-overlay']) {
     const source = wrapper.querySelector(selector);
-    if (source) content.appendChild(source.cloneNode(true));
+    if (!source) continue;
+    const node = source.cloneNode(true);
+    if (inspire && selector === '.game-card') {
+      // Re-create the desktop light stack around the poster inside the dialog.
+      const stage = document.createElement('div');
+      stage.className = 'inspire-stage';
+      stage.append(
+        Object.assign(document.createElement('div'), { className: 'light-beam' }),
+        node,
+        Object.assign(document.createElement('div'), { className: 'light-dust' }),
+        Object.assign(document.createElement('div'), { className: 'light-flare' }));
+      content.appendChild(stage);
+    }
+    else content.appendChild(node);
   }
   dialog.replaceChildren(close, content);
   document.body.classList.add('game-details-open');
   dialog.showModal();
+
+  if (inspire && !reducedMotion.matches) {
+    // Unfold out of the tapped card: start at its rect, grow to full size.
+    const from = wrapper.getBoundingClientRect(), to = dialog.getBoundingClientRect();
+    const dx = (from.left + from.width / 2) - (to.left + to.width / 2);
+    const dy = (from.top + from.height / 2) - (to.top + to.height / 2);
+    dialog.animate([
+      { transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})`, opacity: 0.6, filter: 'brightness(1.8)' },
+      { transform: 'none', opacity: 1, filter: 'none' },
+    ], { duration: 560, easing: 'cubic-bezier(0.2, 0.9, 0.2, 1)' });
+  }
+}
+
+// Phone inspiration tap: the card gets the desktop focus treatment (lift, tilt,
+// warm glow, beam, dust, flare; the rest blur back), then the details unpack.
+function inspireUnpack(wrapper) {
+  const tile = wrapper.closest('.inspiration-tile');
+  if (!tile || tile.classList.contains('unpacking')) return;
+  tile.closest('.inspiration-grid')?.classList.add('has-active');
+  tile.classList.add('unpacking', 'magnetic-active');
+  setTimeout(() => openGameDetails(wrapper, true), reducedMotion.matches ? 0 : 560);
 }
 
 // ===== LOADER COUNTDOWN =====
@@ -676,7 +719,15 @@ function renderInspirationView(games)
     games.forEach(game => {
       const tile = document.createElement('div');
       tile.className = 'inspiration-tile';
-      tile.appendChild(createGameCard(game));
+      // Same light stack as desktop (beam → card → dust → flare); a tap lights
+      // it up and unpacks the details (see inspireUnpack).
+      const inner = document.createElement('div');
+      inner.className = 'inspiration-tile-card';
+      inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-beam' }));
+      inner.appendChild(createGameCard(game));
+      inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-dust' }));
+      inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-flare' }));
+      tile.appendChild(inner);
       grid.appendChild(tile);
     });
     gameContainer.style.minHeight = '';
@@ -1881,7 +1932,8 @@ function setupAppPolish()
     if (!wrapper) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    openGameDetails(wrapper);
+    if (wrapper.closest('.inspiration-tile')) inspireUnpack(wrapper);
+    else openGameDetails(wrapper);
   }, true);
 
   // --- mobile: tap a card to reveal its overlays, tap again to open the link ---

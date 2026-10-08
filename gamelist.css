@@ -1688,9 +1688,20 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
   .game-list-page #main-list .game-card-wrapper > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: none; }
   .game-list-page #main-list .game-card-wrapper:focus-visible { outline: 3px solid #9660be; outline-offset: 3px; }
   .game-list-page .inspiration-subtitle { font-size: 28px; padding: 0 16px; margin: 28px 0; }
-  .game-list-page .inspiration-grid { display: grid; grid-template-columns: repeat(2, var(--cardW)); justify-content: center; gap: 24px 10px; padding: 0 12px; box-sizing: border-box; }
+  .game-list-page .inspiration-grid { display: grid; grid-template-columns: repeat(2, var(--cardW)); justify-content: center; gap: 56px 10px; padding: 8px 12px 40px; box-sizing: border-box; }
   .game-list-page .inspiration-tile { position: relative; width: auto; margin: 0; animation: none; filter: none; }
-  .game-list-page .inspiration-tile .game-card-wrapper { transform: none !important; transition: none; }
+  .game-list-page .inspiration-tile.unpacking { z-index: 100; }
+  .game-list-page .inspiration-tile-card { animation: none; }
+  .game-list-page .inspiration-tile-card::after { display: none; }   /* no per-tile cloud on phone */
+  /* Light layers are wider than the card: only render them while unpacking, and
+     clip sideways so they never widen the phone layout viewport. */
+  .game-list-page .inspiration-grid { overflow-x: clip; overflow-clip-margin: 0; }
+  .game-list-page .inspiration-tile:not(.unpacking) :is(.light-beam, .light-dust, .light-flare) { display: none; }
+  .game-list-page .inspiration-tile:not(.unpacking) .game-card-wrapper { transform: none !important; transition: none; }
+  .game-list-page .inspiration-tile.unpacking .game-card-wrapper { animation: inspire-lift .56s cubic-bezier(.2,.8,.2,1) forwards; }
+  .game-list-page .inspiration-tile.unpacking .light-flare { animation: flare-sweep .56s ease-out forwards; }
+  .loader-number { font-size: 28vw; letter-spacing: 6px; margin-bottom: 4rem; }
+  .loader-dots { font-size: 14vw; gap: 22px; }
   .game-list-page .cloud-layer { animation: none; will-change: auto; }
   .game-list-page .pillar-view.pillar-phone .pillar-ruler span { max-width: 80px; overflow-wrap: anywhere; font-size: 11px; }
   .game-list-page .pillar-mini-card:hover { transform: none !important; }
@@ -1711,8 +1722,54 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
 #game-details-dialog .mobile-game-details { min-width: 0; }
 #game-details-dialog .game-comment { margin-top: 12px; white-space: normal; font-size: 16px; line-height: 1.4; }
 #game-details-dialog .exp-spacer { display: none; }
+/* Phone inspiration: tap = desktop hover focus played as a short animation,
+   then the details dialog unpacks with the same light stack. */
+@keyframes inspire-lift {
+  0%   { transform: scale(1)    rotateX(0)     rotateY(0); }
+  45%  { transform: scale(1.2)  rotateX(9deg)  rotateY(-11deg); }
+  100% { transform: scale(1.22) rotateX(-4deg) rotateY(8deg); }
+}
+@keyframes flare-sweep {
+  from { left: 12%; top: 18%; }
+  to   { left: 82%; top: 58%; }
+}
+@keyframes unpack-y { from { transform: scaleY(0); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes unpack-x { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes inspire-card-in {
+  from { transform: scale(1.22) rotateX(-4deg) rotateY(8deg); }
+  to   { transform: none; }
+}
+#game-details-dialog.inspire {
+  border-color: rgba(255,236,196,0.95);
+  box-shadow: 0 0 0 1px rgba(255,214,150,0.5), 0 0 46px rgba(255,214,150,0.55);
+  overflow-x: hidden;
+}
+#game-details-dialog.inspire::backdrop {
+  background: radial-gradient(circle at 50% 40%, rgba(255,236,196,0.30), rgba(20,28,48,0.78));
+}
+#game-details-dialog .inspire-stage { position: relative; width: 130px; margin: 0 auto; perspective: 1000px; }
+#game-details-dialog .inspire-stage .game-card {
+  animation: inspire-card-in .7s cubic-bezier(.2,.8,.2,1) both;
+  filter: saturate(1.12) brightness(1.06) contrast(1.03) drop-shadow(0 8px 26px rgba(255,214,150,0.45));
+}
+#game-details-dialog .inspire-stage .light-beam  {
+  opacity: 0.55;
+  mix-blend-mode: screen;                       /* warm light on black, not a grey smudge */
+  -webkit-mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+          mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+}
+#game-details-dialog .inspire-stage .light-dust  { opacity: 0.9; }
+#game-details-dialog .inspire-stage .light-flare { opacity: 0.85; animation: flare-sweep 1.4s ease-out both; }
+#game-details-dialog.inspire .mobile-game-details > .game-title-overlay   { transform-origin: bottom; animation: unpack-y .45s .30s cubic-bezier(.2,.8,.2,1) both; }
+#game-details-dialog.inspire .mobile-game-details > .game-exp-overlay     { transform-origin: left;   animation: unpack-x .45s .45s cubic-bezier(.2,.8,.2,1) both; }
+#game-details-dialog.inspire .mobile-game-details > .game-details-overlay { transform-origin: top;    animation: unpack-y .45s .60s cubic-bezier(.2,.8,.2,1) both; }
+
 @media (prefers-reduced-motion: reduce) {
   .game-list-page .cloud-layer, .game-list-page .inspiration-tile, .game-list-page .inspiration-tile-card { animation: none !important; }
+  .game-list-page .inspiration-tile .game-card-wrapper,
+  .game-list-page .inspiration-tile .light-flare,
+  #game-details-dialog.inspire *,
+  #game-details-dialog.inspire .mobile-game-details > * { animation: none !important; }
 }
 
 @media (min-width: 380px) and (max-width: 759px) {
