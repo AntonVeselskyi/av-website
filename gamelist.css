@@ -1729,14 +1729,31 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
 #game-details-dialog .game-comment { margin-top: 12px; white-space: normal; font-size: 16px; line-height: 1.4; }
 #game-details-dialog .exp-spacer { display: none; }
 /* Regular (non-inspiration) details drop in from above the screen and land
-   with a small settle. The whole card moves as one piece. */
+   with a small settle; the poster and title follow a beat later. Closing
+   slides the card back down off the screen. */
 #game-details-dialog:not(.inspire) { animation: card-drop .55s cubic-bezier(.3,1.25,.5,1) both; }
+#game-details-dialog:not(.inspire) .mobile-game-details > :is(.game-card, .game-title-overlay) {
+  animation: card-drop-inner .5s cubic-bezier(.3,1.35,.5,1) .28s both;
+}
+#game-details-dialog:not(.inspire) .mobile-game-details > .game-title-overlay { animation-delay: .36s; }
+#game-details-dialog.closing:not(.inspire) { animation: card-slide-out .38s cubic-bezier(.5,0,.75,0) both; }
+#game-details-dialog.closing:not(.inspire)::backdrop { animation: backdrop-fade .38s ease-in both; }
 @keyframes card-drop {
   from { transform: translateY(-110vh); }
   to   { transform: none; }
 }
+@keyframes card-drop-inner {
+  from { transform: translateY(-70px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@keyframes card-slide-out {
+  from { transform: none; }
+  to   { transform: translateY(110vh); }
+}
+@keyframes backdrop-fade { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  #game-details-dialog:not(.inspire) { animation: none; }
+  #game-details-dialog:not(.inspire),
+  #game-details-dialog:not(.inspire) .mobile-game-details > * { animation: none; }
 }
 /* Phone inspiration: tap = desktop hover focus played as a short animation,
    then the details dialog unpacks with the same light stack. */

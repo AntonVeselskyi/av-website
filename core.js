@@ -17,8 +17,10 @@ function openGameDetails(wrapper, inspire = false) {
     dialog.id = 'game-details-dialog';
     dialog.setAttribute('aria-label', 'Game details');
     document.body.appendChild(dialog);
-    dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('click', e => { if (e.target === dialog) closeGameDetails(dialog); });
+    dialog.addEventListener('cancel', e => { e.preventDefault(); closeGameDetails(dialog); });   // Esc / back
     dialog.addEventListener('close', () => {
+      dialog.classList.remove('closing');
       document.body.classList.remove('game-details-open');
       // Let a lit-up inspiration card settle back into the grid.
       document.querySelectorAll('.inspiration-tile.unpacking')
@@ -30,7 +32,7 @@ function openGameDetails(wrapper, inspire = false) {
   const close = document.createElement('button');
   close.className = 'details-close';
   close.textContent = 'Close';
-  close.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => closeGameDetails(dialog));
   const content = document.createElement('div');
   content.className = 'mobile-game-details';
   for (const selector of ['.game-title-overlay', '.game-card', '.game-exp-overlay', '.game-details-overlay']) {
@@ -64,6 +66,24 @@ function openGameDetails(wrapper, inspire = false) {
       { transform: 'none' },
     ], { duration: 560, easing: 'cubic-bezier(0.2, 0.9, 0.2, 1)' });
   }
+}
+
+// Regular details slide back down off the screen (the drop in reverse) before
+// the dialog actually closes. Inspiration details just close.
+function closeGameDetails(dialog) {
+  if (!dialog.open || dialog.classList.contains('closing')) return;
+  if (dialog.classList.contains('inspire') || reducedMotion.matches) { dialog.close(); return; }
+  dialog.classList.add('closing');
+  let done = false;
+  const onEnd = e => { if (e.target === dialog) finish(); };   // ignore children's animations
+  const finish = () => {
+    if (done) return;
+    done = true;
+    dialog.removeEventListener('animationend', onEnd);
+    dialog.close();
+  };
+  dialog.addEventListener('animationend', onEnd);
+  setTimeout(finish, 600);   // in case animationend never fires (hidden tab etc.)
 }
 
 // Phone inspiration tap: the card gets the desktop focus treatment (lift, tilt,
