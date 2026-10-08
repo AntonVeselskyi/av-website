@@ -60,8 +60,8 @@ function openGameDetails(wrapper, inspire = false) {
     const dx = (from.left + from.width / 2) - (to.left + to.width / 2);
     const dy = (from.top + from.height / 2) - (to.top + to.height / 2);
     dialog.animate([
-      { transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})`, opacity: 0.6, filter: 'brightness(1.8)' },
-      { transform: 'none', opacity: 1, filter: 'none' },
+      { transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})` },
+      { transform: 'none' },
     ], { duration: 560, easing: 'cubic-bezier(0.2, 0.9, 0.2, 1)' });
   }
 }
