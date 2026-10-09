@@ -3,7 +3,8 @@
 // Optional: GAMELIST_URL and PLAYWRIGHT_CHANNEL (e.g. msedge).
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
-const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
+const shows = process.env.LIST_KIND === 'shows';
+const url = process.env.GAMELIST_URL || `http://localhost:8765/${shows ? 'showlist' : 'gamelist'}.html`;
 
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
@@ -15,13 +16,13 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       // Test actual local game data without depending on the enrichment service.
-      await page.route('**/gameTierListProvider', r => r.fulfill({ json: { ok: true, data: [] } }));
+      await page.route(shows ? '**/showTierProvider' : '**/gameTierListProvider', r => r.fulfill({ json: { ok: true, data: [] } }));
       await page.route('https://fonts.googleapis.com/**', r => r.abort());
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('body.content-ready');
       if (phone) {
         const initialCount = await page.locator('#main-list .game-card-wrapper').count();
-        for (const [group, value, parameter] of [['category', 'indie', 'cat'], ['decade', '2010s', 'decade'], ['platform', 'pc', 'platform'], ['vibe', 'Epic', 'vibe'], ['ttb', 'Short', 'ttb']]) {
+        for (const [group, value, parameter] of (shows ? [['category', 'anime', 'cat']] : [['category', 'indie', 'cat'], ['decade', '2010s', 'decade'], ['platform', 'pc', 'platform'], ['vibe', 'Epic', 'vibe'], ['ttb', 'Short', 'ttb']])) {
           const button = page.locator(`[data-group="${group}"][data-value="${value}"]`);
           await button.tap();
           assert.ok(await button.evaluate(e => e.classList.contains('active')), `${group} selects`);
@@ -41,7 +42,7 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
         });
         assert.equal(columns, width < 380 ? 3 : 4, 'Tierlist card density');
       }
-      for (const view of ['grid', 'pillar', 'inspiration']) {
+      for (const view of (shows ? ['grid', 'pillar'] : ['grid', 'pillar', 'inspiration'])) {
         await page.locator(`[data-view="${view}"]`).click();
         await page.waitForTimeout(450);
         assert.ok(await page.locator('#main-list .game-card-wrapper').count(), `${view} has cards`);
@@ -49,12 +50,14 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width, `${view} fits ${width}px`);
         await page.locator('#main-list .game-card-wrapper').first().click();
         await page.waitForSelector('#game-details-dialog[open]');
+        await page.waitForTimeout(650);
         assert.ok(await page.locator('#game-details-dialog .game-title-overlay').textContent());
         assert.ok(await page.locator('#game-details-dialog').evaluate(e => {
           const r = e.getBoundingClientRect();
           return Math.abs((r.left + r.right) / 2 - innerWidth / 2) < 1 && Math.abs((r.top + r.bottom) / 2 - innerHeight / 2) < 1 && r.left >= 12 && r.right <= innerWidth - 12 && e.scrollWidth === e.clientWidth;
         }), 'Detail panel is centered and content fits');
         await page.keyboard.press('Escape');
+        await page.waitForSelector('#game-details-dialog[open]', { state: 'hidden' });
         assert.equal(await page.locator('#game-details-dialog[open]').count(), 0);
         await page.evaluate(() => { window.firstCard = document.querySelector('#main-list .game-card-wrapper'); });
         await page.setViewportSize({ width, height: 744 });
@@ -65,7 +68,7 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
       if (phone) {
         await page.locator('[data-view="pillar"]').click();
         const count = await page.locator('#main-list .pillar-mini-card').count();
-        for (const axis of ['score', 'played', 'released', 'metacritic', 'platform']) {
+        for (const axis of (shows ? ['score', 'watched', 'released', 'network', 'seasons'] : ['score', 'played', 'released', 'metacritic', 'platform'])) {
           await page.locator(`[data-group="pillarAxis"][data-value="${axis}"]`).click();
           await page.waitForTimeout(900);
           assert.ok(await page.evaluate(() => {
@@ -91,7 +94,7 @@ const url = process.env.GAMELIST_URL || 'http://localhost:8765/gamelist.html';
         await page.waitForTimeout(250);
         assert.equal(await page.locator('#main-list .pillar-mini-card').count(), 0);
         assert.ok(await page.evaluate(() => Number.isFinite(parseFloat(document.querySelector('#main-list').style.height))));
-      } else {
+      } else if (!shows) {
         // Pause drifting in this test so the pointer can land deterministically.
         await page.addStyleTag({ content: 'html { scroll-behavior:auto !important; } .inspiration-tile,.inspiration-tile-card { animation:none !important; }' });
         const card = page.locator('.inspiration-tile .game-card-wrapper').first();

@@ -2,20 +2,22 @@ let currentRenderId = 0;
 // ========== DOM ELEMENTS ==========
 const gameContainer = document.getElementById('main-list');
 
-// Keep game-specific phone changes out of the other lists sharing this engine.
+// Share touch layouts between games and shows; other lists keep their existing behavior.
 const isGameList = document.body.classList.contains('game-list-page');
+const isShowList = document.body.classList.contains('show-list-page');
+const hasTouchLayout = isGameList || isShowList;
 const phoneMedia = window.matchMedia('(max-width: 759px)');
 const finePointerMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
-const gamePhone = () => isGameList && phoneMedia.matches;
+const listPhone = () => hasTouchLayout && phoneMedia.matches;
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-function openGameDetails(wrapper, inspire = false) {
+function openListDetails(wrapper, inspire = false) {
   let dialog = document.getElementById('game-details-dialog');
   if (!dialog) {
     dialog = document.createElement('dialog');
     dialog.id = 'game-details-dialog';
-    dialog.setAttribute('aria-label', 'Game details');
+    dialog.setAttribute('aria-label', isShowList ? 'Show details' : 'Game details');
     document.body.appendChild(dialog);
     dialog.addEventListener('click', e => { if (e.target === dialog) closeGameDetails(dialog); });
     dialog.addEventListener('cancel', e => { e.preventDefault(); closeGameDetails(dialog); });   // Esc / back
@@ -93,7 +95,7 @@ function inspireUnpack(wrapper) {
   if (!tile || tile.classList.contains('unpacking')) return;
   tile.closest('.inspiration-grid')?.classList.add('has-active');
   tile.classList.add('unpacking', 'magnetic-active');
-  setTimeout(() => openGameDetails(wrapper, true), reducedMotion.matches ? 0 : 560);
+  setTimeout(() => openListDetails(wrapper, true), reducedMotion.matches ? 0 : 560);
 }
 
 // ===== LOADER COUNTDOWN =====
@@ -212,14 +214,14 @@ function createGameCard(game)
   const wrapper = document.createElement('div');
   wrapper.className = 'game-card-wrapper';
   wrapper.dataset.key = gameKey(game);
-  if (gamePhone()) {
+  if (listPhone()) {
     wrapper.setAttribute('role', 'button');
     wrapper.tabIndex = 0;
     wrapper.setAttribute('aria-label', game.name + ' — details');
     wrapper.addEventListener('keydown', e => {
-      if (gamePhone() && e.target === wrapper && (e.key === 'Enter' || e.key === ' ')) {
+      if (listPhone() && e.target === wrapper && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
-        openGameDetails(wrapper);
+        openListDetails(wrapper);
       }
     });
   }
@@ -456,7 +458,7 @@ if (_yearKeys.includes(sortKey))
 
 function calcMaxCardsPerRow()
 {
-  if (gamePhone()) return Number(getComputedStyle(document.body).getPropertyValue('--tier-columns')) || 3;
+  if (listPhone()) return Number(getComputedStyle(document.body).getPropertyValue('--tier-columns')) || 3;
   // Probe container to get real width + gap
   const probeRow = document.createElement('div');
   probeRow.className = 'row';
@@ -524,7 +526,7 @@ function renderGamesAnimated(games)
   const thisRenderId = currentRenderId;
   const container = gameContainer;
 
-  if (gamePhone()) {
+  if (listPhone()) {
     if (globalRafId) cancelAnimationFrame(globalRafId);
     globalRafId = null;
     container.style.minHeight = '';
@@ -675,7 +677,7 @@ function renderGamesAnimated(games)
 
 function setupOverlaySides()
 {
-  if (gamePhone() || viewMode === 'pillar') return;
+  if (listPhone() || viewMode === 'pillar') return;
   const wrappers = Array.from(gameContainer.querySelectorAll('.game-card-wrapper'));
   // Inspiration mode scales the wrapper on hover, needs extra headroom.
   const isInspiration = document.body.classList.contains('inspiration-mode');
@@ -734,7 +736,7 @@ function renderInspirationView(games)
   const grid = document.createElement('div');
   grid.className = 'inspiration-grid';
 
-  if (gamePhone()) {
+  if (listPhone()) {
     // Normal document flow is stable across browser-bar and keyboard changes.
     games.forEach(game => {
       const tile = document.createElement('div');
@@ -1054,7 +1056,7 @@ function _updateMagnetic()
 
 window.addEventListener('mousemove', (e) =>
 {
-  if (!document.body.classList.contains('inspiration-mode') || gamePhone() || !finePointerMedia.matches) return;
+  if (!document.body.classList.contains('inspiration-mode') || listPhone() || !finePointerMedia.matches) return;
   _lastMouseEvt = e;
   if (!_magneticRaf) _magneticRaf = requestAnimationFrame(_updateMagnetic);
 }, { passive: true });
@@ -1080,7 +1082,7 @@ window.addEventListener('resize', () =>
 {
   if (window.innerWidth === _layoutWidth) return;
   _layoutWidth = window.innerWidth;
-  const needsRelayout = isGameList || document.body.classList.contains('inspiration-mode')
+  const needsRelayout = hasTouchLayout || document.body.classList.contains('inspiration-mode')
     || (typeof viewMode !== 'undefined' && viewMode === 'pillar');
   clearTimeout(_inspirationResizeTimer);
   _inspirationResizeTimer = setTimeout(() =>
@@ -1361,7 +1363,7 @@ function setupTabs()
 
       if (group === 'category')
       {
-        if (value === 'all' || (isGameList && filterCategory.includes(value)))
+        if (value === 'all' || (hasTouchLayout && filterCategory.includes(value)))
         {
           filterCategory = [];
         }
@@ -1518,7 +1520,7 @@ function setupTabs()
 function updatePillarInspect(game, isHovering, mouseX = 0)
 {
   const panel = document.getElementById('pillar-inspect-panel');
-  if (!panel || gamePhone()) return;
+  if (!panel || listPhone()) return;
 
   if (!isHovering)
   {
@@ -1668,7 +1670,7 @@ function renderPillarView(games)
   // On phones the axes flip: values run top→bottom (vertical scroll) and each
   // stack grows left→right, so the dense value-axis labels never overlap.
   const phone = window.innerWidth < 760;
-  const P_LABEL = gamePhone() && activePillarAxis === 'platform' ? 88 : 44, P_GAP = 16, P_CARDW = gamePhone() ? 44 : 34, P_TOP = 14;
+  const P_LABEL = listPhone() && ['platform', 'network'].includes(activePillarAxis) ? 88 : 44, P_GAP = 16, P_CARDW = listPhone() ? 44 : 34, P_TOP = 14;
   const P_CARDH = Math.round(P_CARDW * 1.5);
   const P_ROWH  = P_CARDH + P_GAP;
   const P_AVAIL = window.innerWidth - P_LABEL - 12;  // usable width for a row of cards
@@ -1682,7 +1684,7 @@ function renderPillarView(games)
   let phoneHeight = P_TOP;
   presentValues.forEach(value => {
     phoneRowTops.push(phoneHeight);
-    phoneHeight += (gamePhone() ? Math.ceil(valCounts[value] / phoneColumns) : 1) * P_ROWH;
+    phoneHeight += (listPhone() ? Math.ceil(valCounts[value] / phoneColumns) : 1) * P_ROWH;
   });
   if (phone) {
     container.classList.add('pillar-phone');
@@ -1754,8 +1756,8 @@ function renderPillarView(games)
 
     card.style.position = 'absolute';
     if (phone) {
-      card.style.left = `${P_LABEL + (gamePhone() ? (stacks[val] % phoneColumns) * (P_CARDW + 4) : stacks[val] * phoneStep(valCounts[val]))}px`;
-      card.style.top = `${phoneRowTops[valIndex] + (gamePhone() ? Math.floor(stacks[val] / phoneColumns) * P_ROWH : 0)}px`;
+      card.style.left = `${P_LABEL + (listPhone() ? (stacks[val] % phoneColumns) * (P_CARDW + 4) : stacks[val] * phoneStep(valCounts[val]))}px`;
+      card.style.top = `${phoneRowTops[valIndex] + (listPhone() ? Math.floor(stacks[val] / phoneColumns) * P_ROWH : 0)}px`;
       card.style.bottom = 'auto';
       card.style.width = `${P_CARDW}px`;
       card.style.zIndex = 1000 + (valIndex * 100) + stacks[val];
@@ -1769,7 +1771,7 @@ function renderPillarView(games)
       card.style.transform = 'translateX(-50%) translateZ(0)';
     }
 
-    if ((isNew || isRevived) && !gamePhone()) {
+    if ((isNew || isRevived) && !listPhone()) {
       card.classList.remove('pillar-animate-in');
       card.style.animationDelay = '0s';
       card.style.opacity = '1';
@@ -1799,7 +1801,7 @@ function renderPillarView(games)
   // ============================================================
   // Queues preserve duplicate IDs while reusing every matching card once.
   existingCards.forEach(queue => queue.forEach(el => {
-      if (gamePhone()) { el.remove(); return; }
+      if (listPhone()) { el.remove(); return; }
       if (thisRenderId !== currentRenderId) return;
       if (el.classList.contains('pillar-dissolve')) return;
       if (el._removeTimer) clearTimeout(el._removeTimer);
@@ -1820,7 +1822,7 @@ function renderPillarView(games)
 
   const ruler = document.createElement('div');
   ruler.className = 'pillar-ruler';
-  if (gamePhone()) ruler.style.width = P_LABEL + 'px';
+  if (listPhone()) ruler.style.width = P_LABEL + 'px';
 
   // Desktop year axes are dense enough that 4-digit labels collide, so show
   // just the last two digits there ('03' for 2003). The phone ruler has room.
@@ -1947,13 +1949,13 @@ function setupAppPolish()
   });
 
   document.addEventListener('click', e => {
-    if (!gamePhone() || e.target.closest('dialog')) return;
+    if (!listPhone() || e.target.closest('dialog')) return;
     const wrapper = e.target.closest('#main-list .game-card-wrapper');
     if (!wrapper) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     if (wrapper.closest('.inspiration-tile')) inspireUnpack(wrapper);
-    else openGameDetails(wrapper);
+    else openListDetails(wrapper);
   }, true);
 
   // --- mobile: tap a card to reveal its overlays, tap again to open the link ---

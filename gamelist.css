@@ -1664,52 +1664,52 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
   z-index: 40;              /* above sibling cards, below hover overlays (100000) */
 }
 
-/* Phone layout is scoped to gamelist; desktop and the other lists retain their styles. */
+/* Phone layout is shared by games and shows; desktop retains its existing styles. */
 @media (max-width: 759px) {
-  body.game-list-page { --tier-columns: 3; --cardW: min(169px, calc((100vw - 34px) / 2)); }
-  body.game-list-page:not(.inspiration-mode):not(.pillar-view-active) { --cardW: calc((100vw - 40px) / 3); }
-  .game-list-page .tier-row .row, .game-list-page .year-group-cards { gap: 8px; }
-  .game-list-page .year-label { font-size: 11px; letter-spacing: 1px; }
-  .game-list-page .view-toggles { gap: 6px; padding: 10px 8px; }
-  .game-list-page .view-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 3px; font-size: 11px; min-height: 44px; }
-  .game-list-page .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px; align-items: center; justify-content: center; }
-  .game-list-page .tab-buttons .secret-btn { font-size: 14px; letter-spacing: 1.5px; padding: 11px 13px; min-height: 46px; box-sizing: border-box; display: inline-flex; align-items: center; }
-  .game-list-page .sort-label { font-size: 14px; letter-spacing: 1.5px; padding: 4px 0; flex-basis: 100%; }
-  .game-list-page .search-input { font-size: 16px; width: min(220px, 65%); }
-  .game-list-page #result-count { font-size: 12px; letter-spacing: 1px; margin-left: 0; }
-  .game-list-page:not(.pillar-view-active) .tab-row-columns,
-  .game-list-page.pillar-view-active .tab-row-sort { display: none; }
-  .game-list-page #main-list { padding-bottom: 80px; }
-  .game-list-page .tier-row { display: block; padding: 0 12px; box-sizing: border-box; }
-  .game-list-page .tier-label { position: static !important; width: 100%; height: auto; padding: 8px 0; margin: 16px 0 12px; font-size: 28px !important; }
-  .game-list-page .row { min-width: 0; }
-  .game-list-page .game-card { box-sizing: border-box; }
-  .game-list-page .game-card-wrapper { will-change: auto; }
-  .game-list-page #main-list .game-card-wrapper > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: none; }
-  .game-list-page #main-list .game-card-wrapper:focus-visible { outline: 3px solid #9660be; outline-offset: 3px; }
-  .game-list-page .inspiration-subtitle { font-size: 28px; padding: 0 16px; margin: 28px 0; }
-  .game-list-page .inspiration-grid { display: grid; grid-template-columns: repeat(2, var(--cardW)); justify-content: center; gap: 56px 10px; padding: 8px 12px 40px; box-sizing: border-box; }
-  .game-list-page .inspiration-tile { position: relative; width: auto; margin: 0; animation: none; filter: none; }
-  .game-list-page .inspiration-tile.unpacking { z-index: 100; }
-  .game-list-page .inspiration-tile-card { animation: none; }
-  .game-list-page .inspiration-tile-card::after { display: none; }   /* no per-tile cloud on phone */
+  body:is(.game-list-page, .show-list-page) { --tier-columns: 3; --cardW: min(169px, calc((100vw - 34px) / 2)); }
+  body:is(.game-list-page, .show-list-page):not(.inspiration-mode):not(.pillar-view-active) { --cardW: calc((100vw - 40px) / 3); }
+  :is(.game-list-page, .show-list-page) .tier-row .row, :is(.game-list-page, .show-list-page) .year-group-cards { gap: 8px; }
+  :is(.game-list-page, .show-list-page) .year-label { font-size: 11px; letter-spacing: 1px; }
+  :is(.game-list-page, .show-list-page) .view-toggles { gap: 6px; padding: 10px 8px; }
+  :is(.game-list-page, .show-list-page) .view-btn { flex: 1; min-width: 0; margin: 0; padding: 10px 3px; font-size: 11px; min-height: 44px; }
+  :is(.game-list-page, .show-list-page) .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px; align-items: center; justify-content: center; }
+  :is(.game-list-page, .show-list-page) .tab-buttons .secret-btn { font-size: 14px; letter-spacing: 1.5px; padding: 11px 13px; min-height: 46px; box-sizing: border-box; display: inline-flex; align-items: center; }
+  :is(.game-list-page, .show-list-page) .sort-label { font-size: 14px; letter-spacing: 1.5px; padding: 4px 0; flex-basis: 100%; }
+  :is(.game-list-page, .show-list-page) .search-input { font-size: 16px; width: min(220px, 65%); }
+  :is(.game-list-page, .show-list-page) #result-count { font-size: 12px; letter-spacing: 1px; margin-left: 0; }
+  :is(.game-list-page, .show-list-page):not(.pillar-view-active) .tab-row-columns,
+  :is(.game-list-page, .show-list-page).pillar-view-active .tab-row-sort { display: none; }
+  :is(.game-list-page, .show-list-page) #main-list { padding-bottom: 80px; }
+  :is(.game-list-page, .show-list-page) .tier-row { display: block; padding: 0 12px; box-sizing: border-box; }
+  :is(.game-list-page, .show-list-page) .tier-label { position: static !important; width: 100%; height: auto; padding: 8px 0; margin: 16px 0 12px; font-size: 28px !important; }
+  :is(.game-list-page, .show-list-page) .row { min-width: 0; }
+  :is(.game-list-page, .show-list-page) .game-card { box-sizing: border-box; }
+  :is(.game-list-page, .show-list-page) .game-card-wrapper { will-change: auto; }
+  :is(.game-list-page, .show-list-page) #main-list .game-card-wrapper > :is(.game-title-overlay, .game-exp-overlay, .game-details-overlay) { display: none; }
+  :is(.game-list-page, .show-list-page) #main-list .game-card-wrapper:focus-visible { outline: 3px solid #9660be; outline-offset: 3px; }
+  :is(.game-list-page, .show-list-page) .inspiration-subtitle { font-size: 28px; padding: 0 16px; margin: 28px 0; }
+  :is(.game-list-page, .show-list-page) .inspiration-grid { display: grid; grid-template-columns: repeat(2, var(--cardW)); justify-content: center; gap: 56px 10px; padding: 8px 12px 40px; box-sizing: border-box; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile { position: relative; width: auto; margin: 0; animation: none; filter: none; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile.unpacking { z-index: 100; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile-card { animation: none; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile-card::after { display: none; }   /* no per-tile cloud on phone */
   /* Light layers are wider than the card: only render them while unpacking, and
      clip sideways so they never widen the phone layout viewport. */
-  .game-list-page .inspiration-grid { overflow-x: clip; overflow-clip-margin: 0; }
-  .game-list-page .inspiration-tile:not(.unpacking) :is(.light-beam, .light-dust, .light-flare) { display: none; }
-  .game-list-page .inspiration-tile:not(.unpacking) .game-card-wrapper { transform: none !important; transition: none; }
-  .game-list-page .inspiration-tile.unpacking .game-card-wrapper { animation: inspire-lift .56s cubic-bezier(.2,.8,.2,1) forwards; }
-  .game-list-page .inspiration-tile.unpacking .light-flare { animation: flare-sweep .56s ease-out forwards; }
-  .game-list-page .inspiration-tile .light-beam { -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 100%); mask-image: radial-gradient(closest-side, #000 30%, transparent 100%); }
+  :is(.game-list-page, .show-list-page) .inspiration-grid { overflow-x: clip; overflow-clip-margin: 0; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile:not(.unpacking) :is(.light-beam, .light-dust, .light-flare) { display: none; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile:not(.unpacking) .game-card-wrapper { transform: none !important; transition: none; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile.unpacking .game-card-wrapper { animation: inspire-lift .56s cubic-bezier(.2,.8,.2,1) forwards; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile.unpacking .light-flare { animation: flare-sweep .56s ease-out forwards; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile .light-beam { -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 100%); mask-image: radial-gradient(closest-side, #000 30%, transparent 100%); }
   .loader-number { font-size: 28vw; letter-spacing: 6px; margin-bottom: 4rem; }
   .loader-dots { font-size: 14vw; gap: 22px; }
-  .game-list-page .cloud-layer { animation: none; will-change: auto; }
-  .game-list-page .pillar-view.pillar-phone .pillar-ruler span { max-width: 80px; overflow-wrap: anywhere; font-size: 11px; }
-  .game-list-page .pillar-mini-card:hover { transform: none !important; }
-  .game-list-page #pillar-inspect-panel { display: none; }
-  .game-list-page .scroll-top-btn { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: 44px; height: 44px; }
+  :is(.game-list-page, .show-list-page) .cloud-layer { animation: none; will-change: auto; }
+  :is(.game-list-page, .show-list-page) .pillar-view.pillar-phone .pillar-ruler span { max-width: 80px; overflow-wrap: anywhere; font-size: 11px; }
+  :is(.game-list-page, .show-list-page) .pillar-mini-card:hover { transform: none !important; }
+  :is(.game-list-page, .show-list-page) #pillar-inspect-panel { display: none; }
+  :is(.game-list-page, .show-list-page) .scroll-top-btn { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: 44px; height: 44px; }
 }
-.game-list-page.game-details-open { overflow: hidden; }
+:is(.game-list-page, .show-list-page).game-details-open { overflow: hidden; }
 /* Phone tap-to-open card details: same type and colours as the desktop hover
    overlays (Major Mono Display labels, Consolas purple values, lilac comment). */
 #game-details-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, calc(100% - 24px)); max-width: calc(100% - 24px); max-height: 85vh; max-height: 85dvh; padding: 16px; box-sizing: border-box; border: 3px solid white; background: black; color: white; font-family: 'Major Mono Display', monospace; overscroll-behavior: contain; overflow-x: hidden; }
@@ -1834,9 +1834,9 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
 #game-details-dialog.inspire .mobile-game-details > .game-details-overlay { transform-origin: top;  animation: unpack-y .45s .65s cubic-bezier(.2,.8,.2,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .game-list-page .cloud-layer, .game-list-page .inspiration-tile, .game-list-page .inspiration-tile-card { animation: none !important; }
-  .game-list-page .inspiration-tile .game-card-wrapper,
-  .game-list-page .inspiration-tile .light-flare,
+  :is(.game-list-page, .show-list-page) .cloud-layer, :is(.game-list-page, .show-list-page) .inspiration-tile, :is(.game-list-page, .show-list-page) .inspiration-tile-card { animation: none !important; }
+  :is(.game-list-page, .show-list-page) .inspiration-tile .game-card-wrapper,
+  :is(.game-list-page, .show-list-page) .inspiration-tile .light-flare,
   #game-details-dialog.inspire,
   #game-details-dialog.inspire *,
   #game-details-dialog.inspire .mobile-game-details > * { animation: none !important; }
@@ -1844,12 +1844,12 @@ body:not(.pillar-view-active):not(.inspiration-mode) .tier-label {
 }
 
 @media (min-width: 380px) and (max-width: 759px) {
-  body.game-list-page { --tier-columns: 4; }
-  body.game-list-page:not(.inspiration-mode):not(.pillar-view-active) { --cardW: calc((100vw - 48px) / 4); }
+  body:is(.game-list-page, .show-list-page) { --tier-columns: 4; }
+  body:is(.game-list-page, .show-list-page):not(.inspiration-mode):not(.pillar-view-active) { --cardW: calc((100vw - 48px) / 4); }
 }
 /* Touch browsers keep :hover after a tap. Only selection should look selected. */
 @media (hover: none) {
-  .game-list-page .tab-buttons .secret-btn:not(.active):hover {
+  :is(.game-list-page, .show-list-page) .tab-buttons .secret-btn:not(.active):hover {
     background-color: transparent;
     color: black;
     border-color: black;
