@@ -8,44 +8,109 @@ const phoneMedia = window.matchMedia('(max-width: 759px)');
 const finePointerMedia = window.matchMedia('(hover: hover) and (pointer: fine)');
 const gamePhone = () => isGameList && phoneMedia.matches;
 
-function openGameDetails(wrapper) {
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function openGameDetails(wrapper, inspire = false) {
   let dialog = document.getElementById('game-details-dialog');
   if (!dialog) {
     dialog = document.createElement('dialog');
     dialog.id = 'game-details-dialog';
     dialog.setAttribute('aria-label', 'Game details');
     document.body.appendChild(dialog);
-    dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
-    dialog.addEventListener('close', () => document.body.classList.remove('game-details-open'));
+    dialog.addEventListener('click', e => { if (e.target === dialog) closeGameDetails(dialog); });
+    dialog.addEventListener('cancel', e => { e.preventDefault(); closeGameDetails(dialog); });   // Esc / back
+    dialog.addEventListener('close', () => {
+      dialog.classList.remove('closing');
+      document.body.classList.remove('game-details-open');
+      // Let a lit-up inspiration card settle back into the grid.
+      document.querySelectorAll('.inspiration-tile.unpacking')
+        .forEach(t => t.classList.remove('unpacking', 'magnetic-active'));
+      document.querySelector('.inspiration-grid')?.classList.remove('has-active');
+    });
   }
+  dialog.classList.toggle('inspire', inspire);
   const close = document.createElement('button');
   close.className = 'details-close';
   close.textContent = 'Close';
-  close.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => closeGameDetails(dialog));
   const content = document.createElement('div');
   content.className = 'mobile-game-details';
   for (const selector of ['.game-title-overlay', '.game-card', '.game-exp-overlay', '.game-details-overlay']) {
     const source = wrapper.querySelector(selector);
-    if (source) content.appendChild(source.cloneNode(true));
+    if (!source) continue;
+    const node = source.cloneNode(true);
+    if (inspire && selector === '.game-card') {
+      // Re-create the desktop light stack around the poster inside the dialog.
+      const stage = document.createElement('div');
+      stage.className = 'inspire-stage';
+      stage.append(
+        Object.assign(document.createElement('div'), { className: 'light-beam' }),
+        node,
+        Object.assign(document.createElement('div'), { className: 'light-dust' }),
+        Object.assign(document.createElement('div'), { className: 'light-flare' }));
+      content.appendChild(stage);
+    }
+    else content.appendChild(node);
   }
   dialog.replaceChildren(close, content);
   document.body.classList.add('game-details-open');
   dialog.showModal();
+
+  if (inspire && !reducedMotion.matches) {
+    // Unfold out of the tapped card: start at its rect, grow to full size.
+    const from = wrapper.getBoundingClientRect(), to = dialog.getBoundingClientRect();
+    const dx = (from.left + from.width / 2) - (to.left + to.width / 2);
+    const dy = (from.top + from.height / 2) - (to.top + to.height / 2);
+    dialog.animate([
+      { transform: `translate(${dx}px, ${dy}px) scale(${from.width / to.width}, ${from.height / to.height})` },
+      { transform: 'none' },
+    ], { duration: 560, easing: 'cubic-bezier(0.2, 0.9, 0.2, 1)' });
+  }
+}
+
+// Regular details slide back down off the screen (the drop in reverse) before
+// the dialog actually closes. Inspiration details just close.
+function closeGameDetails(dialog) {
+  if (!dialog.open || dialog.classList.contains('closing')) return;
+  if (dialog.classList.contains('inspire') || reducedMotion.matches) { dialog.close(); return; }
+  dialog.classList.add('closing');
+  let done = false;
+  const onEnd = e => { if (e.target === dialog) finish(); };   // ignore children's animations
+  const finish = () => {
+    if (done) return;
+    done = true;
+    dialog.removeEventListener('animationend', onEnd);
+    dialog.close();
+  };
+  dialog.addEventListener('animationend', onEnd);
+  setTimeout(finish, 600);   // in case animationend never fires (hidden tab etc.)
+}
+
+// Phone inspiration tap: the card gets the desktop focus treatment (lift, tilt,
+// warm glow, beam, dust, flare; the rest blur back), then the details unpack.
+function inspireUnpack(wrapper) {
+  const tile = wrapper.closest('.inspiration-tile');
+  if (!tile || tile.classList.contains('unpacking')) return;
+  tile.closest('.inspiration-grid')?.classList.add('has-active');
+  tile.classList.add('unpacking', 'magnetic-active');
+  setTimeout(() => openGameDetails(wrapper, true), reducedMotion.matches ? 0 : 560);
 }
 
 // ===== LOADER COUNTDOWN =====
-// Roman-ish glyphs from 10 down to 0
+// Roman numerals from 10 down to 0. Plain letters rather than the Unicode
+// Ⅹ/Ⅸ glyphs: no loaded font has those, so each device drew them in its own
+// fallback font. As letters they render in Cinzel everywhere.
 const LOADER_SYMBOLS = {
-  10: 'Ⅹ',
-  9:  'Ⅸ',
-  8:  'Ⅷ',
-  7:  'Ⅶ',
-  6:  'Ⅵ',
-  5:  'Ⅴ',
-  4:  'Ⅳ',
-  3:  'Ⅲ',
-  2:  'Ⅱ',
-  1:  'Ⅰ',
+  10: 'X',
+  9:  'IX',
+  8:  'VIII',
+  7:  'VII',
+  6:  'VI',
+  5:  'V',
+  4:  'IV',
+  3:  'III',
+  2:  'II',
+  1:  'I',
   0:  '∞'   // you can swap for some funky glyph if you want
 };
 
@@ -674,7 +739,15 @@ function renderInspirationView(games)
     games.forEach(game => {
       const tile = document.createElement('div');
       tile.className = 'inspiration-tile';
-      tile.appendChild(createGameCard(game));
+      // Same light stack as desktop (beam → card → dust → flare); a tap lights
+      // it up and unpacks the details (see inspireUnpack).
+      const inner = document.createElement('div');
+      inner.className = 'inspiration-tile-card';
+      inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-beam' }));
+      inner.appendChild(createGameCard(game));
+      inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-dust' }));
+      inner.appendChild(Object.assign(document.createElement('div'), { className: 'light-flare' }));
+      tile.appendChild(inner);
       grid.appendChild(tile);
     });
     gameContainer.style.minHeight = '';
@@ -1749,9 +1822,20 @@ function renderPillarView(games)
   ruler.className = 'pillar-ruler';
   if (gamePhone()) ruler.style.width = P_LABEL + 'px';
 
+  // Desktop year axes are dense enough that 4-digit labels collide, so show
+  // just the last two digits there ('03' for 2003). The phone ruler has room.
+  const shortYears = !phone && (LIST_CONFIG.yearSortKeys ?? ['played', 'released']).includes(activePillarAxis);
+  // Narrow windows with many years: shrink the font so each label (~1.5em
+  // wide in Major Mono) keeps a few px clear of its neighbours.
+  const yearFontPx = shortYears && colCount > 1
+    ? Math.max(10, Math.min(18, ((spacing / 100) * container.clientWidth - 4) / 1.5))
+    : null;
+
   presentValues.forEach((tick, i) => {
     const marker = document.createElement('span');
-    marker.textContent = tick;
+    marker.textContent = shortYears && /^\d{4}$/.test(String(tick)) ? String(tick).slice(-2) : tick;
+    if (marker.textContent !== String(tick)) marker.title = tick;
+    if (yearFontPx) marker.style.fontSize = `${yearFontPx}px`;
     marker.style.position = 'absolute';
 
     if (phone) {
@@ -1771,8 +1855,12 @@ function renderPillarView(games)
     // ▼ SMART ALIGNMENT ▼
     // If the label is extremely close to the left edge (<10%), anchor it left.
     // If it's extremely close to the right edge (>90%), anchor it right.
-    // Otherwise, center it.
-    if (xPos < 10) {
+    // Otherwise, center it. Two-digit years fit inside the side padding, and
+    // nudging them would crowd their neighbours, so they always centre.
+    if (shortYears) {
+        marker.style.transform = 'translateX(-50%)';
+        marker.style.textAlign = 'center';
+    } else if (xPos < 10) {
         marker.style.transform = 'translateX(-15%)'; // Slight shift to keep first letter visible
         marker.style.textAlign = 'left';
     } else if (xPos > 90) {
@@ -1864,7 +1952,8 @@ function setupAppPolish()
     if (!wrapper) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    openGameDetails(wrapper);
+    if (wrapper.closest('.inspiration-tile')) inspireUnpack(wrapper);
+    else openGameDetails(wrapper);
   }, true);
 
   // --- mobile: tap a card to reveal its overlays, tap again to open the link ---
