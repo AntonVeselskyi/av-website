@@ -424,6 +424,58 @@
   .irl-entry .irl-photo figcaption a { color: var(--faint); }
   .irl-entry .irl-photo figcaption a:hover { color: var(--ink); }
 
+  .image-trigger {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+  }
+  .image-trigger:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
+  html.image-viewer-open { overflow: hidden; }
+  .image-viewer {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 72px 24px 24px;
+    border: 0;
+    background: rgba(12, 12, 12, .96);
+    color: white;
+  }
+  .image-viewer[open] { display: grid; place-items: center; }
+  .image-viewer::backdrop { background: rgba(0, 0, 0, .8); }
+  .image-viewer figure { max-width: 100%; text-align: center; }
+  .image-viewer img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 160px);
+    max-height: calc(100dvh - 160px);
+    width: auto;
+    height: auto;
+    margin: auto;
+    object-fit: contain;
+  }
+  .image-viewer figcaption { margin-top: 16px; font: 400 16px/1.4 var(--ui); }
+  .image-viewer-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    min-height: 44px;
+    padding: 8px 18px;
+    border: 1px solid #aaa;
+    background: transparent;
+    color: white;
+    font: 600 16px var(--ui);
+    cursor: pointer;
+  }
+  .image-viewer-close:focus-visible { outline: 2px solid white; outline-offset: 4px; }
+
   .film-entry .irl-photo { max-width: 780px; }
   .type-gallery {
     display: grid;
@@ -1138,32 +1190,32 @@
 <p class="location-tag">Cinema &middot; 2025</p>
 <p class="name">Sacrifice &middot; title lettering</p>
 <p class="seen">Romain Gavras &middot; Anya Taylor-Joy &middot; Chris Evans</p>
-<figure class="irl-photo"><a href="photos/sacrifice-title-hd.jpg" target="_blank" rel="noopener"><img src="photos/sacrifice-title-hd.jpg" width="1920" height="1080" loading="lazy" alt="Sacrifice title in tightly joined white capitals over a fire."></a><figcaption>Sacrifice</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/sacrifice-title-hd.jpg" width="1920" height="1080" loading="lazy" alt="Sacrifice title in tightly joined white capitals over a fire."></button><figcaption>Sacrifice</figcaption></figure>
 <div class="irl-copy"><p>That A looks like it borrowed a hat from the T. Huge top bars, tiny counters, and letters packed shoulder to shoulder give <em>Sacrifice</em> its wonderfully awkward silhouette. Watch the same A squeeze into <strong>GAVRAS</strong>, <strong>ANYA</strong>, and <strong>SALMA</strong>.</p><p>Gavras co-wrote the film with <em>Succession</em> writer Will Arbery. Its mythology mixes Greek legends, Joan of Arc, and&mdash;according to Gavras&mdash;<em>The Lord of the Rings</em>. Anya Taylor-Joy plays Joan, who has rather drastic plans for Chris Evans and a volcano.</p><p><strong>Typeface:</strong> not yet identified. The name cards below show its M, G, J, K, U, and X, too.</p></div>
-<div class="type-gallery"><figure class="irl-photo"><a href="photos/sacrifice-director-credit.jpg" target="_blank" rel="noopener"><img src="photos/sacrifice-director-credit.jpg" width="1920" height="1080" loading="lazy" alt="Romain Gavras in the Sacrifice campaign lettering."></a><figcaption>Romain Gavras</figcaption></figure>
-<figure class="irl-photo"><a href="photos/sacrifice-anya-credit.jpg" target="_blank" rel="noopener"><img src="photos/sacrifice-anya-credit.jpg" width="1920" height="1080" loading="lazy" alt="Anya Taylor-Joy in the Sacrifice campaign lettering."></a><figcaption>Anya Taylor-Joy</figcaption></figure>
-<figure class="irl-photo"><a href="photos/sacrifice-salma-credit.jpg" target="_blank" rel="noopener"><img src="photos/sacrifice-salma-credit.jpg" width="1920" height="1080" loading="lazy" alt="Salma Hayek Pinault in the Sacrifice campaign lettering."></a><figcaption>Salma Hayek Pinault</figcaption></figure>
-<figure class="irl-photo"><a href="photos/sacrifice-charli-credit.jpg" target="_blank" rel="noopener"><img src="photos/sacrifice-charli-credit.jpg" width="1920" height="1080" loading="lazy" alt="Charli XCX in the Sacrifice campaign lettering."></a><figcaption>Charli XCX</figcaption></figure>
-<figure class="irl-photo"><a href="photos/sacrifice-sam-credit.jpg" target="_blank" rel="noopener"><img src="photos/sacrifice-sam-credit.jpg" width="1920" height="1080" loading="lazy" alt="Sam Richardson in the Sacrifice campaign lettering."></a><figcaption>Sam Richardson</figcaption></figure>
+<div class="type-gallery"><figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/sacrifice-director-credit.jpg" width="1920" height="1080" loading="lazy" alt="Romain Gavras in the Sacrifice campaign lettering."></button><figcaption>Romain Gavras</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/sacrifice-anya-credit.jpg" width="1920" height="1080" loading="lazy" alt="Anya Taylor-Joy in the Sacrifice campaign lettering."></button><figcaption>Anya Taylor-Joy</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/sacrifice-salma-credit.jpg" width="1920" height="1080" loading="lazy" alt="Salma Hayek Pinault in the Sacrifice campaign lettering."></button><figcaption>Salma Hayek Pinault</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/sacrifice-charli-credit.jpg" width="1920" height="1080" loading="lazy" alt="Charli XCX in the Sacrifice campaign lettering."></button><figcaption>Charli XCX</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/sacrifice-sam-credit.jpg" width="1920" height="1080" loading="lazy" alt="Sam Richardson in the Sacrifice campaign lettering."></button><figcaption>Sam Richardson</figcaption></figure>
 </div><ul class="irl-links"><li><a href="https://www.youtube.com/watch?v=_nWaZl4sxXY">Trailer &amp; lettering</a> &middot; <a href="https://dcmstories.com/en/movie/sacrifice/">DCM</a> &middot; <a href="https://www.netflix.com/tudum/articles/sacrifice-movie-release-date-plot-photos">Gavras on the film&rsquo;s inspirations</a></li></ul>
 </section>
 <section class="specimen irl-entry film-entry eva-entry" id="font-evangelion">
 <p class="location-tag">Anime &amp; cinema &middot; 1995&ndash;2021</p>
 <p class="name">Evangelion &middot; Matisse EB, Helvetica &amp; Times</p>
 <p class="seen">Neon Genesis Evangelion &middot; The End of Evangelion &middot; Rebuild</p>
-<figure class="irl-photo"><a href="photos/evangelion-111-english.jpg" target="_blank" rel="noopener"><img src="photos/evangelion-111-english.jpg" width="1920" height="1080" loading="lazy" alt="Evangelion 1.11 English title with a red offset N and You are (not) alone."></a><figcaption>You are (not) alone.</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-111-english.jpg" width="1920" height="1080" loading="lazy" alt="Evangelion 1.11 English title with a red offset N and You are (not) alone."></button><figcaption>You are (not) alone.</figcaption></figure>
 <div class="irl-copy"><p><strong>Matisse EB</strong> is the famous Japanese &ldquo;Eva font.&rdquo; Hideaki Anno picked it from Fontworks&rsquo; catalogue; the extra-bold weight had only arrived in 1994, a year before the show. A printing typeface became the voice of an apocalypse.</p><p>The English cards are a small cast of their own: <strong>Helvetica</strong> for many episode titles, <strong>Times</strong> for selected ones, and <strong>Century/Schoolbook-like lettering</strong> for the TV series name. Designer Peiran Tan identifies that last face as Latin glyphs bundled with Japanese fonts; its exact cut remains uncertain.</p><p>Same layout, different moods: the blunt &ldquo;ANGEL ATTACK,&rdquo; the quieter &ldquo;Rei II,&rdquo; and the almost polite &ldquo;Take care of yourself.&rdquo;</p></div>
-<div class="type-gallery"><figure class="irl-photo"><a href="photos/evangelion-tv-01-english.png" target="_blank" rel="noopener"><img src="photos/evangelion-tv-01-english.png" width="473" height="319" loading="lazy" alt="Original English Evangelion title card: ANGEL ATTACK"></a><figcaption>Episode 1 &middot; ANGEL ATTACK</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-tv-06-english.png" target="_blank" rel="noopener"><img src="photos/evangelion-tv-06-english.png" width="473" height="319" loading="lazy" alt="Original English Evangelion title card: Rei II"></a><figcaption>Episode 6 &middot; Rei II</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-tv-26-english.png" target="_blank" rel="noopener"><img src="photos/evangelion-tv-26-english.png" width="473" height="319" loading="lazy" alt="Original English Evangelion title card: Take care of yourself."></a><figcaption>Episode 26 &middot; Take care of yourself.</figcaption></figure>
-</div><div class="irl-copy"><p><strong>1997, on the big screen.</strong> <em>The End of Evangelion</em> turns its English title into a towering serif stripe. <em>Death &amp; Rebirth</em> even makes the intermission dramatic: stretched Matisse EB, compressed Helvetica, and a countdown.</p></div><figure class="irl-photo"><a href="photos/evangelion-end-title.jpg" target="_blank" rel="noopener"><img src="photos/evangelion-end-title.jpg" width="1280" height="720" loading="lazy" alt="The End of Evangelion title in tall white serif capitals."></a><figcaption>The End of Evangelion</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-death-rebirth-intermission.jpg" target="_blank" rel="noopener"><img src="photos/evangelion-death-rebirth-intermission.jpg" width="1280" height="720" loading="lazy" alt="Death and Rebirth intermission lettering and countdown."></a><figcaption>Death &amp; Rebirth &middot; Intermission</figcaption></figure>
-<div class="irl-copy"><p><strong>Rebuild keeps the squeeze.</strong> Matisse Pro EB carries the display identity; Neue Helvetica handles much of the interface text. The offset N changes from red to orange to turquoise, while those little parentheses keep undermining the reassurance: you can <em>(not)</em> advance.</p></div><figure class="irl-photo"><a href="photos/evangelion-222-english.jpg" target="_blank" rel="noopener"><img src="photos/evangelion-222-english.jpg" width="1920" height="1080" loading="lazy" alt="Evangelion 2.22 English title with an orange N."></a><figcaption>You can (not) advance.</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-333-english.jpg" target="_blank" rel="noopener"><img src="photos/evangelion-333-english.jpg" width="1920" height="816" loading="lazy" alt="Evangelion 3.33 English title with a turquoise N."></a><figcaption>You can (not) redo.</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-english-interface.png" target="_blank" rel="noopener"><img src="photos/evangelion-english-interface.png" width="1236" height="695" loading="lazy" alt="Rebuild interface with English WARNING, MODE and MAGI labels."></a><figcaption>Neue Helvetica &middot; NERV has a lot to shout about</figcaption></figure>
-<div class="irl-copy"><p><strong>The Japanese original.</strong> The L-shaped episode cards leave a huge pocket of black space. Fontworks calls the TV version <strong>EVA-Matisse Classic</strong> and the Rebuild version <strong>EVA-Matisse Standard</strong>. Even a familiar character changed: compare the circled stroke in <span lang="ja">使</span> below.</p></div><figure class="irl-photo"><a href="photos/evangelion-episode-01.png" target="_blank" rel="noopener"><img src="photos/evangelion-episode-01.png" width="640" height="480" loading="lazy" alt="Japanese Angel Attack title arranged in an L."></a><figcaption>Matisse EB &middot; Angel Attack</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-matisse-glyphs.png" target="_blank" rel="noopener"><img src="photos/evangelion-matisse-glyphs.png" width="986" height="570" loading="lazy" alt="Older OCF and newer OpenType Matisse glyphs with a changed stroke circled."></a><figcaption>Matisse Plus-EB &rarr; Matisse Pro EB</figcaption></figure>
-<figure class="irl-photo"><a href="photos/evangelion-tv-rebuild-titles.jpg" target="_blank" rel="noopener"><img src="photos/evangelion-tv-rebuild-titles.jpg" width="860" height="274" loading="lazy" alt="Japanese TV and Rebuild titles showing different horizontal compression."></a><figcaption>Same family, different squeeze</figcaption></figure>
+<div class="type-gallery"><figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-tv-01-english.png" width="473" height="319" loading="lazy" alt="Original English Evangelion title card: ANGEL ATTACK"></button><figcaption>Episode 1 &middot; ANGEL ATTACK</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-tv-06-english.png" width="473" height="319" loading="lazy" alt="Original English Evangelion title card: Rei II"></button><figcaption>Episode 6 &middot; Rei II</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-tv-26-english.png" width="473" height="319" loading="lazy" alt="Original English Evangelion title card: Take care of yourself."></button><figcaption>Episode 26 &middot; Take care of yourself.</figcaption></figure>
+</div><div class="irl-copy"><p><strong>1997, on the big screen.</strong> <em>The End of Evangelion</em> turns its English title into a towering serif stripe. <em>Death &amp; Rebirth</em> even makes the intermission dramatic: stretched Matisse EB, compressed Helvetica, and a countdown.</p></div><figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-end-title.jpg" width="1280" height="720" loading="lazy" alt="The End of Evangelion title in tall white serif capitals."></button><figcaption>The End of Evangelion</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-death-rebirth-intermission.jpg" width="1280" height="720" loading="lazy" alt="Death and Rebirth intermission lettering and countdown."></button><figcaption>Death &amp; Rebirth &middot; Intermission</figcaption></figure>
+<div class="irl-copy"><p><strong>Rebuild keeps the squeeze.</strong> Matisse Pro EB carries the display identity; Neue Helvetica handles much of the interface text. The offset N changes from red to orange to turquoise, while those little parentheses keep undermining the reassurance: you can <em>(not)</em> advance.</p></div><figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-222-english.jpg" width="1920" height="1080" loading="lazy" alt="Evangelion 2.22 English title with an orange N."></button><figcaption>You can (not) advance.</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-333-english.jpg" width="1920" height="816" loading="lazy" alt="Evangelion 3.33 English title with a turquoise N."></button><figcaption>You can (not) redo.</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-english-interface.png" width="1236" height="695" loading="lazy" alt="Rebuild interface with English WARNING, MODE and MAGI labels."></button><figcaption>Neue Helvetica &middot; NERV has a lot to shout about</figcaption></figure>
+<div class="irl-copy"><p><strong>The Japanese original.</strong> The L-shaped episode cards leave a huge pocket of black space. Fontworks calls the TV version <strong>EVA-Matisse Classic</strong> and the Rebuild version <strong>EVA-Matisse Standard</strong>. Even a familiar character changed: compare the circled stroke in <span lang="ja">使</span> below.</p></div><figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-episode-01.png" width="640" height="480" loading="lazy" alt="Japanese Angel Attack title arranged in an L."></button><figcaption>Matisse EB &middot; Angel Attack</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-matisse-glyphs.png" width="986" height="570" loading="lazy" alt="Older OCF and newer OpenType Matisse glyphs with a changed stroke circled."></button><figcaption>Matisse Plus-EB &rarr; Matisse Pro EB</figcaption></figure>
+<figure class="irl-photo"><button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/evangelion-tv-rebuild-titles.jpg" width="860" height="274" loading="lazy" alt="Japanese TV and Rebuild titles showing different horizontal compression."></button><figcaption>Same family, different squeeze</figcaption></figure>
 <ul class="irl-links"><li><a href="https://fontworks.co.jp/column/394/">Fontworks: the story of Matisse EB</a> &middot; <a href="https://fontworks.co.jp/products/evamatisse/">Classic &amp; Standard</a></li><li><a href="https://peirantan.com/blog/neon-genesis-evangelion/">Peiran Tan: font identifications &amp; English frames</a></li><li><a href="https://gkids.com/films/end-of-evangelion/">The End of Evangelion</a> &middot; <a href="https://www.evangelion.jp/about_version_numbers.html">Rebuild versions</a></li></ul>
 <p class="seen">TV &copy; khara / Project Eva. &middot; 1997 films &copy; khara / EVA Production Committee. &middot; Rebuild &copy; khara. &middot; Glyph comparison &copy; Fontworks.</p>
 </section>
@@ -1176,7 +1228,7 @@
     <p class="fun-pangram">Bright vixens jump; dozy fowl quack.</p>
     <p class="seen">seen on — <a href="https://www.thebentway.ca">The Bentway</a> wayfinding, including the Bathurst Street signage</p>
     <figure class="irl-photo">
-      <img src="photos/bentway-bathurst-st.jpg" width="1600" height="2125" loading="lazy" alt="Looking up at the underside of the Gardiner Expressway overpass at Bathurst Street, with a black lowercase &ldquo;bathurst st&rdquo; sign in TBW Galeria mounted on a concrete beam, next to columns painted Bentway yellow.">
+      <button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/bentway-bathurst-st.jpg" width="1600" height="2125" loading="lazy" alt="Looking up at the underside of the Gardiner Expressway overpass at Bathurst Street, with a black lowercase &ldquo;bathurst st&rdquo; sign in TBW Galeria mounted on a concrete beam, next to columns painted Bentway yellow."></button>
       <figcaption>bathurst st. underpass &mdash; photographed on site</figcaption>
     </figure>
     <div class="irl-copy">
@@ -1200,7 +1252,7 @@
     <p class="fun-pangram">Waltz, bad nymph, for quick jigs vex 1234567890.</p>
     <p class="seen">seen on — every German vehicle registration plate since 2000</p>
     <figure class="irl-photo">
-      <img src="photos/fe-schrift-plate.jpg" width="1600" height="510" loading="lazy" alt="A Bavarian &ldquo;N&middot;Y 420&rdquo; German vehicle registration plate photographed at an angle, showing the black FE-Schrift lettering on white reflective plate stock with the blue EU/D band on the left.">
+      <button type="button" class="image-trigger" aria-haspopup="dialog" aria-controls="imageViewer"><img src="photos/fe-schrift-plate.jpg" width="1600" height="510" loading="lazy" alt="A Bavarian &ldquo;N&middot;Y 420&rdquo; German vehicle registration plate photographed at an angle, showing the black FE-Schrift lettering on white reflective plate stock with the blue EU/D band on the left."></button>
       <figcaption>N&middot;Y 420, Nuremberg &mdash; photo by Jochen64 / <a href="https://commons.wikimedia.org/wiki/File:German_licence_plate_N-Y_420.jpg">Wikimedia Commons</a>, CC BY-SA 4.0</figcaption>
     </figure>
     <div class="irl-copy">
@@ -1371,7 +1423,43 @@
 
 </main>
 
+<dialog class="image-viewer" id="imageViewer" aria-label="Image preview" aria-describedby="imageViewerCaption">
+  <button class="image-viewer-close" type="button" autofocus>Close &times;</button>
+  <figure>
+    <img id="imageViewerImage" alt="">
+    <figcaption id="imageViewerCaption"></figcaption>
+  </figure>
+</dialog>
+
 <script>
+  (function () {
+    var viewer = document.getElementById('imageViewer');
+    var preview = document.getElementById('imageViewerImage');
+    var caption = document.getElementById('imageViewerCaption');
+    var trigger;
+    document.querySelector('main').addEventListener('click', function (event) {
+      var button = event.target.closest('.image-trigger');
+      if (!button) return;
+      trigger = button;
+      var image = button.querySelector('img');
+      var label = button.closest('figure').querySelector('figcaption');
+      preview.src = image.currentSrc || image.src;
+      preview.alt = image.alt;
+      caption.textContent = label ? label.textContent : image.alt;
+      document.documentElement.classList.add('image-viewer-open');
+      viewer.showModal();
+    });
+    viewer.querySelector('button').addEventListener('click', function () { viewer.close(); });
+    viewer.addEventListener('click', function (event) {
+      if (event.target === viewer) viewer.close();
+    });
+    viewer.addEventListener('close', function () {
+      document.documentElement.classList.remove('image-viewer-open');
+      preview.removeAttribute('src');
+      if (trigger) trigger.focus({ preventScroll: true });
+    });
+  })();
+
   // The title lives only at the very top: one scroll down and it
   // fades away; it comes back when you return to the top.
   (function () {
